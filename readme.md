@@ -1,5 +1,7 @@
 # Snipe IT Mobile
 
+A WIP Snipe IT Mobile app project written in React Native using Expo. 
+
 ## Installation
 1. Clone Repo
  - `brew install yarn` if not already installed
