@@ -1,0 +1,73 @@
+import {View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Button} from 'react-native';
+import { CameraView, useCameraPermissions, CameraType } from 'expo-camera';
+import {Link, router} from "expo-router";
+import React, {useEffect, useState} from "react";
+import {SafeAreaView} from "react-native-safe-area-context";
+
+export default function HomeScreen() {
+    // kind of weird that you have to type it but it's still just a string?
+    const [permission, requestPermission] = useCameraPermissions();
+    useEffect(() => {
+        console.log(permission);
+
+        console.log(permission?.granted);
+    })
+
+
+
+    if (!permission) {
+        // Camera permissions are still loading.
+        return (
+            <SafeAreaView style={{flex: 1, justifyContent: "center", alignItems: "center"}}>
+                <ActivityIndicator size="large" color="purple"/>
+            </SafeAreaView>
+        )
+    }
+
+    if(permission.granted) {
+        return (
+            <SafeAreaView style={styles.container}>
+                    <Text style={styles.text}>Tab Home</Text>
+                    <Button style={styles.text} title='Open Scanner' onPress={() => router.push('/scanner')}>Open Scanner</Button>
+            </SafeAreaView>
+        );
+    } else {
+        return (
+            <SafeAreaView style={styles.buttonContainer}>
+                        <TouchableOpacity onPress={requestPermission}>
+                            <Text style={styles.text}>Request Camera Permission</Text>
+                        </TouchableOpacity>
+            </SafeAreaView>
+        )
+    }
+}
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+        message: {
+            textAlign: 'center',
+            paddingBottom: 10,
+        },
+        camera: {
+            flex: 1,
+        },
+        buttonContainer: {
+            flex: 1,
+            flexDirection: 'row',
+            backgroundColor: 'blue',
+            margin: 64,
+        },
+        button: {
+            flex: 1,
+            alignSelf: 'flex-end',
+            alignItems: 'center',
+        },
+        text: {
+            fontSize: 24,
+            fontWeight: 'bold',
+        }
+});
