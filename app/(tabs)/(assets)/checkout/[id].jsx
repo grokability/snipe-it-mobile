@@ -43,7 +43,7 @@ export default function CheckoutScreen() {
 
     function getInitialUsers() {
         makeRequest({
-            url: `/users`,
+            url: `/users?sort=first_name&order=asc`,
             method: 'GET',
             headers: { 'Authorization': `Bearer ${user.token}` }
         }).then(res => {
@@ -118,7 +118,7 @@ export default function CheckoutScreen() {
 
                     // Get items from API
                     makeRequest({
-                        url: `/users?search=${text}`,
+                        url: `/users?sort=first_name&order=asc&search=${text}`,
                         method: 'GET',
                         headers: { 'Authorization': `Bearer ${user.token}` }
                     })
