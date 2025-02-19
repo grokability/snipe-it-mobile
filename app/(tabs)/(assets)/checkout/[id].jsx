@@ -1,10 +1,11 @@
 import React, {useCallback, useContext, useEffect, useState} from 'react';
-import {Text, Button} from "react-native";
-import {router, useLocalSearchParams} from "expo-router";
+import {Text, Button, StyleSheet} from "react-native";
+import {router, useFocusEffect, useLocalSearchParams} from "expo-router";
 import {SafeAreaProvider} from "react-native-safe-area-context";
 import {makeRequest} from "../../../../helpers/axiosConfig";
 import {AuthContext} from "../../../../context/AuthProvider";
 import DropDownPicker from 'react-native-dropdown-picker';
+import {debounce} from "lodash";
 
 export default function CheckoutScreen() {
     // standard screen states
@@ -35,10 +36,10 @@ export default function CheckoutScreen() {
         setUserDropdown(false);
     })
 
-    useEffect(() => {
+    useFocusEffect(useCallback( () => {
         getInitialUsers();
         getStatusLabels();
-    }, [])
+    }, []))
 
 
     function getInitialUsers() {
@@ -105,7 +106,7 @@ export default function CheckoutScreen() {
     }
 
     return (
-        <SafeAreaProvider>
+        <SafeAreaProvider style={styles.container}>
             <Text>Checkout Asset {id}</Text>
             <DropDownPicker
                 placeholder="Select User"
@@ -170,3 +171,10 @@ export default function CheckoutScreen() {
         </SafeAreaProvider>
     )
 }
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+})

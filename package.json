@@ -20,6 +20,7 @@
     "expo-router": "~4.0.17",
     "expo-secure-store": "~14.0.1",
     "expo-status-bar": "~2.0.1",
+    "lodash": "^4.17.21",
     "react": "18.3.1",
     "react-native": "0.76.6",
     "react-native-dropdown-picker": "^5.4.6",

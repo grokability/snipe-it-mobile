@@ -4,6 +4,7 @@ import {router, useLocalSearchParams} from "expo-router";
 import {SafeAreaProvider} from "react-native-safe-area-context";
 import {makeRequest} from "../../../../helpers/axiosConfig";
 import {AuthContext} from "../../../../context/AuthProvider";
+import {StyleSheet} from "react-native";
 
 export default function CheckoutScreen() {
     const { user } = useContext(AuthContext);
@@ -27,9 +28,16 @@ export default function CheckoutScreen() {
     }
 
     return (
-        <SafeAreaProvider>
+        <SafeAreaProvider style={styles.container}>
             <Text>Checkin Asset {id}</Text>
             <Button title="Checkin" onPress={() => checkin()} />
         </SafeAreaProvider>
     )
 }
+StyleSheet.create({
+    container: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+})
