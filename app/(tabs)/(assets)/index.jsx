@@ -57,7 +57,7 @@ export default function AssetsScreen() {
         }
     }
 
-    const Item = ({id, asset_tag, name, serial, image, checkedOut}) => (
+    const Item = ({id, asset_tag, name, serial, image, checkedOut, status}) => (
         <Pressable
             onPress={() => router.push(`/${id}`)}
             style={({pressed}) => [
@@ -71,13 +71,21 @@ export default function AssetsScreen() {
             <View style={styles.contentContainer}>
                 <Text style={styles.assetTag}>#{asset_tag}</Text>
                 <Text style={styles.assetName}>{name}</Text>
-                {checkedOut ? (
+                {checkedOut && (
                     <Text style={styles.checkedOutText}>
                         Checked out to: <Text style={styles.userName}>{checkedOut.name}</Text>
                     </Text>
-                ) : (
-                    <Text style={styles.availableText}>Available</Text>
                 )}
+                {status.status_type === 'deployable' ?
+                    (
+                    <Text style={styles.availableText}>Available</Text>
+                    ) :
+                    <Text style={styles.notAvailableText}>Not Available</Text>
+                }
+
+                {/*//     : (*/}
+                {/*//     <Text style={styles.availableText}>Available</Text>*/}
+                {/*// )}*/}
                 <Text style={styles.serialText}>SN: {serial || 'N/A'}</Text>
             </View>
         </Pressable>
@@ -89,7 +97,16 @@ export default function AssetsScreen() {
                 <FlatList
                     style={styles.flatlist}
                     data={data.assets}
-                    renderItem={({item}) => <Item id={item.id} asset_tag={item.asset_tag} name={item.model.name} serial={item.serial} image={item.image} checkedOut={item.assigned_to}/>}
+                    renderItem={({item}) => <Item
+                            id={item.id}
+                            asset_tag={item.asset_tag}
+                            name={item.model.name}
+                            serial={item.serial}
+                            image={item.image}
+                            checkedOut={item.assigned_to}
+                            status={item.status_label}
+                        />
+                    }
                     keyExtractor={item => item.id}
                     refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
                 ></FlatList>
@@ -177,6 +194,10 @@ const styles = StyleSheet.create({
     availableText: {
         color: '#4CAF50',
         fontWeight: '500',
+    },
+    notAvailableText: {
+        color: '#FF5252',
+        fontWeight: '500'
     },
     serialText: {
         fontSize: 12,
