@@ -78,9 +78,9 @@ export default function AssetsScreen() {
                 )}
                 {status.status_type === 'deployable' ?
                     (
-                    <Text style={styles.availableText}>Deployable</Text>
+                    <Text style={styles.availableText}>{status.name}</Text>
                     ) :
-                    <Text style={styles.notAvailableText}>Not Deployable</Text>
+                    <Text style={styles.notAvailableText}>{status.name}</Text>
                 }
 
                 {/*//     : (*/}
