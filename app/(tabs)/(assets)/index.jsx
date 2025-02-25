@@ -76,16 +76,13 @@ export default function AssetsScreen() {
                         Checked out to: <Text style={styles.userName}>{checkedOut.name}</Text>
                     </Text>
                 )}
+                {/* this is only for switching the style, it doesn't really work inline in the style attribute unfortunately */}
                 {status.status_type === 'deployable' ?
                     (
                     <Text style={styles.availableText}>{status.name}</Text>
                     ) :
                     <Text style={styles.notAvailableText}>{status.name}</Text>
                 }
-
-                {/*//     : (*/}
-                {/*//     <Text style={styles.availableText}>Available</Text>*/}
-                {/*// )}*/}
                 <Text style={styles.serialText}>SN: {serial || 'N/A'}</Text>
             </View>
         </Pressable>
