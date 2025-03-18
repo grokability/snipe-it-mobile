@@ -1,6 +1,6 @@
 import React, { useState, useContext } from 'react';
 import {StyleSheet, TextInput, View, Text, TouchableOpacity, Alert} from 'react-native';
-import { AuthContext } from '../context/AuthProvider';
+import { AuthContext } from '@/context/AuthProvider';
 import * as SecureStore from 'expo-secure-store';
 
  console.log('login rendered')

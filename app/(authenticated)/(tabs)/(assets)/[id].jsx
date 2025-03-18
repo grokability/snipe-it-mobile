@@ -1,10 +1,10 @@
 import React, {useCallback, useContext, useEffect, useState} from 'react';
 import {ActivityIndicator, Button, Image, Pressable, StyleSheet, Text, View} from 'react-native';
 import {router, useFocusEffect, useLocalSearchParams} from "expo-router";
-import {makeRequest} from "../../../helpers/axiosConfig";
-import {AuthContext} from "../../../context/AuthProvider";
+import {makeRequest} from "@/helpers/axiosConfig";
+import {AuthContext} from "@/context/AuthProvider";
 import {SafeAreaProvider} from "react-native-safe-area-context";
-import {COLORS} from "../../../constants/colors";
+import {COLORS} from "@/constants/colors";
 
 
 export const unstable_settings = {

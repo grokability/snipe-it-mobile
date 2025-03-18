@@ -1,10 +1,13 @@
 import {View, Text, StyleSheet, FlatList, Image, RefreshControl, Pressable} from 'react-native';
 import {useContext, useState, useEffect, useCallback} from "react";
-import {AuthContext} from "../../../context/AuthProvider";
-import {makeRequest} from "../../../helpers/axiosConfig";
+import {AuthContext} from "@/context/AuthProvider";
+import {makeRequest} from "@/helpers/axiosConfig";
 import {SafeAreaProvider, SafeAreaView} from "react-native-safe-area-context";
 import {router, useFocusEffect} from "expo-router";
-import {COLORS} from "../../../constants/colors";
+import { convertUnicode }  from "@/helpers/utils";
+import {COLORS} from "@/constants/colors";
+import {decodeEntity} from "html-entities";
+import {AuthProvider} from "@/context/AuthProvider";
 
 export default function AssetsScreen() {
     const { user } = useContext(AuthContext);
@@ -40,7 +43,11 @@ export default function AssetsScreen() {
     const getAssets = async () => {
         try {
             const res = await makeRequest({
-                url: '/hardware?limit=100&offset=0&sort=created_at&order=desc', //this will turn into a builder function
+                url: '/hardware?' +
+                    'limit=100&' +
+                    'offset=0&' +
+                    'sort=created_at&' +
+                    'order=asc', //this will turn into a builder function
                 // to build up the query string
                 method: 'get',
                 headers: {'Authorization': `Bearer ${user.token}`}
@@ -70,7 +77,7 @@ export default function AssetsScreen() {
             </View>
             <View style={styles.contentContainer}>
                 <Text style={styles.assetTag}>#{asset_tag}</Text>
-                <Text style={styles.assetName}>{name}</Text>
+                <Text style={styles.assetName}>{decodeEntity(name, {level: "xml"})}</Text>
                 {checkedOut && (
                     <Text style={styles.checkedOutText}>
                         Checked out to: <Text style={styles.userName}>{checkedOut.name}</Text>

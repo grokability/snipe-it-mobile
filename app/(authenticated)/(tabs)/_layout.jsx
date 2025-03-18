@@ -26,19 +26,20 @@ export default function TabLayout() {
                 />
                 <Tabs.Screen
                     name="(assets)"
+                    headerShown={false}
                     options={{
                         title: 'Assets',
                         tabBarIcon: ({ color }) => <FontAwesome size={28} name="barcode" color={color} />,
                     }}
                 />
 
-                <Tabs.Screen
-                    name="licenses"
-                    options={{
-                        title: 'Licenses',
-                        tabBarIcon: ({ color }) => <FontAwesome size={28} name="floppy-o" color={color} />,
-                    }}
-                    />
+                {/*<Tabs.Screen*/}
+                {/*    name="licenses"*/}
+                {/*    options={{*/}
+                {/*        title: 'Licenses',*/}
+                {/*        tabBarIcon: ({ color }) => <FontAwesome size={28} name="floppy-o" color={color} />,*/}
+                {/*    }}*/}
+                {/*    />*/}
                 <Tabs.Screen
                     name="accessories"
                     options={{

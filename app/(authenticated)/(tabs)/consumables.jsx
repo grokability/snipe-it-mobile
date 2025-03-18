@@ -1,7 +1,7 @@
 import {View, Text, StyleSheet, FlatList, Image, RefreshControl} from 'react-native';
 import {useContext, useState, useEffect, useCallback} from "react";
-import {AuthContext} from "../../context/AuthProvider";
-import {makeRequest} from "../../helpers/axiosConfig";
+import {AuthContext} from "@/context/AuthProvider";
+import {makeRequest} from "@/helpers/axiosConfig";
 import {SafeAreaProvider, SafeAreaView} from "react-native-safe-area-context";
 
 export default function ConsumablesScreen() {

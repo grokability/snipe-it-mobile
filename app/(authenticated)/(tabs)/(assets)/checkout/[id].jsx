@@ -2,8 +2,8 @@ import React, {useCallback, useContext, useEffect, useState} from 'react';
 import {Text, Button, StyleSheet} from "react-native";
 import {router, useFocusEffect, useLocalSearchParams} from "expo-router";
 import {SafeAreaProvider} from "react-native-safe-area-context";
-import {makeRequest} from "../../../../helpers/axiosConfig";
-import {AuthContext} from "../../../../context/AuthProvider";
+import {makeRequest} from "@/helpers/axiosConfig";
+import {AuthContext} from "@/context/AuthProvider";
 import DropDownPicker from 'react-native-dropdown-picker';
 import {debounce} from "lodash";
 

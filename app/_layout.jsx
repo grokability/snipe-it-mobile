@@ -1,14 +1,18 @@
 import { Stack, router } from 'expo-router';
-import { useAuth, AuthProvider } from "../context/AuthProvider";
+import { useAuth, AuthProvider } from "@/context/AuthProvider";
 import { ActivityIndicator, View } from "react-native";
 import React, {useEffect} from "react";
+import {Drawer} from "expo-router/drawer";
+import {GestureHandlerRootView} from "react-native-gesture-handler";
 
 
 export default function RootLayout() {
 
     return (
         <AuthProvider>
-            <AuthLayoutContent/>
+            <GestureHandlerRootView style={{ flex: 1 }}>
+                <AuthLayoutContent/>
+            </GestureHandlerRootView>
         </AuthProvider>
     )
 
@@ -20,7 +24,7 @@ export default function RootLayout() {
             if (!isLoading) {
                 if (isAuthenticated) {
                     console.log("User is authenticated. Navigating to: /(tabs)");
-                    router.replace("/(tabs)"); // Navigate to tabs layout
+                    router.replace("/(authenticated)/");
                 } else {
                     console.log("User is not authenticated. Navigating to: /login");
                     router.replace("/login"); // Navigate to login page
@@ -37,20 +41,37 @@ export default function RootLayout() {
             );
         }
 
-        if (isAuthenticated) {
-            console.log("User is authenticated. Navigating to: /(tabs)");
-            return (
-                <Stack>
-                    <Stack.Screen name="(tabs)" options={{headerShown: false}}/>
-                </Stack>
-            );
-        } else {
-            console.log("User is not authenticated. Navigating to: /login");
-            return (
-                <Stack>
-                    <Stack.Screen name="login" options={{headerTitle: "Login"}}/>
-                </Stack>
-            );
-        }
+        return (
+            <Stack screenOptions={{ headerShown: false }}>
+                {isAuthenticated ? (
+                    <Stack.Screen name="(authenticated)" />
+                ) : (
+                    <Stack.Screen
+                        name="login"
+                        options={{
+                            headerShown: true,
+                            headerTitle: "Login"
+                        }}
+                    />
+                )}
+            </Stack>
+        );
+
+        // if (isAuthenticated) {
+        //     console.log("User is authenticated. Navigating to: /(tabs)");
+        //     return (
+        //         <Stack.Screen name="(authenticated)" options={{headerShown: false}}/>
+        //         // <Stack>
+        //         //     <Stack.Screen name="(tabs)" options={{headerShown: false}}/>
+        //         // </Stack>
+        //     );
+        // } else {
+        //     console.log("User is not authenticated. Navigating to: /login");
+        //     return (
+        //         // <Stack>
+        //             <Stack.Screen name="login" options={{headerTitle: "Login"}}/>
+        //         // </Stack>
+        //     );
+        // }
     }
 }
