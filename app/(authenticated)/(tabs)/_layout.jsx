@@ -61,14 +61,14 @@ export default function TabLayout() {
                         tabBarIcon: ({ color }) => <FontAwesome size={28} name="hdd-o" color={color} />,
                     }}
                     />
-                <Tabs.Screen
-                    name="settings"
-                    options={{
-                        // href: null,
-                        title: 'Settings',
-                        tabBarIcon: ({ color }) => <FontAwesome size={28} name="cog" color={color} hidden={true}/>,
-                    }}
-                />
+                {/*<Tabs.Screen*/}
+                {/*    name="settings"*/}
+                {/*    options={{*/}
+                {/*        // href: null,*/}
+                {/*        title: 'Settings',*/}
+                {/*        tabBarIcon: ({ color }) => <FontAwesome size={28} name="cog" color={color} hidden={true}/>,*/}
+                {/*    }}*/}
+                {/*/>*/}
                 {/* this is fake and annoying, and i'm confused about why it's necessary, but 🤷‍♂️, it works */}
                 <Tabs.Screen
                     name="index"
