@@ -53,8 +53,6 @@ export default function AuthenticatedLayout() {
                         ),
                         drawerPosition: 'right',
                         drawerType: 'back',
-                        // Hide index routes from the drawer
-                        drawerItemStyle: route.name === "index" ? { display: 'none' } : styles.drawerItem,
                         drawerLabelStyle: styles.drawerLabel,
                     };
                 }}
@@ -84,7 +82,6 @@ export default function AuthenticatedLayout() {
                 <Drawer.Screen
                     name="index"
                     options={{
-                        // This explicitly hides the index route from the drawer
                         drawerItemStyle: { display: 'none' }
                     }}
                 />
