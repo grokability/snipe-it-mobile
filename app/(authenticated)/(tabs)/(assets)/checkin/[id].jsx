@@ -2,8 +2,8 @@ import React, {useContext} from 'react';
 import {Text, Button} from "react-native";
 import {router, useLocalSearchParams} from "expo-router";
 import {SafeAreaProvider} from "react-native-safe-area-context";
-import {makeRequest} from "../../../../helpers/axiosConfig";
-import {AuthContext} from "../../../../context/AuthProvider";
+import {makeRequest} from "@/helpers/axiosConfig";
+import {AuthContext} from "@/context/AuthProvider";
 import {StyleSheet} from "react-native";
 
 export default function CheckoutScreen() {

@@ -26,19 +26,20 @@ export default function TabLayout() {
                 />
                 <Tabs.Screen
                     name="(assets)"
+                    headerShown={false}
                     options={{
                         title: 'Assets',
                         tabBarIcon: ({ color }) => <FontAwesome size={28} name="barcode" color={color} />,
                     }}
                 />
 
-                <Tabs.Screen
-                    name="licenses"
-                    options={{
-                        title: 'Licenses',
-                        tabBarIcon: ({ color }) => <FontAwesome size={28} name="floppy-o" color={color} />,
-                    }}
-                    />
+                {/*<Tabs.Screen*/}
+                {/*    name="licenses"*/}
+                {/*    options={{*/}
+                {/*        title: 'Licenses',*/}
+                {/*        tabBarIcon: ({ color }) => <FontAwesome size={28} name="floppy-o" color={color} />,*/}
+                {/*    }}*/}
+                {/*    />*/}
                 <Tabs.Screen
                     name="accessories"
                     options={{
@@ -60,14 +61,14 @@ export default function TabLayout() {
                         tabBarIcon: ({ color }) => <FontAwesome size={28} name="hdd-o" color={color} />,
                     }}
                     />
-                <Tabs.Screen
-                    name="settings"
-                    options={{
-                        // href: null,
-                        title: 'Settings',
-                        tabBarIcon: ({ color }) => <FontAwesome size={28} name="cog" color={color} hidden={true}/>,
-                    }}
-                />
+                {/*<Tabs.Screen*/}
+                {/*    name="settings"*/}
+                {/*    options={{*/}
+                {/*        // href: null,*/}
+                {/*        title: 'Settings',*/}
+                {/*        tabBarIcon: ({ color }) => <FontAwesome size={28} name="cog" color={color} hidden={true}/>,*/}
+                {/*    }}*/}
+                {/*/>*/}
                 {/* this is fake and annoying, and i'm confused about why it's necessary, but 🤷‍♂️, it works */}
                 <Tabs.Screen
                     name="index"
