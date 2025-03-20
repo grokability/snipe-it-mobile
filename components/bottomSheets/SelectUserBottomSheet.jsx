@@ -1,7 +1,15 @@
-import {BottomSheetModal, BottomSheetTextInput, BottomSheetView, useBottomSheet} from "@gorhom/bottom-sheet";
+import {
+    BottomSheetFlatList,
+    BottomSheetModal,
+    BottomSheetTextInput,
+    BottomSheetView,
+    useBottomSheet
+} from "@gorhom/bottom-sheet";
 import { Text, Button } from "react-native";
-import React, { forwardRef, useMemo } from "react";
+import React, {forwardRef, useContext, useEffect, useMemo, useState} from "react";
 import BottomSheet from "@gorhom/bottom-sheet";
+import {makeRequest} from "@/helpers/axiosConfig";
+import {AuthContext} from "@/context/AuthProvider";
 // export type Ref = BottomSheet;
 
 const CloseBtn = () => {
@@ -11,7 +19,39 @@ const CloseBtn = () => {
 };
 
 const SelectUserBottomSheet = forwardRef((props, ref) => {
+    const { user } = useContext(AuthContext);
+    const [users, setUsers] = useState([])
+    const [searchText, setSearchText] = useState('')
     const snapPoints = useMemo(() => ['25%', '50%', '70%'], []);
+
+    useEffect(() => {
+        fetchUsers();
+    }, [searchText])
+
+    const fetchUsers = () => {
+        makeRequest({
+            url: `/users?sort=first_name&order=asc&search=${searchText}`,
+            method: 'GET',
+            headers: { 'Authorization': `Bearer ${user.token}` }
+        })
+            .then((res) => {
+                console.log(res);
+                setUsers(res.rows)
+            })
+            .catch((err) => {
+                console.error(err);
+            })
+            .finally(() => {
+                // Hide the loading animation
+                // setLoading(false);
+            });
+    }
+
+    const Item = ({item}) => {
+        return (
+            <Text>{item.name}</Text>
+        )
+    }
 
 
     return (
@@ -26,9 +66,11 @@ const SelectUserBottomSheet = forwardRef((props, ref) => {
                 <BottomSheetTextInput
                     label="Search..."
                     placeholder={'Search...'}
-                    onChangeText={(text) => {}}
+                    onChangeText={(text) => {setSearchText(text)}}
                 />
                 <CloseBtn />
+                {/*  flatlist  */}
+                <BottomSheetFlatList data={users} renderItem={({item}) => <Item item={item} />} keyExtractor={item => item.id} />
             </BottomSheetView>
         </BottomSheetModal>
     )
