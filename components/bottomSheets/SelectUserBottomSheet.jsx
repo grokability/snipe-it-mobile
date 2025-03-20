@@ -5,8 +5,8 @@ import {
     BottomSheetView,
     useBottomSheet
 } from "@gorhom/bottom-sheet";
-import { Text, Button } from "react-native";
-import React, {forwardRef, useContext, useEffect, useMemo, useState} from "react";
+import {Text, Button, Pressable} from "react-native";
+import React, {forwardRef, useContext, useEffect, useMemo, useState, useImperativeHandle} from "react";
 import BottomSheet from "@gorhom/bottom-sheet";
 import {makeRequest} from "@/helpers/axiosConfig";
 import {AuthContext} from "@/context/AuthProvider";
@@ -35,7 +35,6 @@ const SelectUserBottomSheet = forwardRef((props, ref) => {
             headers: { 'Authorization': `Bearer ${user.token}` }
         })
             .then((res) => {
-                console.log(res);
                 setUsers(res.rows)
             })
             .catch((err) => {
@@ -49,7 +48,9 @@ const SelectUserBottomSheet = forwardRef((props, ref) => {
 
     const Item = ({item}) => {
         return (
-            <Text>{item.name}</Text>
+            <Pressable onPress={() => props.setSelectedUser(item)}>
+                <Text style={{padding: '10'}}>{item.name}</Text>
+            </Pressable>
         )
     }
 
@@ -61,9 +62,10 @@ const SelectUserBottomSheet = forwardRef((props, ref) => {
             snapPoints={snapPoints}
         >
             <BottomSheetView>
-                <Text>{props.title}</Text>
+                <Text style={{padding: '10'}}>{props.title}</Text>
                 {/* we use BottomSheetTextInput to make the BottomSheet aware of the keyboard and expand to accommodate it */}
                 <BottomSheetTextInput
+                    style={{padding: '10'}}
                     label="Search..."
                     placeholder={'Search...'}
                     onChangeText={(text) => {setSearchText(text)}}
