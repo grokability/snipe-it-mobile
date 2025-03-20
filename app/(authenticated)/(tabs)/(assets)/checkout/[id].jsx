@@ -1,4 +1,4 @@
-import React, {useCallback, useContext, useEffect, useState} from 'react';
+import React, {useCallback, useContext, useEffect, useRef, useState, useMemo} from 'react';
 import {Text, Button, StyleSheet} from "react-native";
 import {router, useFocusEffect, useLocalSearchParams} from "expo-router";
 import {SafeAreaProvider} from "react-native-safe-area-context";
@@ -6,6 +6,13 @@ import {makeRequest} from "@/helpers/axiosConfig";
 import {AuthContext} from "@/context/AuthProvider";
 import DropDownPicker from 'react-native-dropdown-picker';
 import {debounce} from "lodash";
+import BottomSheet, {
+    BottomSheetModal,
+    BottomSheetTextInput,
+    BottomSheetView,
+    useBottomSheet
+} from "@gorhom/bottom-sheet";
+import SelectUserBottomSheet from "@/components/bottomSheets/SelectUserBottomSheet";
 
 export default function CheckoutScreen() {
     // standard screen states
@@ -16,6 +23,11 @@ export default function CheckoutScreen() {
     const [loading, setLoading] = useState(false);
     const [value, setValue] = useState(null);
     const [items, setItems] = useState([]);
+
+    // bottomsheet
+    const snapPoints = useMemo(() => ['50%', '75%', '90%'], []);
+    const bottomSheetRef = useRef(null);
+    const handleOpenBottomSheet = () => bottomSheetRef.current?.present();
 
     // initial status states
     const [statuses, setStatuses] = useState();
@@ -108,52 +120,60 @@ export default function CheckoutScreen() {
     return (
         <SafeAreaProvider style={styles.container}>
             <Text>Checkout Asset {id}</Text>
-            <DropDownPicker
-                placeholder="Select User"
-                open={userDropdown}
-                onOpen={onUserDropdownOpen}
-                searchable={true}
-                onChangeSearchText={(text) => {
-                    // Show the loading animation
-                    setLoading(true);
+            {/*<DropDownPicker*/}
+            {/*    placeholder="Select User"*/}
+            {/*    open={userDropdown}*/}
+            {/*    onOpen={onUserDropdownOpen}*/}
+            {/*    searchable={true}*/}
+            {/*    onChangeSearchText={(text) => {*/}
+            {/*        // Show the loading animation*/}
+            {/*        setLoading(true);*/}
 
-                    // Get items from API
-                    makeRequest({
-                        url: `/users?sort=first_name&order=asc&search=${text}`,
-                        method: 'GET',
-                        headers: { 'Authorization': `Bearer ${user.token}` }
-                    })
-                        .then((res) => {
-                            setItems(
-                                res.rows.map(user => {
-                                    return {
-                                        label: user.name,
-                                        value: user.id,
-                                    }
-                                }))
-                        })
-                        .catch((err) => {
-                           console.error(err);
-                        })
-                        .finally(() => {
-                            // Hide the loading animation
-                            setLoading(false);
-                        });
-                }}
-                onSelectItem={(item) => {
-                    setSelectedUser(item);
-                }}
-                disableLocalSearch={true}
-                loading={loading}
-                value={value}
-                items={items}
-                setValue={setValue}
-                setItems={setItems}
-                setOpen={setUserDropdown}
-                style={{padding: 10}}
-                zIndex={2000}
-                zIndexInverse={1000}
-            />
+            {/*        // Get items from API*/}
+            {/*        makeRequest({*/}
+            {/*            url: `/users?sort=first_name&order=asc&search=${text}`,*/}
+            {/*            method: 'GET',*/}
+            {/*            headers: { 'Authorization': `Bearer ${user.token}` }*/}
+            {/*        })*/}
+            {/*            .then((res) => {*/}
+            {/*                setItems(*/}
+            {/*                    res.rows.map(user => {*/}
+            {/*                        return {*/}
+            {/*                            label: user.name,*/}
+            {/*                            value: user.id,*/}
+            {/*                        }*/}
+            {/*                    }))*/}
+            {/*            })*/}
+            {/*            .catch((err) => {*/}
+            {/*               console.error(err);*/}
+            {/*            })*/}
+            {/*            .finally(() => {*/}
+            {/*                // Hide the loading animation*/}
+            {/*                setLoading(false);*/}
+            {/*            });*/}
+            {/*    }}*/}
+            {/*    onSelectItem={(item) => {*/}
+            {/*        setSelectedUser(item);*/}
+            {/*    }}*/}
+            {/*    disableLocalSearch={true}*/}
+            {/*    loading={loading}*/}
+            {/*    value={value}*/}
+            {/*    items={items}*/}
+            {/*    setValue={setValue}*/}
+            {/*    setItems={setItems}*/}
+            {/*    setOpen={setUserDropdown}*/}
+            {/*    style={{padding: 10}}*/}
+            {/*    zIndex={2000}*/}
+            {/*    zIndexInverse={1000}*/}
+            {/*/>*/}
+            <Button title="Open Bottom Sheet" onPress={handleOpenBottomSheet} />
+            <SelectUserBottomSheet title="Select User" ref={bottomSheetRef} />
+
+            {/*<BottomSheetModal index={1} ref={bottomSheetRef} snapPoints={snapPoints}>*/}
+            {/*    <BottomSheetView>*/}
+            {/*        <BottomSheetTextInput label="Search..." placeholder={'Search...'} onChangeText={(text) => {}}/>*/}
+            {/*    </BottomSheetView>*/}
+            {/*</BottomSheetModal>*/}
             <DropDownPicker
                 placeholder="Select Status"
                 setOpen={setStatusDropdown}
