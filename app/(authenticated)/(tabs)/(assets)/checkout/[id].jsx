@@ -6,6 +6,7 @@ import {makeRequest} from "@/helpers/axiosConfig";
 import {AuthContext} from "@/context/AuthProvider";
 import DropDownPicker from 'react-native-dropdown-picker';
 import {debounce} from "lodash";
+import SelectUserModal from "@/components/modals/SelectUserModal";
 
 export default function CheckoutScreen() {
     // standard screen states
@@ -35,6 +36,10 @@ export default function CheckoutScreen() {
     const onStatusDropdownOpen = useCallback(() => {
         setUserDropdown(false);
     })
+
+    const [userModalVisible, setUserModalVisible] = useState(false);
+    const showUserModal = () => setUserModalVisible(true);
+    const hideUserModal = () => setUserModalVisible(false);
 
     useFocusEffect(useCallback( () => {
         getInitialUsers();
@@ -154,9 +159,11 @@ export default function CheckoutScreen() {
             {/*    zIndex={2000}*/}
             {/*    zIndexInverse={1000}*/}
             {/*/>*/}
-            <TouchableOpacity onPress={() => showModal()}>
+            <TouchableOpacity onPress={() => showUserModal()}>
                 <Text>Select User Modal</Text>
             </TouchableOpacity>
+                <SelectUserModal parentVisible={userModalVisible} hideModal={hideUserModal} />
+
             <DropDownPicker
                 placeholder="Select Status"
                 setOpen={setStatusDropdown}
