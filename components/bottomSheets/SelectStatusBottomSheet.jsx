@@ -42,7 +42,6 @@ const SelectStatusBottomSheet = forwardRef((props, ref) => {
 
     const selectStatus = (status) => {
         props.setSelectedStatus(status)
-        console.log(status)
         ref.current.close()
     }
 
