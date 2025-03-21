@@ -4,6 +4,7 @@ import { ActivityIndicator, View } from "react-native";
 import React, {useEffect} from "react";
 import {Drawer} from "expo-router/drawer";
 import {GestureHandlerRootView} from "react-native-gesture-handler";
+import {BottomSheetModalProvider} from "@gorhom/bottom-sheet";
 
 
 export default function RootLayout() {
@@ -42,19 +43,21 @@ export default function RootLayout() {
         }
 
         return (
-            <Stack screenOptions={{ headerShown: false }}>
-                {isAuthenticated ? (
-                    <Stack.Screen name="(authenticated)" />
-                ) : (
-                    <Stack.Screen
-                        name="login"
-                        options={{
-                            headerShown: true,
-                            headerTitle: "Login"
-                        }}
-                    />
-                )}
-            </Stack>
+            <BottomSheetModalProvider>
+                <Stack screenOptions={{ headerShown: false }}>
+                    {isAuthenticated ? (
+                        <Stack.Screen name="(authenticated)" />
+                    ) : (
+                        <Stack.Screen
+                            name="login"
+                            options={{
+                                headerShown: true,
+                                headerTitle: "Login"
+                            }}
+                        />
+                    )}
+                </Stack>
+            </BottomSheetModalProvider>
         );
 
         // if (isAuthenticated) {

@@ -1164,6 +1164,21 @@
     find-up "^5.0.0"
     js-yaml "^4.1.0"
 
+"@gorhom/bottom-sheet@^5":
+  version "5.1.2"
+  resolved "https://registry.yarnpkg.com/@gorhom/bottom-sheet/-/bottom-sheet-5.1.2.tgz#509992983ce2905d5899d1c7cab1cd3950c8c238"
+  integrity sha512-5np8oL2krqAsVKLRE4YmtkZkyZeFiitoki72bEpVhZb8SRTNuAEeSbP3noq5srKpcRsboCr7uI+xmMyrWUd9kw==
+  dependencies:
+    "@gorhom/portal" "1.0.14"
+    invariant "^2.2.4"
+
+"@gorhom/portal@1.0.14":
+  version "1.0.14"
+  resolved "https://registry.yarnpkg.com/@gorhom/portal/-/portal-1.0.14.tgz#1953edb76aaba80fb24021dc774550194a18e111"
+  integrity sha512-MXyL4xvCjmgaORr/rtryDNFy3kU4qUbKlwtQqqsygd0xX3mhKjOLn6mQK8wfu0RkoE0pBE0nAasRoHua+/QZ7A==
+  dependencies:
+    nanoid "^3.3.1"
+
 "@isaacs/cliui@^8.0.2":
   version "8.0.2"
   resolved "https://registry.yarnpkg.com/@isaacs/cliui/-/cliui-8.0.2.tgz#b37667b7bc181c168782259bab42474fbf52b550"
@@ -4554,6 +4569,11 @@ nanoid@3.3.8, nanoid@^3.3.7:
   resolved "https://registry.yarnpkg.com/nanoid/-/nanoid-3.3.8.tgz#b1be3030bee36aaff18bacb375e5cce521684baf"
   integrity sha512-WNLf5Sd8oZxOm+TzppcYk8gVOgP+l58xNy58D0nbUnOxOWRWvlcCV4kUF7ltmI6PsrLl/BgKEyS4mqsGChFN0w==
 
+nanoid@^3.3.1:
+  version "3.3.11"
+  resolved "https://registry.yarnpkg.com/nanoid/-/nanoid-3.3.11.tgz#4f4f112cefbe303202f2199838128936266d185b"
+  integrity sha512-N8SpfPUnUp1bK+PMYW8qSWdl9U+wwNWI4QKxOYDy9JAro3WMX7p2OeVRF9v+347pnakNevPmiHhNmZ2HbFA76w==
+
 negotiator@0.6.3:
   version "0.6.3"
   resolved "https://registry.yarnpkg.com/negotiator/-/negotiator-0.6.3.tgz#58e323a72fedc0d6f9cd4d31fe49f51479590ccd"
@@ -5086,11 +5106,6 @@ react-native-drawer-layout@^4.1.1:
   integrity sha512-ob6O3ph7PZ3A2FpdlsSxHuMpHDXREZPR8A6S3q0dSxV7i6d+8Z6CPCTbegfN2QZyizSow9NLrKyXP93tlqZ3dA==
   dependencies:
     use-latest-callback "^0.2.1"
-
-react-native-dropdown-picker@^5.4.6:
-  version "5.4.6"
-  resolved "https://registry.yarnpkg.com/react-native-dropdown-picker/-/react-native-dropdown-picker-5.4.6.tgz#3736fc468de4a295e4df8d1f65ed2eadaf9b445f"
-  integrity sha512-T1XBHbE++M6aRU3wFYw3MvcOuabhWZ29RK/Ivdls2r1ZkZ62iEBZknLUPeVLMX3x6iUxj4Zgr3X2DGlEGXeHsA==
 
 react-native-gesture-handler@~2.20.2:
   version "2.20.2"
