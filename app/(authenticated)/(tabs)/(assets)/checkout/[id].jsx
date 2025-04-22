@@ -1,5 +1,5 @@
 import React, {useContext, useRef, useState} from 'react';
-import {Text, Button, StyleSheet} from "react-native";
+import {Text, Button, StyleSheet, TextInput} from "react-native";
 import {router, useLocalSearchParams} from "expo-router";
 import {SafeAreaProvider} from "react-native-safe-area-context";
 import {makeRequest} from "@/helpers/axiosConfig";
@@ -8,6 +8,7 @@ import SelectUserBottomSheet from "@/components/bottomSheets/SelectUserBottomShe
 import SelectStatusBottomSheet from "@/components/bottomSheets/SelectStatusBottomSheet";
 import SelectLocationBottomSheet from "@/components/bottomSheets/SelectLocationBottomSheet";
 import SelectAssetBottomSheet from "@/components/bottomSheets/SelectAssetBottomSheet";
+import RNDateTimePicker from "@react-native-community/datetimepicker";
 
 export default function CheckoutScreen() {
     const { id } = useLocalSearchParams();
@@ -27,6 +28,8 @@ export default function CheckoutScreen() {
     const [selectedStatus, setSelectedStatus] = useState(null);
     const [selectedLocation, setSelectedLocation] = useState(null);
     const [selectedAsset, setSelectedAsset] = useState(null);
+
+    const [assetName, setAssetName] = useState("")
 
     function checkout() {
         console.log('checkout');
@@ -56,7 +59,17 @@ export default function CheckoutScreen() {
 
     return (
         <SafeAreaProvider style={styles.container}>
-            <Text>Checkout Asset {id}</Text>
+            <Text style={styles.headerText}>Checkout Asset #{id}</Text>
+            {/* asset name */}
+            <Text style={styles.headerText}>Asset Name: {selectedAsset?.name}</Text>
+            <TextInput placeholder="Asset Name" onChangeText={setAssetName}></TextInput>
+
+            {/* status select sheet */}
+            <Button title="Select Status" onPress={handleOpenStatusBottomSheet} />
+            <SelectStatusBottomSheet title="Select Status" ref={statusBottomSheetRef} setSelectedStatus={setSelectedStatus}/>
+            <Text>Selected Status: {selectedStatus?.name}</Text>
+
+            <Text>Checkout to: </Text>
 
             {/* user select sheet */}
             <Button title="Select User" onPress={handleOpenUserBottomSheet} />
@@ -73,11 +86,16 @@ export default function CheckoutScreen() {
             <SelectAssetBottomSheet title="Select Asset" ref={assetBottomSheetRef} setSelectedAsset={setSelectedAsset}/>
             <Text>Selected Asset: {selectedAsset?.name}</Text>
 
-            {/* status select sheet */}
-            <Button title="Select Status" onPress={handleOpenStatusBottomSheet} />
-            <SelectStatusBottomSheet title="Select Status" ref={statusBottomSheetRef} setSelectedStatus={setSelectedStatus}/>
-            <Text>Selected Status: {selectedStatus?.name}</Text>
+            {/* checkout/in dates */}
+            <Text style={styles.headerText}>Checkout Date</Text>
+            <RNDateTimePicker value={new Date()} />
 
+            <Text style={styles.headerText}>Expected Checkin Date</Text>
+            <RNDateTimePicker value={new Date()} />
+
+            {/*/ notes */}
+            <Text style={styles.headerText}>Notes</Text>
+            <TextInput placeholder="Notes" />
             {/* submit button */}
             <Button title="Checkout" onPress={() => checkout()} />
 
@@ -91,4 +109,9 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     },
+    headerText: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        marginBottom: 10,
+    }
 })
