@@ -6,6 +6,8 @@ import {makeRequest} from "@/helpers/axiosConfig";
 import {AuthContext} from "@/context/AuthProvider";
 import SelectUserBottomSheet from "@/components/bottomSheets/SelectUserBottomSheet";
 import SelectStatusBottomSheet from "@/components/bottomSheets/SelectStatusBottomSheet";
+import SelectLocationBottomSheet from "@/components/bottomSheets/SelectLocationBottomSheet";
+import SelectAssetBottomSheet from "@/components/bottomSheets/SelectAssetBottomSheet";
 
 export default function CheckoutScreen() {
     const { id } = useLocalSearchParams();
@@ -14,11 +16,17 @@ export default function CheckoutScreen() {
 
     const userBottomSheetRef  = useRef(null);
     const statusBottomSheetRef = useRef(null);
+    const locationBottomSheetRef = useRef(null);
+    const assetBottomSheetRef = useRef(null);
     const handleOpenUserBottomSheet = () => userBottomSheetRef.current?.present();
     const handleOpenStatusBottomSheet = () => statusBottomSheetRef.current?.present();
+    const handleOpenLocationBottomSheet = () => {locationBottomSheetRef.current?.present()};
+    const handleOpenAssetBottomSheet = () => {assetBottomSheetRef.current?.present()};
 
     const [selectedUser, setSelectedUser] = useState(null);
     const [selectedStatus, setSelectedStatus] = useState(null);
+    const [selectedLocation, setSelectedLocation] = useState(null);
+    const [selectedAsset, setSelectedAsset] = useState(null);
 
     function checkout() {
         console.log('checkout');
@@ -54,6 +62,16 @@ export default function CheckoutScreen() {
             <Button title="Select User" onPress={handleOpenUserBottomSheet} />
             <SelectUserBottomSheet title="Select User" ref={userBottomSheetRef} setSelectedUser={setSelectedUser}/>
             <Text>Selected User: {selectedUser?.name}</Text>
+
+            {/* location select sheet */}
+            <Button title="Select Location" onPress={handleOpenLocationBottomSheet} />
+            <SelectLocationBottomSheet title="Select Location" ref={locationBottomSheetRef} setSelectedLocation={setSelectedLocation}/>
+            <Text>Selected Location: {selectedLocation?.name}</Text>
+
+            {/* asset select sheet */}
+            <Button title="Select Asset" onPress={handleOpenAssetBottomSheet} />
+            <SelectAssetBottomSheet title="Select Asset" ref={assetBottomSheetRef} setSelectedAsset={setSelectedAsset}/>
+            <Text>Selected Asset: {selectedAsset?.name}</Text>
 
             {/* status select sheet */}
             <Button title="Select Status" onPress={handleOpenStatusBottomSheet} />
