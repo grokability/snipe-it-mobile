@@ -10,13 +10,16 @@ const BarcodeOverlay = ({ barcodes, onBarcodeSelect, clearBarcodes }) => {
     return (
         <View style={[
             styles.overlay,
-        {
-            paddingTop: insets.top > 0 ? 15 : insets.top + 15
-        }
+            {
+                paddingTop: insets.top
+            }
         ]}>
-            <View style={[styles.header, { paddingTop: insets.top > 0 ? 15 : insets.top + 15 }]}>
+            <View style={[styles.header, { paddingTop: insets.top }]}>
                 <Text style={styles.headerText}>Select a QR code</Text>
-                <TouchableOpacity onPress={clearBarcodes} style={styles.closeButton} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+                <TouchableOpacity 
+                    onPress={clearBarcodes} 
+                    style={styles.closeButton}
+                    hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
                 >
                     <Text style={styles.closeButtonText}>✕</Text>
                 </TouchableOpacity>
@@ -46,6 +49,7 @@ const BarcodeOverlay = ({ barcodes, onBarcodeSelect, clearBarcodes }) => {
 const styles = StyleSheet.create({
     overlay: {
         ...StyleSheet.absoluteFillObject,
+        zIndex: 10,
     },
     header: {
         flexDirection: 'row',
@@ -53,6 +57,7 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(0, 0, 0, 0.7)',
         padding: 15,
         alignItems: 'center',
+        marginBottom: 10,
     },
     headerText: {
         color: 'white',
@@ -60,11 +65,14 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
     },
     closeButton: {
-        padding: 10,
+        padding: 15,  // Increased from 10 to 15
+        backgroundColor: 'rgba(100, 100, 100, 0.5)',
+        borderRadius: 25,
     },
     closeButtonText: {
         color: 'white',
         fontSize: 20,
+        fontWeight: 'bold',
     },
     barcodeHighlight: {
         position: 'absolute',

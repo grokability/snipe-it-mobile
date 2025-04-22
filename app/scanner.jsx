@@ -1,9 +1,8 @@
-import { Camera, CameraView } from "expo-camera";
-import { Link, router, Stack } from "expo-router";
+import { CameraView } from "expo-camera";
+import { router, Stack } from "expo-router";
 import {
     AppState,
     Platform,
-    SafeAreaView,
     StatusBar,
     StyleSheet,
     View
@@ -11,13 +10,14 @@ import {
 import { useEffect, useRef, useState } from "react";
 import * as Haptics from 'expo-haptics';
 import BarcodeOverlay from "@/components/camera/BarcodeOverlay";
-import {useSafeAreaInsets} from "react-native-safe-area-context"; // Import the new component
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function Home() {
     const [barcodes, setBarcodes] = useState([]);
     const [scanningPaused, setScanningPaused] = useState(false);
     const appState = useRef(AppState.currentState);
     const insets = useSafeAreaInsets();
+    const cameraRef = useRef(null);
 
     useEffect(() => {
         const subscription = AppState.addEventListener("change", (nextAppState) => {
@@ -35,6 +35,20 @@ export default function Home() {
             subscription.remove();
         };
     }, []);
+
+    // Add a timer to clear barcodes and resume scanning when in paused state
+    useEffect(() => {
+        let rescanTimer;
+        if (scanningPaused) {
+            rescanTimer = setTimeout(() => {
+                clearBarcodes();
+            }, 5000); // 5 seconds timeout for automatic resume
+        }
+        
+        return () => {
+            if (rescanTimer) clearTimeout(rescanTimer);
+        };
+    }, [scanningPaused]);
 
     const handleBarcodeScan = (barcode) => {
         if (!scanningPaused && barcode) {
@@ -79,7 +93,7 @@ export default function Home() {
     };
 
     return (
-        <View style={[styles.container, { paddingTop: insets.top }]}>
+        <View style={styles.container}>
             <Stack.Screen
                 options={{
                     title: "Overview",
@@ -88,14 +102,15 @@ export default function Home() {
             />
             {Platform.OS === "android" ? <StatusBar hidden /> : null}
             <CameraView
+                ref={cameraRef}
                 barcodeScannerSettings={{
                     barcodeTypes: ['aztec', 'ean13', 'ean8', 'qr', 'pdf417', 'upc_e', 'datamatrix', 'code39', 'code93', 'itf14', 'codabar', 'code128', 'upc_a'],
                     isHighlightingEnabled: false,
                 }}
-                // style={StyleSheet.absoluteFillObject}
-                style={{flex:1}}
+                style={styles.camera}
                 facing="back"
                 onBarcodeScanned={scanningPaused ? undefined : handleBarcodeScan}
+                onCameraReady={() => console.log("Camera ready")}
             />
 
             {/* Barcode Mask Overlay */}
@@ -113,16 +128,7 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: 'black',
     },
-    cameraContainer: {
-        flex: 1,
-        overflow: 'hidden',
-        borderRadius: 12, // Optional: adds rounded corners to the camera view
-    },
     camera: {
         flex: 1,
-    },
-    overlayContainer: {
-        ...StyleSheet.absoluteFillObject,
-        zIndex: 2,
     }
 });
