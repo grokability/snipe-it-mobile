@@ -9,7 +9,7 @@ import SelectStatusBottomSheet from "@/components/bottomSheets/SelectStatusBotto
 import SelectLocationBottomSheet from "@/components/bottomSheets/SelectLocationBottomSheet";
 import SelectAssetBottomSheet from "@/components/bottomSheets/SelectAssetBottomSheet";
 import RNDateTimePicker from "@react-native-community/datetimepicker";
-import SegmentedControl from "@react-native-segmented-control/segmented-control";
+import SegmentedControl from '@react-native-segmented-control/segmented-control';
 
 export default function CheckoutScreen() {
     const { id } = useLocalSearchParams();
@@ -22,8 +22,8 @@ export default function CheckoutScreen() {
     const assetBottomSheetRef = useRef(null);
     const handleOpenUserBottomSheet = () => userBottomSheetRef.current?.present();
     const handleOpenStatusBottomSheet = () => statusBottomSheetRef.current?.present();
-    const handleOpenLocationBottomSheet = () => {locationBottomSheetRef.current?.present()};
-    const handleOpenAssetBottomSheet = () => {assetBottomSheetRef.current?.present()};
+    const handleOpenLocationBottomSheet = () => locationBottomSheetRef.current?.present();
+    const handleOpenAssetBottomSheet = () => assetBottomSheetRef.current?.present();
 
     const [selectedUser, setSelectedUser] = useState(null);
     const [selectedStatus, setSelectedStatus] = useState(null);
@@ -41,7 +41,7 @@ export default function CheckoutScreen() {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${user.token}` },
             data: {
-                checkout_to_type: 'user',
+                checkout_to_type: checkoutTo.toLowerCase(),
                 assigned_user: selectedUser.value,
                 status_id: selectedStatus.value,
                 note: 'mobile app checkout'
@@ -77,7 +77,8 @@ export default function CheckoutScreen() {
                 values={['User', 'Asset', 'Location']}
                 selectedIndex={checkoutTo}
                 onChange={(event) => {
-                    setCheckoutTo(event.nativeEvent.selectedSegmentIndex === 0 ? 'User' : event.nativeEvent.selectedSegmentIndex === 1 ? 'Asset' : 'Location');
+                    // setCheckoutTo(event.nativeEvent.selectedSegmentIndex === 0 ? 'User' : event.nativeEvent.selectedSegmentIndex === 1 ? 'Asset' : 'Location');
+                    setCheckoutTo({selectedIndex: event.nativeEvent.selectedSegmentIndex});
                     // this.setState({selectedIndex: event.nativeEvent.selectedSegmentIndex});
                 }}
             />
