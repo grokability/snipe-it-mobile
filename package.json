@@ -12,6 +12,7 @@
     "@expo/vector-icons": "^14.0.4",
     "@gorhom/bottom-sheet": "^5",
     "@react-native-community/datetimepicker": "8.2.0",
+    "@react-native-segmented-control/segmented-control": "2.5.4",
     "@react-navigation/drawer": "^7.1.2",
     "axios": "^1.7.9",
     "expo": "~52.0.27",
