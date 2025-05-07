@@ -10,6 +10,11 @@ import SelectLocationBottomSheet from "@/components/bottomSheets/SelectLocationB
 import SelectAssetBottomSheet from "@/components/bottomSheets/SelectAssetBottomSheet";
 import RNDateTimePicker from "@react-native-community/datetimepicker";
 import SegmentedControl from '@react-native-segmented-control/segmented-control';
+import { Picker } from '@expo/ui/swift-ui';
+// import { Picker as AndroidPicker } from '@expo/ui/jetpack-compose';
+import {Section} from "@expo/ui/src/swift-ui";
+
+
 
 export default function CheckoutScreen() {
     const { id } = useLocalSearchParams();
@@ -32,7 +37,9 @@ export default function CheckoutScreen() {
 
     const [assetName, setAssetName] = useState("")
 
+    const checkoutToOptions = ['User', 'Asset', 'Location'];
     const [checkoutTo, setCheckoutTo] = useState('User');
+    const [selectedIndex, setSelectedIndex] = useState(1);
 
     function checkout() {
         console.log('checkout');
@@ -73,16 +80,26 @@ export default function CheckoutScreen() {
             <Text>Selected Status: {selectedStatus?.name}</Text>
 
             <Text>Checkout to: </Text>
-            <SegmentedControl
-                values={['User', 'Asset', 'Location']}
-                selectedIndex={checkoutTo}
-                onChange={(event) => {
-                    // setCheckoutTo(event.nativeEvent.selectedSegmentIndex === 0 ? 'User' : event.nativeEvent.selectedSegmentIndex === 1 ? 'Asset' : 'Location');
-                    setCheckoutTo({selectedIndex: event.nativeEvent.selectedSegmentIndex});
-                    // this.setState({selectedIndex: event.nativeEvent.selectedSegmentIndex});
-                }}
-                backgroundColor={'black'}
-            />
+            {/*<SegmentedControl*/}
+            {/*    values={['User', 'Asset', 'Location']}*/}
+            {/*    selectedIndex={checkoutTo}*/}
+            {/*    onChange={(event) => {*/}
+            {/*        // setCheckoutTo(event.nativeEvent.selectedSegmentIndex === 0 ? 'User' : event.nativeEvent.selectedSegmentIndex === 1 ? 'Asset' : 'Location');*/}
+            {/*        setCheckoutTo({selectedIndex: event.nativeEvent.selectedSegmentIndex});*/}
+            {/*        // this.setState({selectedIndex: event.nativeEvent.selectedSegmentIndex});*/}
+            {/*    }}*/}
+            {/*    backgroundColor={'black'}*/}
+            {/*/>*/}
+                <Picker
+                    options={checkoutToOptions}
+                    selectedIndex={selectedIndex}
+                    onOptionSelected={({ nativeEvent: { index } }) => {
+                        setSelectedIndex(index);
+                    }}
+                    variant="segmented"
+                />
+
+                <Text>{[...checkoutToOptions, 'unset'][selectedIndex ?? checkoutToOptions.length]}</Text>
 
             {/* user select sheet */}
             <Button title="Select User" onPress={handleOpenUserBottomSheet} />
