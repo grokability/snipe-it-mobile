@@ -1,11 +1,20 @@
 import React, {useContext, useRef, useState} from 'react';
-import {Text, Button, StyleSheet} from "react-native";
+import {Text, Button, StyleSheet, TextInput} from "react-native";
 import {router, useLocalSearchParams} from "expo-router";
 import {SafeAreaProvider} from "react-native-safe-area-context";
 import {makeRequest} from "@/helpers/axiosConfig";
 import {AuthContext} from "@/context/AuthProvider";
 import SelectUserBottomSheet from "@/components/bottomSheets/SelectUserBottomSheet";
 import SelectStatusBottomSheet from "@/components/bottomSheets/SelectStatusBottomSheet";
+import SelectLocationBottomSheet from "@/components/bottomSheets/SelectLocationBottomSheet";
+import SelectAssetBottomSheet from "@/components/bottomSheets/SelectAssetBottomSheet";
+import RNDateTimePicker from "@react-native-community/datetimepicker";
+import SegmentedControl from '@react-native-segmented-control/segmented-control';
+import { Picker } from '@expo/ui/swift-ui';
+// import { Picker as AndroidPicker } from '@expo/ui/jetpack-compose';
+import {Section} from "@expo/ui/src/swift-ui";
+
+
 
 export default function CheckoutScreen() {
     const { id } = useLocalSearchParams();
@@ -14,11 +23,23 @@ export default function CheckoutScreen() {
 
     const userBottomSheetRef  = useRef(null);
     const statusBottomSheetRef = useRef(null);
+    const locationBottomSheetRef = useRef(null);
+    const assetBottomSheetRef = useRef(null);
     const handleOpenUserBottomSheet = () => userBottomSheetRef.current?.present();
     const handleOpenStatusBottomSheet = () => statusBottomSheetRef.current?.present();
+    const handleOpenLocationBottomSheet = () => locationBottomSheetRef.current?.present();
+    const handleOpenAssetBottomSheet = () => assetBottomSheetRef.current?.present();
 
     const [selectedUser, setSelectedUser] = useState(null);
     const [selectedStatus, setSelectedStatus] = useState(null);
+    const [selectedLocation, setSelectedLocation] = useState(null);
+    const [selectedAsset, setSelectedAsset] = useState(null);
+
+    const [assetName, setAssetName] = useState("")
+
+    const checkoutToOptions = ['User', 'Asset', 'Location'];
+    const [checkoutTo, setCheckoutTo] = useState('User');
+    const [selectedIndex, setSelectedIndex] = useState(1);
 
     function checkout() {
         console.log('checkout');
@@ -27,7 +48,7 @@ export default function CheckoutScreen() {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${user.token}` },
             data: {
-                checkout_to_type: 'user',
+                checkout_to_type: checkoutTo.toLowerCase(),
                 assigned_user: selectedUser.value,
                 status_id: selectedStatus.value,
                 note: 'mobile app checkout'
@@ -48,18 +69,63 @@ export default function CheckoutScreen() {
 
     return (
         <SafeAreaProvider style={styles.container}>
-            <Text>Checkout Asset {id}</Text>
-
-            {/* user select sheet */}
-            <Button title="Select User" onPress={handleOpenUserBottomSheet} />
-            <SelectUserBottomSheet title="Select User" ref={userBottomSheetRef} setSelectedUser={setSelectedUser}/>
-            <Text>Selected User: {selectedUser?.name}</Text>
+            <Text style={styles.headerText}>Checkout Asset #{id}</Text>
+            {/* asset name */}
+            <Text style={styles.headerText}>Asset Name: {selectedAsset?.name}</Text>
+            <TextInput placeholder="Asset Name" onChangeText={setAssetName}></TextInput>
 
             {/* status select sheet */}
             <Button title="Select Status" onPress={handleOpenStatusBottomSheet} />
             <SelectStatusBottomSheet title="Select Status" ref={statusBottomSheetRef} setSelectedStatus={setSelectedStatus}/>
             <Text>Selected Status: {selectedStatus?.name}</Text>
 
+            <Text>Checkout to: </Text>
+            {/*<SegmentedControl*/}
+            {/*    values={['User', 'Asset', 'Location']}*/}
+            {/*    selectedIndex={checkoutTo}*/}
+            {/*    onChange={(event) => {*/}
+            {/*        // setCheckoutTo(event.nativeEvent.selectedSegmentIndex === 0 ? 'User' : event.nativeEvent.selectedSegmentIndex === 1 ? 'Asset' : 'Location');*/}
+            {/*        setCheckoutTo({selectedIndex: event.nativeEvent.selectedSegmentIndex});*/}
+            {/*        // this.setState({selectedIndex: event.nativeEvent.selectedSegmentIndex});*/}
+            {/*    }}*/}
+            {/*    backgroundColor={'black'}*/}
+            {/*/>*/}
+                <Picker
+                    options={checkoutToOptions}
+                    selectedIndex={selectedIndex}
+                    onOptionSelected={({ nativeEvent: { index } }) => {
+                        setSelectedIndex(index);
+                    }}
+                    variant="segmented"
+                />
+
+                <Text>{[...checkoutToOptions, 'unset'][selectedIndex ?? checkoutToOptions.length]}</Text>
+
+            {/* user select sheet */}
+            <Button title="Select User" onPress={handleOpenUserBottomSheet} />
+            <SelectUserBottomSheet title="Select User" ref={userBottomSheetRef} setSelectedUser={setSelectedUser}/>
+            <Text>Selected User: {selectedUser?.name}</Text>
+
+            {/* location select sheet */}
+            <Button title="Select Location" onPress={handleOpenLocationBottomSheet} />
+            <SelectLocationBottomSheet title="Select Location" ref={locationBottomSheetRef} setSelectedLocation={setSelectedLocation}/>
+            <Text>Selected Location: {selectedLocation?.name}</Text>
+
+            {/* asset select sheet */}
+            <Button title="Select Asset" onPress={handleOpenAssetBottomSheet} />
+            <SelectAssetBottomSheet title="Select Asset" ref={assetBottomSheetRef} setSelectedAsset={setSelectedAsset}/>
+            <Text>Selected Asset: {selectedAsset?.name}</Text>
+
+            {/* checkout/in dates */}
+            <Text style={styles.headerText}>Checkout Date</Text>
+            <RNDateTimePicker value={new Date()} />
+
+            <Text style={styles.headerText}>Expected Checkin Date</Text>
+            <RNDateTimePicker value={new Date()} />
+
+            {/*/ notes */}
+            <Text style={styles.headerText}>Notes</Text>
+            <TextInput placeholder="Notes" />
             {/* submit button */}
             <Button title="Checkout" onPress={() => checkout()} />
 
@@ -73,4 +139,9 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     },
+    headerText: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        marginBottom: 10,
+    }
 })
