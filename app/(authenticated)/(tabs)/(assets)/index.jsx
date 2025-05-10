@@ -8,6 +8,7 @@ import { convertUnicode }  from "@/helpers/utils";
 import {COLORS} from "@/constants/colors";
 import {decodeEntity} from "html-entities";
 import {AuthProvider} from "@/context/AuthProvider";
+import LottieView from "lottie-react-native";
 
 export default function AssetsScreen() {
     const { user } = useContext(AuthContext);
@@ -112,7 +113,12 @@ export default function AssetsScreen() {
                         />
                     }
                     keyExtractor={item => item.id}
-                    refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+                    // refreshControl={<LottieView
+                    //     source={require('@/assets/spinning_star_eye.json')}
+                    //     style={{width: "50%", height: "50%"}}
+                    //     autoPlay
+                    //     loop  />}
+                    refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh}  />}
                 ></FlatList>
             </SafeAreaProvider>
     );

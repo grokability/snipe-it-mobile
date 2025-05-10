@@ -3,6 +3,7 @@ import { CameraView, useCameraPermissions, CameraType } from 'expo-camera';
 import {Link, router} from "expo-router";
 import React, {useEffect, useState} from "react";
 import {SafeAreaView} from "react-native-safe-area-context";
+import LottieView from "lottie-react-native";
 
 export default function HomeScreen() {
     // kind of weird that you have to type it but it's still just a string?
@@ -29,6 +30,12 @@ export default function HomeScreen() {
             <SafeAreaView style={styles.container}>
                     <Text style={styles.text}>Tab Home</Text>
                     <Button style={styles.text} title='Open Scanner' onPress={() => router.push('/scanner')}>Open Scanner</Button>
+                    <LottieView
+                        source={require('@/assets/spinning_star_eye.json')}
+                        style={{width: "50%", height: "50%"}}
+                        autoPlay
+                        loop
+                    />
             </SafeAreaView>
         );
     } else {
