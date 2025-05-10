@@ -57,7 +57,7 @@ export default function CheckoutScreen() {
             if(res.status === 'error') {
                setError(res);
                console.error(error);
-                console.error('validation error');
+               console.error('validation error');
             }
             console.log(res);
             router.replace(`/(tabs)/(assets)/${id}`)
