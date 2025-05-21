@@ -19,7 +19,12 @@
           "recordAudioAndroid": true
         }
       ],
-      "expo-web-browser"
+      [
+      "expo-web-browser",
+        {
+          "experimentalLauncherActivity": true
+        }
+      ]
     ],
     "splash": {
       "image": "./assets/splash-icon.png",

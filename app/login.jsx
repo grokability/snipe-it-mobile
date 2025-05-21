@@ -1,7 +1,8 @@
 import React, { useState, useContext } from 'react';
-import {StyleSheet, TextInput, View, Text, TouchableOpacity, Alert} from 'react-native';
+import {StyleSheet, TextInput, View, Text, TouchableOpacity, Alert, Button} from 'react-native';
 import { AuthContext } from '@/context/AuthProvider';
 import * as SecureStore from 'expo-secure-store';
+import * as WebBrowser from "expo-web-browser";
 
  console.log('login rendered')
 export default function LoginScreen() {
@@ -10,12 +11,19 @@ export default function LoginScreen() {
     const [password, setPassword] = useState('');
     const { login } = useContext(AuthContext);
 
+    const [result, setResult] = useState(null);
+
     const handleLogin = async () => {
         try {
             await login(username, password); // Call the login function
         } catch (error) {
             Alert.alert("Login Failed", "Please check your username/password");
         }
+    };
+
+    const _handleBrowserOpen = async () => {
+        let result = await WebBrowser.openBrowserAsync(domain + '/login');
+        setResult(result);
     };
 
 
@@ -48,12 +56,14 @@ export default function LoginScreen() {
                 value={password}
                 style={styles.input}
                 textContentType="password"
-                autoCapitalize="none"
+                // autoCapitalize="none"
                 secureTextEntry={true}
             />
             <TouchableOpacity onPress={() => login(username, password, domain)}>
                 <Text>Login</Text>
             </TouchableOpacity>
+            <Button title="Open WebBrowser" onPress={_handleBrowserOpen} />
+            <Text>{result && JSON.stringify(result)}</Text>
         </View>
     );
 }
