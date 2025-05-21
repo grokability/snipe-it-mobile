@@ -22,7 +22,8 @@ export default function LoginScreen() {
     };
 
     const _handleBrowserOpen = async () => {
-        let result = await WebBrowser.openBrowserAsync(domain + '/login');
+        console.log('open browser')
+        let result = await WebBrowser.openAuthSessionAsync(domain + '/login', domain + '/login')
         setResult(result);
     };
 
@@ -62,7 +63,7 @@ export default function LoginScreen() {
             <TouchableOpacity onPress={() => login(username, password, domain)}>
                 <Text>Login</Text>
             </TouchableOpacity>
-            <Button title="Open WebBrowser" onPress={_handleBrowserOpen} />
+            <Button title="Open SnipeLogin" onPress={_handleBrowserOpen} />
             <Text>{result && JSON.stringify(result)}</Text>
         </View>
     );
