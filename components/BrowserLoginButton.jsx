@@ -7,7 +7,7 @@ const BrowserLoginButton = ({ domain }) => {
 
     const handleBrowserOpen = async () => {
         console.log('open browser');
-        let result = await WebBrowser.openAuthSessionAsync(domain + '/login', domain + '/login');
+        let result = await WebBrowser.openAuthSessionAsync(domain + '/login', 'app://snipe/callback');
         setResult(result);
     };
 
