@@ -32,18 +32,19 @@ WebBrowser.maybeCompleteAuthSession();
 
 // Endpoint
 const discovery = {
-    authorizationEndpoint: domain + '/login?client=Snipe-IT-Mobile',
-    tokenEndpoint: domain + '/oauth/token',
+    authorizationEndpoint: 'https://snipe.ngrok.dev' + '/login?client=Snipe-IT-Mobile&',
+    tokenEndpoint: 'https://snipe.ngrok.dev' + '/oauth/token',
     // revocationEndpoint: 'https://github.com/settings/connections/applications/<CLIENT_ID>',
 };
 
 const BrowserLoginButton = ({ domain }) => {
     const [request, response, promptAsync] = useAuthRequest(
         {
+
             clientId: 'CLIENT_ID',
             scopes: ['identity'],
             redirectUri: makeRedirectUri({
-                scheme: 'com.grokability.snipeitmobile://**'
+                scheme: 'com.grokability.snipeitmobile'
             }),
         },
         discovery
