@@ -2,7 +2,7 @@
   "expo": {
     "name": "Snipe IT",
     "slug": "snipe-it-mobile",
-    "scheme": "snipe-it-mobile",
+    "scheme": "com.grokability.snipeitmobile",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
