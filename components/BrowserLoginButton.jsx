@@ -32,7 +32,8 @@ WebBrowser.maybeCompleteAuthSession();
 
 // Endpoint
 const discovery = {
-    authorizationEndpoint: 'https://snipe.ngrok.dev' + '/login',
+    // authorizationEndpoint: 'https://snipe.ngrok.dev' + '/login',
+    authorizationEndpoint: 'https://snipe.ngrok.dev' + '/oauth/authorize',
     tokenEndpoint: 'https://snipe.ngrok.dev' + '/oauth/token', //maybe change this to /oauth/token/refresh ??
     // revocationEndpoint: 'https://snipe.ngrok.dev' + '/oauth/revoke', //will have to get the id back later
 
@@ -42,13 +43,11 @@ const discovery = {
 const BrowserLoginButton = ({ domain }) => {
     const [request, response, promptAsync] = useAuthRequest(
         {
+            prompt: 'login',
             usePKCE: true,
             responseType: 'code',
-            clientId: 'mobile',
-            scopes: ['identity'],
-            redirectUri: makeRedirectUri({
-                scheme: 'com.grokability.snipeitmobile'
-            }),
+            clientId: 34,
+            redirectUri: 'com.grokability.snipeitmobile://home'
         },
         discovery
     );
