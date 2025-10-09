@@ -7,7 +7,7 @@ import BearerTokenLogin from "@/components/BearerTokenLogin";
 
 console.log('login rendered')
 export default function LoginScreen() {
-    const { login } = useContext(AuthContext);
+    const { login, bearerLogin } = useContext(AuthContext);
     const [domain, setDomain] = useState('https://example.example.com');
     const [token, setToken] = useState('');
 
@@ -19,7 +19,7 @@ export default function LoginScreen() {
         <View style={styles.container}>
             <Text style={styles.title}>Login Screen</Text>
             {/* for login via bearer token */}
-            <BearerTokenLogin onLogin={login} onDomainChange={handleDomainChange} />
+            <BearerTokenLogin onLogin={bearerLogin} onDomainChange={handleDomainChange} />
             {/* original form for login */}
             {/*<LoginForm onLogin={login} onDomainChange={handleDomainChange} />*/}
             {/* for oauth flow */}

@@ -99,6 +99,39 @@ export const AuthProvider = ({children}) => {
                         console.error(error);
                     });
                 },
+                bearerLogin: (domain, token) => {
+                    setIsLoading(true);
+                    if (!token) {
+                        console.log('token is empty');
+                    }
+                    if (!domain) {
+                        console.log('domain is empty');
+                    }
+                    makeRequest({
+                        domain: domain,
+                        url: 'users/me',
+                        method: 'GET',
+                        isAuth: false, // if true this strips `api/v1` i think
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    })
+                        .then(response => {
+                            console.log(response);
+                            setUser(response);
+                            setIsAuthenticated(true);
+                            SecureStore.setItemAsync('domain', domain);
+                            // need to check that this is usable data, i'm imagining it should be
+                            // SecureStore.setItemAsync('user', JSON.stringify(user));
+                            // something here isn't working, i guess I could save it separately, but it makes sense
+                            // to have it on the user object...
+                            SecureStore.setItemAsync('user.token', token);
+                            setIsLoading(false);
+                        })
+                        .catch(error => {
+                            setUser(null);
+                            setIsAuthenticated(false);
+                            console.error(error);
+                        });
+                },
             }}
         >
             {children}

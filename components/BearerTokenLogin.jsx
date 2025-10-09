@@ -2,28 +2,30 @@ import React, { useState, useEffect } from 'react';
 import { StyleSheet, TextInput, Text, TouchableOpacity, Alert } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 
-const LoginForm = ({ onLogin, onDomainChange }) => {
+const BearerTokenLogin = ({ onLogin, onDomainChange }) => {
     const [domain, setDomain] = useState('https://example.example.com');
     const [token, setToken] = useState('');
 
-    useEffect(() => {
-        const loadDomain = async () => {
-            const savedDomain = await SecureStore.getItemAsync('domain');
-            if (savedDomain) {
-                setDomain(savedDomain);
-                if (onDomainChange) onDomainChange(savedDomain);
-            }
-        };
-        loadDomain();
-    }, []); // this doesn't have a dep, but i'm not sure how else to make it work...
+    // this doesn't have a dep, but i'm not sure how else to make it work...
     // and i don't know why it's happening here, because it hasn't happened on the other versions of this...
+    // useEffect(() => {
+    //     const loadDomain = async () => {
+    //         const savedDomain = await SecureStore.getItemAsync('domain');
+    //         if (savedDomain) {
+    //             setDomain(savedDomain);
+    //             if (onDomainChange) onDomainChange(savedDomain);
+    //         }
+    //     };
+    //     loadDomain();
+    // }, []);
 
-    useEffect(() => {
-        const savedBearerToken = SecureStore.getItemAsync('bearer_token');
-        if (savedBearerToken) {
-            setToken(savedBearerToken);
-        }
-    }, [token])
+    // same here, not sure what's going on....
+    // useEffect(() => {
+    //     const savedBearerToken = SecureStore.getItemAsync('bearer_token');
+    //     if (savedBearerToken) {
+    //         setToken(savedBearerToken);
+    //     }
+    // }, [token])
 
     const handleDomainChange = (text) => {
         setDomain(text);
@@ -32,7 +34,7 @@ const LoginForm = ({ onLogin, onDomainChange }) => {
 
     const handleLogin = async () => {
         try {
-            await onLogin(username, password, domain);
+            await onLogin(domain, token);
         } catch (error) {
             Alert.alert("Login Failed", "Please check your username/password");
         }
@@ -75,4 +77,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default LoginForm;
+export default BearerTokenLogin;
