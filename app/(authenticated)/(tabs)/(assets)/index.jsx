@@ -43,6 +43,7 @@ export default function AssetsScreen() {
 
     const getAssets = async () => {
         try {
+            console.log(user)
             const res = await makeRequest({
                 url: '/hardware?' +
                     'limit=100&' +

@@ -1,13 +1,15 @@
-import React, { useContext, useState } from 'react';
+import React, {useContext, useEffect, useState} from 'react';
 import { StyleSheet, View, Text } from 'react-native';
 import { AuthContext } from '@/context/AuthProvider';
 import LoginForm from '@/components/LoginForm';
 import BrowserLoginButton from '@/components/BrowserLoginButton';
+import BearerTokenLogin from "@/components/BearerTokenLogin";
 
 console.log('login rendered')
 export default function LoginScreen() {
-    const { login } = useContext(AuthContext);
+    const { login, bearerLogin } = useContext(AuthContext);
     const [domain, setDomain] = useState('https://example.example.com');
+    const [token, setToken] = useState('');
 
     const handleDomainChange = (newDomain) => {
         setDomain(newDomain);
@@ -16,8 +18,12 @@ export default function LoginScreen() {
     return (
         <View style={styles.container}>
             <Text style={styles.title}>Login Screen</Text>
-            <LoginForm onLogin={login} onDomainChange={handleDomainChange} />
-            <BrowserLoginButton domain={domain} />
+            {/* for login via bearer token */}
+            <BearerTokenLogin onLogin={bearerLogin} onDomainChange={handleDomainChange} />
+            {/* original form for login */}
+            {/*<LoginForm onLogin={login} onDomainChange={handleDomainChange} />*/}
+            {/* for oauth flow */}
+            {/*<BrowserLoginButton domain={domain} />*/}
         </View>
     );
 }
