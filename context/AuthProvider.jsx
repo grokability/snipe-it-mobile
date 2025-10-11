@@ -58,7 +58,7 @@ export const AuthProvider = ({children}) => {
                         }
                     }).then(response => {
                         console.log(response);
-                        const userReponse = {
+                        const userResponse = {
                             token: response.token,
                             token_id: response.token_id,
                             id: response.user.id,
@@ -66,11 +66,11 @@ export const AuthProvider = ({children}) => {
                             last_name: response.user.last_name,
                             email: response.user.email,
                         }
-                        setUser(userReponse);
+                        setUser(userResponse);
                         setIsAuthenticated(true);
                         console.log(isAuthenticated);
                         SecureStore.setItemAsync('domain', domain);
-                        SecureStore.setItemAsync('user', JSON.stringify(userReponse));
+                        SecureStore.setItemAsync('user', JSON.stringify(userResponse));
                         setIsLoading(false);
                     }).catch(error => {
                         setUser(null);
@@ -129,11 +129,7 @@ export const AuthProvider = ({children}) => {
                                 email: response.email,
                             }
                             setUser(userResponse);
-                            // need to check that this is usable data, i'm imagining it should be
-                            SecureStore.setItemAsync('user', JSON.stringify(user, token));
-                            // something here isn't working, i guess I could save it separately, but it makes sense
-                            // to have it on the user object... (and then i wouldn't have to change all the requests)
-                            // SecureStore.setItemAsync('user.token', token);
+                            SecureStore.setItemAsync('user', JSON.stringify(userResponse));
                             setIsLoading(false);
                         })
                         .catch(error => {
