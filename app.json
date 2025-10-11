@@ -24,7 +24,8 @@
         {
           "experimentalLauncherActivity": true
         }
-      ]
+      ],
+      "expo-font"
     ],
     "splash": {
       "image": "./assets/splash-icon.png",

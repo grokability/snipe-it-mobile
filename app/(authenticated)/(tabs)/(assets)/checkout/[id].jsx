@@ -10,7 +10,7 @@ import SelectLocationBottomSheet from "@/components/bottomSheets/SelectLocationB
 import SelectAssetBottomSheet from "@/components/bottomSheets/SelectAssetBottomSheet";
 import RNDateTimePicker from "@react-native-community/datetimepicker";
 import SegmentedControl from '@react-native-segmented-control/segmented-control';
-import { Picker } from '@expo/ui/swift-ui';
+import {Host, Picker} from '@expo/ui/swift-ui';
 // import { Picker as AndroidPicker } from '@expo/ui/jetpack-compose';
 import {Section} from "@expo/ui/src/swift-ui";
 
@@ -90,6 +90,7 @@ export default function CheckoutScreen() {
             {/*    }}*/}
             {/*    backgroundColor={'black'}*/}
             {/*/>*/}
+            <Host>
                 <Picker
                     options={checkoutToOptions}
                     selectedIndex={selectedIndex}
@@ -98,6 +99,7 @@ export default function CheckoutScreen() {
                     }}
                     variant="segmented"
                 />
+            </Host>
 
                 <Text>{[...checkoutToOptions, 'unset'][selectedIndex ?? checkoutToOptions.length]}</Text>
 
