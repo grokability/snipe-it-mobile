@@ -40,7 +40,7 @@ export default function CheckoutScreen() {
     const [selectedIndex, setSelectedIndex] = useState(1);
 
     function checkout() {
-        if (!selectedStatus || !selectedUser) {
+        if (!selectedStatus && (!selectedUser || !selectedLocation || !selectedAsset)) {
             // frontend "validation"
             // console.error('Validation error: status and user are required');
             // some background color issues with this
@@ -61,16 +61,20 @@ export default function CheckoutScreen() {
             })
             return;
         }
+        // console.log(selectedLocation);
+        // return;
         console.log('checkout');
         makeRequest({
             url: `/hardware/${id}/checkout`,
             method: 'POST',
             headers: { 'Authorization': `Bearer ${user.token}` },
             data: {
+                // this is still required for some reason, so until <Picker> (or something like it) is working
+                // we're only checking out to Users
                 checkout_to_type: checkoutTo.toLowerCase(),
                 assigned_user: selectedUser?.id,
-                assigned_location: selectedLocation?.value,
-                assigned_asset: selectedAsset?.value,
+                assigned_location: selectedLocation?.id,
+                assigned_asset: selectedAsset?.id,
                 status_id: selectedStatus.value,
                 note: 'mobile app checkout'
             }
