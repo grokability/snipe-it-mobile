@@ -9,6 +9,7 @@
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "plugins": [
+      "expo-build-properties",
       "expo-router",
       "expo-secure-store",
       [

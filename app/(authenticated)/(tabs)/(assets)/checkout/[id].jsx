@@ -10,6 +10,7 @@ import SelectLocationBottomSheet from "@/components/bottomSheets/SelectLocationB
 import SelectAssetBottomSheet from "@/components/bottomSheets/SelectAssetBottomSheet";
 import RNDateTimePicker from "@react-native-community/datetimepicker";
 import {Host, Picker} from '@expo/ui/swift-ui';
+import * as Burnt from 'burnt';
 
 
 
@@ -39,6 +40,26 @@ export default function CheckoutScreen() {
     const [selectedIndex, setSelectedIndex] = useState(1);
 
     function checkout() {
+        if (!selectedStatus || !selectedUser) {
+            // frontend "validation"
+            // console.error('Validation error: status and user are required');
+            // Burnt.toast({
+            //     title: "Error", // required
+            //     preset: "error", // or "error", "none", "custom"
+            //     message: "", // optional
+            //     haptic: "none", // or "success", "warning", "error"
+            //     duration: 2, // duration in seconds
+            //     shouldDismissByDrag: true,
+            //     from: "top", // "top" or "bottom"
+            // })
+            Burnt.alert({
+                title: "Error", // required
+                preset: "error", // or "error", "heart", "custom"
+                message: "Status and User are Required", // optional
+                duration: 2, // duration in seconds
+            })
+            return;
+        }
         console.log('checkout');
         makeRequest({
             url: `/hardware/${id}/checkout`,
@@ -52,11 +73,19 @@ export default function CheckoutScreen() {
             }
         }).then(res => {
             if(res.status === 'error') {
+
                setError(res);
+               console.log(res);
                console.error(error);
-               console.error('validation error');
+               console.log('validation error');
+               Burnt.alert({
+                   title: "Error", // required
+                   preset: "error", // or "error", "heart", "custom"
+                   message: res.messages, // optional
+                   duration: 2, // duration in seconds
+               })
             }
-            console.log(res);
+            return;
             router.replace(`/(tabs)/(assets)/${id}`)
         }).catch(err => {
             console.log(err);
