@@ -37,7 +37,7 @@ export default function CheckoutScreen() {
 
     const checkoutToOptions = ['User', 'Asset', 'Location'];
     const [checkoutTo, setCheckoutTo] = useState('User');
-    const [selectedIndex, setSelectedIndex] = useState(1);
+   const [selectedIndex, setSelectedIndex] = useState(0);
 
     function checkout() {
         if (!selectedStatus && (!selectedUser || !selectedLocation || !selectedAsset)) {
@@ -93,6 +93,11 @@ export default function CheckoutScreen() {
                })
                 return;
             }
+            Burnt.alert({
+                title: "Success!",
+                preset: "heart",
+                duration: 4
+            })
             router.replace(`/(tabs)/(assets)/${id}`)
         }).catch(err => {
             console.log(err);
@@ -123,7 +128,7 @@ export default function CheckoutScreen() {
             {/*    }}*/}
             {/*    backgroundColor={'black'}*/}
             {/*/>*/}
-            <Host>
+            <Host matchContents={selectedIndex}>
                 <Picker
                     options={checkoutToOptions}
                     selectedIndex={selectedIndex}
