@@ -9,10 +9,7 @@ import SelectStatusBottomSheet from "@/components/bottomSheets/SelectStatusBotto
 import SelectLocationBottomSheet from "@/components/bottomSheets/SelectLocationBottomSheet";
 import SelectAssetBottomSheet from "@/components/bottomSheets/SelectAssetBottomSheet";
 import RNDateTimePicker from "@react-native-community/datetimepicker";
-import SegmentedControl from '@react-native-segmented-control/segmented-control';
 import {Host, Picker} from '@expo/ui/swift-ui';
-// import { Picker as AndroidPicker } from '@expo/ui/jetpack-compose';
-import {Section} from "@expo/ui/src/swift-ui";
 
 
 

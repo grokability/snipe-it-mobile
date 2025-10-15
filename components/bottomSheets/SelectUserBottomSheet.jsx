@@ -32,7 +32,7 @@ const SelectUserBottomSheet = forwardRef((props, ref) => {
 
     const fetchUsers = () => {
         makeRequest({
-            url: `/users?sort=first_name&order=asc&search=${searchText}`,
+            url: `/users?sort=display_name&order=asc&search=${searchText}`,
             method: 'GET',
             headers: { 'Authorization': `Bearer ${user.token}` }
         })
