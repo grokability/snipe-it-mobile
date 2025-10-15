@@ -43,6 +43,7 @@ export default function CheckoutScreen() {
         if (!selectedStatus || !selectedUser) {
             // frontend "validation"
             // console.error('Validation error: status and user are required');
+            // some background color issues with this
             // Burnt.toast({
             //     title: "Error", // required
             //     preset: "error", // or "error", "none", "custom"
@@ -67,7 +68,9 @@ export default function CheckoutScreen() {
             headers: { 'Authorization': `Bearer ${user.token}` },
             data: {
                 checkout_to_type: checkoutTo.toLowerCase(),
-                assigned_user: selectedUser.value,
+                assigned_user: selectedUser?.id,
+                assigned_location: selectedLocation?.value,
+                assigned_asset: selectedAsset?.value,
                 status_id: selectedStatus.value,
                 note: 'mobile app checkout'
             }
@@ -76,16 +79,16 @@ export default function CheckoutScreen() {
 
                setError(res);
                console.log(res);
-               console.error(error);
+               // console.error(error);
                console.log('validation error');
                Burnt.alert({
                    title: "Error", // required
                    preset: "error", // or "error", "heart", "custom"
-                   message: res.messages, // optional
-                   duration: 2, // duration in seconds
+                   message: res.messages.assigned_asset[0], // optional
+                   duration: 4, // duration in seconds
                })
+                return;
             }
-            return;
             router.replace(`/(tabs)/(assets)/${id}`)
         }).catch(err => {
             console.log(err);
