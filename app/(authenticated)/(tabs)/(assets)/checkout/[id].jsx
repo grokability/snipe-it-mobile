@@ -10,6 +10,7 @@ import SelectLocationBottomSheet from "@/components/bottomSheets/SelectLocationB
 import SelectAssetBottomSheet from "@/components/bottomSheets/SelectAssetBottomSheet";
 import RNDateTimePicker from "@react-native-community/datetimepicker";
 import {Host, Picker} from '@expo/ui/swift-ui';
+import * as Burnt from 'burnt';
 
 
 
@@ -36,27 +37,67 @@ export default function CheckoutScreen() {
 
     const checkoutToOptions = ['User', 'Asset', 'Location'];
     const [checkoutTo, setCheckoutTo] = useState('User');
-    const [selectedIndex, setSelectedIndex] = useState(1);
+   const [selectedIndex, setSelectedIndex] = useState(0);
 
     function checkout() {
+        if (!selectedStatus && (!selectedUser || !selectedLocation || !selectedAsset)) {
+            // frontend "validation"
+            // console.error('Validation error: status and user are required');
+            // some background color issues with this
+            // Burnt.toast({
+            //     title: "Error", // required
+            //     preset: "error", // or "error", "none", "custom"
+            //     message: "", // optional
+            //     haptic: "none", // or "success", "warning", "error"
+            //     duration: 2, // duration in seconds
+            //     shouldDismissByDrag: true,
+            //     from: "top", // "top" or "bottom"
+            // })
+            Burnt.alert({
+                title: "Error", // required
+                preset: "error", // or "error", "heart", "custom"
+                message: "Status and User are Required", // optional
+                duration: 2, // duration in seconds
+            })
+            return;
+        }
+        // console.log(selectedLocation);
+        // return;
         console.log('checkout');
         makeRequest({
             url: `/hardware/${id}/checkout`,
             method: 'POST',
             headers: { 'Authorization': `Bearer ${user.token}` },
             data: {
+                // this is still required for some reason, so until <Picker> (or something like it) is working
+                // we're only checking out to Users
                 checkout_to_type: checkoutTo.toLowerCase(),
-                assigned_user: selectedUser.value,
+                assigned_user: selectedUser?.id,
+                assigned_location: selectedLocation?.id,
+                assigned_asset: selectedAsset?.id,
                 status_id: selectedStatus.value,
                 note: 'mobile app checkout'
             }
         }).then(res => {
             if(res.status === 'error') {
+
                setError(res);
-               console.error(error);
-               console.error('validation error');
+               console.log(res);
+               // console.error(error);
+               console.log('validation error');
+               Burnt.alert({
+                   title: "Error", // required
+                   preset: "error", // or "error", "heart", "custom"
+                   message: res.messages.assigned_asset[0], // optional
+                   duration: 4, // duration in seconds
+               })
+                return;
             }
-            console.log(res);
+            Burnt.alert({
+                title: "Success!",
+                preset: "heart",
+                duration: 4
+            })
             router.replace(`/(tabs)/(assets)/${id}`)
         }).catch(err => {
             console.log(err);
@@ -87,7 +128,7 @@ export default function CheckoutScreen() {
             {/*    }}*/}
             {/*    backgroundColor={'black'}*/}
             {/*/>*/}
-            <Host>
+            <Host matchContents={selectedIndex}>
                 <Picker
                     options={checkoutToOptions}
                     selectedIndex={selectedIndex}
