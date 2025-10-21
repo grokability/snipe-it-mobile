@@ -25,11 +25,11 @@ export default function HomeScreen() {
         )
     }
 
-    if(permission.granted) {
         return (
             <SafeAreaView style={styles.container}>
                     <Text style={styles.text}>Tab Home</Text>
-                    <Button style={styles.text} title='Open Scanner' onPress={() => router.push('/scanner')}>Open Scanner</Button>
+                {!permission.granted && <Button style={styles.text} title='Open Scanner' onPress={requestPermission}>Request Camera Permissions For Scanner</Button>}
+                {permission.granted && <Button style={styles.text} title='Open Scanner' onPress={() => router.push('/scanner')}>Open Scanner</Button>}
                     <LottieView
                         source={require('@/assets/spinning_star_eye.json')}
                         style={{width: "50%", height: "50%"}}
@@ -38,15 +38,6 @@ export default function HomeScreen() {
                     />
             </SafeAreaView>
         );
-    } else {
-        return (
-            <SafeAreaView style={styles.buttonContainer}>
-                        <TouchableOpacity onPress={requestPermission}>
-                            <Text style={styles.text}>Request Camera Permission</Text>
-                        </TouchableOpacity>
-            </SafeAreaView>
-        )
-    }
 }
 
 const styles = StyleSheet.create({
