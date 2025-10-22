@@ -4,6 +4,8 @@ import {Link, router} from "expo-router";
 import React, {useEffect, useState} from "react";
 import {SafeAreaView} from "react-native-safe-area-context";
 import LottieView from "lottie-react-native";
+import Constants from "expo-constants/src/Constants";
+import ExpoApplication from "expo-application/src/ExpoApplication";
 
 export default function HomeScreen() {
     // kind of weird that you have to type it but it's still just a string?
@@ -27,7 +29,8 @@ export default function HomeScreen() {
 
         return (
             <SafeAreaView style={styles.container}>
-                    <Text style={styles.text}>Tab Home</Text>
+                    <Text style={styles.text}>Build Number: {ExpoApplication.nativeApplicationVersion}</Text>
+                    <Text style={styles.text}>Build Number: {ExpoApplication.nativeBuildVersion}</Text>
                 {!permission.granted && <Button style={styles.text} title='Request Camera Permissions for Scanner' onPress={requestPermission}>Request Camera Permissions For Scanner</Button>}
                 {permission.granted && <Button style={styles.text} title='Open Scanner' onPress={() => router.push('/scanner')}>Open Scanner</Button>}
                     {/* this is crashing android for some reason */}

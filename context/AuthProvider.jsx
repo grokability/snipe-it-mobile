@@ -135,6 +135,7 @@ export const AuthProvider = ({children}) => {
                         .catch(error => {
                             setUser(null);
                             setIsAuthenticated(false);
+                            console.error(error);
                             console.error(error.message);
                         });
                 },

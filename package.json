@@ -18,6 +18,7 @@
     "axios": "1.8.2",
     "burnt": "^0.13.0",
     "expo": "^54.0.13",
+    "expo-application": "~7.0.7",
     "expo-auth-session": "~7.0.8",
     "expo-build-properties": "~1.0.9",
     "expo-camera": "~17.0.8",
