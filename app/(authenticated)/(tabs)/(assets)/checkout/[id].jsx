@@ -1,5 +1,5 @@
 import React, {useContext, useRef, useState} from 'react';
-import {Text, Button, StyleSheet, TextInput} from "react-native";
+import {Text, Button, StyleSheet, TextInput, Platform} from "react-native";
 import {router, useLocalSearchParams} from "expo-router";
 import {SafeAreaProvider} from "react-native-safe-area-context";
 import {makeRequest} from "@/helpers/axiosConfig";
@@ -128,6 +128,7 @@ export default function CheckoutScreen() {
             {/*    }}*/}
             {/*    backgroundColor={'black'}*/}
             {/*/>*/}
+            {Platform.OS === 'ios' && (
             <Host matchContents={selectedIndex}>
                 <Picker
                     options={checkoutToOptions}
@@ -138,6 +139,8 @@ export default function CheckoutScreen() {
                     variant="segmented"
                 />
             </Host>
+            )
+        }
 
                 <Text>{[...checkoutToOptions, 'unset'][selectedIndex ?? checkoutToOptions.length]}</Text>
 

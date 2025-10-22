@@ -1,4 +1,4 @@
-import {View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Button} from 'react-native';
+import {View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Button, Platform} from 'react-native';
 import { CameraView, useCameraPermissions, CameraType } from 'expo-camera';
 import {Link, router} from "expo-router";
 import React, {useEffect, useState} from "react";
@@ -28,14 +28,18 @@ export default function HomeScreen() {
         return (
             <SafeAreaView style={styles.container}>
                     <Text style={styles.text}>Tab Home</Text>
-                {!permission.granted && <Button style={styles.text} title='Open Scanner' onPress={requestPermission}>Request Camera Permissions For Scanner</Button>}
+                {!permission.granted && <Button style={styles.text} title='Request Camera Permissions for Scanner' onPress={requestPermission}>Request Camera Permissions For Scanner</Button>}
                 {permission.granted && <Button style={styles.text} title='Open Scanner' onPress={() => router.push('/scanner')}>Open Scanner</Button>}
+                    {/* this is crashing android for some reason */}
+                {Platform.OS === 'ios' && (
                     <LottieView
                         source={require('@/assets/spinning_star_eye.json')}
                         style={{width: "50%", height: "50%"}}
                         autoPlay
                         loop
                     />
+                    )
+                }
             </SafeAreaView>
         );
 }
