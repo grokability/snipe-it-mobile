@@ -29,10 +29,13 @@ export default function HomeScreen() {
 
         return (
             <SafeAreaView style={styles.container}>
-                    <Text style={styles.text}>Build Number: {ExpoApplication.nativeApplicationVersion}</Text>
-                    <Text style={styles.text}>Build Number: {ExpoApplication.nativeBuildVersion}</Text>
-                {!permission.granted && <Button style={styles.text} title='Request Camera Permissions for Scanner' onPress={requestPermission}>Request Camera Permissions For Scanner</Button>}
-                {permission.granted && <Button style={styles.text} title='Open Scanner' onPress={() => router.push('/scanner')}>Open Scanner</Button>}
+                    <Text style={styles.text}>Version: {ExpoApplication.nativeApplicationVersion} ({ExpoApplication.nativeBuildVersion})</Text>
+                {!permission.granted &&
+                    <Button style={styles.text} title='Request Camera Permissions for Scanner' onPress={requestPermission}/>
+                }
+                {permission.granted &&
+                    <Button style={styles.text} title='Open Scanner' onPress={() => router.push('/scanner')}/>
+                }
                     {/* this is crashing android for some reason */}
                 {Platform.OS === 'ios' && (
                     <LottieView

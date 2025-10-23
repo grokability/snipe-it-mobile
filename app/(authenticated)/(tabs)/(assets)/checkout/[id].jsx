@@ -11,6 +11,7 @@ import SelectAssetBottomSheet from "@/components/bottomSheets/SelectAssetBottomS
 import RNDateTimePicker from "@react-native-community/datetimepicker";
 import {Host, Picker} from '@expo/ui/swift-ui';
 import * as Burnt from 'burnt';
+import {CheckoutPicker} from "@/components/CheckoutPicker";
 
 
 
@@ -35,9 +36,8 @@ export default function CheckoutScreen() {
 
     const [assetName, setAssetName] = useState("")
 
-    const checkoutToOptions = ['User', 'Asset', 'Location'];
     const [checkoutTo, setCheckoutTo] = useState('User');
-   const [selectedIndex, setSelectedIndex] = useState(0);
+    const [selectedCheckoutTo, setSelectedCheckoutTo] = useState(0);
 
     function checkout() {
         if (!selectedStatus && (!selectedUser || !selectedLocation || !selectedAsset)) {
@@ -118,31 +118,10 @@ export default function CheckoutScreen() {
             <Text>Selected Status: {selectedStatus?.name}</Text>
 
             <Text>Checkout to: </Text>
-            {/*<SegmentedControl*/}
-            {/*    values={['User', 'Asset', 'Location']}*/}
-            {/*    selectedIndex={checkoutTo}*/}
-            {/*    onChange={(event) => {*/}
-            {/*        // setCheckoutTo(event.nativeEvent.selectedSegmentIndex === 0 ? 'User' : event.nativeEvent.selectedSegmentIndex === 1 ? 'Asset' : 'Location');*/}
-            {/*        setCheckoutTo({selectedIndex: event.nativeEvent.selectedSegmentIndex});*/}
-            {/*        // this.setState({selectedIndex: event.nativeEvent.selectedSegmentIndex});*/}
-            {/*    }}*/}
-            {/*    backgroundColor={'black'}*/}
-            {/*/>*/}
-            {Platform.OS === 'ios' && (
-            <Host matchContents={selectedIndex}>
-                <Picker
-                    options={checkoutToOptions}
-                    selectedIndex={selectedIndex}
-                    onOptionSelected={({ nativeEvent: { index } }) => {
-                        setSelectedIndex(index);
-                    }}
-                    variant="segmented"
-                />
-            </Host>
-            )
-        }
 
-                <Text>{[...checkoutToOptions, 'unset'][selectedIndex ?? checkoutToOptions.length]}</Text>
+            <CheckoutPicker selectedCheckoutTo={selectedCheckoutTo} setSelectedCheckoutTo={setSelectedCheckoutTo} checkoutToOptions={['User', 'Location', 'Asset']} />
+
+                {/*<Text>{[...checkoutToOptions, 'unset'][selectedIndex ?? checkoutToOptions.length]}</Text>*/}
 
             {/* user select sheet */}
             <Button title="Select User" onPress={handleOpenUserBottomSheet} />
