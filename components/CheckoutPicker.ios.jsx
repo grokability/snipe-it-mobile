@@ -1,37 +1,43 @@
 import {Host, Picker} from "@expo/ui/swift-ui";
 import {StyleSheet, View} from "react-native";
 import ExpoDevice from "expo-device/src/ExpoDevice";
+import {value} from "lodash/seq";
+import {indexOf} from "lodash";
 
 
-export function CheckoutPicker({ selectedCheckoutTo, setSelectedCheckoutTo, checkoutToOptions }) {
+export function CheckoutPicker({ selectedCheckoutTo, setSelectedCheckoutTo, availableOptions}) {
     const isIpad = ExpoDevice.osName === "iPadOS";
     const SPACE_SCALE = 1.33;
 
+    const options = [
+        {label: "User", value: "user"},
+        {label: "Location", value: "location"},
+        {label: "Asset", value: "asset"}
+    ];
 
     return (
         <View
         style={{
             paddingVertical: isIpad ? Math.round(4 * SPACE_SCALE) : 4,
-            backgroundColor: "#FFFFFF"
+            backgroundColor: "#f1f1f1"
         }}
         >
             <Host matchContents>
                 <Picker
-                    options={checkoutToOptions}
-                    selectedIndex={selectedCheckoutTo}
+                    options={options.map(option => option.label)}
+                    selectedIndex={indexOf(options, options.find(option => option.value === selectedCheckoutTo))}
                     onOptionSelected={({nativeEvent: {index}}) => {
-                        console.log(index);
-                        setSelectedCheckoutTo(index);
+                        setSelectedCheckoutTo(options[index].value);
                     }}
                     variant="segmented"
-                    color={"#FFFFFF"}
+                    color={"#606060"}
                     elementColors={{
                         activeContainerColor: "blue",
-                        activeContentColor: "white",
+                        activeContentColor: "#f1f1f1",
                         activeBorderColor: "transparent",
                         inactiveContainerColor: "#f1f1f1",
                         inactiveContentColor: "#606060",
-                        inactiveBorderColor: "transparent",
+                        inactiveBorderColor: "#f1f1f1",
                     }}
                     style={{
                         ...styles.picker,

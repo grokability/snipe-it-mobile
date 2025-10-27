@@ -1,4 +1,4 @@
-import React, {useContext, useRef, useState} from 'react';
+import React, {useContext, useEffect, useRef, useState} from 'react';
 import {Text, Button, StyleSheet, TextInput, Platform} from "react-native";
 import {router, useLocalSearchParams} from "expo-router";
 import {SafeAreaProvider} from "react-native-safe-area-context";
@@ -12,8 +12,6 @@ import RNDateTimePicker from "@react-native-community/datetimepicker";
 import {Host, Picker} from '@expo/ui/swift-ui';
 import * as Burnt from 'burnt';
 import {CheckoutPicker} from "@/components/CheckoutPicker";
-
-
 
 export default function CheckoutScreen() {
     const { id } = useLocalSearchParams();
@@ -36,8 +34,8 @@ export default function CheckoutScreen() {
 
     const [assetName, setAssetName] = useState("")
 
-    const [checkoutTo, setCheckoutTo] = useState('User');
-    const [selectedCheckoutTo, setSelectedCheckoutTo] = useState(0);
+    const [selectedCheckoutTo, setSelectedCheckoutTo] = useState("user");
+
 
     function checkout() {
         if (!selectedStatus && (!selectedUser || !selectedLocation || !selectedAsset)) {
@@ -56,7 +54,7 @@ export default function CheckoutScreen() {
             Burnt.alert({
                 title: "Error", // required
                 preset: "error", // or "error", "heart", "custom"
-                message: "Status and User are Required", // optional
+                message: "Status and User|Location|Asset are Required", // optional
                 duration: 2, // duration in seconds
             })
             return;
@@ -71,7 +69,7 @@ export default function CheckoutScreen() {
             data: {
                 // this is still required for some reason, so until <Picker> (or something like it) is working
                 // we're only checking out to Users
-                checkout_to_type: checkoutTo.toLowerCase(),
+                checkout_to_type: selectedCheckoutTo,
                 assigned_user: selectedUser?.id,
                 assigned_location: selectedLocation?.id,
                 assigned_asset: selectedAsset?.id,
@@ -119,24 +117,36 @@ export default function CheckoutScreen() {
 
             <Text>Checkout to: </Text>
 
-            <CheckoutPicker selectedCheckoutTo={selectedCheckoutTo} setSelectedCheckoutTo={setSelectedCheckoutTo} checkoutToOptions={['User', 'Location', 'Asset']} />
+            <CheckoutPicker selectedCheckoutTo={selectedCheckoutTo} setSelectedCheckoutTo={setSelectedCheckoutTo} availableOptions={['User', 'Location', 'Asset']} />
 
                 {/*<Text>{[...checkoutToOptions, 'unset'][selectedIndex ?? checkoutToOptions.length]}</Text>*/}
 
             {/* user select sheet */}
-            <Button title="Select User" onPress={handleOpenUserBottomSheet} />
-            <SelectUserBottomSheet title="Select User" ref={userBottomSheetRef} setSelectedUser={setSelectedUser}/>
-            <Text>Selected User: {selectedUser?.name}</Text>
+            {selectedCheckoutTo === 'user' && (
+                <>
+                    <Button title="Select User" onPress={handleOpenUserBottomSheet} />
+                    <SelectUserBottomSheet title="Select User" ref={userBottomSheetRef} setSelectedUser={setSelectedUser}/>
+                    <Text>Selected User: {selectedUser?.name}</Text>
+                </>
+            )}
 
             {/* location select sheet */}
-            <Button title="Select Location" onPress={handleOpenLocationBottomSheet} />
-            <SelectLocationBottomSheet title="Select Location" ref={locationBottomSheetRef} setSelectedLocation={setSelectedLocation}/>
-            <Text>Selected Location: {selectedLocation?.name}</Text>
+            {selectedCheckoutTo === 'location' && (
+            <>
+                <Button title="Select Location" onPress={handleOpenLocationBottomSheet} />
+                <SelectLocationBottomSheet title="Select Location" ref={locationBottomSheetRef} setSelectedLocation={setSelectedLocation}/>
+                <Text>Selected Location: {selectedLocation?.name}</Text>
+            </>
+            )}
 
             {/* asset select sheet */}
-            <Button title="Select Asset" onPress={handleOpenAssetBottomSheet} />
-            <SelectAssetBottomSheet title="Select Asset" ref={assetBottomSheetRef} setSelectedAsset={setSelectedAsset}/>
-            <Text>Selected Asset: {selectedAsset?.name}</Text>
+            {selectedCheckoutTo === 'asset' && (
+            <>
+                <Button title="Select Asset" onPress={handleOpenAssetBottomSheet} />
+                <SelectAssetBottomSheet title="Select Asset" ref={assetBottomSheetRef} setSelectedAsset={setSelectedAsset}/>
+                <Text>Selected Asset: {selectedAsset?.name}</Text>
+            </>
+            )}
 
             {/* checkout/in dates */}
             <Text style={styles.headerText}>Checkout Date</Text>
