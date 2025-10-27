@@ -150,10 +150,10 @@ export default function CheckoutScreen() {
 
             {/* checkout/in dates */}
             <Text style={styles.headerText}>Checkout Date</Text>
-            <RNDateTimePicker value={new Date()} />
+            {/*<RNDateTimePicker value={new Date()} />*/}
 
             <Text style={styles.headerText}>Expected Checkin Date</Text>
-            <RNDateTimePicker value={new Date()} />
+            {/*<RNDateTimePicker value={new Date()} />*/}
 
             {/*/ notes */}
             <Text style={styles.headerText}>Notes</Text>
