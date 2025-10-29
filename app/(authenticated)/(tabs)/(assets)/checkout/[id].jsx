@@ -12,6 +12,7 @@ import RNDateTimePicker from "@react-native-community/datetimepicker";
 import {Host, Picker} from '@expo/ui/swift-ui';
 import * as Burnt from 'burnt';
 import {CheckoutPicker} from "@/components/CheckoutPicker";
+import Datepicker from "@/components/Datepicker";
 
 export default function CheckoutScreen() {
     const { id } = useLocalSearchParams();
@@ -150,10 +151,11 @@ export default function CheckoutScreen() {
 
             {/* checkout/in dates */}
             <Text style={styles.headerText}>Checkout Date</Text>
-            {/*<RNDateTimePicker value={new Date()} />*/}
+            <Datepicker />
+
 
             <Text style={styles.headerText}>Expected Checkin Date</Text>
-            {/*<RNDateTimePicker value={new Date()} />*/}
+            <Datepicker />
 
             {/*/ notes */}
             <Text style={styles.headerText}>Notes</Text>

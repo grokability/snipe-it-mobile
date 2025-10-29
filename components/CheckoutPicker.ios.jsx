@@ -5,7 +5,7 @@ import {value} from "lodash/seq";
 import {indexOf} from "lodash";
 
 
-export function CheckoutPicker({ selectedCheckoutTo, setSelectedCheckoutTo, availableOptions}) {
+export function CheckoutPicker({ selectedCheckoutTo, setSelectedCheckoutTo }) {
     const isIpad = ExpoDevice.osName === "iPadOS";
     const SPACE_SCALE = 1.33;
 

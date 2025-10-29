@@ -1,11 +1,11 @@
-import {Host, Picker} from "@expo/ui/jetpack-compose";
+import {Picker} from "@expo/ui/jetpack-compose";
 import {StyleSheet, View} from "react-native";
 import ExpoDevice from "expo-device/src/ExpoDevice";
 import {value} from "lodash/seq";
 import {indexOf} from "lodash";
 
 
-export function CheckoutPicker({ selectedCheckoutTo, setSelectedCheckoutTo, availableOptions}) {
+export function CheckoutPicker({ selectedCheckoutTo, setSelectedCheckoutTo }) {
     const isIpad = ExpoDevice.osName === "iPadOS";
     const SPACE_SCALE = 1.33;
 
