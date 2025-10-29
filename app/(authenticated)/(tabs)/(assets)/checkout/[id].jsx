@@ -37,6 +37,27 @@ export default function CheckoutScreen() {
 
     const [selectedCheckoutTo, setSelectedCheckoutTo] = useState("user");
 
+    const [notes, setNotes] = useState("");
+
+    const [checkoutDate, setCheckoutDate] = useState();
+    const [expectedCheckinDate, setExpectedCheckinDate] = useState();
+
+    const handleCheckoutDate = (event, selectedDate) => {
+        const currentDate = selectedDate;
+        if (currentDate) {
+            console.log(currentDate);
+            setCheckoutDate(currentDate);
+        }
+    }
+
+    const handleExpectedCheckinDate = (event, selectedDate) => {
+       const currentDate = selectedDate;
+       if (currentDate) {
+           console.log(currentDate);
+           setExpectedCheckinDate(currentDate);
+       }
+    }
+
 
     function checkout() {
         if (!selectedStatus && (!selectedUser || !selectedLocation || !selectedAsset)) {
@@ -151,15 +172,15 @@ export default function CheckoutScreen() {
 
             {/* checkout/in dates */}
             <Text style={styles.headerText}>Checkout Date</Text>
-            <Datepicker />
+            <Datepicker onDateChange={handleCheckoutDate} />
 
 
             <Text style={styles.headerText}>Expected Checkin Date</Text>
-            <Datepicker />
+            <Datepicker onDateChange={handleExpectedCheckinDate}/>
 
             {/*/ notes */}
             <Text style={styles.headerText}>Notes</Text>
-            <TextInput placeholder="Notes" />
+            <TextInput placeholder="Notes" onChange={setNotes} value={notes} numberOfLines={4} multiline={true} />
             {/* submit button */}
             <Button title="Checkout" onPress={() => checkout()} />
 
