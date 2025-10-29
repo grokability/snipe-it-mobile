@@ -89,14 +89,15 @@ export default function CheckoutScreen() {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${user.token}` },
             data: {
-                // this is still required for some reason, so until <Picker> (or something like it) is working
-                // we're only checking out to Users
+                name: assetName,
                 checkout_to_type: selectedCheckoutTo,
                 assigned_user: selectedUser?.id,
                 assigned_location: selectedLocation?.id,
                 assigned_asset: selectedAsset?.id,
                 status_id: selectedStatus.value,
-                note: 'mobile app checkout'
+                checkout_at: checkoutDate,
+                expected_checkin: expectedCheckinDate,
+                note: 'mobile app checkout: ' + notes,
             }
         }).then(res => {
             if(res.status === 'error') {
@@ -180,7 +181,7 @@ export default function CheckoutScreen() {
 
             {/*/ notes */}
             <Text style={styles.headerText}>Notes</Text>
-            <TextInput placeholder="Notes" onChange={setNotes} value={notes} numberOfLines={4} multiline={true} />
+            <TextInput placeholder="Notes" onChange={setNotes} value={notes} />
             {/* submit button */}
             <Button title="Checkout" onPress={() => checkout()} />
 
