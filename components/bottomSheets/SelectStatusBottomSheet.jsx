@@ -93,6 +93,10 @@ const styles = StyleSheet.create({
         borderRadius: 10,
         elevation: 4,
         shadowColor: '#000',
+    },
+    listContent: {
+        paddingBottom: 50,
     }
+
 })
 export default SelectStatusBottomSheet;
