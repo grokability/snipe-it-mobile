@@ -1,4 +1,4 @@
-import React, {useContext, useRef, useState} from 'react';
+import React, {useContext, useEffect, useRef, useState} from 'react';
 import {Text, Button, StyleSheet, TextInput, Platform} from "react-native";
 import {router, useLocalSearchParams} from "expo-router";
 import {SafeAreaProvider} from "react-native-safe-area-context";
@@ -11,8 +11,8 @@ import SelectAssetBottomSheet from "@/components/bottomSheets/SelectAssetBottomS
 import RNDateTimePicker from "@react-native-community/datetimepicker";
 import {Host, Picker} from '@expo/ui/swift-ui';
 import * as Burnt from 'burnt';
-
-
+import {CheckoutPicker} from "@/components/CheckoutPicker";
+import Datepicker from "@/components/Datepicker";
 
 export default function CheckoutScreen() {
     const { id } = useLocalSearchParams();
@@ -35,9 +35,29 @@ export default function CheckoutScreen() {
 
     const [assetName, setAssetName] = useState("")
 
-    const checkoutToOptions = ['User', 'Asset', 'Location'];
-    const [checkoutTo, setCheckoutTo] = useState('User');
-   const [selectedIndex, setSelectedIndex] = useState(0);
+    const [selectedCheckoutTo, setSelectedCheckoutTo] = useState("user");
+
+    const [notes, setNotes] = useState("");
+
+    const [checkoutDate, setCheckoutDate] = useState();
+    const [expectedCheckinDate, setExpectedCheckinDate] = useState();
+
+    const handleCheckoutDate = (event, selectedDate) => {
+        const currentDate = selectedDate;
+        if (currentDate) {
+            console.log(currentDate);
+            setCheckoutDate(currentDate);
+        }
+    }
+
+    const handleExpectedCheckinDate = (event, selectedDate) => {
+       const currentDate = selectedDate;
+       if (currentDate) {
+           console.log(currentDate);
+           setExpectedCheckinDate(currentDate);
+       }
+    }
+
 
     function checkout() {
         if (!selectedStatus && (!selectedUser || !selectedLocation || !selectedAsset)) {
@@ -56,7 +76,7 @@ export default function CheckoutScreen() {
             Burnt.alert({
                 title: "Error", // required
                 preset: "error", // or "error", "heart", "custom"
-                message: "Status and User are Required", // optional
+                message: "Status and User|Location|Asset are Required", // optional
                 duration: 2, // duration in seconds
             })
             return;
@@ -69,14 +89,15 @@ export default function CheckoutScreen() {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${user.token}` },
             data: {
-                // this is still required for some reason, so until <Picker> (or something like it) is working
-                // we're only checking out to Users
-                checkout_to_type: checkoutTo.toLowerCase(),
+                name: assetName,
+                checkout_to_type: selectedCheckoutTo,
                 assigned_user: selectedUser?.id,
                 assigned_location: selectedLocation?.id,
                 assigned_asset: selectedAsset?.id,
                 status_id: selectedStatus.value,
-                note: 'mobile app checkout'
+                checkout_at: checkoutDate,
+                expected_checkin: expectedCheckinDate,
+                note: 'mobile app checkout: ' + notes,
             }
         }).then(res => {
             if(res.status === 'error') {
@@ -118,57 +139,49 @@ export default function CheckoutScreen() {
             <Text>Selected Status: {selectedStatus?.name}</Text>
 
             <Text>Checkout to: </Text>
-            {/*<SegmentedControl*/}
-            {/*    values={['User', 'Asset', 'Location']}*/}
-            {/*    selectedIndex={checkoutTo}*/}
-            {/*    onChange={(event) => {*/}
-            {/*        // setCheckoutTo(event.nativeEvent.selectedSegmentIndex === 0 ? 'User' : event.nativeEvent.selectedSegmentIndex === 1 ? 'Asset' : 'Location');*/}
-            {/*        setCheckoutTo({selectedIndex: event.nativeEvent.selectedSegmentIndex});*/}
-            {/*        // this.setState({selectedIndex: event.nativeEvent.selectedSegmentIndex});*/}
-            {/*    }}*/}
-            {/*    backgroundColor={'black'}*/}
-            {/*/>*/}
-            {Platform.OS === 'ios' && (
-            <Host matchContents={selectedIndex}>
-                <Picker
-                    options={checkoutToOptions}
-                    selectedIndex={selectedIndex}
-                    onOptionSelected={({ nativeEvent: { index } }) => {
-                        setSelectedIndex(index);
-                    }}
-                    variant="segmented"
-                />
-            </Host>
-            )
-        }
 
-                <Text>{[...checkoutToOptions, 'unset'][selectedIndex ?? checkoutToOptions.length]}</Text>
+            <CheckoutPicker selectedCheckoutTo={selectedCheckoutTo} setSelectedCheckoutTo={setSelectedCheckoutTo} availableOptions={['User', 'Location', 'Asset']} />
+
+                {/*<Text>{[...checkoutToOptions, 'unset'][selectedIndex ?? checkoutToOptions.length]}</Text>*/}
 
             {/* user select sheet */}
-            <Button title="Select User" onPress={handleOpenUserBottomSheet} />
-            <SelectUserBottomSheet title="Select User" ref={userBottomSheetRef} setSelectedUser={setSelectedUser}/>
-            <Text>Selected User: {selectedUser?.name}</Text>
+            {selectedCheckoutTo === 'user' && (
+                <>
+                    <Button title="Select User" onPress={handleOpenUserBottomSheet} />
+                    <SelectUserBottomSheet title="Select User" ref={userBottomSheetRef} setSelectedUser={setSelectedUser}/>
+                    <Text>Selected User: {selectedUser?.name}</Text>
+                </>
+            )}
 
             {/* location select sheet */}
-            <Button title="Select Location" onPress={handleOpenLocationBottomSheet} />
-            <SelectLocationBottomSheet title="Select Location" ref={locationBottomSheetRef} setSelectedLocation={setSelectedLocation}/>
-            <Text>Selected Location: {selectedLocation?.name}</Text>
+            {selectedCheckoutTo === 'location' && (
+            <>
+                <Button title="Select Location" onPress={handleOpenLocationBottomSheet} />
+                <SelectLocationBottomSheet title="Select Location" ref={locationBottomSheetRef} setSelectedLocation={setSelectedLocation}/>
+                <Text>Selected Location: {selectedLocation?.name}</Text>
+            </>
+            )}
 
             {/* asset select sheet */}
-            <Button title="Select Asset" onPress={handleOpenAssetBottomSheet} />
-            <SelectAssetBottomSheet title="Select Asset" ref={assetBottomSheetRef} setSelectedAsset={setSelectedAsset}/>
-            <Text>Selected Asset: {selectedAsset?.name}</Text>
+            {selectedCheckoutTo === 'asset' && (
+            <>
+                <Button title="Select Asset" onPress={handleOpenAssetBottomSheet} />
+                <SelectAssetBottomSheet title="Select Asset" ref={assetBottomSheetRef} setSelectedAsset={setSelectedAsset}/>
+                <Text>Selected Asset: {selectedAsset?.name}</Text>
+            </>
+            )}
 
             {/* checkout/in dates */}
             <Text style={styles.headerText}>Checkout Date</Text>
-            <RNDateTimePicker value={new Date()} />
+            <Datepicker onDateChange={handleCheckoutDate} />
+
 
             <Text style={styles.headerText}>Expected Checkin Date</Text>
-            <RNDateTimePicker value={new Date()} />
+            <Datepicker onDateChange={handleExpectedCheckinDate}/>
 
             {/*/ notes */}
             <Text style={styles.headerText}>Notes</Text>
-            <TextInput placeholder="Notes" />
+            <TextInput placeholder="Notes" onChange={setNotes} value={notes} />
             {/* submit button */}
             <Button title="Checkout" onPress={() => checkout()} />
 
