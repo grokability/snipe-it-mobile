@@ -4,10 +4,8 @@ import {AuthContext} from "@/context/AuthProvider";
 import {makeRequest} from "@/helpers/axiosConfig";
 import {SafeAreaProvider, SafeAreaView} from "react-native-safe-area-context";
 import {router, useFocusEffect} from "expo-router";
-import { convertUnicode }  from "@/helpers/utils";
 import {COLORS} from "@/constants/colors";
 import {decodeEntity} from "html-entities";
-import {AuthProvider} from "@/context/AuthProvider";
 import LottieView from "lottie-react-native";
 
 export default function AssetsScreen() {
@@ -42,28 +40,23 @@ export default function AssetsScreen() {
     )
 
     const getAssets = async () => {
-        try {
-            console.log(user)
-            const res = await makeRequest({
-                url: '/hardware?' +
-                    'limit=100&' +
-                    'offset=0&' +
-                    'sort=created_at&' +
-                    'order=asc', //this will turn into a builder function
-                // to build up the query string
-                method: 'get',
-                headers: {'Authorization': `Bearer ${user.token}`}
-            })
+        makeRequest({
+            url: '/hardware?' +
+                'limit=100&' +
+                'offset=0&' +
+                'sort=created_at&' +
+                'order=asc', //this will turn into a builder function
+            // to build up the query string
+            method: 'get',
+            headers: {'Authorization': `Bearer ${user.token}`}
+        }).then(res => {
             setData({
                 assets: res.rows,
                 count: res.total
             });
-            // console.log(data);
-            // console.log(data);
-            setLoading(false);
-        } catch (error) {
-            console.log(error);
-        }
+        }).catch(err => {
+            console.log(err);
+        })
     }
 
     const Item = ({id, asset_tag, name, serial, image, checkedOut, status}) => (
@@ -116,6 +109,8 @@ export default function AssetsScreen() {
                     keyExtractor={item => item.id}
                     // refreshControl={<LottieView
                     //     source={require('@/assets/spinning_star_eye.json')}
+                    //     refreshing={refreshing}
+                    //     onRefresh={onRefresh}
                     //     style={{width: "50%", height: "50%"}}
                     //     autoPlay
                     //     loop  />}
