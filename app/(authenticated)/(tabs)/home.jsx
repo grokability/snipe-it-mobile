@@ -6,6 +6,7 @@ import {SafeAreaView} from "react-native-safe-area-context";
 import LottieView from "lottie-react-native";
 import Constants from "expo-constants/src/Constants";
 import ExpoApplication from "expo-application/src/ExpoApplication";
+import RecentActions from "@/components/RecentActions";
 
 export default function HomeScreen() {
     // kind of weird that you have to type it but it's still just a string?
@@ -29,6 +30,7 @@ export default function HomeScreen() {
 
         return (
             <SafeAreaView style={styles.container}>
+                    <RecentActions />
                     <Text style={styles.text}>Version: {ExpoApplication.nativeApplicationVersion} ({ExpoApplication.nativeBuildVersion})</Text>
                 {!permission.granted &&
                     <Button style={styles.text} title='Request Camera Permissions for Scanner' onPress={requestPermission}/>
