@@ -127,7 +127,9 @@ export const AuthProvider = ({children}) => {
                                 first_name: response.first_name,
                                 last_name: response.last_name,
                                 email: response.email,
+                                permissions: response.permissions,
                             }
+
                             setUser(userResponse);
                             SecureStore.setItemAsync('user', JSON.stringify(userResponse));
                             setIsLoading(false);
