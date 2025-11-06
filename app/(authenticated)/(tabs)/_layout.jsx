@@ -1,9 +1,12 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { Tabs } from 'expo-router';
 import {Platform} from 'react-native';
+import {useContext} from "react";
+import {AuthContext} from "@/context/AuthProvider";
 
 console.log('tab layout rendered')
 export default function TabLayout() {
+    const { user } = useContext(AuthContext);
     return (
             <Tabs screenOptions={{ tabBarActiveTintColor: 'purple',
                 headerShown: false,
@@ -43,10 +46,11 @@ export default function TabLayout() {
                 <Tabs.Screen
                     name="accessories"
                     options={{
+                        href: user.permissions.accessories?.view === -1 || user.permissions.superuser === 1 ? '/accessories' : null,
                         title: 'Accessories',
                         tabBarIcon: ({ color }) => <FontAwesome size={28} name="keyboard-o" color={color} />,
                     }}
-                    />
+                />
                 <Tabs.Screen
                     name="consumables"
                     options={{
@@ -54,6 +58,7 @@ export default function TabLayout() {
                         tabBarIcon: ({ color }) => <FontAwesome size={28} name="tint" color={color} />,
                     }}
                     />
+
                 <Tabs.Screen
                     name="components"
                     options={{

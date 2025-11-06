@@ -1,14 +1,16 @@
 import {View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Button, Platform} from 'react-native';
 import { CameraView, useCameraPermissions, CameraType } from 'expo-camera';
 import {Link, router} from "expo-router";
-import React, {useEffect, useState} from "react";
+import React, {useContext, useEffect, useState} from "react";
 import {SafeAreaView} from "react-native-safe-area-context";
 import LottieView from "lottie-react-native";
 import Constants from "expo-constants/src/Constants";
 import ExpoApplication from "expo-application/src/ExpoApplication";
 import RecentActions from "@/components/RecentActions";
+import {AuthContext} from "@/context/AuthProvider";
 
 export default function HomeScreen() {
+    const { user } = useContext(AuthContext);
     // kind of weird that you have to type it but it's still just a string?
     const [permission, requestPermission] = useCameraPermissions();
     useEffect(() => {
@@ -30,7 +32,11 @@ export default function HomeScreen() {
 
         return (
             <SafeAreaView style={styles.container}>
+
+                {user.permissions.superuser === 1 && (
                     <RecentActions />
+                )}
+
                     <Text style={styles.text}>Version: {ExpoApplication.nativeApplicationVersion} ({ExpoApplication.nativeBuildVersion})</Text>
                 {!permission.granted &&
                     <Button style={styles.text} title='Request Camera Permissions for Scanner' onPress={requestPermission}/>
