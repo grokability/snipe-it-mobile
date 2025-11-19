@@ -9,7 +9,7 @@ const initI18n = async () => {
     let savedLanguage = await AsyncStorage.getItem("locale");
 
     if (!savedLanguage) {
-        savedLanguage = Localization.locale;
+        savedLanguage = Localization.locale; // this doesn't seem to work for some reason, leaving here for now though
     }
 
     const resources = {
