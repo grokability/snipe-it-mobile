@@ -6,6 +6,8 @@ import {Drawer} from "expo-router/drawer";
 import {GestureHandlerRootView} from "react-native-gesture-handler";
 import {BottomSheetModalProvider} from "@gorhom/bottom-sheet";
 
+import i18n from "@/i18n";
+
 
 export default function RootLayout() {
 

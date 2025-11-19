@@ -3,6 +3,7 @@ import {makeRequest} from "../helpers/axiosConfig";
 import * as SecureStore from 'expo-secure-store';
 import { deviceName } from "expo-device";
 import {useRouter} from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export const AuthContext = createContext();
 
@@ -129,9 +130,9 @@ export const AuthProvider = ({children}) => {
                                 email: response.email,
                                 permissions: response.permissions,
                             }
-
                             setUser(userResponse);
                             SecureStore.setItemAsync('user', JSON.stringify(userResponse));
+                            AsyncStorage.setItem('locale', response.locale || 'en-US')
                             setIsLoading(false);
                         })
                         .catch(error => {

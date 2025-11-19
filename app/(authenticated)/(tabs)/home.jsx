@@ -8,6 +8,9 @@ import Constants from "expo-constants/src/Constants";
 import ExpoApplication from "expo-application/src/ExpoApplication";
 import RecentActions from "@/components/RecentActions";
 import {AuthContext} from "@/context/AuthProvider";
+import {useTranslation} from "react-i18next";
+import i18n from "@/i18n";
+import ExpoLocalization from "expo-localization/src/ExpoLocalization";
 
 export default function HomeScreen() {
     const { user } = useContext(AuthContext);
@@ -18,6 +21,7 @@ export default function HomeScreen() {
 
         console.log(permission?.granted);
     })
+    const { t, i18n } = useTranslation();
 
 
 
@@ -36,7 +40,7 @@ export default function HomeScreen() {
                 {user.permissions.superuser === 1 && (
                     <RecentActions />
                 )}
-
+                    <Text style={styles.text}>{t('home.welcome')}</Text>
                     <Text style={styles.text}>Version: {ExpoApplication.nativeApplicationVersion} ({ExpoApplication.nativeBuildVersion})</Text>
                 {!permission.granted &&
                     <Button style={styles.text} title='Request Camera Permissions for Scanner' onPress={requestPermission}/>

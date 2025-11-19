@@ -69,7 +69,7 @@ const RecentActions = () => {
                     <Item
                     id={item.id}
                     action_type={item.action_type}
-                    created_by={item.created_by.name}
+                    created_by={item.created_by?.name}
                 />
                 }
                 keyExtractor={item => item.id}
