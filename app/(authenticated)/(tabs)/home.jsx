@@ -8,11 +8,14 @@ import Constants from "expo-constants/src/Constants";
 import ExpoApplication from "expo-application/src/ExpoApplication";
 import RecentActions from "@/components/RecentActions";
 import {AuthContext} from "@/context/AuthProvider";
+import {useTranslation} from "react-i18next";
+import * as Localization from 'expo-localization';
 
 export default function HomeScreen() {
     const { user } = useContext(AuthContext);
     // kind of weird that you have to type it but it's still just a string?
     const [permission, requestPermission] = useCameraPermissions();
+    const { t, i18n } = useTranslation()
     useEffect(() => {
         console.log(permission);
 
@@ -37,6 +40,8 @@ export default function HomeScreen() {
                     <RecentActions />
                 )}
 
+                    <Text style={styles.text}>{t('home.welcome')}</Text>
+                    <Text style={styles.text}>{() => console.log(Localization.locale)}</Text>
                     <Text style={styles.text}>Version: {ExpoApplication.nativeApplicationVersion} ({ExpoApplication.nativeBuildVersion})</Text>
                 {!permission.granted &&
                     <Button style={styles.text} title='Request Camera Permissions for Scanner' onPress={requestPermission}/>

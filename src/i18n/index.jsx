@@ -29,3 +29,5 @@ export async function initI18n() {
       });
   }
 }
+
+// ... existing changeLanguage code ...
