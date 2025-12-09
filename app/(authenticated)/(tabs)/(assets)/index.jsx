@@ -18,6 +18,8 @@ export default function AssetsScreen() {
 
     const [offset, setOffset] = useState(0);
 
+    const [onEndReachedCalledDuringMomentum, setOnEndReachedCalledDuringMomentum] = useState(true);
+
     const onRefresh = useCallback(async() => {
             setRefreshing(true);
         try {
@@ -104,6 +106,7 @@ export default function AssetsScreen() {
     return (
             <SafeAreaProvider>
                 <FlashList
+                    contentContainerStyle={{ paddingBottom: 80 }}
                     style={styles.flatlist}
                     data={data.assets}
                     renderItem={({item}) => <Item
@@ -114,8 +117,17 @@ export default function AssetsScreen() {
                             image={item.image}
                             checkedOut={item.assigned_to}
                             status={item.status_label}
-                            onEndReached={loadMore}
+                            // onEndReached={loadMore()}
+                            initialNumToRender={100}
                             onEndReachedThreshold={0.1}
+                            onMomentumScrollBegin = {() => {setOnEndReachedCalledDuringMomentum(false)}}
+                            onEndReached = {() => {
+                                if (onEndReachedCalledDuringMomentum) {
+                                    loadMore();    // LOAD MORE DATA
+                                    setOnEndReachedCalledDuringMomentum(true);
+                                }
+                            }
+                            }
                         />
                     }
                     keyExtractor={item => item.id}
@@ -144,6 +156,7 @@ const styles = StyleSheet.create({
     flatlist: {
         flex: 1,
         padding: 5,
+        // paddingBottom: 80,
         flexDirection: 'column',
         gap: 5,
         shadowOffset: {
