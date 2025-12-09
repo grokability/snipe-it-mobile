@@ -37,7 +37,7 @@ export default function HomeScreen() {
         return (
             <SafeAreaView style={styles.container}>
 
-                {user.permissions.superuser === 1 && (
+                {user?.permissions?.superuser === 1 && (
                     <RecentActions />
                 )}
                     <Text style={styles.text}>{t('home.welcome')}</Text>

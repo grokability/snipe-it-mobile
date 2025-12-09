@@ -46,7 +46,7 @@ export default function TabLayout() {
                 <Tabs.Screen
                     name="accessories"
                     options={{
-                        href: user.permissions.accessories?.view === -1 || user.permissions.superuser === 1 ? '/accessories' : null,
+                        href: user.permissions?.accessories?.view === -1 || user.permissions?.superuser === 1 ? '/accessories' : null,
                         title: 'Accessories',
                         tabBarIcon: ({ color }) => <FontAwesome size={28} name="keyboard-o" color={color} />,
                     }}
