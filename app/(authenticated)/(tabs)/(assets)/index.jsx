@@ -1,12 +1,13 @@
-import {View, Text, StyleSheet, FlatList, Image, RefreshControl, Pressable} from 'react-native';
-import {useContext, useState, useEffect, useCallback} from "react";
+import {View, Text, StyleSheet, Image, RefreshControl, Pressable} from 'react-native';
+import {useContext, useState, useCallback} from "react";
 import {AuthContext} from "@/context/AuthProvider";
 import {makeRequest} from "@/helpers/axiosConfig";
-import {SafeAreaProvider, SafeAreaView} from "react-native-safe-area-context";
+import {SafeAreaProvider} from "react-native-safe-area-context";
 import {router, useFocusEffect} from "expo-router";
 import {COLORS} from "@/constants/colors";
 import {decodeEntity} from "html-entities";
 import LottieView from "lottie-react-native";
+import {FlashList} from "@shopify/flash-list";
 
 export default function AssetsScreen() {
     const { user } = useContext(AuthContext);
@@ -14,6 +15,8 @@ export default function AssetsScreen() {
     const [data, setData] = useState({});
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
+
+    const [offset, setOffset] = useState(0);
 
     const onRefresh = useCallback(async() => {
             setRefreshing(true);
@@ -43,7 +46,7 @@ export default function AssetsScreen() {
         makeRequest({
             url: '/hardware?' +
                 'limit=100&' +
-                'offset=0&' +
+                `offset=${offset}&` +
                 'sort=created_at&' +
                 'order=asc', //this will turn into a builder function
             // to build up the query string
@@ -51,12 +54,19 @@ export default function AssetsScreen() {
             headers: {'Authorization': `Bearer ${user.token}`}
         }).then(res => {
             setData({
+                ...data,
                 assets: res.rows,
                 count: res.total
             });
         }).catch(err => {
             console.log(err);
         })
+    }
+
+    const loadMore = async () => {
+        console.log("loading more");
+        setOffset(offset + 100);
+        await getAssets();
     }
 
     const Item = ({id, asset_tag, name, serial, image, checkedOut, status}) => (
@@ -93,7 +103,7 @@ export default function AssetsScreen() {
 
     return (
             <SafeAreaProvider>
-                <FlatList
+                <FlashList
                     style={styles.flatlist}
                     data={data.assets}
                     renderItem={({item}) => <Item
@@ -104,6 +114,8 @@ export default function AssetsScreen() {
                             image={item.image}
                             checkedOut={item.assigned_to}
                             status={item.status_label}
+                            onEndReached={loadMore}
+                            onEndReachedThreshold={0.1}
                         />
                     }
                     keyExtractor={item => item.id}
@@ -115,7 +127,7 @@ export default function AssetsScreen() {
                     //     autoPlay
                     //     loop  />}
                     refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh}  />}
-                ></FlatList>
+                ></FlashList>
             </SafeAreaProvider>
     );
 }
