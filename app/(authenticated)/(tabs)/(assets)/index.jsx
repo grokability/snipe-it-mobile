@@ -58,9 +58,7 @@ export default function AssetsScreen() {
     }
 
     const loadMore = async () => {
-        if(loading) {
-            return;
-        }
+        if (loading) return;
         setOffset(offset + 25);
         await getAssets();
     }
