@@ -3,12 +3,13 @@ import { Tabs } from 'expo-router';
 import {Platform} from 'react-native';
 import {useContext} from "react";
 import {AuthContext} from "@/context/AuthProvider";
+import {Label, NativeTabs, Icon} from "expo-router/unstable-native-tabs";
 
 console.log('tab layout rendered')
 export default function TabLayout() {
     const { user } = useContext(AuthContext);
     return (
-            <Tabs screenOptions={{ tabBarActiveTintColor: 'purple',
+            <NativeTabs screenOptions={{ tabBarActiveTintColor: 'purple',
                 headerShown: false,
                 // tabBarButton: HapticTab,
                 // tabBarBackground: TabBarBackground,
@@ -20,21 +21,27 @@ export default function TabLayout() {
                     default: {},
                 }),
             }}>
-                <Tabs.Screen
+                <NativeTabs.Trigger
                     name="home"
-                    options={{
-                        title: 'Home',
-                        tabBarIcon: ({ color }) => <FontAwesome size={28} name="home" color={color} />,
-                    }}
-                />
-                <Tabs.Screen
+                    // options={{
+                    //     title: 'Home',
+                    // }}
+                >
+                    <Label>Home</Label>
+                    <Icon sf="home" />
+                    <FontAwesome size={28} name="home" color="purple" />
+                </NativeTabs.Trigger>
+                <NativeTabs.Trigger
                     name="(assets)"
-                    headerShown={false}
-                    options={{
-                        title: 'Assets',
-                        tabBarIcon: ({ color }) => <FontAwesome size={28} name="barcode" color={color} />,
-                    }}
-                />
+                    // headerShown={false}
+                    // options={{
+                    //     title: 'Assets',
+                    //     tabBarIcon: ({ color }) => <FontAwesome size={28} name="barcode" color={color} />,
+                    // }}
+                >
+                    <Label>Assets</Label>
+                    <Icon sf="barcode" />
+                </NativeTabs.Trigger>
 
                 {/*<Tabs.Screen*/}
                 {/*    name="licenses"*/}
@@ -43,7 +50,7 @@ export default function TabLayout() {
                 {/*        tabBarIcon: ({ color }) => <FontAwesome size={28} name="floppy-o" color={color} />,*/}
                 {/*    }}*/}
                 {/*    />*/}
-                <Tabs.Screen
+                <NativeTabs.Trigger
                     name="accessories"
                     options={{
                         href: user.permissions?.accessories?.view === -1 || user.permissions?.superuser === 1 ? '/accessories' : null,
@@ -51,7 +58,7 @@ export default function TabLayout() {
                         tabBarIcon: ({ color }) => <FontAwesome size={28} name="keyboard-o" color={color} />,
                     }}
                 />
-                <Tabs.Screen
+                <NativeTabs.Trigger
                     name="consumables"
                     options={{
                         title: 'Consumables',
@@ -59,7 +66,7 @@ export default function TabLayout() {
                     }}
                     />
 
-                <Tabs.Screen
+                <NativeTabs.Trigger
                     name="components"
                     options={{
                         title: 'Components',
@@ -90,6 +97,6 @@ export default function TabLayout() {
                         href: null
                     }}
                 />
-            </Tabs>
+            </NativeTabs>
     );
 }
