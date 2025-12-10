@@ -6,19 +6,15 @@ import {SafeAreaProvider} from "react-native-safe-area-context";
 import {router, useFocusEffect} from "expo-router";
 import {COLORS} from "@/constants/colors";
 import {decodeEntity} from "html-entities";
-import LottieView from "lottie-react-native";
 import {FlashList} from "@shopify/flash-list";
 
 export default function AssetsScreen() {
     const { user } = useContext(AuthContext);
-    // console.log(JSON.parse(user));
-    const [data, setData] = useState({});
+    const [data, setData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
 
     const [offset, setOffset] = useState(0);
-
-    const [onEndReachedCalledDuringMomentum, setOnEndReachedCalledDuringMomentum] = useState(true);
 
     const onRefresh = useCallback(async() => {
             setRefreshing(true);
@@ -32,42 +28,40 @@ export default function AssetsScreen() {
     useFocusEffect(
         useCallback(() => {
             setLoading(true);
-            setRefreshing(true);
-            // hm, just playing around with async stuff
-            // to see if i could get the refreshing indicator
-            // to show during the useFocusEffect event
-            async function test(){
+            async function fetchData() {
                 await getAssets();
             }
-            test();
-            setRefreshing(false);
+            fetchData();
         }, [])
     )
 
     const getAssets = async () => {
+        setLoading(true);
         makeRequest({
             url: '/hardware?' +
-                'limit=100&' +
+                'limit=25&' +
                 `offset=${offset}&` +
                 'sort=created_at&' +
                 'order=asc', //this will turn into a builder function
             // to build up the query string
             method: 'get',
             headers: {'Authorization': `Bearer ${user.token}`}
-        }).then(res => {
-            setData({
-                ...data,
-                assets: res.rows,
-                count: res.total
+        }).then((res) => {
+            setData((existingItems) => {
+                return [...existingItems, ...res.rows]
             });
         }).catch(err => {
             console.log(err);
+            setLoading(false);
         })
+        setLoading(false);
     }
 
     const loadMore = async () => {
-        console.log("loading more");
-        setOffset(offset + 100);
+        if(loading) {
+            return;
+        }
+        setOffset(offset + 25);
         await getAssets();
     }
 
@@ -106,9 +100,11 @@ export default function AssetsScreen() {
     return (
             <SafeAreaProvider>
                 <FlashList
+                    onEndReached={() => loadMore()}
+                    onEndReachedThreshold={0.1}
                     contentContainerStyle={{ paddingBottom: 80 }}
                     style={styles.flatlist}
-                    data={data.assets}
+                    data={data}
                     renderItem={({item}) => <Item
                             id={item.id}
                             asset_tag={item.asset_tag}
@@ -117,28 +113,11 @@ export default function AssetsScreen() {
                             image={item.image}
                             checkedOut={item.assigned_to}
                             status={item.status_label}
-                            // onEndReached={loadMore()}
-                            initialNumToRender={100}
-                            onEndReachedThreshold={0.1}
-                            onMomentumScrollBegin = {() => {setOnEndReachedCalledDuringMomentum(false)}}
-                            onEndReached = {() => {
-                                if (onEndReachedCalledDuringMomentum) {
-                                    loadMore();    // LOAD MORE DATA
-                                    setOnEndReachedCalledDuringMomentum(true);
-                                }
-                            }
-                            }
                         />
                     }
                     keyExtractor={item => item.id}
-                    // refreshControl={<LottieView
-                    //     source={require('@/assets/spinning_star_eye.json')}
-                    //     refreshing={refreshing}
-                    //     onRefresh={onRefresh}
-                    //     style={{width: "50%", height: "50%"}}
-                    //     autoPlay
-                    //     loop  />}
                     refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh}  />}
+
                 ></FlashList>
             </SafeAreaProvider>
     );
