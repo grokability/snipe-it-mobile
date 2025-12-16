@@ -2,8 +2,7 @@ import { Drawer } from 'expo-router/drawer';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { TouchableOpacity, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation, useRoute } from '@react-navigation/native';
-import { useRouter } from "expo-router";
+import {Stack, useRouter} from "expo-router";
 import { COLORS } from "@/constants/colors";
 
 export default function AuthenticatedLayout() {
@@ -11,7 +10,7 @@ export default function AuthenticatedLayout() {
 
     return (
         <GestureHandlerRootView style={{ flex: 1 }}>
-            <Drawer
+            <Stack
                 screenOptions={({ navigation, route }) => {
                     // Get parent navigator state to check if we're in a nested stack
                     const state = navigation.getState();
@@ -57,21 +56,21 @@ export default function AuthenticatedLayout() {
                     };
                 }}
             >
-                <Drawer.Screen
+                <Stack.Screen
                     name="(tabs)"
                     options={{
                         title: 'Home',
                         drawerLabel: 'Home'
                     }}
                 />
-                <Drawer.Screen
+                <Stack.Screen
                     name="licenses"
                     options={{
                         drawerLabel: 'Licenses',
                         title: 'Licenses',
                     }}
                 />
-                <Drawer.Screen
+                <Stack.Screen
                     name="settings"
                     options={{
                         drawerLabel: 'Settings',
@@ -79,13 +78,13 @@ export default function AuthenticatedLayout() {
                     }}
                 />
             {/*  hidden screens  */}
-                <Drawer.Screen
+                <Stack.Screen
                     name="index"
                     options={{
                         drawerItemStyle: { display: 'none' }
                     }}
                 />
-            </Drawer>
+            </Stack>
         </GestureHandlerRootView>
     );
 }
