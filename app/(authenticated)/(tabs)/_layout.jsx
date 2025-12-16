@@ -1,6 +1,7 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import {useContext} from "react";
 import {AuthContext} from "@/context/AuthProvider";
+import { DynamicColorIOS } from 'react-native';
 import {NativeTabs, Label, Icon} from "expo-router/unstable-native-tabs";
 
 console.log('TAB LAYOUT MOUNTED')
@@ -8,6 +9,18 @@ export default function TabLayout() {
     const { user } = useContext(AuthContext);
     return (
             <NativeTabs
+                labelStyle={{
+                    // For the text color
+                    color: DynamicColorIOS({
+                        dark: 'purple',
+                        light: 'purple',
+                    }),
+                }}
+                // For the selected icon color
+                tintColor={DynamicColorIOS({
+                    dark: 'purple',
+                    light: 'purple',
+                })}
                 // screenOptions={{
                 // tabBarActiveTintColor: 'purple',
                 // headerShown: false,
@@ -29,7 +42,7 @@ export default function TabLayout() {
                     // }}
                 >
                     <Label>Home</Label>
-                    <Icon sf="home" />
+                    <Icon sf="house" />
                     {/*<FontAwesome size={28} name="home" color="purple" />*/}
                 </NativeTabs.Trigger>
                 <NativeTabs.Trigger
@@ -70,7 +83,7 @@ export default function TabLayout() {
                     // }}
                     >
                     <Label>Consumables</Label>
-                    <Icon sf="tint" />
+                    <Icon sf="cart" />
                 </NativeTabs.Trigger>
 
                 <NativeTabs.Trigger
@@ -81,7 +94,7 @@ export default function TabLayout() {
                     // }}
                     >
                     <Label>Components</Label>
-                    <Icon sf="hdd" />
+                    <Icon sf="storefront" />
                 </NativeTabs.Trigger>
                 {/*<Tabs.Screen*/}
                 {/*    name="settings"*/}
@@ -107,6 +120,11 @@ export default function TabLayout() {
                 {/*        href: null*/}
                 {/*    }}*/}
                 {/*/>*/}
+                <NativeTabs.Trigger
+                name="search"
+                role="search">
+                    <Label>Search</Label>
+                </NativeTabs.Trigger>
             </NativeTabs>
     );
 }
