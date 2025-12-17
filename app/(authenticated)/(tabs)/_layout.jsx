@@ -9,18 +9,18 @@ export default function TabLayout() {
     const { user } = useContext(AuthContext);
     return (
             <NativeTabs
-                labelStyle={{
-                    // For the text color
-                    color: DynamicColorIOS({
-                        dark: 'purple',
-                        light: 'purple',
-                    }),
-                }}
-                // For the selected icon color
-                tintColor={DynamicColorIOS({
-                    dark: 'purple',
-                    light: 'purple',
-                })}
+                // labelStyle={{
+                //     // For the text color
+                //     color: DynamicColorIOS({
+                //         dark: 'purple',
+                //         light: 'purple',
+                //     }),
+                // }}
+                // // For the selected icon color
+                // tintColor={DynamicColorIOS({
+                //     dark: 'purple',
+                //     light: 'purple',
+                // })}
                 // screenOptions={{
                 // tabBarActiveTintColor: 'purple',
                 // headerShown: false,
