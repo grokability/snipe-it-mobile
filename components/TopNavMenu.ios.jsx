@@ -6,29 +6,6 @@ import {Host, ContextMenu, Button} from '@expo/ui/swift-ui';
 
 export default function TopNavMenu() {
     return (
-        // <Host matchContents>
-        //     <ContextMenu
-        //         title="Menu"
-        //         items={[
-        //             {
-        //                 text: 'Licenses',
-        //                 onPress: () => router.push('/(authenticated)/licenses'),
-        //             },
-        //             {
-        //                 text: 'Settings',
-        //                 onPress: () => router.push('/(authenticated)/settings'),
-        //             },
-        //         ]}
-        //     >
-        //         <Pressable
-        //             accessibilityRole="button"
-        //             accessibilityLabel="Open menu"
-        //             style={styles.button}
-        //         >
-        //             <Ionicons name="ellipsis-horizontal" size={20} color="#111" />
-        //         </Pressable>
-        //     </ContextMenu>
-        // </Host>
         <Host style={{ width: 150, height: 50 }}>
             <ContextMenu>
                 <ContextMenu.Items>
@@ -64,9 +41,6 @@ export default function TopNavMenu() {
                              >
                                  <Ionicons name="menu" size={20} color="#111" />
                              </Pressable>
-                    {/*<Button variant="bordered">*/}
-                    {/*    Show Menu*/}
-                    {/*</Button>*/}
                 </ContextMenu.Trigger>
             </ContextMenu>
         </Host>

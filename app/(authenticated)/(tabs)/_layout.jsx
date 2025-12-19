@@ -21,108 +21,33 @@ export default function TabLayout() {
                 //     dark: 'purple',
                 //     light: 'purple',
                 // })}
-                // screenOptions={{
-                // tabBarActiveTintColor: 'purple',
-                // headerShown: false,
-                // // tabBarButton: HapticTab,
-                // // tabBarBackground: TabBarBackground,
-                // tabBarStyle: Platform.select({
-                //     ios: {
-                //         // Use a transparent background on iOS to show the blur effect
-                //         position: 'absolute',
-                //     },
-                //     default: {},
-                // }),
-                // }}
             >
-                <NativeTabs.Trigger
-                    name="home"
-                    // options={{
-                    //     title: 'Home',
-                    // }}
-                >
+                <NativeTabs.Trigger name="home">
                     <Label>Home</Label>
                     <Icon sf="house" />
-                    {/*<FontAwesome size={28} name="home" color="purple" />*/}
                 </NativeTabs.Trigger>
-                <NativeTabs.Trigger
-                    name="(assets)"
-                    // headerShown={false}
-                    // options={{
-                    //     title: 'Assets',
-                    //     tabBarIcon: ({ color }) => <FontAwesome size={28} name="barcode" color={color} />,
-                    // }}
-                >
+
+                <NativeTabs.Trigger name="(assets)">
                     <Label>Assets</Label>
                     <Icon sf="barcode" />
                 </NativeTabs.Trigger>
 
-                {/*<Tabs.Screen*/}
-                {/*    name="licenses"*/}
-                {/*    options={{*/}
-                {/*        title: 'Licenses',*/}
-                {/*        tabBarIcon: ({ color }) => <FontAwesome size={28} name="floppy-o" color={color} />,*/}
-                {/*    }}*/}
-                {/*    />*/}
-                <NativeTabs.Trigger
-                    name="accessories"
-                    // options={{
-                    //     href: user.permissions?.accessories?.view === -1 || user.permissions?.superuser === 1 ? '/accessories' : null,
-                    //     title: 'Accessories',
-                    //     tabBarIcon: ({ color }) => <FontAwesome size={28} name="keyboard-o" color={color} />,
-                    // }}
-                >
+                <NativeTabs.Trigger name="accessories">
                     <Label>Accessories</Label>
                     <Icon sf="keyboard" />
                 </NativeTabs.Trigger>
-                <NativeTabs.Trigger
-                    name="consumables"
-                    // options={{
-                    //     title: 'Consumables',
-                    //     tabBarIcon: ({ color }) => <FontAwesome size={28} name="tint" color={color} />,
-                    // }}
-                    >
+
+                <NativeTabs.Trigger name="consumables">
                     <Label>Consumables</Label>
                     <Icon sf="cart" />
                 </NativeTabs.Trigger>
 
-                <NativeTabs.Trigger
-                    name="components"
-                    // options={{
-                    //     title: 'Components',
-                    //     tabBarIcon: ({ color }) => <FontAwesome size={28} name="hdd-o" color={color} />,
-                    // }}
-                    >
+                <NativeTabs.Trigger name="components">
                     <Label>Components</Label>
                     <Icon sf="storefront" />
                 </NativeTabs.Trigger>
-                {/*<Tabs.Screen*/}
-                {/*    name="settings"*/}
-                {/*    options={{*/}
-                {/*        // href: null,*/}
-                {/*        title: 'Settings',*/}
-                {/*        tabBarIcon: ({ color }) => <FontAwesome size={28} name="cog" color={color} hidden={true}/>,*/}
-                {/*    }}*/}
-                {/*/>*/}
-                {/* this is fake and annoying, and i'm confused about why it's necessary, but 🤷‍♂️, it works */}
-                {/*<Tabs.Screen*/}
-                {/*    name="index"*/}
-                {/*    hidden={true}*/}
-                {/*    options={{*/}
-                {/*       href: null*/}
-                {/*    }}*/}
-                {/*/>*/}
-                {/*this one too*/}
-                {/*<Tabs.Screen*/}
-                {/*    name="(assets)/[id]"*/}
-                {/*    hidden={true}*/}
-                {/*    options={{*/}
-                {/*        href: null*/}
-                {/*    }}*/}
-                {/*/>*/}
-                <NativeTabs.Trigger
-                name="search"
-                role="search">
+
+                <NativeTabs.Trigger name="search" role="search">
                     <Label>Search</Label>
                 </NativeTabs.Trigger>
             </NativeTabs>
