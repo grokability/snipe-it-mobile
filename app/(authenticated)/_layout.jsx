@@ -5,6 +5,7 @@ import { Ionicons } from "@expo/vector-icons";
 import {Stack, useRouter} from "expo-router";
 import { COLORS } from "@/constants/colors";
 import TopNavMenuOverlay from "@/components/TopNavMenuOverlay";
+import {SafeAreaView} from "react-native-safe-area-context";
 
 export default function AuthenticatedLayout() {
     const router = useRouter();
@@ -89,7 +90,9 @@ export default function AuthenticatedLayout() {
                 />
             </Stack>
 
-            <TopNavMenuOverlay />
+            <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
+                <TopNavMenuOverlay />
+            </View>
         </View>
     );
 }

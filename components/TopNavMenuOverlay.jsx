@@ -27,9 +27,10 @@ const styles = StyleSheet.create({
         elevation: 9999,
     },
     topRight: {
-        color: 'red',
         position: 'absolute',
-        right: 12,
+        left: 12,
+        width: 40,
+        // height: 40,
         zIndex: 9999,
         elevation: 9999,
     },
