@@ -1,17 +1,18 @@
 import { Drawer } from 'expo-router/drawer';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { TouchableOpacity, StyleSheet } from "react-native";
+import { TouchableOpacity, StyleSheet, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation, useRoute } from '@react-navigation/native';
-import { useRouter } from "expo-router";
+import {Stack, useRouter} from "expo-router";
 import { COLORS } from "@/constants/colors";
+import TopNavMenuOverlay from "@/components/TopNavMenuOverlay";
+import {SafeAreaView} from "react-native-safe-area-context";
 
 export default function AuthenticatedLayout() {
     const router = useRouter();
 
     return (
-        <GestureHandlerRootView style={{ flex: 1 }}>
-            <Drawer
+        <View style={{ flex: 1 }}>
+            <Stack
                 screenOptions={({ navigation, route }) => {
                     // Get parent navigator state to check if we're in a nested stack
                     const state = navigation.getState();
@@ -20,7 +21,9 @@ export default function AuthenticatedLayout() {
                     const showBackButton = currentStack !== undefined;
 
                     return {
-                        headerShown: true,
+                        headerShown: false, // this is the header for all the tabs - they're all shown as "home" though
+                                            // if we use this header. (because that's this stack) - we can individually
+                                            // show headers if we want to though through the actual screens
                         headerStyle: styles.header,
                         headerTintColor: COLORS.text,
                         headerTitleStyle: styles.headerTitle,
@@ -57,21 +60,21 @@ export default function AuthenticatedLayout() {
                     };
                 }}
             >
-                <Drawer.Screen
+                <Stack.Screen
                     name="(tabs)"
                     options={{
                         title: 'Home',
                         drawerLabel: 'Home'
                     }}
                 />
-                <Drawer.Screen
+                <Stack.Screen
                     name="licenses"
                     options={{
                         drawerLabel: 'Licenses',
                         title: 'Licenses',
                     }}
                 />
-                <Drawer.Screen
+                <Stack.Screen
                     name="settings"
                     options={{
                         drawerLabel: 'Settings',
@@ -79,14 +82,18 @@ export default function AuthenticatedLayout() {
                     }}
                 />
             {/*  hidden screens  */}
-                <Drawer.Screen
+                <Stack.Screen
                     name="index"
                     options={{
                         drawerItemStyle: { display: 'none' }
                     }}
                 />
-            </Drawer>
-        </GestureHandlerRootView>
+            </Stack>
+
+            <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
+                <TopNavMenuOverlay />
+            </View>
+        </View>
     );
 }
 

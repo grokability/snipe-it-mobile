@@ -7,15 +7,19 @@ import {GestureHandlerRootView} from "react-native-gesture-handler";
 import {BottomSheetModalProvider} from "@gorhom/bottom-sheet";
 
 import i18n from "@/i18n";
+import {Host} from "@expo/ui/swift-ui";
+import {SafeAreaProvider} from "react-native-safe-area-context";
 
 
 export default function RootLayout() {
 
     return (
         <AuthProvider>
+            <SafeAreaProvider>
                 <GestureHandlerRootView style={{ flex: 1 }}>
-                    <AuthLayoutContent/>
+                        <AuthLayoutContent/>
                 </GestureHandlerRootView>
+            </SafeAreaProvider>
         </AuthProvider>
     )
 
@@ -48,7 +52,9 @@ export default function RootLayout() {
             <BottomSheetModalProvider>
                 <Stack screenOptions={{ headerShown: false }}>
                     {isAuthenticated ? (
-                        <Stack.Screen name="(authenticated)" />
+                        <SafeAreaProvider>
+                            <Stack.Screen name="(authenticated)" />
+                        </SafeAreaProvider>
                     ) : (
                         <Stack.Screen
                             name="login"

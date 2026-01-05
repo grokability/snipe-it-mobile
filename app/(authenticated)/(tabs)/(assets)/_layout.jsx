@@ -1,33 +1,39 @@
 import {Stack} from 'expo-router';
+import BackButtonOverlay from "@/components/BackButtonOverlay";
 
 export default function AssetsLayout() {
     return (
-        <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen
-                name="index"
-                options={{
-                    title: 'Assets',
-                }}
-            />
-            <Stack.Screen
-                name="[id]"
-                options={{
-                    title: 'Asset Details',
-                    headerBackTitle: 'Back',
-                }}
-            />
-            <Stack.Screen
-                name="checkout/[id]"
-                options={{
-                    title: 'Checkout Screen',
-                }}
+        <>
+            <Stack screenOptions={{ headerShown: false }}>
+                <Stack.Screen
+                    name="index"
+                    options={{
+                        title: 'Assets',
+                    }}
                 />
-            <Stack.Screen
-                name="checkin/[id]"
-                options={{
-                    title: 'Checkin Screen',
-                }}
+                <Stack.Screen
+                    name="[id]"
+                    options={{
+                        title: 'Asset Details',
+                        headerBackTitle: 'Back',
+                    }}
                 />
-        </Stack>
+                <Stack.Screen
+                    name="checkout/[id]"
+                    options={{
+                        title: 'Checkout Screen',
+                    }}
+                    />
+                <Stack.Screen
+                    name="checkin/[id]"
+                    options={{
+                        title: 'Checkin Screen',
+                    }}
+                    />
+            </Stack>
+
+            <BackButtonOverlay />
+        </>
+
     );
 }
