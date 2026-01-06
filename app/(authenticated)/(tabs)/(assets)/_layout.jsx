@@ -1,10 +1,19 @@
 import {Stack} from 'expo-router';
-import BackButtonOverlay from "@/components/BackButtonOverlay";
+import TopNavMenu from "@/components/overlays/TopNavMenu";
 
 export default function AssetsLayout() {
     return (
         <>
-            <Stack screenOptions={{ headerShown: false }}>
+            <Stack screenOptions={{
+                headerShown: true,
+                headerTransparent: true,
+                headerShadowVisible: false,
+                headerTitle: '',
+                headerTintColor: '#000',
+                headerRight: () => <TopNavMenu />,
+            }}
+            >
+
                 <Stack.Screen
                     name="index"
                     options={{
@@ -15,24 +24,25 @@ export default function AssetsLayout() {
                     name="[id]"
                     options={{
                         title: 'Asset Details',
-                        headerBackTitle: 'Back',
+                        headerBackTitle: '',
                     }}
                 />
                 <Stack.Screen
                     name="checkout/[id]"
                     options={{
                         title: 'Checkout Screen',
+                        headerBackTitle: '',
                     }}
                     />
                 <Stack.Screen
                     name="checkin/[id]"
                     options={{
                         title: 'Checkin Screen',
+                        headerBackTitle: '',
                     }}
                     />
             </Stack>
 
-            <BackButtonOverlay />
         </>
 
     );

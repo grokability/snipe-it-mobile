@@ -6,7 +6,7 @@ import {Host, ContextMenu, Button} from '@expo/ui/swift-ui';
 
 export default function TopNavMenu() {
     return (
-        <Host style={{ width: 150, height: 50 }}>
+        <Host>
             <ContextMenu>
                 <ContextMenu.Items>
                     <Button
@@ -25,13 +25,6 @@ export default function TopNavMenu() {
                         onPress={() => router.push('/(authenticated)/settings')}>
                         Settings
                     </Button>
-                    {/*<Picker*/}
-                    {/*    label="Doggos"*/}
-                    {/*    options={['very', 'veery', 'veeery', 'much']}*/}
-                    {/*    variant="menu"*/}
-                    {/*    selectedIndex={selectedIndex}*/}
-                    {/*    onOptionSelected={({ nativeEvent: { index } }) => setSelectedIndex(index)}*/}
-                    {/*/>*/}
                 </ContextMenu.Items>
                 <ContextMenu.Trigger>
                              <Pressable
@@ -48,14 +41,26 @@ export default function TopNavMenu() {
 }
 
 const styles = StyleSheet.create({
+    // host: {
+    //     width: 44,
+    //     height: 44,
+    //     justifyContent: 'center',
+    //     alignItems: 'center',
+    // },
     button: {
         width: 40,
-        height: 36,
-        borderRadius: 18,
+        height: 40,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: 'rgba(255,255,255,0.75)',
-        borderWidth: 1,
-        borderColor: 'rgba(0,0,0,0.08)',
+        backgroundColor: 'transparent', // Remove the white circle background
+        // width: 36,
+        // height: 36,
+        // borderRadius: 18,
+        // alignItems: 'center',
+        // justifyContent: 'center',
+        // // backgroundColor: 'rgba(0,0,0,0.05)',
+        // backgroundColor: 'transparent',
+        // borderWidth: 1,
+        // borderColor: 'rgba(0,0,0,0.08)',
     },
 });

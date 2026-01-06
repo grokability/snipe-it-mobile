@@ -4,7 +4,6 @@ import {AuthContext} from "@/context/AuthProvider";
 import {DynamicColorIOS, Platform} from 'react-native';
 import {NativeTabs, Label, Icon, VectorIcon} from "expo-router/unstable-native-tabs";
 
-console.log('TAB LAYOUT MOUNTED')
 export default function TabLayout() {
     const { user } = useContext(AuthContext);
     return (

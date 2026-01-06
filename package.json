@@ -35,6 +35,7 @@
     "expo-router": "~6.0.11",
     "expo-secure-store": "~15.0.7",
     "expo-status-bar": "~3.0.8",
+    "expo-symbols": "~1.0.8",
     "expo-web-browser": "~15.0.8",
     "html-entities": "^2.5.2",
     "i18next": "^25.6.3",
