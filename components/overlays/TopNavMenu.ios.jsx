@@ -6,7 +6,7 @@ import {Host, ContextMenu, Button} from '@expo/ui/swift-ui';
 
 export default function TopNavMenu() {
     return (
-        <Host style={{ width: 150, height: 50 }}>
+        <Host>
             <ContextMenu>
                 <ContextMenu.Items>
                     <Button
@@ -25,21 +25,17 @@ export default function TopNavMenu() {
                         onPress={() => router.push('/(authenticated)/settings')}>
                         Settings
                     </Button>
-                    {/*<Picker*/}
-                    {/*    label="Doggos"*/}
-                    {/*    options={['very', 'veery', 'veeery', 'much']}*/}
-                    {/*    variant="menu"*/}
-                    {/*    selectedIndex={selectedIndex}*/}
-                    {/*    onOptionSelected={({ nativeEvent: { index } }) => setSelectedIndex(index)}*/}
-                    {/*/>*/}
                 </ContextMenu.Items>
                 <ContextMenu.Trigger>
                              <Pressable
                                  accessibilityRole="button"
                                  accessibilityLabel="Open menu"
-                                 style={styles.button}
+                                 style={({ pressed }) => [
+                                     styles.button,
+                                     pressed && {opacity: 0.3}
+                             ]}
                              >
-                                 <Ionicons name="menu" size={20} color="#111" />
+                                 <Ionicons name="menu" size={24} color="#111" />
                              </Pressable>
                 </ContextMenu.Trigger>
             </ContextMenu>
@@ -49,13 +45,10 @@ export default function TopNavMenu() {
 
 const styles = StyleSheet.create({
     button: {
-        width: 40,
-        height: 36,
-        borderRadius: 18,
+        width: 44,
+        height: 44,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: 'rgba(255,255,255,0.75)',
-        borderWidth: 1,
-        borderColor: 'rgba(0,0,0,0.08)',
+        marginRight: -8, //
     },
 });

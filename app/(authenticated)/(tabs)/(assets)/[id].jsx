@@ -107,7 +107,6 @@ export default function AssetScreen() {
                         </View>
                     </View>
                 </View>
-
             </SafeAreaProvider>
         );
 }
