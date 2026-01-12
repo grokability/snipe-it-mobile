@@ -15,6 +15,7 @@ export default function AuthenticatedLayout() {
 
 
     return (
+        // mine
         <View style={{ flex: 1 }}>
             <Stack
                 screenOptions={({ navigation, route }) => {

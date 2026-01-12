@@ -30,9 +30,12 @@ export default function TopNavMenu() {
                              <Pressable
                                  accessibilityRole="button"
                                  accessibilityLabel="Open menu"
-                                 style={styles.button}
+                                 style={({ pressed }) => [
+                                     styles.button,
+                                     pressed && {opacity: 0.3}
+                             ]}
                              >
-                                 <Ionicons name="menu" size={20} color="#111" />
+                                 <Ionicons name="menu" size={24} color="#111" />
                              </Pressable>
                 </ContextMenu.Trigger>
             </ContextMenu>
@@ -41,26 +44,11 @@ export default function TopNavMenu() {
 }
 
 const styles = StyleSheet.create({
-    // host: {
-    //     width: 44,
-    //     height: 44,
-    //     justifyContent: 'center',
-    //     alignItems: 'center',
-    // },
     button: {
-        width: 40,
-        height: 40,
+        width: 44,
+        height: 44,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: 'transparent', // Remove the white circle background
-        // width: 36,
-        // height: 36,
-        // borderRadius: 18,
-        // alignItems: 'center',
-        // justifyContent: 'center',
-        // // backgroundColor: 'rgba(0,0,0,0.05)',
-        // backgroundColor: 'transparent',
-        // borderWidth: 1,
-        // borderColor: 'rgba(0,0,0,0.08)',
+        marginRight: -8, //
     },
 });
