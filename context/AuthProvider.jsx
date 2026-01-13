@@ -37,48 +37,48 @@ export const AuthProvider = ({children}) => {
                 isAuthenticated,
                 isLoading,
                 setUser,
-                login: (username, password, domain) => {
-                    if(!domain) {
-                        console.log('domain is empty');
-                        setIsLoading(false);
-                        return;
-                    }
-                    SecureStore.deleteItemAsync('user');
-                    setUser(null);
-                    setIsAuthenticated(false);
-                    setIsLoading(true);
-                    makeRequest({
-                        domain: domain,
-                        url: '/mobile/login',
-                        method: 'POST',
-                        isAuth: true,
-                        data: {
-                            username: username,
-                            password: password,
-                            device_name: deviceName,
-                        }
-                    }).then(response => {
-                        console.log(response);
-                        const userResponse = {
-                            token: response.token,
-                            token_id: response.token_id,
-                            id: response.user.id,
-                            first_name: response.user.first_name,
-                            last_name: response.user.last_name,
-                            email: response.user.email,
-                        }
-                        setUser(userResponse);
-                        setIsAuthenticated(true);
-                        console.log(isAuthenticated);
-                        SecureStore.setItemAsync('domain', domain);
-                        SecureStore.setItemAsync('user', JSON.stringify(userResponse));
-                        setIsLoading(false);
-                    }).catch(error => {
-                        setUser(null);
-                        setIsAuthenticated(false);
-                        console.error(error);
-                    });
-                },
+                // login: (username, password, domain) => {
+                //     if(!domain) {
+                //         console.log('domain is empty');
+                //         setIsLoading(false);
+                //         return;
+                //     }
+                //     SecureStore.deleteItemAsync('user');
+                //     setUser(null);
+                //     setIsAuthenticated(false);
+                //     setIsLoading(true);
+                //     makeRequest({
+                //         domain: domain,
+                //         url: '/mobile/login',
+                //         method: 'POST',
+                //         isAuth: true,
+                //         data: {
+                //             username: username,
+                //             password: password,
+                //             device_name: deviceName,
+                //         }
+                //     }).then(response => {
+                //         console.log(response);
+                //         const userResponse = {
+                //             token: response.token,
+                //             token_id: response.token_id,
+                //             id: response.user.id,
+                //             first_name: response.user.first_name,
+                //             last_name: response.user.last_name,
+                //             email: response.user.email,
+                //         }
+                //         setUser(userResponse);
+                //         setIsAuthenticated(true);
+                //         console.log(isAuthenticated);
+                //         SecureStore.setItemAsync('domain', domain);
+                //         SecureStore.setItemAsync('user', JSON.stringify(userResponse));
+                //         setIsLoading(false);
+                //     }).catch(error => {
+                //         setUser(null);
+                //         setIsAuthenticated(false);
+                //         console.error(error);
+                //     });
+                // },
                 logout: () => {
                     // commenting out most of this to do a regular bearer token logout of the mobile app
                     // this means the token is NOT invalidated when logging out for now.
@@ -103,78 +103,125 @@ export const AuthProvider = ({children}) => {
                     //     console.error(error);
                     // });
                 },
-                bearerLogin: (domain, token) => {
-                    setIsLoading(true);
-                    if (!token) {
-                        console.log('token is empty');
-                    }
-                    if (!domain) {
-                        console.log('domain is empty');
-                    }
-                    makeRequest({
-                        domain: domain,
-                        url: 'users/me',
-                        method: 'GET',
-                        isAuth: false, // if true this strips `api/v1` i think
-                        headers: { 'Authorization': `Bearer ${token}` }
-                    })
-                        .then(response => {
-                            console.log(response);
-                            setIsAuthenticated(true);
-                            SecureStore.setItemAsync('domain', domain);
-                            const userResponse = {
-                                token: token,
-                                id: response.id,
-                                first_name: response.first_name,
-                                last_name: response.last_name,
-                                email: response.email,
-                                permissions: response.permissions,
-                            }
-                            setUser(userResponse);
-                            SecureStore.setItemAsync('user', JSON.stringify(userResponse));
-                            AsyncStorage.setItem('locale', response.locale || 'en-US')
-                            setIsLoading(false);
-                        })
-                        .catch(error => {
-                            setUser(null);
-                            setIsAuthenticated(false);
-                            console.error(error);
-                            console.error(error.message);
-                        });
-                },
-                oAuthLogin: (domain, code) => {
+                // bearerLogin: (domain, token) => {
+                //     setIsLoading(true);
+                //     if (!token) {
+                //         console.log('token is empty');
+                //     }
+                //     if (!domain) {
+                //         console.log('domain is empty');
+                //     }
+                //     makeRequest({
+                //         domain: domain,
+                //         url: 'users/me',
+                //         method: 'GET',
+                //         isAuth: false, // if true this strips `api/v1` i think
+                //         headers: { 'Authorization': `Bearer ${token}` }
+                //     })
+                //         .then(response => {
+                //             console.log(response);
+                //             setIsAuthenticated(true);
+                //             SecureStore.setItemAsync('domain', domain);
+                //             const userResponse = {
+                //                 token: token,
+                //                 id: response.id,
+                //                 first_name: response.first_name,
+                //                 last_name: response.last_name,
+                //                 email: response.email,
+                //                 permissions: response.permissions,
+                //             }
+                //             setUser(userResponse);
+                //             SecureStore.setItemAsync('user', JSON.stringify(userResponse));
+                //             AsyncStorage.setItem('locale', response.locale || 'en-US')
+                //             setIsLoading(false);
+                //         })
+                //         .catch(error => {
+                //             setUser(null);
+                //             setIsAuthenticated(false);
+                //             console.error(error);
+                //             console.error(error.message);
+                //         });
+                // },
+                oAuthLogin: (domain, code, codeVerifier) => {
                    setIsLoading(true);
                    if (!code) {
                        console.log('code is empty');
                    }
+                   console.log('code:', code);
                    if (!domain) {
                        console.log('domain is empty');
                    }
-                   makeRequest({
-                       domain: domain,
-                       isAuth: true,
-                       url: '/oauth/token',
-                       method: 'POST',
-                       data: {
-                           client_id: '34',
-                           usePKCE: true,
-                           grant_type: 'authorization_code',
-                           code: code,
-                           redirect_uri: 'com.grokability.snipeitmobile://home',
-                       }
-                   })
-                    .then(response => {
-                        console.log(response);
-                        setIsAuthenticated(true);
-                        SecureStore.setItemAsync('domain', domain);
-                        const userResponse = {
-                            token: response.access_token,
-                            token_id: response.token_id,
-                            id: response.user.id,
-                            first_name: response.user.first_name,
-                            last_name: response.user.last_name,
-                        }
+                    const params = new URLSearchParams();
+                    params.append('grant_type', 'authorization_code');
+                    params.append('client_id', '39');
+                    params.append('code', code);
+                    params.append('code_verifier', codeVerifier);
+                    params.append('redirect_uri', 'com.grokability.snipeitmobile://home');
+                   // makeRequest({
+                   //     domain: domain,
+                   //     isAuth: true,
+                   //     url: '/oauth/token',
+                   //     method: 'POST',
+                   //     data: {
+                   //         client_id: '34',
+                   //         grant_type: 'authorization_code',
+                   //         code: code,
+                   //         code_verifier: codeVerifier,
+                   //         redirect_uri: 'com.grokability.snipeitmobile://home',
+                   //     }
+                   // })
+                    makeRequest({
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'Accept': 'application/json'
+                        },
+                        domain: domain,
+                        isAuth: true,
+                        url: '/oauth/token',
+                        method: 'POST',
+                        data: params,
                     })
+                    .then(async response => {
+                        const accessToken = response.access_token;
+
+                        // 1. Fetch user details using the new token
+                        const userData = await makeRequest({
+                            domain: domain,
+                            url: '/users/me', // or your specific 'me' endpoint
+                            method: 'GET',
+                            isAuth: false,
+                            headers: {'Authorization': `Bearer ${accessToken}`}
+                        });
+
+                        // 2. Format the user object for your app state
+                        const userResponse = {
+                            token: accessToken,
+                            id: userData.id,
+                            first_name: userData.first_name,
+                            last_name: userData.last_name,
+                            email: userData.email,
+                            // add other fields as needed
+                        };
+
+                        // 3. Persist and Update State
+                        await SecureStore.setItemAsync('domain', domain);
+                        await SecureStore.setItemAsync('user', JSON.stringify(userResponse));
+
+                        setUser(userResponse);
+                        setIsAuthenticated(true);
+                    })
+                   .catch(error => {
+                       if (error.response && error.response.data) {
+                           console.log('Server Error Data:', JSON.stringify(error.response.data, null, 2));
+                       }
+                       console.log(error);
+                       // setUser(null);
+                       // setIsAuthenticated(false);
+                       // console.error(error);
+                   })
+                   .finally(() => {
+                       setIsLoading(false);
+                   });
                 }
             }}
         >

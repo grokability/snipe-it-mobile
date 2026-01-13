@@ -32,7 +32,7 @@ const BrowserLoginButton = ({ domain }) => {
             prompt: 'login',
             usePKCE: true,
             responseType: 'code',
-            clientId: 34,
+            clientId: '39',
             redirectUri: 'com.grokability.snipeitmobile://home'
         },
         discovery
@@ -42,7 +42,7 @@ const BrowserLoginButton = ({ domain }) => {
         if (response?.type === 'success') {
             const { code } = response.params;
             console.log(response)
-            oAuthLogin(domain, code);
+            oAuthLogin(domain, code, request.codeVerifier);
         }
     }, [response]);
 
