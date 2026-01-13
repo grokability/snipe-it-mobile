@@ -142,6 +142,40 @@ export const AuthProvider = ({children}) => {
                             console.error(error.message);
                         });
                 },
+                oAuthLogin: (domain, code) => {
+                   setIsLoading(true);
+                   if (!code) {
+                       console.log('code is empty');
+                   }
+                   if (!domain) {
+                       console.log('domain is empty');
+                   }
+                   makeRequest({
+                       domain: domain,
+                       isAuth: true,
+                       url: '/oauth/token',
+                       method: 'POST',
+                       data: {
+                           client_id: '34',
+                           usePKCE: true,
+                           grant_type: 'authorization_code',
+                           code: code,
+                           redirect_uri: 'com.grokability.snipeitmobile://home',
+                       }
+                   })
+                    .then(response => {
+                        console.log(response);
+                        setIsAuthenticated(true);
+                        SecureStore.setItemAsync('domain', domain);
+                        const userResponse = {
+                            token: response.access_token,
+                            token_id: response.token_id,
+                            id: response.user.id,
+                            first_name: response.user.first_name,
+                            last_name: response.user.last_name,
+                        }
+                    })
+                }
             }}
         >
             {children}

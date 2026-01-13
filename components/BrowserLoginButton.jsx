@@ -1,45 +1,32 @@
-// import React, { useState } from 'react';
-// import { Button, Text } from 'react-native';
-// import * as WebBrowser from "expo-web-browser";
-//
-// const BrowserLoginButton = ({ domain }) => {
-//     const [result, setResult] = useState(null);
-//
-//     const handleBrowserOpen = async () => {
-//         console.log('open browser');
-//         let result = await WebBrowser.openAuthSessionAsync(
-//             domain + '/login?client=Snipe-IT-Mobile',
-//             'com.grokability.snipeitmobile://**'
-//         );
-//         setResult(result);
-//     };
-//
-//     return (
-//         <>
-//             <Button title="Open SnipeLogin" onPress={handleBrowserOpen} />
-//             <Text>{result && JSON.stringify(result)}</Text>
-//         </>
-//     );
-// };
-//
-// export default BrowserLoginButton;
-import { useEffect } from 'react';
+import {useContext, useEffect} from 'react';
 import * as WebBrowser from 'expo-web-browser';
 import { makeRedirectUri, useAuthRequest } from 'expo-auth-session';
 import { Button } from 'react-native';
+import {AuthContext, useAuth} from "@/context/AuthProvider";
 
 WebBrowser.maybeCompleteAuthSession();
 
 // Endpoint
-const discovery = {
-    authorizationEndpoint: 'https://snipe.ngrok.dev' + '/oauth/authorize',
-    tokenEndpoint: 'https://snipe.ngrok.dev' + '/oauth/token', //maybe change this to /oauth/token/refresh ?? // probably not, that probably goes in AuthProvider
-    revocationEndpoint: 'https://snipe.ngrok.dev' + '/oauth/revoke' //+ id, //will have to get the id back later
-
-    // revocationEndpoint: 'https://github.com/settings/connections/applications/<CLIENT_ID>',
-};
+// const discovery = {
+//     authorizationEndpoint: 'https://snipe.ngrok.dev' + '/oauth/authorize',
+//     tokenEndpoint: 'https://snipe.ngrok.dev' + '/oauth/token', //maybe change this to /oauth/token/refresh ?? // probably not, that probably goes in AuthProvider
+//     revocationEndpoint: 'https://snipe.ngrok.dev' + '/oauth/revoke' //+ id, //will have to get the id back later
+//
+//     // revocationEndpoint: 'https://github.com/settings/connections/applications/<CLIENT_ID>',
+// };
 
 const BrowserLoginButton = ({ domain }) => {
+    const { login, bearerLogin, oAuthLogin } = useContext(AuthContext);
+    // Endpoint
+    const discovery = {
+        authorizationEndpoint: domain + '/oauth/authorize',
+        tokenEndpoint: domain + '/oauth/token', //maybe change this to /oauth/token/refresh ?? // probably not, that probably goes in AuthProvider
+        revocationEndpoint: domain + '/oauth/revoke' //+ id, //will have to get the id back later
+
+        // revocationEndpoint: 'https://github.com/settings/connections/applications/<CLIENT_ID>',
+    };
+
+
     const [request, response, promptAsync] = useAuthRequest(
         {
             prompt: 'login',
@@ -55,13 +42,14 @@ const BrowserLoginButton = ({ domain }) => {
         if (response?.type === 'success') {
             const { code } = response.params;
             console.log(response)
+            oAuthLogin(domain, code);
         }
     }, [response]);
 
     return (
         <Button
             disabled={!request}
-            title="Web Login"
+            title="Login"
             onPress={() => {
                 promptAsync();
             }}

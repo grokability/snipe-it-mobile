@@ -19,11 +19,11 @@ export default function LoginScreen() {
         <View style={styles.container}>
             <Text style={styles.title}>Login Screen</Text>
             {/* for login via bearer token */}
-            <BearerTokenLogin onLogin={bearerLogin} onDomainChange={handleDomainChange} />
+            {/*<BearerTokenLogin onLogin={bearerLogin} onDomainChange={handleDomainChange} />*/}
             {/* original form for login */}
-            {/*<LoginForm onLogin={login} onDomainChange={handleDomainChange} />*/}
+            <LoginForm onLogin={login} onDomainChange={handleDomainChange} />
             {/* for oauth flow */}
-            {/*<BrowserLoginButton domain={domain} />*/}
+
         </View>
     );
 }
