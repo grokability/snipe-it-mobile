@@ -11,7 +11,7 @@ export default function TopNavMenu() {
     return (
         <ContextMenu>
             <ContextMenu.Trigger>
-                <Button variant="transparent" leadingIcon={"filled.MoreVert"}> </Button>
+                <Button variant={'default'} leadingIcon={"filled.MoreVert"}> </Button>
             </ContextMenu.Trigger>
             <ContextMenu.Items>
                 <Button

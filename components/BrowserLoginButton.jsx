@@ -16,7 +16,7 @@ WebBrowser.maybeCompleteAuthSession();
 // };
 
 const BrowserLoginButton = ({ domain }) => {
-    const { login, bearerLogin, oAuthLogin } = useContext(AuthContext);
+    const { oAuthLogin } = useContext(AuthContext);
     // Endpoint
     const discovery = {
         authorizationEndpoint: domain + '/oauth/authorize',
@@ -26,33 +26,64 @@ const BrowserLoginButton = ({ domain }) => {
         // revocationEndpoint: 'https://github.com/settings/connections/applications/<CLIENT_ID>',
     };
 
+    const redirectUri = makeRedirectUri({
+        native: 'com.grokability.snipeitmobile://home'
+    })
 
     const [request, response, promptAsync] = useAuthRequest(
         {
             prompt: 'login',
             usePKCE: true,
             responseType: 'code',
-            clientId: '39',
-            redirectUri: 'com.grokability.snipeitmobile://home'
+            clientId: '9999',
+            redirectUri: redirectUri
         },
         discovery
     );
 
-    useEffect(() => {
-        if (response?.type === 'success') {
-            const { code } = response.params;
-            console.log(response)
+    const handleLogin = async () => {
+
+
+        const result = await promptAsync()
+
+        console.log("manual prompt", result);
+
+        if (result?.type === 'success') {
+            const { code } = result.params;
+            console.log("success result", result)
             oAuthLogin(domain, code, request.codeVerifier);
         }
-    }, [response]);
+    }
+
+    // const redirectUri = makeRedirectUri({
+    //     scheme: 'com.grokability.snipeitmobile',
+    //     path: 'home',
+    // })
+
+
+
+    // console.log("generated redirect uri", redirectUri);
+
+
+
+
+    // useEffect(() => {
+    //     console.log(response);
+    //     if (response?.type === 'success') {
+    //         const { code } = response.params;
+    //         console.log(response)
+    //         oAuthLogin(domain, code, request.codeVerifier);
+    //     }
+    // }, [response]);
 
     return (
         <Button
             disabled={!request}
             title="Login"
-            onPress={() => {
-                promptAsync();
-            }}
+            // onPress={() => {
+            //     promptAsync();
+            // }}
+            onPress={handleLogin}
         />
     );
 }

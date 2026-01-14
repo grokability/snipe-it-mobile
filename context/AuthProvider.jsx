@@ -4,6 +4,7 @@ import * as SecureStore from 'expo-secure-store';
 import { deviceName } from "expo-device";
 import {useRouter} from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import {makeRedirectUri} from "expo-auth-session";
 
 export const AuthContext = createContext();
 
@@ -61,6 +62,7 @@ export const AuthProvider = ({children}) => {
                     // });
                 },
                 oAuthLogin: (domain, code, codeVerifier) => {
+                    console.log('oAuthLogin');
                    setIsLoading(true);
                    if (!code) {
                        console.log('code is empty');
@@ -69,13 +71,17 @@ export const AuthProvider = ({children}) => {
                    if (!domain) {
                        console.log('domain is empty');
                    }
+                   const redirectUri = makeRedirectUri({
+                       scheme: 'com.grokability.snipeitmobile',
+                       path: 'home',
+                   })
                    // set up url encoding
                     const params = new URLSearchParams();
                     params.append('grant_type', 'authorization_code');
-                    params.append('client_id', '39');
+                    params.append('client_id', '9999');
                     params.append('code', code);
                     params.append('code_verifier', codeVerifier);
-                    params.append('redirect_uri', 'com.grokability.snipeitmobile://home');
+                    params.append('redirect_uri', redirectUri);
                     params.append('name', deviceName); // hm, this isn't working.
                     console.log('params:', params);
 
@@ -91,6 +97,7 @@ export const AuthProvider = ({children}) => {
                         method: 'POST',
                         data: params,
                     })
+                    // take response and set up the user object
                     .then(async response => {
                         const accessToken = response.access_token;
 
@@ -109,6 +116,7 @@ export const AuthProvider = ({children}) => {
                             first_name: userData.first_name,
                             last_name: userData.last_name,
                             email: userData.email,
+                            permissions: userData.permissions,
                         };
 
                         await SecureStore.setItemAsync('domain', domain);
@@ -116,6 +124,7 @@ export const AuthProvider = ({children}) => {
 
                         setUser(userResponse);
                         setIsAuthenticated(true);
+                        console.log('user:', userResponse);
                     })
                    .catch(error => {
                        if (error.response && error.response.data) {
@@ -127,6 +136,7 @@ export const AuthProvider = ({children}) => {
                    })
                    .finally(() => {
                        setIsLoading(false);
+                       router.replace('/home');
                    });
                 }
             }}
