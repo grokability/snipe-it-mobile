@@ -26,7 +26,7 @@ const BrowserLoginButton = ({ domain }) => {
             clientId: '9999',
             redirectUri: redirectUri,
             extraParams: {
-                mobile: true,
+                client: 'snipe-it-mobile',
             }
         },
         discovery
