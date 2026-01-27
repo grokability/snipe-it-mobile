@@ -61,6 +61,46 @@ export const AuthProvider = ({children}) => {
                     //     console.error(error);
                     // });
                 },
+                // leaving this here for now, may serve as a backup login method
+                bearerLogin: (domain, token) => {
+                    setIsLoading(true);
+                    if (!token) {
+                        console.log('token is empty');
+                    }
+                    if (!domain) {
+                        console.log('domain is empty');
+                    }
+                    makeRequest({
+                        domain: domain,
+                        url: 'users/me',
+                        method: 'GET',
+                        isAuth: false, // if true this strips `api/v1` i think
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    })
+                        .then(response => {
+                            console.log(response);
+                            setIsAuthenticated(true);
+                            SecureStore.setItemAsync('domain', domain);
+                            const userResponse = {
+                                token: token,
+                                id: response.id,
+                                first_name: response.first_name,
+                                last_name: response.last_name,
+                                email: response.email,
+                                permissions: response.permissions,
+                            }
+                            setUser(userResponse);
+                            SecureStore.setItemAsync('user', JSON.stringify(userResponse));
+                            AsyncStorage.setItem('locale', response.locale || 'en-US')
+                            setIsLoading(false);
+                        })
+                        .catch(error => {
+                            setUser(null);
+                            setIsAuthenticated(false);
+                            console.error(error);
+                            console.error(error.message);
+                        });
+                },
                 oAuthLogin: (domain, code, codeVerifier) => {
                     console.log('oAuthLogin');
                    setIsLoading(true);
