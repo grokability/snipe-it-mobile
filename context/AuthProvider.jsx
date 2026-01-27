@@ -4,6 +4,7 @@ import * as SecureStore from 'expo-secure-store';
 import { deviceName } from "expo-device";
 import {useRouter} from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import {makeRedirectUri} from "expo-auth-session";
 
 export const AuthContext = createContext();
 
@@ -37,52 +38,10 @@ export const AuthProvider = ({children}) => {
                 isAuthenticated,
                 isLoading,
                 setUser,
-                login: (username, password, domain) => {
-                    if(!domain) {
-                        console.log('domain is empty');
-                        setIsLoading(false);
-                        return;
-                    }
-                    SecureStore.deleteItemAsync('user');
-                    setUser(null);
-                    setIsAuthenticated(false);
-                    setIsLoading(true);
-                    makeRequest({
-                        domain: domain,
-                        url: '/mobile/login',
-                        method: 'POST',
-                        isAuth: true,
-                        data: {
-                            username: username,
-                            password: password,
-                            device_name: deviceName,
-                        }
-                    }).then(response => {
-                        console.log(response);
-                        const userResponse = {
-                            token: response.token,
-                            token_id: response.token_id,
-                            id: response.user.id,
-                            first_name: response.user.first_name,
-                            last_name: response.user.last_name,
-                            email: response.user.email,
-                        }
-                        setUser(userResponse);
-                        setIsAuthenticated(true);
-                        console.log(isAuthenticated);
-                        SecureStore.setItemAsync('domain', domain);
-                        SecureStore.setItemAsync('user', JSON.stringify(userResponse));
-                        setIsLoading(false);
-                    }).catch(error => {
-                        setUser(null);
-                        setIsAuthenticated(false);
-                        console.error(error);
-                    });
-                },
                 logout: () => {
                     // commenting out most of this to do a regular bearer token logout of the mobile app
                     // this means the token is NOT invalidated when logging out for now.
-                    // console.log('logout');
+                    console.log('logout');
                     // return makeRequest({
                     //     url: '/mobile/logout',
                     //     method: 'POST',
@@ -93,7 +52,6 @@ export const AuthProvider = ({children}) => {
                     //     headers: { 'Authorization': `Bearer ${user.token}` }
                     // }).then(response => {
                     //     console.log('logout response');
-                    // THIS IS ALL THAT HAPPENS AT LOGOUT
                         SecureStore.deleteItemAsync('user');
                         setUser(null);
                         setIsAuthenticated(false);
@@ -103,6 +61,7 @@ export const AuthProvider = ({children}) => {
                     //     console.error(error);
                     // });
                 },
+                // leaving this here for now, may serve as a backup login method
                 bearerLogin: (domain, token) => {
                     setIsLoading(true);
                     if (!token) {
@@ -142,6 +101,84 @@ export const AuthProvider = ({children}) => {
                             console.error(error.message);
                         });
                 },
+                oAuthLogin: (domain, code, codeVerifier) => {
+                    console.log('oAuthLogin');
+                   setIsLoading(true);
+                   if (!code) {
+                       console.log('code is empty');
+                   }
+                   console.log('code:', code);
+                   if (!domain) {
+                       console.log('domain is empty');
+                   }
+                   const redirectUri = makeRedirectUri({
+                       scheme: 'com.grokability.snipeitmobile',
+                       path: 'home',
+                   })
+                   // set up url encoding
+                    const params = new URLSearchParams();
+                    params.append('grant_type', 'authorization_code');
+                    params.append('client_id', '9999');
+                    params.append('code', code);
+                    params.append('code_verifier', codeVerifier);
+                    params.append('redirect_uri', redirectUri);
+                    params.append('name', deviceName); // hm, this isn't working.
+                    console.log('params:', params);
+
+                    // make the actual token request
+                    makeRequest({
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'Accept': 'application/json'
+                        },
+                        domain: domain,
+                        isAuth: true,
+                        url: '/oauth/token',
+                        method: 'POST',
+                        data: params,
+                    })
+                    // take response and set up the user object
+                    .then(async response => {
+                        const accessToken = response.access_token;
+
+                        const userData = await makeRequest({
+                            domain: domain,
+                            url: '/users/me',
+                            method: 'GET',
+                            isAuth: false,
+                            headers: {'Authorization': `Bearer ${accessToken}`} // i think we might be able to use `state` now instead?
+                        });
+
+                        const userResponse = {
+                            token: accessToken,
+                            token_id: response.id,
+                            id: userData.id,
+                            first_name: userData.first_name,
+                            last_name: userData.last_name,
+                            email: userData.email,
+                            permissions: userData.permissions,
+                        };
+
+                        await SecureStore.setItemAsync('domain', domain);
+                        await SecureStore.setItemAsync('user', JSON.stringify(userResponse));
+
+                        setUser(userResponse);
+                        setIsAuthenticated(true);
+                        console.log('user:', userResponse);
+                    })
+                   .catch(error => {
+                       if (error.response && error.response.data) {
+                           console.log('Server Error Data:', JSON.stringify(error.response.data, null, 2));
+                       }
+                       console.log(error);
+                       setUser(null);
+                       setIsAuthenticated(false);
+                   })
+                   .finally(() => {
+                       setIsLoading(false);
+                       router.replace('/home');
+                   });
+                }
             }}
         >
             {children}

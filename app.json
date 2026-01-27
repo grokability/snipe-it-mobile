@@ -50,7 +50,17 @@
         "android.permission.CAMERA",
         "android.permission.RECORD_AUDIO"
       ],
-      "package": "com.grokability.snipeitmobile"
+      "package": "com.grokability.snipeitmobile",
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "category": ["BROWSABLE", "DEFAULT"],
+          "data": {
+            "scheme": "com.grokability.snipeitmobile",
+            "host": "home"
+          }
+        }
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
