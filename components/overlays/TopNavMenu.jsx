@@ -1,17 +1,14 @@
 import React from 'react';
-import {Pressable, StyleSheet, Text, View} from 'react-native';
+import {StyleSheet, View} from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import {ContextMenu, Picker, Button, Trigger, Submenu, Switch} from '@expo/ui/jetpack-compose';
+import {ContextMenu, Button} from '@expo/ui/jetpack-compose';
 
 export default function TopNavMenu() {
-
-    const [selectedIndex, setSelectedIndex] = React.useState(0);
-
     return (
         <ContextMenu>
             <ContextMenu.Trigger>
-                <Button variant={'default'} leadingIcon={"filled.MoreVert"}> </Button>
+                <Button variant={'default'} systemImage={"filled.MoreVert"} />
             </ContextMenu.Trigger>
             <ContextMenu.Items>
                 <Button
@@ -36,14 +33,12 @@ export default function TopNavMenu() {
 
 const styles = StyleSheet.create({
     button: {
-        width: 40,
-        height: 36,
-        borderRadius: 18,
+        width: 44,
+        height: 44,
+        borderRadius: 22,
         alignItems: 'center',
         justifyContent: 'center',
-        // backgroundColor: 'rgba(255,255,255,0.75)',
-        backgroundColor: 'red',
-        borderWidth: 1,
-        borderColor: 'red',
+        backgroundColor: '#fff',
+        elevation: 2,
     },
 });
