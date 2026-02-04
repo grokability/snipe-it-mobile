@@ -27,7 +27,8 @@
           "experimentalLauncherActivity": true
         }
       ],
-      "expo-font"
+      "expo-font",
+      "lottie-react-native"
     ],
     "splash": {
       "image": "./assets/splash-icon.png",
