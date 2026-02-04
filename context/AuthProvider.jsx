@@ -88,17 +88,19 @@ export const AuthProvider = ({children}) => {
                                 last_name: response.last_name,
                                 email: response.email,
                                 permissions: response.permissions,
-                            }
+                            };
                             setUser(userResponse);
                             SecureStore.setItemAsync('user', JSON.stringify(userResponse));
-                            AsyncStorage.setItem('locale', response.locale || 'en-US')
-                            setIsLoading(false);
+                            AsyncStorage.setItem('locale', response.locale || 'en-US');
                         })
                         .catch(error => {
                             setUser(null);
                             setIsAuthenticated(false);
                             console.error(error);
                             console.error(error.message);
+                        })
+                        .finally(() => {
+                            setIsLoading(false);
                         });
                 },
                 oAuthLogin: (domain, code, codeVerifier) => {

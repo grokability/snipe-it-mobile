@@ -11,20 +11,21 @@ export default function CheckoutScreen() {
     const { id } = useLocalSearchParams();
 
     function checkin() {
+        console.log('checkin');
         makeRequest({
             url: `/hardware/${id}/checkin`,
             method: 'POST',
-            headers: { 'Authorization': `Bearer ${user.token}` },
             data: {
                 status_id: 1,
             }
-        }).then(res => {
-            console.log(res);
-            router.replace(`/(tabs)/(assets)/${id}`)
-        }).catch(err => {
-            console.log(err);
         })
-        console.log('checkout');
+            .then(res => {
+                console.log(res);
+                router.replace(`/(tabs)/(assets)/${id}`)
+            })
+            .catch(err => {
+                console.log(err);
+            });
     }
 
     return (

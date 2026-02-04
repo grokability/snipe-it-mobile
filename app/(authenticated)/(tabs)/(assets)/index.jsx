@@ -16,51 +16,47 @@ export default function AssetsScreen() {
 
     const [offset, setOffset] = useState(0);
 
-    const onRefresh = useCallback(async() => {
-            setRefreshing(true);
-        try {
-            await getAssets();
-        } finally {
-            setRefreshing(false);
-        }
-    }, [loading]);
-
-    useFocusEffect(
-        useCallback(() => {
-            setLoading(true);
-            async function fetchData() {
-                await getAssets();
-            }
-            fetchData();
-        }, [])
-    )
-
-    const getAssets = async () => {
+    const getAssets = useCallback(() => {
         setLoading(true);
-        makeRequest({
+        return makeRequest({
             url: '/hardware?' +
                 'limit=25&' +
                 `offset=${offset}&` +
                 'sort=created_at&' +
-                'order=asc', //this will turn into a builder function
-            // to build up the query string
-            method: 'get',
-            headers: {'Authorization': `Bearer ${user.token}`}
-        }).then((res) => {
-            setData((existingItems) => {
-                return [...existingItems, ...res.rows]
-            });
-        }).catch(err => {
-            console.log(err);
-            setLoading(false);
+                'order=asc',
+            method: 'get'
         })
-        setLoading(false);
-    }
+            .then((res) => {
+                setData((existingItems) => {
+                    return [...existingItems, ...res.rows]
+                });
+            })
+            .catch(err => {
+                console.log(err);
+            })
+            .finally(() => {
+                setLoading(false);
+            });
+    }, [offset]);
 
-    const loadMore = async () => {
+    useFocusEffect(
+        useCallback(() => {
+            getAssets();
+        }, [getAssets])
+    );
+
+    const onRefresh = useCallback(() => {
+        setRefreshing(true);
+        getAssets()
+            .finally(() => {
+                setRefreshing(false);
+            });
+    }, [getAssets]);
+
+    const loadMore = () => {
         if (loading) return;
         setOffset(offset + 25);
-        await getAssets();
+        getAssets();
     }
 
     const Item = ({id, asset_tag, name, serial, image, checkedOut, status}) => (

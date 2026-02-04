@@ -61,33 +61,19 @@ export default function CheckoutScreen() {
 
     function checkout() {
         if (!selectedStatus && (!selectedUser || !selectedLocation || !selectedAsset)) {
-            // frontend "validation"
-            // console.error('Validation error: status and user are required');
-            // some background color issues with this
-            // Burnt.toast({
-            //     title: "Error", // required
-            //     preset: "error", // or "error", "none", "custom"
-            //     message: "", // optional
-            //     haptic: "none", // or "success", "warning", "error"
-            //     duration: 2, // duration in seconds
-            //     shouldDismissByDrag: true,
-            //     from: "top", // "top" or "bottom"
-            // })
             Burnt.alert({
-                title: "Error", // required
-                preset: "error", // or "error", "heart", "custom"
-                message: "Status and User|Location|Asset are Required", // optional
-                duration: 2, // duration in seconds
+                title: "Error",
+                preset: "error",
+                message: "Status and User|Location|Asset are Required",
+                duration: 2,
             })
             return;
         }
-        // console.log(selectedLocation);
-        // return;
+
         console.log('checkout');
         makeRequest({
             url: `/hardware/${id}/checkout`,
             method: 'POST',
-            headers: { 'Authorization': `Bearer ${user.token}` },
             data: {
                 name: assetName,
                 checkout_to_type: selectedCheckoutTo,
@@ -99,31 +85,30 @@ export default function CheckoutScreen() {
                 expected_checkin: expectedCheckinDate,
                 note: 'mobile app checkout: ' + notes,
             }
-        }).then(res => {
-            if(res.status === 'error') {
-
-               setError(res);
-               console.log(res);
-               // console.error(error);
-               console.log('validation error');
-               Burnt.alert({
-                   title: "Error", // required
-                   preset: "error", // or "error", "heart", "custom"
-                   message: res.messages.assigned_asset[0], // optional
-                   duration: 4, // duration in seconds
-               })
-                return;
-            }
-            Burnt.alert({
-                title: "Success!",
-                preset: "heart",
-                duration: 4
-            })
-            router.replace(`/(tabs)/(assets)/${id}`)
-        }).catch(err => {
-            console.log(err);
         })
-        console.log('checkout');
+            .then(res => {
+                if(res.status === 'error') {
+                   setError(res);
+                   console.log(res);
+                   console.log('validation error');
+                   Burnt.alert({
+                       title: "Error",
+                       preset: "error",
+                       message: res.messages?.assigned_asset?.[0] || 'Checkout failed',
+                       duration: 4,
+                   })
+                    return;
+                }
+                Burnt.alert({
+                    title: "Success!",
+                    preset: "heart",
+                    duration: 4
+                })
+                router.replace(`/(tabs)/(assets)/${id}`)
+            })
+            .catch(err => {
+                console.log(err);
+            });
     }
 
     return (

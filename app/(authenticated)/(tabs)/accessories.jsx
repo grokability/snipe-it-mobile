@@ -10,18 +10,37 @@ export default function AccessoriesScreen() {
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
 
-    const onRefresh = useCallback(() => {
-        if(loading) {
-            setRefreshing(true);
-        }
-       getAccessories();
-        setRefreshing(false);
-    }, [getAccessories, loading]);
+    const getAccessories = useCallback(() => {
+        setLoading(true);
+        return makeRequest({
+            method: 'get',
+            url: '/accessories'
+        })
+            .then(res => {
+                setData({
+                    accessories: res.rows,
+                    count: res.total
+                });
+            })
+            .catch(err => {
+                console.log(err);
+            })
+            .finally(() => {
+                setLoading(false);
+            });
+    }, []);
 
+    const onRefresh = useCallback(() => {
+        setRefreshing(true);
+        getAccessories()
+            .finally(() => {
+                setRefreshing(false);
+            });
+    }, [getAccessories]);
 
     useEffect(() => {
         getAccessories();
-    }, [loading]);
+    }, []);
 
     const Item = ({image, name, qty}) => (
         <View style={{padding: 10, marginVertical: 8, backgroundColor: '#eee', borderRadius: 8, flexDirection: 'row', flexWrap: 'wrap', gap: 10}}>
@@ -30,22 +49,6 @@ export default function AccessoriesScreen() {
             <Text style={styles.name}>Qty: {qty}</Text>
         </View>
     );
-
-    function getAccessories() {
-        makeRequest({
-            method: 'get',
-            url: '/accessories',
-            headers: { 'Authorization': `Bearer ${user.token}` }
-        }).then(res => {
-            setData({
-                accessories: res.rows,
-                count: res.total
-            });
-            setLoading(false);
-        }).catch(err => {
-            console.log(err);
-        });
-    }
 
 
 
