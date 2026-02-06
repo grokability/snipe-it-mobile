@@ -19,13 +19,30 @@ export default function AssetScreen() {
     const { user } = useContext(AuthContext);
     const { id } = useLocalSearchParams();
 
+    const getAsset = useCallback(() => {
+        setLoading(true);
+        makeRequest({
+            url: `/hardware/${id}`,
+            method: 'get'
+        })
+            .then(res => {
+                setData({
+                    asset: res,
+                });
+            })
+            .catch(err => {
+                console.log(err);
+            })
+            .finally(() => {
+                setLoading(false);
+            });
+    }, [id]);
+
     useFocusEffect(
         useCallback(() => {
-            setLoading(true);
-                getAsset();
-            setLoading(false);
-        }, [])
-    )
+            getAsset();
+        }, [getAsset])
+    );
 
     const DetailRow = ({label, value}) => {
         return (
@@ -34,22 +51,6 @@ export default function AssetScreen() {
                 <Text style={styles.detailValue}>{value}</Text>
             </View>
         )
-    }
-
-    function getAsset() {
-        makeRequest({
-            url: `/hardware/${id}`,
-            method: 'get',
-            headers: { 'Authorization': `Bearer ${user.token}` }
-        }).then(res => {
-            setData({asset: res})
-            setData({
-                asset: res,
-            });
-            setLoading(false);
-        }).catch(err => {
-            console.log(err);
-        });
     }
 
     if(loading) {

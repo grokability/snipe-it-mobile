@@ -24,6 +24,7 @@ export default function TabLayout() {
                     dark: 'purple',
                     light: 'purple',
                 })}
+                labelVisibilityMode="labeled"
             >
                 <NativeTabs.Trigger name="home">
                     <Label>Home</Label>

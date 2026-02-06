@@ -10,43 +10,42 @@ const RecentActions = () => {
     const [data, setData] = useState({})
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
-    const getRecentActions = async () => {
+    const getRecentActions = useCallback(() => {
         setLoading(true);
-        try {
-            const res = await makeRequest({
-                url: '/reports/activity?' +
-                    'limit=30&' +
-                    'offset=0&' +
-                    'sort=created_at&' +
-                    'order=dsc',
-                method: 'get',
-                headers: {'Authorization': `Bearer ${user.token}`}
+        return makeRequest({
+            url: '/reports/activity?' +
+                'limit=30&' +
+                'offset=0&' +
+                'sort=created_at&' +
+                'order=dsc',
+            method: 'get'
+        })
+            .then(res => {
+                setData({
+                    actions: res.rows || [],
+                });
+            })
+            .catch(error => {
+                console.error('Error fetching recent actions:', error);
+            })
+            .finally(() => {
+                setLoading(false);
             });
-            setData({
-                actions: res.rows || [],
-            });
-        } catch (error) {
-            console.error('Error fetching recent actions:', error);
-        } finally {
-            setLoading(false);
-            console.log(data);
-        }
-    }
+    }, []);
 
     useFocusEffect(
         useCallback(() => {
             getRecentActions();
-        }, [user?.token])
+        }, [getRecentActions])
     );
 
-    const onRefresh = useCallback(async() => {
+    const onRefresh = useCallback(() => {
         setRefreshing(true);
-        try {
-            await getRecentActions();
-        } finally {
-            setRefreshing(false);
-        }
-    }, [loading]);
+        getRecentActions()
+            .finally(() => {
+                setRefreshing(false);
+            });
+    }, [getRecentActions]);
 
     const Item = ({id, action_type, created_by }) => (
         <Pressable

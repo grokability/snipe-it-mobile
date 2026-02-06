@@ -1,5 +1,5 @@
 import React from 'react';
-import {Pressable, StyleSheet} from 'react-native';
+import {Pressable, StyleSheet, View} from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import {Host, ContextMenu, Button} from '@expo/ui/swift-ui';
@@ -27,16 +27,18 @@ export default function TopNavMenu() {
                     </Button>
                 </ContextMenu.Items>
                 <ContextMenu.Trigger>
-                             <Pressable
-                                 accessibilityRole="button"
-                                 accessibilityLabel="Open menu"
-                                 style={({ pressed }) => [
-                                     styles.button,
-                                     pressed && {opacity: 0.3}
-                             ]}
-                             >
-                                 <Ionicons name="menu" size={24} color="#111" />
-                             </Pressable>
+                    <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel="Open menu"
+                        style={({ pressed }) => [
+                            styles.button,
+                            pressed && {opacity: 0.3}
+                        ]}
+                    >
+                        <View style={styles.iconContainer}>
+                            <Ionicons name="menu" size={18} color="#111" />
+                        </View>
+                    </Pressable>
                 </ContextMenu.Trigger>
             </ContextMenu>
         </Host>
@@ -45,10 +47,16 @@ export default function TopNavMenu() {
 
 const styles = StyleSheet.create({
     button: {
-        width: 44,
-        height: 44,
         alignItems: 'center',
         justifyContent: 'center',
-        marginRight: -8, //
+        paddingHorizontal: 2,
+        paddingVertical: 6,
+    },
+    iconContainer: {
+        width: 20,
+        height: 20,
+        alignItems: 'center',
+        justifyContent: 'center',
+        left: 5,
     },
 });

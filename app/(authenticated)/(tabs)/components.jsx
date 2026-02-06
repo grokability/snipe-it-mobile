@@ -11,18 +11,37 @@ export default function ComponentsScreen() {
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
 
-    const onRefresh = useCallback(() => {
-        if(loading) {
-            setRefreshing(true);
-        }
-        getComponents();
-        setRefreshing(false);
-    }, [getComponents, loading]);
+    const getComponents = useCallback(() => {
+        setLoading(true);
+        return makeRequest({
+            method: 'get',
+            url: '/components'
+        })
+            .then(res => {
+                setData({
+                    components: res.rows,
+                    count: res.total
+                });
+            })
+            .catch(err => {
+                console.log(err);
+            })
+            .finally(() => {
+                setLoading(false);
+            });
+    }, []);
 
+    const onRefresh = useCallback(() => {
+        setRefreshing(true);
+        getComponents()
+            .finally(() => {
+                setRefreshing(false);
+            });
+    }, [getComponents]);
 
     useEffect(() => {
         getComponents();
-    }, [loading]);
+    }, []);
 
     const Item = ({image, name, qty}) => (
         <View style={{padding: 10, marginVertical: 8, backgroundColor: '#eee', borderRadius: 8, flexDirection: 'row', flexWrap: 'wrap', gap: 10}}>
@@ -31,23 +50,6 @@ export default function ComponentsScreen() {
             <Text style={styles.name}>Qty: {qty}</Text>
         </View>
     );
-
-    function getComponents() {
-        makeRequest({
-            method: 'get',
-            url: '/components',
-            headers: { 'Authorization': `Bearer ${user.token}` }
-        }).then(res => {
-            setData({
-                components: res.rows,
-                count: res.total
-            });
-            console.log(data.count);
-            setLoading(false);
-        }).catch(err => {
-            console.log(err);
-        });
-    }
 
 
 

@@ -10,18 +10,37 @@ export default function ConsumablesScreen() {
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
 
-    const onRefresh = useCallback(() => {
-        if(loading) {
-            setRefreshing(true);
-        }
-        getConsumables();
-        setRefreshing(false);
-    }, [getConsumables, loading]);
+    const getConsumables = useCallback(() => {
+        setLoading(true);
+        return makeRequest({
+            method: 'get',
+            url: '/consumables'
+        })
+            .then(res => {
+                setData({
+                    consumables: res.rows,
+                    count: res.total
+                });
+            })
+            .catch(err => {
+                console.log(err);
+            })
+            .finally(() => {
+                setLoading(false);
+            });
+    }, []);
 
+    const onRefresh = useCallback(() => {
+        setRefreshing(true);
+        getConsumables()
+            .finally(() => {
+                setRefreshing(false);
+            });
+    }, [getConsumables]);
 
     useEffect(() => {
         getConsumables();
-    }, [loading]);
+    }, []);
 
     const Item = ({image, name, qty}) => (
         <View style={{padding: 10, marginVertical: 8, backgroundColor: '#eee', borderRadius: 8, flexDirection: 'row', flexWrap: 'wrap', gap: 10}}>
@@ -34,22 +53,6 @@ export default function ConsumablesScreen() {
             <Text style={styles.name}>Qty: {qty}</Text>
         </View>
     );
-
-    function getConsumables() {
-        makeRequest({
-            method: 'get',
-            url: '/consumables',
-            headers: { 'Authorization': `Bearer ${user.token}` }
-        }).then(res => {
-            setData({
-                consumables: res.rows,
-                count: res.total
-            });
-            setLoading(false);
-        }).catch(err => {
-            console.log(err);
-        });
-    }
 
 
 
