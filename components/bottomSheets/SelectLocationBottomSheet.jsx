@@ -10,7 +10,8 @@ import React, {forwardRef, useContext, useEffect, useMemo, useState, useImperati
 import BottomSheet from "@gorhom/bottom-sheet";
 import {makeRequest} from "@/helpers/axiosConfig";
 import {AuthContext} from "@/context/AuthProvider";
-import {COLORS} from "@/constants/colors";
+import {Colors} from "@/constants/colors";
+import {Spacing, BorderRadius, Typography, FontWeight} from "@/constants/sizes";
 import {GestureHandlerRootView} from "react-native-gesture-handler";
 // export type Ref = BottomSheet;
 
@@ -103,53 +104,53 @@ const SelectLocationBottomSheet = forwardRef((props, ref) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        padding: 16,
+        padding: Spacing.lg,
     },
     title: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        marginBottom: 16,
-        color: COLORS.light.text,
+        fontSize: Typography.subtitle,
+        fontWeight: FontWeight.bold,
+        marginBottom: Spacing.lg,
+        color: Colors.light.text,
     },
     searchContainer: {
-        marginBottom: 16,
+        marginBottom: Spacing.lg,
     },
     searchInput: {
-        padding: 12,
-        borderRadius: 8,
-        backgroundColor: '#F1F3F5',
-        fontSize: 16,
+        padding: Spacing.md,
+        borderRadius: BorderRadius.sm,
+        backgroundColor: Colors.light.backgroundTertiary,
+        fontSize: Typography.bodyLarge,
         borderWidth: 1,
-        borderColor: '#E4E7EB',
+        borderColor: Colors.light.border,
     },
     itemContainer: {
         flexDirection: 'row',
-        padding: 12,
+        padding: Spacing.md,
         alignItems: 'center',
         borderBottomWidth: 1,
-        borderBottomColor: '#E4E7EB',
+        borderBottomColor: Colors.light.border,
     },
     itemPressed: {
-        backgroundColor: '#F1F3F5',
+        backgroundColor: Colors.light.backgroundTertiary,
     },
     imageContainer: {
-        marginRight: 12,
+        marginRight: Spacing.md,
     },
     placeholderText: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        color: '#687076',
+        fontSize: Typography.bodyLarge,
+        fontWeight: FontWeight.bold,
+        color: Colors.light.textMuted,
     },
     locationInfoContainer: {
         flex: 1,
     },
     locationName: {
-        fontSize: 16,
-        fontWeight: '500',
-        color: COLORS.light.text,
+        fontSize: Typography.bodyLarge,
+        fontWeight: FontWeight.medium,
+        color: Colors.light.text,
     },
     listContent: {
-        paddingBottom: 20,
+        paddingBottom: Spacing.xl,
     },
 });
 

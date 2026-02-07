@@ -4,6 +4,8 @@ import { AuthContext } from '@/context/AuthProvider';
 import LoginForm from '@/components/LoginForm';
 import BrowserLoginButton from '@/components/BrowserLoginButton';
 import BearerTokenLogin from "@/components/BearerTokenLogin";
+import {Colors} from "@/constants/colors";
+import {Spacing, Typography, FontWeight} from "@/constants/sizes";
 
 console.log('login rendered')
 export default function LoginScreen() {
@@ -33,20 +35,20 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        padding: 20,
-        backgroundColor: '#fff',
+        padding: Spacing.xl,
+        backgroundColor: Colors.light.background,
     },
     input: {
         height: 40,
-        borderColor: 'gray',
+        borderColor: Colors.light.textSecondary,
         borderWidth: 1,
-        marginBottom: 12,
-        padding: 10,
+        marginBottom: Spacing.md,
+        padding: Spacing.md,
         width: '100%',
     },
     title: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        marginBottom: 20,
+        fontSize: Typography.title,
+        fontWeight: FontWeight.bold,
+        marginBottom: Spacing.xl,
     },
 });

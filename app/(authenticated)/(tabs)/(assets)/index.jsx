@@ -4,7 +4,8 @@ import {AuthContext} from "@/context/AuthProvider";
 import {makeRequest} from "@/helpers/axiosConfig";
 import {SafeAreaProvider} from "react-native-safe-area-context";
 import {router, useFocusEffect} from "expo-router";
-import {COLORS} from "@/constants/colors";
+import {Colors} from "@/constants/colors";
+import {Spacing, BorderRadius, Typography, FontWeight} from "@/constants/sizes";
 import {decodeEntity} from "html-entities";
 import {FlashList} from "@shopify/flash-list";
 
@@ -124,12 +125,11 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     name: {
-        fontWeight: 'bold',
+        fontWeight: FontWeight.bold,
     },
     flatlist: {
         flex: 1,
         padding: 5,
-        // paddingBottom: 80,
         flexDirection: 'column',
         gap: 5,
         shadowOffset: {
@@ -140,16 +140,16 @@ const styles = StyleSheet.create({
         shadowRadius: 20,
     },
     innerText: {
-        color: COLORS.light.primary,
+        color: Colors.light.primary,
     },
     itemContainer: {
         width: '100%',
-        padding: 16,
-        marginVertical: 8,
-        backgroundColor: '#ffffff',
-        borderRadius: 12,
+        padding: Spacing.lg,
+        marginVertical: Spacing.sm,
+        backgroundColor: Colors.light.background,
+        borderRadius: BorderRadius.md,
         flexDirection: 'row',
-        gap: 16,
+        gap: Spacing.lg,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
@@ -157,7 +157,7 @@ const styles = StyleSheet.create({
         elevation: 3,
     },
     itemPressed: {
-        backgroundColor: '#f8f4ff',
+        backgroundColor: Colors.light.backgroundSecondary,
         transform: [{ scale: 0.995 }],
     },
     imageContainer: {
@@ -165,47 +165,47 @@ const styles = StyleSheet.create({
         height: 100,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: '#f8f4ff',
-        borderRadius: 8,
+        backgroundColor: Colors.light.backgroundSecondary,
+        borderRadius: BorderRadius.sm,
     },
     image: {
         width: 80,
         height: 80,
-        borderRadius: 8,
+        borderRadius: BorderRadius.sm,
     },
     contentContainer: {
         flex: 1,
         gap: 6,
     },
     assetTag: {
-        fontSize: 12,
-        color: '#666',
-        fontWeight: '500',
+        fontSize: Typography.caption,
+        color: Colors.light.textSecondary,
+        fontWeight: FontWeight.medium,
     },
     assetName: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: '#1a1a1a',
+        fontSize: Typography.bodyLarge,
+        fontWeight: FontWeight.semibold,
+        color: Colors.light.text,
     },
     checkedOutText: {
-        fontSize: 14,
-        color: '#666',
+        fontSize: Typography.body,
+        color: Colors.light.textSecondary,
     },
     userName: {
-        color: '#6200ee',
-        fontWeight: '500',
+        color: Colors.light.primary,
+        fontWeight: FontWeight.medium,
     },
     availableText: {
-        color: '#4CAF50',
-        fontWeight: '500',
+        color: Colors.light.success,
+        fontWeight: FontWeight.medium,
     },
     notAvailableText: {
-        color: '#FF5252',
-        fontWeight: '500'
+        color: Colors.light.danger,
+        fontWeight: FontWeight.medium,
     },
     serialText: {
-        fontSize: 12,
-        color: '#555',
+        fontSize: Typography.caption,
+        color: Colors.light.textSecondary,
     },
 
 });

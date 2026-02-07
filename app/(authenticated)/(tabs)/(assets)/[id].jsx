@@ -4,7 +4,8 @@ import {router, useFocusEffect, useLocalSearchParams} from "expo-router";
 import {makeRequest} from "@/helpers/axiosConfig";
 import {AuthContext} from "@/context/AuthProvider";
 import {SafeAreaProvider} from "react-native-safe-area-context";
-import {COLORS} from "@/constants/colors";
+import {Colors} from "@/constants/colors";
+import {Spacing, BorderRadius, Typography, FontWeight} from "@/constants/sizes";
 
 
 export const unstable_settings = {
@@ -55,16 +56,16 @@ export default function AssetScreen() {
 
     if(loading) {
         return (
-            <View style={{flex: 1, justifyContent: "center", alignItems: "center"}}>
-                <ActivityIndicator size="large" color="purple"/>
+            <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color={Colors.light.primary}/>
             </View>
         )
     }
 
     if(loading || !data.asset) {
         return (
-            <View style={{flex: 1, justifyContent: "center", alignItems: "center"}}>
-                <ActivityIndicator size="large" color="purple"/>
+            <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color={Colors.light.primary}/>
             </View>
         )
     }
@@ -120,35 +121,35 @@ const styles = StyleSheet.create({
     },
     container: {
         flex: 1,
-        padding: 16,
-        backgroundColor: '#fff'
+        padding: Spacing.lg,
+        backgroundColor: Colors.light.background
     },
     imageContainer: {
         alignItems: 'center',
-        backgroundColor: '#f8f4ff',
-        borderRadius: 12,
-        padding: 16,
-        marginBottom: 24
+        backgroundColor: Colors.light.backgroundSecondary,
+        borderRadius: BorderRadius.md,
+        padding: Spacing.lg,
+        marginBottom: Spacing.xxl
     },
     image: {
         width: 250,
         height: 250,
-        borderRadius: 12
+        borderRadius: BorderRadius.md
     },
     infoContainer: {
-        gap: 24
+        gap: Spacing.xxl
     },
     assetTitle: {
-        fontSize: 24,
-        fontWeight: '700',
-        color: '#1a1a1a',
-        marginBottom: 8
+        fontSize: Typography.titleLarge,
+        fontWeight: FontWeight.bold,
+        color: Colors.light.text,
+        marginBottom: Spacing.sm
     },
     detailsContainer: {
-        backgroundColor: '#f8f4ff',
-        padding: 16,
-        borderRadius: 12,
-        gap: 12
+        backgroundColor: Colors.light.backgroundSecondary,
+        padding: Spacing.lg,
+        borderRadius: BorderRadius.md,
+        gap: Spacing.md
     },
     detailRow: {
         flexDirection: 'row',
@@ -156,46 +157,46 @@ const styles = StyleSheet.create({
         alignItems: 'center'
     },
     detailLabel: {
-        fontSize: 16,
-        color: '#666',
-        fontWeight: '500'
+        fontSize: Typography.bodyLarge,
+        color: Colors.light.textSecondary,
+        fontWeight: FontWeight.medium
     },
     detailValue: {
-        fontSize: 16,
-        color: '#1a1a1a',
-        fontWeight: '600'
+        fontSize: Typography.bodyLarge,
+        color: Colors.light.text,
+        fontWeight: FontWeight.semibold
     },
     assignmentContainer: {
         alignItems: 'center',
-        gap: 16
+        gap: Spacing.lg
     },
     assignedText: {
-        fontSize: 16,
-        color: '#666'
+        fontSize: Typography.bodyLarge,
+        color: Colors.light.textSecondary
     },
     userName: {
-        color: COLORS.light.primary,
-        fontWeight: '600'
+        color: Colors.light.primary,
+        fontWeight: FontWeight.semibold
     },
     button: {
         width: '100%',
-        padding: 16,
-        borderRadius: 12,
+        padding: Spacing.lg,
+        borderRadius: BorderRadius.md,
         alignItems: 'center'
     },
     checkinButton: {
-        backgroundColor: '#FF5252'
+        backgroundColor: Colors.light.danger
     },
     checkoutButton: {
-        backgroundColor: '#4CAF50'
+        backgroundColor: Colors.light.success
     },
     buttonPressed: {
         opacity: 0.8,
         transform: [{scale: 0.98}]
     },
     buttonText: {
-        color: '#fff',
-        fontSize: 16,
-        fontWeight: '600'
+        color: Colors.light.background,
+        fontSize: Typography.bodyLarge,
+        fontWeight: FontWeight.semibold
     }
 });

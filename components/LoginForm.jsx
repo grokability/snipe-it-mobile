@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { StyleSheet, TextInput, Text, TouchableOpacity, Alert } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import BrowserLoginButton from "@/components/BrowserLoginButton";
+import {Colors} from "@/constants/colors";
+import {Spacing, BorderRadius, Typography} from "@/constants/sizes";
 
 const LoginForm = ({ onLogin, onDomainChange }) => {
     const [domain, setDomain] = useState('https://example.example.com');
@@ -39,7 +41,7 @@ const LoginForm = ({ onLogin, onDomainChange }) => {
                 onChangeText={handleDomainChange}
                 value={domain}
                 style={styles.input}
-                placeholderTextColor="gray"
+                placeholderTextColor={Colors.light.textMuted}
                 textContentType="URL"
                 autoCapitalize="none"
             />
@@ -54,11 +56,14 @@ const LoginForm = ({ onLogin, onDomainChange }) => {
 const styles = StyleSheet.create({
     input: {
         height: 40,
-        borderColor: 'gray',
+        borderColor: Colors.light.border,
         borderWidth: 1,
-        marginBottom: 12,
-        padding: 10,
+        marginBottom: Spacing.md,
+        padding: Spacing.md,
         width: '100%',
+        borderRadius: BorderRadius.sm,
+        fontSize: Typography.body,
+        color: Colors.light.text,
     },
 });
 

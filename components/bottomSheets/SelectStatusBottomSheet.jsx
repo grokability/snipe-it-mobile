@@ -4,6 +4,8 @@ import {GestureHandlerRootView} from "react-native-gesture-handler";
 import React, {useMemo, useState, forwardRef, useContext, useEffect} from "react";
 import {makeRequest} from "@/helpers/axiosConfig";
 import {AuthContext} from "@/context/AuthProvider";
+import {Colors} from "@/constants/colors";
+import {Spacing, BorderRadius, Typography, FontWeight} from "@/constants/sizes";
 
 const CloseBtn = () => {
     const { close } = useBottomSheet();
@@ -48,10 +50,12 @@ const SelectStatusBottomSheet = forwardRef((props, ref) => {
     const Item = ({item}) => (
         <Pressable
             onPress={() => selectStatus(item)}
+            style={({pressed}) => [
+                styles.itemContainer,
+                pressed && styles.itemPressed
+            ]}
         >
-            <View style={{padding: 10, marginVertical: 8, backgroundColor: '#eee', borderRadius: 8, flexDirection: 'row', flexWrap: 'wrap', gap: 10}}>
-                <Text style={styles.name}>{item.name}</Text>
-            </View>
+            <Text style={styles.name}>{item.name}</Text>
         </Pressable>
     )
 
@@ -85,18 +89,53 @@ const SelectStatusBottomSheet = forwardRef((props, ref) => {
         </BottomSheetModal>
     )
 })
+
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#fff',
-        padding: 10,
-        borderRadius: 10,
+        backgroundColor: Colors.light.background,
+        padding: Spacing.lg,
+        borderRadius: BorderRadius.sm,
         elevation: 4,
         shadowColor: '#000',
+    },
+    title: {
+        fontSize: Typography.subtitle,
+        fontWeight: FontWeight.bold,
+        marginBottom: Spacing.lg,
+        color: Colors.light.text,
+    },
+    searchContainer: {
+        marginBottom: Spacing.lg,
+    },
+    searchInput: {
+        padding: Spacing.md,
+        borderRadius: BorderRadius.sm,
+        backgroundColor: Colors.light.backgroundTertiary,
+        fontSize: Typography.bodyLarge,
+        borderWidth: 1,
+        borderColor: Colors.light.border,
+    },
+    itemContainer: {
+        padding: Spacing.md,
+        marginVertical: Spacing.sm,
+        backgroundColor: Colors.light.backgroundTertiary,
+        borderRadius: BorderRadius.sm,
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: Spacing.md,
+    },
+    itemPressed: {
+        backgroundColor: Colors.light.border,
+    },
+    name: {
+        fontSize: Typography.bodyLarge,
+        fontWeight: FontWeight.medium,
+        color: Colors.light.text,
     },
     listContent: {
         paddingBottom: 50,
     }
-
 })
+
 export default SelectStatusBottomSheet;
