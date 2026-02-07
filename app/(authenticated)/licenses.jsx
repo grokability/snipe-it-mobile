@@ -3,6 +3,8 @@ import {useContext, useState, useEffect, useCallback} from "react";
 import {AuthContext} from "@/context/AuthProvider";
 import {makeRequest} from "@/helpers/axiosConfig";
 import {SafeAreaProvider, SafeAreaView} from "react-native-safe-area-context";
+import {Colors} from "@/constants/colors";
+import {Spacing, BorderRadius, Typography, FontWeight} from "@/constants/sizes";
 
 export default function LicensesScreen() {
     const { user } = useContext(AuthContext);
@@ -24,11 +26,11 @@ export default function LicensesScreen() {
     }, [loading]);
 
     const Item = ({license_name, image, product_key, supplier_name, manufacturer_name}) => (
-        <View style={{padding: 10, marginVertical: 8, backgroundColor: '#eee', borderRadius: 8, flexDirection: 'row', flexWrap: 'wrap', gap: 10}}>
-            <Image style={{width: 100, height: 100}} src={image} />
+        <View style={styles.itemContainer}>
+            <Image style={styles.image} src={image} />
             <Text style={styles.name}>{license_name}</Text>
             <Text style={styles.name}>{manufacturer_name} ({supplier_name})</Text>
-            <Text style={styles.innerText}>{product_key}</Text>
+            <Text style={styles.productKey}>{product_key}</Text>
         </View>
     );
 
@@ -53,7 +55,7 @@ export default function LicensesScreen() {
 
     return (
         <SafeAreaView style={styles.container}>
-            <Text>Licenses Index</Text>
+            <Text style={styles.title}>Licenses Index</Text>
             <SafeAreaProvider>
                 <SafeAreaView style={styles.container}>
                     <FlatList
@@ -80,10 +82,31 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     },
-    name: {
-        fontWeight: 'bold',
+    title: {
+        fontSize: Typography.subtitle,
+        fontWeight: FontWeight.semibold,
+        color: Colors.light.text,
+        marginBottom: Spacing.md,
     },
-    innerText: {
-        color: 'red',
+    itemContainer: {
+        padding: Spacing.md,
+        marginVertical: Spacing.sm,
+        backgroundColor: Colors.light.backgroundTertiary,
+        borderRadius: BorderRadius.sm,
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: Spacing.md,
+    },
+    image: {
+        width: 100,
+        height: 100,
+    },
+    name: {
+        fontWeight: FontWeight.bold,
+        color: Colors.light.text,
+    },
+    productKey: {
+        color: Colors.light.primary,
+        fontSize: Typography.body,
     },
 });

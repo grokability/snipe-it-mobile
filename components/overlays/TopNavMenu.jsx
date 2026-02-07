@@ -3,6 +3,8 @@ import {StyleSheet, View} from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import {ContextMenu, Button} from '@expo/ui/jetpack-compose';
+import {Colors} from "@/constants/colors";
+import {BorderRadius} from "@/constants/sizes";
 
 export default function TopNavMenu() {
     return (
@@ -35,10 +37,10 @@ const styles = StyleSheet.create({
     button: {
         width: 44,
         height: 44,
-        borderRadius: 22,
+        borderRadius: BorderRadius.lg,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: '#fff',
+        backgroundColor: Colors.light.background,
         elevation: 2,
     },
 });

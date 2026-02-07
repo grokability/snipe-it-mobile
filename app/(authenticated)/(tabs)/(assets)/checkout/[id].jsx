@@ -13,6 +13,8 @@ import {Host, Picker} from '@expo/ui/swift-ui';
 import * as Burnt from 'burnt';
 import {CheckoutPicker} from "@/components/CheckoutPicker";
 import Datepicker from "@/components/Datepicker";
+import {Colors} from "@/constants/colors";
+import {Spacing, Typography, FontWeight} from "@/constants/sizes";
 
 export default function CheckoutScreen() {
     const { id } = useLocalSearchParams();
@@ -115,15 +117,15 @@ export default function CheckoutScreen() {
         <SafeAreaProvider style={styles.container}>
             <Text style={styles.headerText}>Checkout Asset #{id}</Text>
             {/* asset name */}
-            <Text style={styles.headerText}>Asset Name: {selectedAsset?.name}</Text>
-            <TextInput placeholder="Asset Name" onChangeText={setAssetName}></TextInput>
+            <Text style={styles.labelText}>Asset Name: {selectedAsset?.name}</Text>
+            <TextInput placeholder="Asset Name" onChangeText={setAssetName} style={styles.input}></TextInput>
 
             {/* status select sheet */}
             <Button title="Select Status" onPress={handleOpenStatusBottomSheet} />
             <SelectStatusBottomSheet title="Select Status" ref={statusBottomSheetRef} setSelectedStatus={setSelectedStatus}/>
-            <Text>Selected Status: {selectedStatus?.name}</Text>
+            <Text style={styles.selectedText}>Selected Status: {selectedStatus?.name}</Text>
 
-            <Text>Checkout to: </Text>
+            <Text style={styles.labelText}>Checkout to: </Text>
 
             <CheckoutPicker selectedCheckoutTo={selectedCheckoutTo} setSelectedCheckoutTo={setSelectedCheckoutTo} availableOptions={['User', 'Location', 'Asset']} />
 
@@ -134,7 +136,7 @@ export default function CheckoutScreen() {
                 <>
                     <Button title="Select User" onPress={handleOpenUserBottomSheet} />
                     <SelectUserBottomSheet title="Select User" ref={userBottomSheetRef} setSelectedUser={setSelectedUser}/>
-                    <Text>Selected User: {selectedUser?.name}</Text>
+                    <Text style={styles.selectedText}>Selected User: {selectedUser?.name}</Text>
                 </>
             )}
 
@@ -143,7 +145,7 @@ export default function CheckoutScreen() {
             <>
                 <Button title="Select Location" onPress={handleOpenLocationBottomSheet} />
                 <SelectLocationBottomSheet title="Select Location" ref={locationBottomSheetRef} setSelectedLocation={setSelectedLocation}/>
-                <Text>Selected Location: {selectedLocation?.name}</Text>
+                <Text style={styles.selectedText}>Selected Location: {selectedLocation?.name}</Text>
             </>
             )}
 
@@ -152,7 +154,7 @@ export default function CheckoutScreen() {
             <>
                 <Button title="Select Asset" onPress={handleOpenAssetBottomSheet} />
                 <SelectAssetBottomSheet title="Select Asset" ref={assetBottomSheetRef} setSelectedAsset={setSelectedAsset}/>
-                <Text>Selected Asset: {selectedAsset?.name}</Text>
+                <Text style={styles.selectedText}>Selected Asset: {selectedAsset?.name}</Text>
             </>
             )}
 
@@ -166,7 +168,7 @@ export default function CheckoutScreen() {
 
             {/*/ notes */}
             <Text style={styles.headerText}>Notes</Text>
-            <TextInput placeholder="Notes" onChange={setNotes} value={notes} />
+            <TextInput placeholder="Notes" onChange={setNotes} value={notes} style={styles.input} />
             {/* submit button */}
             <Button title="Checkout" onPress={() => checkout()} />
 
@@ -179,10 +181,31 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
+        backgroundColor: Colors.light.background,
     },
     headerText: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        marginBottom: 10,
-    }
+        fontSize: Typography.title,
+        fontWeight: FontWeight.bold,
+        marginBottom: Spacing.md,
+        color: Colors.light.text,
+    },
+    labelText: {
+        fontSize: Typography.body,
+        color: Colors.light.textSecondary,
+        marginBottom: Spacing.sm,
+    },
+    selectedText: {
+        fontSize: Typography.body,
+        color: Colors.light.text,
+        marginVertical: Spacing.sm,
+    },
+    input: {
+        borderWidth: 1,
+        borderColor: Colors.light.border,
+        borderRadius: 8,
+        padding: Spacing.md,
+        marginBottom: Spacing.md,
+        width: '80%',
+        color: Colors.light.text,
+    },
 })

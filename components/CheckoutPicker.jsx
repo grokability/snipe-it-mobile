@@ -3,6 +3,8 @@ import {StyleSheet, View} from "react-native";
 import ExpoDevice from "expo-device/src/ExpoDevice";
 import {value} from "lodash/seq";
 import {indexOf} from "lodash";
+import {Colors} from "@/constants/colors";
+import {Spacing} from "@/constants/sizes";
 
 
 export function CheckoutPicker({ selectedCheckoutTo, setSelectedCheckoutTo }) {
@@ -19,7 +21,7 @@ export function CheckoutPicker({ selectedCheckoutTo, setSelectedCheckoutTo }) {
         <View
             style={{
                 paddingVertical: isIpad ? Math.round(4 * SPACE_SCALE) : 4,
-                backgroundColor: "#f1f1f1"
+                backgroundColor: Colors.light.backgroundTertiary
             }}
         >
                 <Picker
@@ -29,18 +31,17 @@ export function CheckoutPicker({ selectedCheckoutTo, setSelectedCheckoutTo }) {
                         setSelectedCheckoutTo(options[index].value);
                     }}
                     variant="segmented"
-                    color={"#606060"}
+                    color={Colors.light.textSecondary}
                     elementColors={{
-                        activeContainerColor: "blue",
-                        activeContentColor: "#f1f1f1",
+                        activeContainerColor: Colors.light.primary,
+                        activeContentColor: Colors.light.background,
                         activeBorderColor: "transparent",
-                        inactiveContainerColor: "#f1f1f1",
-                        inactiveContentColor: "#606060",
-                        inactiveBorderColor: "#f1f1f1",
+                        inactiveContainerColor: Colors.light.backgroundTertiary,
+                        inactiveContentColor: Colors.light.textSecondary,
+                        inactiveBorderColor: Colors.light.backgroundTertiary,
                     }}
                     style={{
                         ...styles.picker,
-                        // width: isIpad ? Math.round(24 * SPACE_SCALE) : 24 * 2,
                         width: 300,
                     }}
                 />

@@ -1,5 +1,6 @@
 import {Stack} from 'expo-router';
 import TopNavMenu from "@/components/overlays/TopNavMenu";
+import {Colors} from "@/constants/colors";
 
 export default function AssetsLayout() {
     return (
@@ -9,7 +10,7 @@ export default function AssetsLayout() {
                 headerTransparent: true,
                 headerShadowVisible: false,
                 headerTitle: '',
-                headerTintColor: '#000',
+                headerTintColor: Colors.light.text,
                 headerRight: () => <TopNavMenu />,
             }}
             >
