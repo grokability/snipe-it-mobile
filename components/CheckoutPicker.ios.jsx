@@ -21,7 +21,6 @@ export function CheckoutPicker({ selectedCheckoutTo, setSelectedCheckoutTo }) {
         <View
         style={{
             paddingVertical: isIpad ? Math.round(4 * SPACE_SCALE) : 4,
-            backgroundColor: Colors.light.backgroundTertiary
         }}
         >
             <Host matchContents>
