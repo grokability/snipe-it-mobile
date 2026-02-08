@@ -1,11 +1,13 @@
-import React from 'react';
+import React, {useMemo} from 'react';
 import { View, TouchableOpacity, StyleSheet, Text } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import {Colors} from "@/constants/colors";
+import {useColors} from "@/hooks/useThemeColors";
 import {Spacing, BorderRadius, Typography, FontWeight} from "@/constants/sizes";
 
 const BarcodeOverlay = ({ barcodes, onBarcodeSelect, clearBarcodes }) => {
     const insets = useSafeAreaInsets();
+    const colors = useColors();
+    const styles = useMemo(() => createStyles(colors), [colors]);
 
     if (barcodes.length === 0) return null;
 
@@ -48,7 +50,7 @@ const BarcodeOverlay = ({ barcodes, onBarcodeSelect, clearBarcodes }) => {
     );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors) => StyleSheet.create({
     overlay: {
         ...StyleSheet.absoluteFillObject,
         zIndex: 10,
@@ -62,7 +64,7 @@ const styles = StyleSheet.create({
         marginBottom: Spacing.md,
     },
     headerText: {
-        color: Colors.light.background,
+        color: '#ffffff',
         fontSize: Typography.bodyLarge,
         fontWeight: FontWeight.bold,
     },
@@ -72,14 +74,14 @@ const styles = StyleSheet.create({
         borderRadius: BorderRadius.lg,
     },
     closeButtonText: {
-        color: Colors.light.background,
+        color: '#ffffff',
         fontSize: Typography.title,
         fontWeight: FontWeight.bold,
     },
     barcodeHighlight: {
         position: 'absolute',
         borderWidth: 2,
-        borderColor: Colors.light.success,
+        borderColor: colors.success,
         backgroundColor: 'rgba(76, 175, 80, 0.15)',
         justifyContent: 'center',
         alignItems: 'center',
@@ -88,7 +90,7 @@ const styles = StyleSheet.create({
         width: 20,
         height: 20,
         borderWidth: 3,
-        borderColor: Colors.light.background,
+        borderColor: '#ffffff',
         borderTopWidth: 0,
         borderRightWidth: 0,
         position: 'absolute',

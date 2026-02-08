@@ -10,18 +10,19 @@ import React, {forwardRef, useContext, useEffect, useMemo, useState, useImperati
 import BottomSheet from "@gorhom/bottom-sheet";
 import {makeRequest} from "@/helpers/axiosConfig";
 import {AuthContext} from "@/context/AuthProvider";
-import {Colors} from "@/constants/colors";
+import {useColors} from "@/hooks/useThemeColors";
 import {Spacing, BorderRadius, Typography, FontWeight} from "@/constants/sizes";
 import {GestureHandlerRootView} from "react-native-gesture-handler";
-// export type Ref = BottomSheet;
 
 const CloseBtn = () => {
     const { close } = useBottomSheet();
-
     return <Button title="Close" onPress={() => close()} />;
 };
 
 const SelectLocationBottomSheet = forwardRef((props, ref) => {
+    const colors = useColors();
+    const styles = useMemo(() => createStyles(colors), [colors]);
+
     const { user } = useContext(AuthContext);
     const [locations, setLocations] = useState([])
     const [searchText, setSearchText] = useState('')
@@ -42,10 +43,6 @@ const SelectLocationBottomSheet = forwardRef((props, ref) => {
             })
             .catch((err) => {
                 console.error(err);
-            })
-            .finally(() => {
-                // Hide the loading animation
-                // setLoading(false);
             });
     }
 
@@ -70,25 +67,25 @@ const SelectLocationBottomSheet = forwardRef((props, ref) => {
         )
     }
 
-
     return (
         <BottomSheetModal
             index={1}
             ref={ref}
             snapPoints={snapPoints}
+            backgroundStyle={{ backgroundColor: colors.background }}
+            handleIndicatorStyle={{ backgroundColor: colors.textMuted }}
         >
             <GestureHandlerRootView style={styles.container}>
                 <Text style={styles.title}>{props.title}</Text>
-                {/* we use BottomSheetTextInput to make the BottomSheet aware of the keyboard and expand to accommodate it */}
                 <View style={styles.searchContainer}>
                     <BottomSheetTextInput
                         style={styles.searchInput}
                         label="Search..."
                         placeholder={'Search...'}
+                        placeholderTextColor={colors.textMuted}
                         onChangeText={(text) => {setSearchText(text)}}
                     />
                 </View>
-                {/*  flatlist  */}
                 <BottomSheetFlatList
                     data={locations}
                     renderItem={({item}) => <Item item={item} />}
@@ -101,16 +98,17 @@ const SelectLocationBottomSheet = forwardRef((props, ref) => {
     )
 })
 
-const styles = StyleSheet.create({
+const createStyles = (colors) => StyleSheet.create({
     container: {
         flex: 1,
         padding: Spacing.lg,
+        backgroundColor: colors.background,
     },
     title: {
         fontSize: Typography.subtitle,
         fontWeight: FontWeight.bold,
         marginBottom: Spacing.lg,
-        color: Colors.light.text,
+        color: colors.text,
     },
     searchContainer: {
         marginBottom: Spacing.lg,
@@ -118,20 +116,21 @@ const styles = StyleSheet.create({
     searchInput: {
         padding: Spacing.md,
         borderRadius: BorderRadius.sm,
-        backgroundColor: Colors.light.backgroundTertiary,
+        backgroundColor: colors.backgroundTertiary,
         fontSize: Typography.bodyLarge,
         borderWidth: 1,
-        borderColor: Colors.light.border,
+        borderColor: colors.border,
+        color: colors.text,
     },
     itemContainer: {
         flexDirection: 'row',
         padding: Spacing.md,
         alignItems: 'center',
         borderBottomWidth: 1,
-        borderBottomColor: Colors.light.border,
+        borderBottomColor: colors.border,
     },
     itemPressed: {
-        backgroundColor: Colors.light.backgroundTertiary,
+        backgroundColor: colors.backgroundTertiary,
     },
     imageContainer: {
         marginRight: Spacing.md,
@@ -139,7 +138,7 @@ const styles = StyleSheet.create({
     placeholderText: {
         fontSize: Typography.bodyLarge,
         fontWeight: FontWeight.bold,
-        color: Colors.light.textMuted,
+        color: colors.textMuted,
     },
     locationInfoContainer: {
         flex: 1,
@@ -147,7 +146,7 @@ const styles = StyleSheet.create({
     locationName: {
         fontSize: Typography.bodyLarge,
         fontWeight: FontWeight.medium,
-        color: Colors.light.text,
+        color: colors.text,
     },
     listContent: {
         paddingBottom: Spacing.xl,

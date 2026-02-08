@@ -1,8 +1,10 @@
 import {Stack} from 'expo-router';
 import TopNavMenu from "@/components/overlays/TopNavMenu";
-import {Colors} from "@/constants/colors";
+import {useColors} from "@/hooks/useThemeColors";
 
 export default function AssetsLayout() {
+    const colors = useColors();
+
     return (
         <>
             <Stack screenOptions={{
@@ -10,7 +12,7 @@ export default function AssetsLayout() {
                 headerTransparent: true,
                 headerShadowVisible: false,
                 headerTitle: '',
-                headerTintColor: Colors.light.text,
+                headerTintColor: colors.text,
                 headerRight: () => <TopNavMenu />,
             }}
             >

@@ -1,4 +1,4 @@
-import React, {useContext, useEffect, useRef, useState} from 'react';
+import React, {useContext, useMemo, useRef, useState} from 'react';
 import {Text, Button, StyleSheet, TextInput, Platform} from "react-native";
 import {router, useLocalSearchParams} from "expo-router";
 import {SafeAreaProvider} from "react-native-safe-area-context";
@@ -13,10 +13,12 @@ import {Host, Picker} from '@expo/ui/swift-ui';
 import * as Burnt from 'burnt';
 import {CheckoutPicker} from "@/components/CheckoutPicker";
 import Datepicker from "@/components/Datepicker";
-import {Colors} from "@/constants/colors";
-import {Spacing, Typography, FontWeight} from "@/constants/sizes";
+import {useColors} from "@/hooks/useThemeColors";
+import {Spacing, Typography, FontWeight, BorderRadius} from "@/constants/sizes";
 
 export default function CheckoutScreen() {
+    const colors = useColors();
+    const styles = useMemo(() => createStyles(colors), [colors]);
     const { id } = useLocalSearchParams();
     const { user } = useContext(AuthContext);
     const [error, setError] = useState(null);
@@ -176,36 +178,36 @@ export default function CheckoutScreen() {
         </SafeAreaProvider>
     )
 }
-const styles = StyleSheet.create({
+const createStyles = (colors) => StyleSheet.create({
     container: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: Colors.light.background,
+        backgroundColor: colors.background,
     },
     headerText: {
         fontSize: Typography.title,
         fontWeight: FontWeight.bold,
         marginBottom: Spacing.md,
-        color: Colors.light.text,
+        color: colors.text,
     },
     labelText: {
         fontSize: Typography.body,
-        color: Colors.light.textSecondary,
+        color: colors.textSecondary,
         marginBottom: Spacing.sm,
     },
     selectedText: {
         fontSize: Typography.body,
-        color: Colors.light.text,
+        color: colors.text,
         marginVertical: Spacing.sm,
     },
     input: {
         borderWidth: 1,
-        borderColor: Colors.light.border,
-        borderRadius: 8,
+        borderColor: colors.border,
+        borderRadius: BorderRadius.sm,
         padding: Spacing.md,
         marginBottom: Spacing.md,
         width: '80%',
-        color: Colors.light.text,
+        color: colors.text,
     },
 })

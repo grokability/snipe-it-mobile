@@ -1,11 +1,15 @@
-import React, {useCallback, useContext, useState} from 'react';
-import {Button, FlatList, Pressable, RefreshControl, Text} from "react-native";
+import React, {useCallback, useContext, useMemo, useState} from 'react';
+import {Button, FlatList, Pressable, RefreshControl, StyleSheet, Text, View} from "react-native";
 import {makeRequest} from "@/helpers/axiosConfig";
 import {useFocusEffect} from "expo-router";
 import {AuthContext} from "@/context/AuthProvider";
 import {SafeAreaProvider} from "react-native-safe-area-context";
+import {useColors} from "@/hooks/useThemeColors";
+import {Typography, FontWeight, Spacing} from "@/constants/sizes";
 
 const RecentActions = () => {
+    const colors = useColors();
+    const styles = useMemo(() => createStyles(colors), [colors]);
     const { user } = useContext(AuthContext);
     const [data, setData] = useState({})
     const [loading, setLoading] = useState(true);
@@ -50,9 +54,11 @@ const RecentActions = () => {
     const Item = ({id, action_type, created_by }) => (
         <Pressable
             onPress={() => console.log('Pressed:', id)}
+            style={styles.item}
         >
             <Text
                 adjustsFontSizeToFit={true}
+                style={styles.itemText}
             >
                 {id} - {action_type} - {created_by}
             </Text>
@@ -60,10 +66,10 @@ const RecentActions = () => {
     )
 
     return (
-        <SafeAreaProvider>
-            <Text>Recent Actions</Text>
+        <View style={styles.container}>
+            <Text style={styles.title}>Recent Actions</Text>
             <FlatList
-                data={data.actions}
+                data={data.actions?.slice(0, 12)}
                 renderItem={({item}) =>
                     <Item
                     id={item.id}
@@ -73,11 +79,39 @@ const RecentActions = () => {
                 }
                 keyExtractor={item => item.id}
                 refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh}  />}
+                style={styles.list}
+                scrollEnabled={true}
+                nestedScrollEnabled={true}
             />
             <Button title='Show More' onPress={() => console.log('show action log index')} />
-        </SafeAreaProvider>
+        </View>
 
     )
 }
+
+const createStyles = (colors) => StyleSheet.create({
+    container: {
+        backgroundColor: colors.background,
+        maxHeight: 300,
+    },
+    title: {
+        fontSize: Typography.body,
+        fontWeight: FontWeight.semibold,
+        color: colors.text,
+        marginBottom: Spacing.sm,
+    },
+    list: {
+        backgroundColor: colors.background,
+        flexGrow: 0,
+    },
+    item: {
+        paddingVertical: Spacing.xs,
+        backgroundColor: colors.background,
+    },
+    itemText: {
+        fontSize: Typography.body,
+        color: colors.text,
+    },
+});
 
 export default RecentActions;

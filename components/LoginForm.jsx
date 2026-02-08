@@ -1,11 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { StyleSheet, TextInput, Text, TouchableOpacity, Alert } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import BrowserLoginButton from "@/components/BrowserLoginButton";
-import {Colors} from "@/constants/colors";
+import {useColors} from "@/hooks/useThemeColors";
 import {Spacing, BorderRadius, Typography} from "@/constants/sizes";
 
 const LoginForm = ({ onLogin, onDomainChange }) => {
+    const colors = useColors();
+    const styles = useMemo(() => createStyles(colors), [colors]);
+
     const [domain, setDomain] = useState('https://example.example.com');
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
@@ -41,7 +44,7 @@ const LoginForm = ({ onLogin, onDomainChange }) => {
                 onChangeText={handleDomainChange}
                 value={domain}
                 style={styles.input}
-                placeholderTextColor={Colors.light.textMuted}
+                placeholderTextColor={colors.textMuted}
                 textContentType="URL"
                 autoCapitalize="none"
             />
@@ -53,17 +56,18 @@ const LoginForm = ({ onLogin, onDomainChange }) => {
     );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors) => StyleSheet.create({
     input: {
         height: 40,
-        borderColor: Colors.light.border,
+        borderColor: colors.border,
         borderWidth: 1,
         marginBottom: Spacing.md,
         padding: Spacing.md,
         width: '100%',
         borderRadius: BorderRadius.sm,
         fontSize: Typography.body,
-        color: Colors.light.text,
+        color: colors.text,
+        backgroundColor: colors.background,
     },
 });
 

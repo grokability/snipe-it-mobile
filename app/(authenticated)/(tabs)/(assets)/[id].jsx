@@ -1,20 +1,22 @@
-import React, {useCallback, useContext, useEffect, useState} from 'react';
+import React, {useCallback, useContext, useEffect, useState, useMemo} from 'react';
 import {ActivityIndicator, Button, Image, Pressable, StyleSheet, Text, View} from 'react-native';
 import {router, useFocusEffect, useLocalSearchParams} from "expo-router";
 import {makeRequest} from "@/helpers/axiosConfig";
 import {AuthContext} from "@/context/AuthProvider";
 import {SafeAreaProvider} from "react-native-safe-area-context";
-import {Colors} from "@/constants/colors";
+import {useColors} from "@/hooks/useThemeColors";
 import {Spacing, BorderRadius, Typography, FontWeight} from "@/constants/sizes";
 
 
 export const unstable_settings = {
-    // Ensure any route can link back to `/`
     initialRouteName: 'index',
 };
 
 
 export default function AssetScreen() {
+    const colors = useColors();
+    const styles = useMemo(() => createStyles(colors), [colors]);
+
     const [data, setData] = useState({});
     const [loading, setLoading] = useState(true);
     const { user } = useContext(AuthContext);
@@ -57,7 +59,7 @@ export default function AssetScreen() {
     if(loading) {
         return (
             <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color={Colors.light.primary}/>
+                <ActivityIndicator size="large" color={colors.primary}/>
             </View>
         )
     }
@@ -65,7 +67,7 @@ export default function AssetScreen() {
     if(loading || !data.asset) {
         return (
             <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color={Colors.light.primary}/>
+                <ActivityIndicator size="large" color={colors.primary}/>
             </View>
         )
     }
@@ -113,20 +115,21 @@ export default function AssetScreen() {
         );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors) => StyleSheet.create({
     loadingContainer: {
         flex: 1,
         justifyContent: "center",
-        alignItems: "center"
+        alignItems: "center",
+        backgroundColor: colors.background,
     },
     container: {
         flex: 1,
         padding: Spacing.lg,
-        backgroundColor: Colors.light.background
+        backgroundColor: colors.background
     },
     imageContainer: {
         alignItems: 'center',
-        backgroundColor: Colors.light.backgroundSecondary,
+        backgroundColor: colors.backgroundSecondary,
         borderRadius: BorderRadius.md,
         padding: Spacing.lg,
         marginBottom: Spacing.xxl
@@ -142,11 +145,11 @@ const styles = StyleSheet.create({
     assetTitle: {
         fontSize: Typography.titleLarge,
         fontWeight: FontWeight.bold,
-        color: Colors.light.text,
+        color: colors.text,
         marginBottom: Spacing.sm
     },
     detailsContainer: {
-        backgroundColor: Colors.light.backgroundSecondary,
+        backgroundColor: colors.backgroundSecondary,
         padding: Spacing.lg,
         borderRadius: BorderRadius.md,
         gap: Spacing.md
@@ -158,12 +161,12 @@ const styles = StyleSheet.create({
     },
     detailLabel: {
         fontSize: Typography.bodyLarge,
-        color: Colors.light.textSecondary,
+        color: colors.textSecondary,
         fontWeight: FontWeight.medium
     },
     detailValue: {
         fontSize: Typography.bodyLarge,
-        color: Colors.light.text,
+        color: colors.text,
         fontWeight: FontWeight.semibold
     },
     assignmentContainer: {
@@ -172,10 +175,10 @@ const styles = StyleSheet.create({
     },
     assignedText: {
         fontSize: Typography.bodyLarge,
-        color: Colors.light.textSecondary
+        color: colors.textSecondary
     },
     userName: {
-        color: Colors.light.primary,
+        color: colors.primary,
         fontWeight: FontWeight.semibold
     },
     button: {
@@ -185,17 +188,17 @@ const styles = StyleSheet.create({
         alignItems: 'center'
     },
     checkinButton: {
-        backgroundColor: Colors.light.danger
+        backgroundColor: colors.danger
     },
     checkoutButton: {
-        backgroundColor: Colors.light.success
+        backgroundColor: colors.success
     },
     buttonPressed: {
         opacity: 0.8,
         transform: [{scale: 0.98}]
     },
     buttonText: {
-        color: Colors.light.background,
+        color: '#fff',
         fontSize: Typography.bodyLarge,
         fontWeight: FontWeight.semibold
     }

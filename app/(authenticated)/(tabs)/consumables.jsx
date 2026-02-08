@@ -1,12 +1,15 @@
 import {View, Text, StyleSheet, FlatList, Image, RefreshControl} from 'react-native';
-import {useContext, useState, useEffect, useCallback} from "react";
+import {useContext, useState, useEffect, useCallback, useMemo} from "react";
 import {AuthContext} from "@/context/AuthProvider";
 import {makeRequest} from "@/helpers/axiosConfig";
 import {SafeAreaProvider, SafeAreaView} from "react-native-safe-area-context";
-import {Colors} from "@/constants/colors";
+import {useColors} from "@/hooks/useThemeColors";
 import {Spacing, BorderRadius, Typography, FontWeight} from "@/constants/sizes";
 
 export default function ConsumablesScreen() {
+    const colors = useColors();
+    const styles = useMemo(() => createStyles(colors), [colors]);
+
     const { user } = useContext(AuthContext);
     const [data, setData] = useState({});
     const [loading, setLoading] = useState(true);
@@ -52,15 +55,12 @@ export default function ConsumablesScreen() {
         </View>
     );
 
-
-
     return (
         <SafeAreaView style={styles.container}>
             <Text style={styles.title}>Consumables Index</Text>
             <SafeAreaProvider>
                 <SafeAreaView style={styles.container}>
                     <FlatList
-
                         data={data.consumables}
                         renderItem={({item}) => <Item
                             image={item.image}
@@ -76,22 +76,23 @@ export default function ConsumablesScreen() {
     );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors) => StyleSheet.create({
     container: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
+        backgroundColor: colors.background,
     },
     title: {
         fontSize: Typography.subtitle,
         fontWeight: FontWeight.semibold,
-        color: Colors.light.text,
+        color: colors.text,
         marginBottom: Spacing.md,
     },
     itemContainer: {
         padding: Spacing.md,
         marginVertical: Spacing.sm,
-        backgroundColor: Colors.light.backgroundTertiary,
+        backgroundColor: colors.backgroundTertiary,
         borderRadius: BorderRadius.sm,
         flexDirection: 'row',
         flexWrap: 'wrap',
@@ -103,6 +104,6 @@ const styles = StyleSheet.create({
     },
     name: {
         fontWeight: FontWeight.bold,
-        color: Colors.light.text,
+        color: colors.text,
     },
 });

@@ -3,10 +3,11 @@ import {Pressable, StyleSheet, View} from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import {Host, ContextMenu, Button} from '@expo/ui/swift-ui';
-import {Colors} from "@/constants/colors";
-import {Spacing} from "@/constants/sizes";
+import {useColors} from "@/hooks/useThemeColors";
 
 export default function TopNavMenu() {
+    const colors = useColors();
+
     return (
         <Host>
             <ContextMenu>
@@ -38,7 +39,7 @@ export default function TopNavMenu() {
                         ]}
                     >
                         <View style={styles.iconContainer}>
-                            <Ionicons name="menu" size={18} color={Colors.light.text} />
+                            <Ionicons name="menu" size={18} color={colors.text} />
                         </View>
                     </Pressable>
                 </ContextMenu.Trigger>

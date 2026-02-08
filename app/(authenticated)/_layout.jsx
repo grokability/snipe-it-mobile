@@ -3,20 +3,18 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { TouchableOpacity, StyleSheet, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import {Stack, useRouter} from "expo-router";
-import { Colors } from "@/constants/colors";
+import {useColors} from "@/hooks/useThemeColors";
 import {Spacing, BorderRadius, Typography, FontWeight} from "@/constants/sizes";
 import {SafeAreaView} from "react-native-safe-area-context";
 import TopNavMenu from "@/components/overlays/TopNavMenu";
 import { getFocusedRouteNameFromRoute } from '@react-navigation/native';
+import {useMemo} from "react";
 
 export default function AuthenticatedLayout() {
-
-    // Hide the header if we are in the (assets) stack
-    // This prevents the "double header" look
-
+    const colors = useColors();
+    const styles = useMemo(() => createStyles(colors), [colors]);
 
     return (
-        // mine
         <View style={{ flex: 1 }}>
             <Stack
                 screenOptions={({ navigation, route }) => {
@@ -53,7 +51,6 @@ export default function AuthenticatedLayout() {
                         title: 'Settings',
                     }}
                 />
-            {/*  hidden screens  */}
                 <Stack.Screen
                     name="index"
                     options={{
@@ -68,9 +65,9 @@ export default function AuthenticatedLayout() {
     );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors) => StyleSheet.create({
     header: {
-        backgroundColor: Colors.light.background,
+        backgroundColor: colors.background,
         elevation: 4,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
@@ -80,14 +77,14 @@ const styles = StyleSheet.create({
     headerTitle: {
         fontSize: Typography.subtitle,
         fontWeight: FontWeight.bold,
-        color: Colors.light.text,
+        color: colors.text,
     },
     headerButton: {
         padding: Spacing.md,
         marginHorizontal: 6,
     },
     drawer: {
-        backgroundColor: Colors.light.background,
+        backgroundColor: colors.background,
         width: 250,
     },
     drawerItem: {

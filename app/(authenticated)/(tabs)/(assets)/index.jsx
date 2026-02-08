@@ -1,15 +1,18 @@
 import {View, Text, StyleSheet, Image, RefreshControl, Pressable} from 'react-native';
-import {useContext, useState, useCallback} from "react";
+import {useContext, useState, useCallback, useMemo} from "react";
 import {AuthContext} from "@/context/AuthProvider";
 import {makeRequest} from "@/helpers/axiosConfig";
 import {SafeAreaProvider} from "react-native-safe-area-context";
 import {router, useFocusEffect} from "expo-router";
-import {Colors} from "@/constants/colors";
+import {useColors} from "@/hooks/useThemeColors";
 import {Spacing, BorderRadius, Typography, FontWeight} from "@/constants/sizes";
 import {decodeEntity} from "html-entities";
 import {FlashList} from "@shopify/flash-list";
 
 export default function AssetsScreen() {
+    const colors = useColors();
+    const styles = useMemo(() => createStyles(colors), [colors]);
+
     const { user } = useContext(AuthContext);
     const [data, setData] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -79,7 +82,6 @@ export default function AssetsScreen() {
                         Checked out to: <Text style={styles.userName}>{checkedOut.name}</Text>
                     </Text>
                 )}
-                {/* this is only for switching the style, it doesn't really work inline in the style attribute unfortunately */}
                 {status.status_type === 'deployable' ?
                     (
                     <Text style={styles.availableText}>{status.name}</Text>
@@ -93,7 +95,7 @@ export default function AssetsScreen() {
 
 
     return (
-            <SafeAreaProvider>
+            <SafeAreaProvider style={styles.container}>
                 <FlashList
                     onEndReached={() => loadMore()}
                     onEndReachedThreshold={0.1}
@@ -118,11 +120,10 @@ export default function AssetsScreen() {
     );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors) => StyleSheet.create({
     container: {
         flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
+        backgroundColor: colors.background,
     },
     name: {
         fontWeight: FontWeight.bold,
@@ -132,6 +133,7 @@ const styles = StyleSheet.create({
         padding: 5,
         flexDirection: 'column',
         gap: 5,
+        backgroundColor: colors.background,
         shadowOffset: {
             width: 1,
             height: -1,
@@ -140,13 +142,13 @@ const styles = StyleSheet.create({
         shadowRadius: 20,
     },
     innerText: {
-        color: Colors.light.primary,
+        color: colors.primary,
     },
     itemContainer: {
         width: '100%',
         padding: Spacing.lg,
         marginVertical: Spacing.sm,
-        backgroundColor: Colors.light.background,
+        backgroundColor: colors.backgroundTertiary,
         borderRadius: BorderRadius.md,
         flexDirection: 'row',
         gap: Spacing.lg,
@@ -157,7 +159,7 @@ const styles = StyleSheet.create({
         elevation: 3,
     },
     itemPressed: {
-        backgroundColor: Colors.light.backgroundSecondary,
+        backgroundColor: colors.backgroundSecondary,
         transform: [{ scale: 0.995 }],
     },
     imageContainer: {
@@ -165,7 +167,7 @@ const styles = StyleSheet.create({
         height: 100,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: Colors.light.backgroundSecondary,
+        backgroundColor: colors.backgroundSecondary,
         borderRadius: BorderRadius.sm,
     },
     image: {
@@ -179,33 +181,32 @@ const styles = StyleSheet.create({
     },
     assetTag: {
         fontSize: Typography.caption,
-        color: Colors.light.textSecondary,
+        color: colors.textSecondary,
         fontWeight: FontWeight.medium,
     },
     assetName: {
         fontSize: Typography.bodyLarge,
         fontWeight: FontWeight.semibold,
-        color: Colors.light.text,
+        color: colors.text,
     },
     checkedOutText: {
         fontSize: Typography.body,
-        color: Colors.light.textSecondary,
+        color: colors.textSecondary,
     },
     userName: {
-        color: Colors.light.primary,
+        color: colors.primary,
         fontWeight: FontWeight.medium,
     },
     availableText: {
-        color: Colors.light.success,
+        color: colors.success,
         fontWeight: FontWeight.medium,
     },
     notAvailableText: {
-        color: Colors.light.danger,
+        color: colors.danger,
         fontWeight: FontWeight.medium,
     },
     serialText: {
         fontSize: Typography.caption,
-        color: Colors.light.textSecondary,
+        color: colors.textSecondary,
     },
-
 });

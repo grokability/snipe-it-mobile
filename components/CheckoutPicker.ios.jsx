@@ -1,13 +1,11 @@
 import {Host, Picker} from "@expo/ui/swift-ui";
 import {StyleSheet, View} from "react-native";
 import ExpoDevice from "expo-device/src/ExpoDevice";
-import {value} from "lodash/seq";
 import {indexOf} from "lodash";
-import {Colors} from "@/constants/colors";
-import {Spacing} from "@/constants/sizes";
-
+import {useColors} from "@/hooks/useThemeColors";
 
 export function CheckoutPicker({ selectedCheckoutTo, setSelectedCheckoutTo }) {
+    const colors = useColors();
     const isIpad = ExpoDevice.osName === "iPadOS";
     const SPACE_SCALE = 1.33;
 
@@ -31,14 +29,14 @@ export function CheckoutPicker({ selectedCheckoutTo, setSelectedCheckoutTo }) {
                         setSelectedCheckoutTo(options[index].value);
                     }}
                     variant="segmented"
-                    color={Colors.light.textSecondary}
+                    color={colors.textSecondary}
                     elementColors={{
-                        activeContainerColor: Colors.light.primary,
-                        activeContentColor: Colors.light.background,
+                        activeContainerColor: colors.primary,
+                        activeContentColor: colors.background,
                         activeBorderColor: "transparent",
-                        inactiveContainerColor: Colors.light.backgroundTertiary,
-                        inactiveContentColor: Colors.light.textSecondary,
-                        inactiveBorderColor: Colors.light.backgroundTertiary,
+                        inactiveContainerColor: colors.backgroundTertiary,
+                        inactiveContentColor: colors.textSecondary,
+                        inactiveBorderColor: colors.backgroundTertiary,
                     }}
                     style={{
                         ...styles.picker,

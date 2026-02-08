@@ -4,18 +4,19 @@ import {GestureHandlerRootView} from "react-native-gesture-handler";
 import React, {useMemo, useState, forwardRef, useContext, useEffect} from "react";
 import {makeRequest} from "@/helpers/axiosConfig";
 import {AuthContext} from "@/context/AuthProvider";
-import {Colors} from "@/constants/colors";
+import {useColors} from "@/hooks/useThemeColors";
 import {Spacing, BorderRadius, Typography, FontWeight} from "@/constants/sizes";
 
 const CloseBtn = () => {
     const { close } = useBottomSheet();
-
     return <Button title="Close" onPress={() => close()} />;
 };
 
 const SelectStatusBottomSheet = forwardRef((props, ref) => {
-    const { user } = useContext(AuthContext);
+    const colors = useColors();
+    const styles = useMemo(() => createStyles(colors), [colors]);
 
+    const { user } = useContext(AuthContext);
     const snapPoints = useMemo(() => ['30%', '50%'], []);
     const [searchText, setSearchText] = useState('')
     const [statuses, setStatuses] = useState([])
@@ -35,10 +36,6 @@ const SelectStatusBottomSheet = forwardRef((props, ref) => {
             })
             .catch((err) => {
                 console.error(err);
-            })
-            .finally(() => {
-                // Hide the loading animation
-                // setLoading(false);
             });
     }
 
@@ -59,25 +56,25 @@ const SelectStatusBottomSheet = forwardRef((props, ref) => {
         </Pressable>
     )
 
-
     return (
         <BottomSheetModal
             index={1}
             ref={ref}
             snapPoints={snapPoints}
+            backgroundStyle={{ backgroundColor: colors.background }}
+            handleIndicatorStyle={{ backgroundColor: colors.textMuted }}
         >
             <GestureHandlerRootView style={styles.container}>
                 <Text style={styles.title}>{props.title}</Text>
-                {/* we use BottomSheetTextInput to make the BottomSheet aware of the keyboard and expand to accommodate it */}
                 <View style={styles.searchContainer}>
                     <BottomSheetTextInput
                         style={styles.searchInput}
                         label="Search..."
                         placeholder={'Search...'}
+                        placeholderTextColor={colors.textMuted}
                         onChangeText={(text) => {setSearchText(text)}}
                     />
                 </View>
-                {/*  flatlist  */}
                 <BottomSheetFlatList
                     data={statuses}
                     renderItem={({item}) => <Item item={item} />}
@@ -90,10 +87,10 @@ const SelectStatusBottomSheet = forwardRef((props, ref) => {
     )
 })
 
-const styles = StyleSheet.create({
+const createStyles = (colors) => StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: Colors.light.background,
+        backgroundColor: colors.background,
         padding: Spacing.lg,
         borderRadius: BorderRadius.sm,
         elevation: 4,
@@ -103,7 +100,7 @@ const styles = StyleSheet.create({
         fontSize: Typography.subtitle,
         fontWeight: FontWeight.bold,
         marginBottom: Spacing.lg,
-        color: Colors.light.text,
+        color: colors.text,
     },
     searchContainer: {
         marginBottom: Spacing.lg,
@@ -111,27 +108,28 @@ const styles = StyleSheet.create({
     searchInput: {
         padding: Spacing.md,
         borderRadius: BorderRadius.sm,
-        backgroundColor: Colors.light.backgroundTertiary,
+        backgroundColor: colors.backgroundTertiary,
         fontSize: Typography.bodyLarge,
         borderWidth: 1,
-        borderColor: Colors.light.border,
+        borderColor: colors.border,
+        color: colors.text,
     },
     itemContainer: {
         padding: Spacing.md,
         marginVertical: Spacing.sm,
-        backgroundColor: Colors.light.backgroundTertiary,
+        backgroundColor: colors.backgroundTertiary,
         borderRadius: BorderRadius.sm,
         flexDirection: 'row',
         flexWrap: 'wrap',
         gap: Spacing.md,
     },
     itemPressed: {
-        backgroundColor: Colors.light.border,
+        backgroundColor: colors.border,
     },
     name: {
         fontSize: Typography.bodyLarge,
         fontWeight: FontWeight.medium,
-        color: Colors.light.text,
+        color: colors.text,
     },
     listContent: {
         paddingBottom: 50,
