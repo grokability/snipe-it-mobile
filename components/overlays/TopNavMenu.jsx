@@ -13,21 +13,28 @@ export default function TopNavMenu() {
     return (
         <ContextMenu>
             <ContextMenu.Trigger>
-                <Button variant={'default'} systemImage={"filled.MoreVert"} />
+                <Button
+                    variant={'default'}
+                    systemImage={"filled.MoreVert"}
+                    elementColors={{ contentColor: colors.text }}
+                />
             </ContextMenu.Trigger>
             <ContextMenu.Items>
                 <Button
                     onPress={() => router.push('/(authenticated)/(tabs)/home')}
+                    elementColors={{ contentColor: colors.text }}
                 >
                     Home
                 </Button>
                 <Button
                     onPress={() => router.push('/(authenticated)/licenses')}
+                    elementColors={{ contentColor: colors.text }}
                 >
                     License
                 </Button>
                 <Button
                     onPress={() => router.push('/(authenticated)/settings')}
+                    elementColors={{ contentColor: colors.text }}
                 >
                     Settings
                 </Button>
@@ -44,6 +51,7 @@ const createStyles = (colors) => StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         backgroundColor: colors.background,
+        textColor: colors.text,
         elevation: 2,
     },
 });

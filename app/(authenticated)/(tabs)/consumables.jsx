@@ -1,13 +1,15 @@
-import {View, Text, StyleSheet, FlatList, Image, RefreshControl} from 'react-native';
+import {View, Text, StyleSheet, Image, RefreshControl, Platform} from 'react-native';
 import {useContext, useState, useEffect, useCallback, useMemo} from "react";
 import {AuthContext} from "@/context/AuthProvider";
 import {makeRequest} from "@/helpers/axiosConfig";
-import {SafeAreaProvider, SafeAreaView} from "react-native-safe-area-context";
+import {SafeAreaProvider, useSafeAreaInsets} from "react-native-safe-area-context";
 import {useColors} from "@/hooks/useThemeColors";
 import {Spacing, BorderRadius, Typography, FontWeight} from "@/constants/sizes";
+import {FlashList} from "@shopify/flash-list";
 
 export default function ConsumablesScreen() {
     const colors = useColors();
+    const insets = useSafeAreaInsets();
     const styles = useMemo(() => createStyles(colors), [colors]);
 
     const { user } = useContext(AuthContext);
@@ -49,61 +51,93 @@ export default function ConsumablesScreen() {
 
     const Item = ({image, name, qty}) => (
         <View style={styles.itemContainer}>
-            <Image style={styles.image} src={image} />
-            <Text style={styles.name}>{name}</Text>
-            <Text style={styles.name}>Qty: {qty}</Text>
+            <View style={styles.imageContainer}>
+                <Image style={styles.image} src={image} />
+            </View>
+            <View style={styles.contentContainer}>
+                <Text style={styles.itemName}>{name}</Text>
+                <Text style={styles.qtyText}>Qty: {qty}</Text>
+            </View>
         </View>
     );
 
     return (
-        <SafeAreaView style={styles.container}>
-            <Text style={styles.title}>Consumables Index</Text>
-            <SafeAreaProvider>
-                <SafeAreaView style={styles.container}>
-                    <FlatList
-                        data={data.consumables}
-                        renderItem={({item}) => <Item
-                            image={item.image}
-                            name={item.name}
-                            qty={item.qty}
-                        />}
-                        keyExtractor={item => item.id}
-                        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-                    ></FlatList>
-                </SafeAreaView>
-            </SafeAreaProvider>
-        </SafeAreaView>
+        <SafeAreaProvider style={styles.container}>
+            <FlashList
+                contentContainerStyle={{
+                    paddingTop: Platform.OS === 'android' ? insets.top + 56 : 0,
+                    paddingBottom: 80
+                }}
+                style={styles.flatlist}
+                data={data.consumables}
+                renderItem={({item}) => <Item
+                    image={item.image}
+                    name={item.name}
+                    qty={item.qty}
+                />}
+                keyExtractor={item => item.id}
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+            />
+        </SafeAreaProvider>
     );
 }
 
 const createStyles = (colors) => StyleSheet.create({
     container: {
         flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
         backgroundColor: colors.background,
     },
-    title: {
-        fontSize: Typography.subtitle,
-        fontWeight: FontWeight.semibold,
-        color: colors.text,
-        marginBottom: Spacing.md,
+    flatlist: {
+        flex: 1,
+        padding: 5,
+        flexDirection: 'column',
+        gap: 5,
+        backgroundColor: colors.background,
+        shadowOffset: {
+            width: 1,
+            height: -1,
+        },
+        shadowOpacity: 0.10,
+        shadowRadius: 20,
     },
     itemContainer: {
-        padding: Spacing.md,
+        width: '100%',
+        padding: Spacing.lg,
         marginVertical: Spacing.sm,
         backgroundColor: colors.backgroundTertiary,
-        borderRadius: BorderRadius.sm,
+        borderRadius: BorderRadius.md,
         flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: Spacing.md,
+        gap: Spacing.lg,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+        elevation: 3,
+    },
+    imageContainer: {
+        width: '25%',
+        height: 100,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: colors.backgroundSecondary,
+        borderRadius: BorderRadius.sm,
     },
     image: {
-        width: 100,
-        height: 100,
+        width: 80,
+        height: 80,
+        borderRadius: BorderRadius.sm,
     },
-    name: {
-        fontWeight: FontWeight.bold,
+    contentContainer: {
+        flex: 1,
+        gap: 6,
+    },
+    itemName: {
+        fontSize: Typography.bodyLarge,
+        fontWeight: FontWeight.semibold,
         color: colors.text,
+    },
+    qtyText: {
+        fontSize: Typography.body,
+        color: colors.textSecondary,
     },
 });
