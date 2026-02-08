@@ -3,7 +3,7 @@
  * https://docs.expo.dev/guides/color-schemes/
  */
 
-import { Colors } from '@/constants/Colors';
+import { Colors } from '@/constants/colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 
 export function useThemeColor(props, colorName) {
@@ -15,4 +15,9 @@ export function useThemeColor(props, colorName) {
     } else {
         return Colors[theme][colorName];
     }
+}
+
+export function useColors() {
+    const scheme = useColorScheme() ?? 'light';
+    return Colors[scheme];
 }

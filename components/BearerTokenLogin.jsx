@@ -1,8 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { StyleSheet, TextInput, Text, TouchableOpacity, Alert } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
+import {useColors} from "@/hooks/useThemeColors";
+import {Spacing, BorderRadius} from "@/constants/sizes";
 
 const BearerTokenLogin = ({ onLogin, onDomainChange }) => {
+    const colors = useColors();
+    const styles = useMemo(() => createStyles(colors), [colors]);
     const [domain, setDomain] = useState('https://example.example.com');
     const [token, setToken] = useState('');
 
@@ -47,7 +51,7 @@ const BearerTokenLogin = ({ onLogin, onDomainChange }) => {
                 onChangeText={handleDomainChange}
                 value={domain}
                 style={styles.input}
-                placeholderTextColor="gray"
+                placeholderTextColor={colors.textMuted}
                 textContentType="URL"
                 autoCapitalize="none"
             />
@@ -56,24 +60,30 @@ const BearerTokenLogin = ({ onLogin, onDomainChange }) => {
                 onChangeText={setToken}
                 value={token}
                 style={styles.input}
-                placeholderTextColor="gray"
+                placeholderTextColor={colors.textMuted}
                 autoCapitalize="none"
             />
             <TouchableOpacity onPress={handleLogin}>
-                <Text>Login</Text>
+                <Text style={styles.buttonText}>Login</Text>
             </TouchableOpacity>
         </>
     );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors) => StyleSheet.create({
     input: {
         height: 40,
-        borderColor: 'gray',
+        borderColor: colors.border,
         borderWidth: 1,
-        marginBottom: 12,
-        padding: 10,
+        borderRadius: BorderRadius.sm,
+        marginBottom: Spacing.md,
+        padding: Spacing.sm,
         width: '100%',
+        color: colors.text,
+        backgroundColor: colors.background,
+    },
+    buttonText: {
+        color: colors.primary,
     },
 });
 

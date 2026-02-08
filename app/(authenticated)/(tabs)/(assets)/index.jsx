@@ -1,14 +1,18 @@
 import {View, Text, StyleSheet, Image, RefreshControl, Pressable} from 'react-native';
-import {useContext, useState, useCallback} from "react";
+import {useContext, useState, useCallback, useMemo} from "react";
 import {AuthContext} from "@/context/AuthProvider";
 import {makeRequest} from "@/helpers/axiosConfig";
 import {SafeAreaProvider} from "react-native-safe-area-context";
 import {router, useFocusEffect} from "expo-router";
-import {COLORS} from "@/constants/colors";
+import {useColors} from "@/hooks/useThemeColors";
+import {Spacing, BorderRadius, Typography, FontWeight} from "@/constants/sizes";
 import {decodeEntity} from "html-entities";
 import {FlashList} from "@shopify/flash-list";
 
 export default function AssetsScreen() {
+    const colors = useColors();
+    const styles = useMemo(() => createStyles(colors), [colors]);
+
     const { user } = useContext(AuthContext);
     const [data, setData] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -78,7 +82,6 @@ export default function AssetsScreen() {
                         Checked out to: <Text style={styles.userName}>{checkedOut.name}</Text>
                     </Text>
                 )}
-                {/* this is only for switching the style, it doesn't really work inline in the style attribute unfortunately */}
                 {status.status_type === 'deployable' ?
                     (
                     <Text style={styles.availableText}>{status.name}</Text>
@@ -92,7 +95,7 @@ export default function AssetsScreen() {
 
 
     return (
-            <SafeAreaProvider>
+            <SafeAreaProvider style={styles.container}>
                 <FlashList
                     onEndReached={() => loadMore()}
                     onEndReachedThreshold={0.1}
@@ -117,21 +120,20 @@ export default function AssetsScreen() {
     );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors) => StyleSheet.create({
     container: {
         flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
+        backgroundColor: colors.background,
     },
     name: {
-        fontWeight: 'bold',
+        fontWeight: FontWeight.bold,
     },
     flatlist: {
         flex: 1,
         padding: 5,
-        // paddingBottom: 80,
         flexDirection: 'column',
         gap: 5,
+        backgroundColor: colors.background,
         shadowOffset: {
             width: 1,
             height: -1,
@@ -140,16 +142,16 @@ const styles = StyleSheet.create({
         shadowRadius: 20,
     },
     innerText: {
-        color: COLORS.light.primary,
+        color: colors.primary,
     },
     itemContainer: {
         width: '100%',
-        padding: 16,
-        marginVertical: 8,
-        backgroundColor: '#ffffff',
-        borderRadius: 12,
+        padding: Spacing.lg,
+        marginVertical: Spacing.sm,
+        backgroundColor: colors.backgroundTertiary,
+        borderRadius: BorderRadius.md,
         flexDirection: 'row',
-        gap: 16,
+        gap: Spacing.lg,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
@@ -157,7 +159,7 @@ const styles = StyleSheet.create({
         elevation: 3,
     },
     itemPressed: {
-        backgroundColor: '#f8f4ff',
+        backgroundColor: colors.backgroundSecondary,
         transform: [{ scale: 0.995 }],
     },
     imageContainer: {
@@ -165,47 +167,46 @@ const styles = StyleSheet.create({
         height: 100,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: '#f8f4ff',
-        borderRadius: 8,
+        backgroundColor: colors.backgroundSecondary,
+        borderRadius: BorderRadius.sm,
     },
     image: {
         width: 80,
         height: 80,
-        borderRadius: 8,
+        borderRadius: BorderRadius.sm,
     },
     contentContainer: {
         flex: 1,
         gap: 6,
     },
     assetTag: {
-        fontSize: 12,
-        color: '#666',
-        fontWeight: '500',
+        fontSize: Typography.caption,
+        color: colors.textSecondary,
+        fontWeight: FontWeight.medium,
     },
     assetName: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: '#1a1a1a',
+        fontSize: Typography.bodyLarge,
+        fontWeight: FontWeight.semibold,
+        color: colors.text,
     },
     checkedOutText: {
-        fontSize: 14,
-        color: '#666',
+        fontSize: Typography.body,
+        color: colors.textSecondary,
     },
     userName: {
-        color: '#6200ee',
-        fontWeight: '500',
+        color: colors.primary,
+        fontWeight: FontWeight.medium,
     },
     availableText: {
-        color: '#4CAF50',
-        fontWeight: '500',
+        color: colors.success,
+        fontWeight: FontWeight.medium,
     },
     notAvailableText: {
-        color: '#FF5252',
-        fontWeight: '500'
+        color: colors.danger,
+        fontWeight: FontWeight.medium,
     },
     serialText: {
-        fontSize: 12,
-        color: '#555',
+        fontSize: Typography.caption,
+        color: colors.textSecondary,
     },
-
 });

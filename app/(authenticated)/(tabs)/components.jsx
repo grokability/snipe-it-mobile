@@ -1,11 +1,16 @@
 import {View, Text, StyleSheet, FlatList, Image, RefreshControl} from 'react-native';
-import {useContext, useState, useEffect, useCallback} from "react";
+import {useContext, useState, useEffect, useCallback, useMemo} from "react";
 import {AuthContext} from "@/context/AuthProvider";
 import {makeRequest} from "@/helpers/axiosConfig";
 import {SafeAreaProvider, SafeAreaView} from "react-native-safe-area-context";
 import {getComponentIds} from "expo-router/build/rsc/router/common";
+import {useColors} from "@/hooks/useThemeColors";
+import {Spacing, BorderRadius, Typography, FontWeight} from "@/constants/sizes";
 
 export default function ComponentsScreen() {
+    const colors = useColors();
+    const styles = useMemo(() => createStyles(colors), [colors]);
+
     const { user } = useContext(AuthContext);
     const [data, setData] = useState({});
     const [loading, setLoading] = useState(true);
@@ -44,19 +49,16 @@ export default function ComponentsScreen() {
     }, []);
 
     const Item = ({image, name, qty}) => (
-        <View style={{padding: 10, marginVertical: 8, backgroundColor: '#eee', borderRadius: 8, flexDirection: 'row', flexWrap: 'wrap', gap: 10}}>
-            <Image style={{width: 100, height: 100}} src={image} />
+        <View style={styles.itemContainer}>
+            <Image style={styles.image} src={image} />
             <Text style={styles.name}>{name}</Text>
             <Text style={styles.name}>Qty: {qty}</Text>
         </View>
     );
 
-
-
-
     return (
         <SafeAreaView style={styles.container}>
-            <Text>Components Index</Text>
+            <Text style={styles.title}>Components Index</Text>
             <SafeAreaProvider>
                 <SafeAreaView style={styles.container}>
                     {data.count > 0 &&
@@ -72,7 +74,7 @@ export default function ComponentsScreen() {
                         ></FlatList>
                     }
                     {data.count === 0 &&
-                        <Text>No components found</Text>
+                        <Text style={styles.emptyText}>No components found</Text>
                     }
                 </SafeAreaView>
             </SafeAreaProvider>
@@ -80,16 +82,38 @@ export default function ComponentsScreen() {
     );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors) => StyleSheet.create({
     container: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
+        backgroundColor: colors.background,
+    },
+    title: {
+        fontSize: Typography.subtitle,
+        fontWeight: FontWeight.semibold,
+        color: colors.text,
+        marginBottom: Spacing.md,
+    },
+    itemContainer: {
+        padding: Spacing.md,
+        marginVertical: Spacing.sm,
+        backgroundColor: colors.backgroundTertiary,
+        borderRadius: BorderRadius.sm,
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: Spacing.md,
+    },
+    image: {
+        width: 100,
+        height: 100,
     },
     name: {
-        fontWeight: 'bold',
+        fontWeight: FontWeight.bold,
+        color: colors.text,
     },
-    innerText: {
-        color: 'red',
+    emptyText: {
+        color: colors.textSecondary,
+        fontSize: Typography.body,
     },
 });

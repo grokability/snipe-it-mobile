@@ -3,19 +3,18 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { TouchableOpacity, StyleSheet, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import {Stack, useRouter} from "expo-router";
-import { COLORS } from "@/constants/colors";
+import {useColors} from "@/hooks/useThemeColors";
+import {Spacing, BorderRadius, Typography, FontWeight} from "@/constants/sizes";
 import {SafeAreaView} from "react-native-safe-area-context";
 import TopNavMenu from "@/components/overlays/TopNavMenu";
 import { getFocusedRouteNameFromRoute } from '@react-navigation/native';
+import {useMemo} from "react";
 
 export default function AuthenticatedLayout() {
-
-    // Hide the header if we are in the (assets) stack
-    // This prevents the "double header" look
-
+    const colors = useColors();
+    const styles = useMemo(() => createStyles(colors), [colors]);
 
     return (
-        // mine
         <View style={{ flex: 1 }}>
             <Stack
                 screenOptions={({ navigation, route }) => {
@@ -52,7 +51,6 @@ export default function AuthenticatedLayout() {
                         title: 'Settings',
                     }}
                 />
-            {/*  hidden screens  */}
                 <Stack.Screen
                     name="index"
                     options={{
@@ -67,9 +65,9 @@ export default function AuthenticatedLayout() {
     );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors) => StyleSheet.create({
     header: {
-        backgroundColor: COLORS.background,
+        backgroundColor: colors.background,
         elevation: 4,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
@@ -77,25 +75,25 @@ const styles = StyleSheet.create({
         shadowRadius: 2,
     },
     headerTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: COLORS.text,
+        fontSize: Typography.subtitle,
+        fontWeight: FontWeight.bold,
+        color: colors.text,
     },
     headerButton: {
-        padding: 10,
+        padding: Spacing.md,
         marginHorizontal: 6,
     },
     drawer: {
-        backgroundColor: COLORS.background,
+        backgroundColor: colors.background,
         width: 250,
     },
     drawerItem: {
-        borderRadius: 8,
-        marginHorizontal: 10,
-        marginVertical: 4,
+        borderRadius: BorderRadius.sm,
+        marginHorizontal: Spacing.md,
+        marginVertical: Spacing.xs,
     },
     drawerLabel: {
-        fontSize: 16,
-        fontWeight: '500',
+        fontSize: Typography.bodyLarge,
+        fontWeight: FontWeight.medium,
     }
 });

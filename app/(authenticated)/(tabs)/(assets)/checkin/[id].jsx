@@ -1,12 +1,15 @@
-import React, {useContext} from 'react';
-import {Text, Button} from "react-native";
+import React, {useContext, useMemo} from 'react';
+import {Text, Button, StyleSheet} from "react-native";
 import {router, useLocalSearchParams} from "expo-router";
 import {SafeAreaProvider} from "react-native-safe-area-context";
 import {makeRequest} from "@/helpers/axiosConfig";
 import {AuthContext} from "@/context/AuthProvider";
-import {StyleSheet} from "react-native";
+import {useColors} from "@/hooks/useThemeColors";
+import {Typography, FontWeight, Spacing} from "@/constants/sizes";
 
-export default function CheckoutScreen() {
+export default function CheckinScreen() {
+    const colors = useColors();
+    const styles = useMemo(() => createStyles(colors), [colors]);
     const { user } = useContext(AuthContext);
     const { id } = useLocalSearchParams();
 
@@ -30,15 +33,22 @@ export default function CheckoutScreen() {
 
     return (
         <SafeAreaProvider style={styles.container}>
-            <Text>Checkin Asset {id}</Text>
+            <Text style={styles.title}>Checkin Asset {id}</Text>
             <Button title="Checkin" onPress={() => checkin()} />
         </SafeAreaProvider>
     )
 }
-const styles = StyleSheet.create({
+const createStyles = (colors) => StyleSheet.create({
     container: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
+        backgroundColor: colors.background,
+    },
+    title: {
+        fontSize: Typography.title,
+        fontWeight: FontWeight.bold,
+        color: colors.text,
+        marginBottom: Spacing.lg,
     },
 })

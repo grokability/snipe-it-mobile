@@ -1,19 +1,22 @@
-import React, {useCallback, useContext, useEffect, useState} from 'react';
+import React, {useCallback, useContext, useEffect, useState, useMemo} from 'react';
 import {ActivityIndicator, Button, Image, Pressable, StyleSheet, Text, View} from 'react-native';
 import {router, useFocusEffect, useLocalSearchParams} from "expo-router";
 import {makeRequest} from "@/helpers/axiosConfig";
 import {AuthContext} from "@/context/AuthProvider";
 import {SafeAreaProvider} from "react-native-safe-area-context";
-import {COLORS} from "@/constants/colors";
+import {useColors} from "@/hooks/useThemeColors";
+import {Spacing, BorderRadius, Typography, FontWeight} from "@/constants/sizes";
 
 
 export const unstable_settings = {
-    // Ensure any route can link back to `/`
     initialRouteName: 'index',
 };
 
 
 export default function AssetScreen() {
+    const colors = useColors();
+    const styles = useMemo(() => createStyles(colors), [colors]);
+
     const [data, setData] = useState({});
     const [loading, setLoading] = useState(true);
     const { user } = useContext(AuthContext);
@@ -55,16 +58,16 @@ export default function AssetScreen() {
 
     if(loading) {
         return (
-            <View style={{flex: 1, justifyContent: "center", alignItems: "center"}}>
-                <ActivityIndicator size="large" color="purple"/>
+            <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color={colors.primary}/>
             </View>
         )
     }
 
     if(loading || !data.asset) {
         return (
-            <View style={{flex: 1, justifyContent: "center", alignItems: "center"}}>
-                <ActivityIndicator size="large" color="purple"/>
+            <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color={colors.primary}/>
             </View>
         )
     }
@@ -112,43 +115,44 @@ export default function AssetScreen() {
         );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors) => StyleSheet.create({
     loadingContainer: {
         flex: 1,
         justifyContent: "center",
-        alignItems: "center"
+        alignItems: "center",
+        backgroundColor: colors.background,
     },
     container: {
         flex: 1,
-        padding: 16,
-        backgroundColor: '#fff'
+        padding: Spacing.lg,
+        backgroundColor: colors.background
     },
     imageContainer: {
         alignItems: 'center',
-        backgroundColor: '#f8f4ff',
-        borderRadius: 12,
-        padding: 16,
-        marginBottom: 24
+        backgroundColor: colors.backgroundSecondary,
+        borderRadius: BorderRadius.md,
+        padding: Spacing.lg,
+        marginBottom: Spacing.xxl
     },
     image: {
         width: 250,
         height: 250,
-        borderRadius: 12
+        borderRadius: BorderRadius.md
     },
     infoContainer: {
-        gap: 24
+        gap: Spacing.xxl
     },
     assetTitle: {
-        fontSize: 24,
-        fontWeight: '700',
-        color: '#1a1a1a',
-        marginBottom: 8
+        fontSize: Typography.titleLarge,
+        fontWeight: FontWeight.bold,
+        color: colors.text,
+        marginBottom: Spacing.sm
     },
     detailsContainer: {
-        backgroundColor: '#f8f4ff',
-        padding: 16,
-        borderRadius: 12,
-        gap: 12
+        backgroundColor: colors.backgroundSecondary,
+        padding: Spacing.lg,
+        borderRadius: BorderRadius.md,
+        gap: Spacing.md
     },
     detailRow: {
         flexDirection: 'row',
@@ -156,38 +160,38 @@ const styles = StyleSheet.create({
         alignItems: 'center'
     },
     detailLabel: {
-        fontSize: 16,
-        color: '#666',
-        fontWeight: '500'
+        fontSize: Typography.bodyLarge,
+        color: colors.textSecondary,
+        fontWeight: FontWeight.medium
     },
     detailValue: {
-        fontSize: 16,
-        color: '#1a1a1a',
-        fontWeight: '600'
+        fontSize: Typography.bodyLarge,
+        color: colors.text,
+        fontWeight: FontWeight.semibold
     },
     assignmentContainer: {
         alignItems: 'center',
-        gap: 16
+        gap: Spacing.lg
     },
     assignedText: {
-        fontSize: 16,
-        color: '#666'
+        fontSize: Typography.bodyLarge,
+        color: colors.textSecondary
     },
     userName: {
-        color: COLORS.light.primary,
-        fontWeight: '600'
+        color: colors.primary,
+        fontWeight: FontWeight.semibold
     },
     button: {
         width: '100%',
-        padding: 16,
-        borderRadius: 12,
+        padding: Spacing.lg,
+        borderRadius: BorderRadius.md,
         alignItems: 'center'
     },
     checkinButton: {
-        backgroundColor: '#FF5252'
+        backgroundColor: colors.danger
     },
     checkoutButton: {
-        backgroundColor: '#4CAF50'
+        backgroundColor: colors.success
     },
     buttonPressed: {
         opacity: 0.8,
@@ -195,7 +199,7 @@ const styles = StyleSheet.create({
     },
     buttonText: {
         color: '#fff',
-        fontSize: 16,
-        fontWeight: '600'
+        fontSize: Typography.bodyLarge,
+        fontWeight: FontWeight.semibold
     }
 });

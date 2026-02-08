@@ -1,7 +1,7 @@
 import {View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Button} from 'react-native';
 import { CameraView, useCameraPermissions, CameraType } from 'expo-camera';
 import {Link, router} from "expo-router";
-import React, {useContext, useEffect, useState} from "react";
+import React, {useContext, useEffect, useMemo, useState} from "react";
 import {SafeAreaView} from "react-native-safe-area-context";
 import LottieView from "lottie-react-native";
 import Constants from "expo-constants/src/Constants";
@@ -11,8 +11,12 @@ import {AuthContext} from "@/context/AuthProvider";
 import {useTranslation} from "react-i18next";
 import i18n from "@/i18n";
 import ExpoLocalization from "expo-localization/src/ExpoLocalization";
+import {useColors} from "@/hooks/useThemeColors";
+import {Typography, FontWeight} from "@/constants/sizes";
 
 export default function HomeScreen() {
+    const colors = useColors();
+    const styles = useMemo(() => createStyles(colors), [colors]);
     const { user } = useContext(AuthContext);
     // kind of weird that you have to type it but it's still just a string?
     const [permission, requestPermission] = useCameraPermissions();
@@ -58,11 +62,12 @@ export default function HomeScreen() {
         );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors) => StyleSheet.create({
     container: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
+        backgroundColor: colors.background,
     },
         message: {
             textAlign: 'center',
@@ -83,7 +88,8 @@ const styles = StyleSheet.create({
             alignItems: 'center',
         },
         text: {
-            fontSize: 24,
-            fontWeight: 'bold',
+            fontSize: Typography.titleLarge,
+            fontWeight: FontWeight.bold,
+            color: colors.text,
         }
 });

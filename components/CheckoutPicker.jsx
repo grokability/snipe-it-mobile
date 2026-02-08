@@ -1,11 +1,11 @@
 import {Picker} from "@expo/ui/jetpack-compose";
 import {StyleSheet, View} from "react-native";
 import ExpoDevice from "expo-device/src/ExpoDevice";
-import {value} from "lodash/seq";
 import {indexOf} from "lodash";
-
+import {useColors} from "@/hooks/useThemeColors";
 
 export function CheckoutPicker({ selectedCheckoutTo, setSelectedCheckoutTo }) {
+    const colors = useColors();
     const isIpad = ExpoDevice.osName === "iPadOS";
     const SPACE_SCALE = 1.33;
 
@@ -19,7 +19,6 @@ export function CheckoutPicker({ selectedCheckoutTo, setSelectedCheckoutTo }) {
         <View
             style={{
                 paddingVertical: isIpad ? Math.round(4 * SPACE_SCALE) : 4,
-                backgroundColor: "#f1f1f1"
             }}
         >
                 <Picker
@@ -29,18 +28,17 @@ export function CheckoutPicker({ selectedCheckoutTo, setSelectedCheckoutTo }) {
                         setSelectedCheckoutTo(options[index].value);
                     }}
                     variant="segmented"
-                    color={"#606060"}
+                    color={colors.textSecondary}
                     elementColors={{
-                        activeContainerColor: "blue",
-                        activeContentColor: "#f1f1f1",
+                        activeContainerColor: colors.primary,
+                        activeContentColor: colors.background,
                         activeBorderColor: "transparent",
-                        inactiveContainerColor: "#f1f1f1",
-                        inactiveContentColor: "#606060",
-                        inactiveBorderColor: "#f1f1f1",
+                        inactiveContainerColor: colors.backgroundTertiary,
+                        inactiveContentColor: colors.textSecondary,
+                        inactiveBorderColor: colors.backgroundTertiary,
                     }}
                     style={{
                         ...styles.picker,
-                        // width: isIpad ? Math.round(24 * SPACE_SCALE) : 24 * 2,
                         width: 300,
                     }}
                 />

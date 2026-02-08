@@ -10,17 +10,19 @@ import React, {forwardRef, useContext, useEffect, useMemo, useState, useImperati
 import BottomSheet from "@gorhom/bottom-sheet";
 import {makeRequest} from "@/helpers/axiosConfig";
 import {AuthContext} from "@/context/AuthProvider";
-import {COLORS} from "@/constants/colors";
+import {useColors} from "@/hooks/useThemeColors";
+import {Spacing, BorderRadius, Typography, FontWeight} from "@/constants/sizes";
 import {GestureHandlerRootView} from "react-native-gesture-handler";
-// export type Ref = BottomSheet;
 
 const CloseBtn = () => {
     const { close } = useBottomSheet();
-
     return <Button title="Close" onPress={() => close()} />;
 };
 
-const SelectLocationBottomSheet = forwardRef((props, ref) => {
+const SelectAssetBottomSheet = forwardRef((props, ref) => {
+    const colors = useColors();
+    const styles = useMemo(() => createStyles(colors), [colors]);
+
     const { user } = useContext(AuthContext);
     const [assets, setAssets] = useState([])
     const [searchText, setSearchText] = useState('')
@@ -41,10 +43,6 @@ const SelectLocationBottomSheet = forwardRef((props, ref) => {
             })
             .catch((err) => {
                 console.error(err);
-            })
-            .finally(() => {
-                // Hide the loading animation
-                // setLoading(false);
             });
     }
 
@@ -62,32 +60,32 @@ const SelectLocationBottomSheet = forwardRef((props, ref) => {
                     pressed && styles.itemPressed
                 ]}
             >
-                <View style={styles.locationInfoContainer}>
-                    <Text style={styles.locationName}>{item.asset_tag}</Text>
+                <View style={styles.assetInfoContainer}>
+                    <Text style={styles.assetName}>{item.asset_tag}</Text>
                 </View>
             </Pressable>
         )
     }
-
 
     return (
         <BottomSheetModal
             index={1}
             ref={ref}
             snapPoints={snapPoints}
+            backgroundStyle={{ backgroundColor: colors.background }}
+            handleIndicatorStyle={{ backgroundColor: colors.textMuted }}
         >
             <GestureHandlerRootView style={styles.container}>
                 <Text style={styles.title}>{props.title}</Text>
-                {/* we use BottomSheetTextInput to make the BottomSheet aware of the keyboard and expand to accommodate it */}
                 <View style={styles.searchContainer}>
                     <BottomSheetTextInput
                         style={styles.searchInput}
                         label="Search..."
                         placeholder={'Search...'}
+                        placeholderTextColor={colors.textMuted}
                         onChangeText={(text) => {setSearchText(text)}}
                     />
                 </View>
-                {/*  flatlist  */}
                 <BottomSheetFlatList
                     data={assets}
                     renderItem={({item}) => <Item item={item} />}
@@ -100,57 +98,59 @@ const SelectLocationBottomSheet = forwardRef((props, ref) => {
     )
 })
 
-const styles = StyleSheet.create({
+const createStyles = (colors) => StyleSheet.create({
     container: {
         flex: 1,
-        padding: 16,
+        padding: Spacing.lg,
+        backgroundColor: colors.background,
     },
     title: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        marginBottom: 16,
-        color: COLORS.light.text,
+        fontSize: Typography.subtitle,
+        fontWeight: FontWeight.bold,
+        marginBottom: Spacing.lg,
+        color: colors.text,
     },
     searchContainer: {
-        marginBottom: 16,
+        marginBottom: Spacing.lg,
     },
     searchInput: {
-        padding: 12,
-        borderRadius: 8,
-        backgroundColor: '#F1F3F5',
-        fontSize: 16,
+        padding: Spacing.md,
+        borderRadius: BorderRadius.sm,
+        backgroundColor: colors.backgroundTertiary,
+        fontSize: Typography.bodyLarge,
         borderWidth: 1,
-        borderColor: '#E4E7EB',
+        borderColor: colors.border,
+        color: colors.text,
     },
     itemContainer: {
         flexDirection: 'row',
-        padding: 12,
+        padding: Spacing.md,
         alignItems: 'center',
         borderBottomWidth: 1,
-        borderBottomColor: '#E4E7EB',
+        borderBottomColor: colors.border,
     },
     itemPressed: {
-        backgroundColor: '#F1F3F5',
+        backgroundColor: colors.backgroundTertiary,
     },
     imageContainer: {
-        marginRight: 12,
+        marginRight: Spacing.md,
     },
     placeholderText: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        color: '#687076',
+        fontSize: Typography.bodyLarge,
+        fontWeight: FontWeight.bold,
+        color: colors.textMuted,
     },
-    locationInfoContainer: {
+    assetInfoContainer: {
         flex: 1,
     },
-    locationName: {
-        fontSize: 16,
-        fontWeight: '500',
-        color: COLORS.light.text,
+    assetName: {
+        fontSize: Typography.bodyLarge,
+        fontWeight: FontWeight.medium,
+        color: colors.text,
     },
     listContent: {
-        paddingBottom: 20,
+        paddingBottom: Spacing.xl,
     },
 });
 
-export default SelectLocationBottomSheet;
+export default SelectAssetBottomSheet;

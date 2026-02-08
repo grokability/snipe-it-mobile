@@ -1,10 +1,15 @@
-import React from 'react';
+import React, {useMemo} from 'react';
 import {StyleSheet, View} from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import {ContextMenu, Button} from '@expo/ui/jetpack-compose';
+import {useColors} from "@/hooks/useThemeColors";
+import {BorderRadius} from "@/constants/sizes";
 
 export default function TopNavMenu() {
+    const colors = useColors();
+    const styles = useMemo(() => createStyles(colors), [colors]);
+
     return (
         <ContextMenu>
             <ContextMenu.Trigger>
@@ -31,14 +36,14 @@ export default function TopNavMenu() {
     );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors) => StyleSheet.create({
     button: {
         width: 44,
         height: 44,
-        borderRadius: 22,
+        borderRadius: BorderRadius.lg,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: '#fff',
+        backgroundColor: colors.background,
         elevation: 2,
     },
 });
