@@ -1,8 +1,8 @@
-import {View, Text, StyleSheet, Image, RefreshControl, Pressable} from 'react-native';
+import {View, Text, StyleSheet, Image, RefreshControl, Pressable, Platform} from 'react-native';
 import {useContext, useState, useCallback, useMemo} from "react";
 import {AuthContext} from "@/context/AuthProvider";
 import {makeRequest} from "@/helpers/axiosConfig";
-import {SafeAreaProvider} from "react-native-safe-area-context";
+import {SafeAreaProvider, useSafeAreaInsets} from "react-native-safe-area-context";
 import {router, useFocusEffect} from "expo-router";
 import {useColors} from "@/hooks/useThemeColors";
 import {Spacing, BorderRadius, Typography, FontWeight} from "@/constants/sizes";
@@ -11,6 +11,7 @@ import {FlashList} from "@shopify/flash-list";
 
 export default function AssetsScreen() {
     const colors = useColors();
+    const insets = useSafeAreaInsets();
     const styles = useMemo(() => createStyles(colors), [colors]);
 
     const { user } = useContext(AuthContext);
@@ -99,7 +100,10 @@ export default function AssetsScreen() {
                 <FlashList
                     onEndReached={() => loadMore()}
                     onEndReachedThreshold={0.1}
-                    contentContainerStyle={{ paddingBottom: 80 }}
+                    contentContainerStyle={{
+                        paddingTop: Platform.OS === 'android' ? insets.top + 56 : 0,
+                        paddingBottom: 80
+                    }}
                     style={styles.flatlist}
                     data={data}
                     renderItem={({item}) => <Item

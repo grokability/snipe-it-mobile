@@ -26,6 +26,7 @@ export default function AuthenticatedLayout() {
                         headerShadowVisible: false,
                         headerTitle: '',
                         headerStyle: styles.header,
+                        headerTintColor: colors.text,
                         headerRight: () => <TopNavMenu />,
                     };
                 }}
