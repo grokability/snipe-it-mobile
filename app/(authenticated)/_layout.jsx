@@ -9,10 +9,12 @@ import {SafeAreaView} from "react-native-safe-area-context";
 import TopNavMenu from "@/components/overlays/TopNavMenu";
 import { getFocusedRouteNameFromRoute } from '@react-navigation/native';
 import {useMemo} from "react";
+import {useTranslation} from "react-i18next";
 
 export default function AuthenticatedLayout() {
     const colors = useColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
+    const { t } = useTranslation();
 
     return (
         <View style={{ flex: 1 }}>
@@ -34,22 +36,22 @@ export default function AuthenticatedLayout() {
                 <Stack.Screen
                     name="(tabs)"
                     options={{
-                        title: 'Home',
-                        drawerLabel: 'Home',
+                        title: t('nav.home'),
+                        drawerLabel: t('nav.home'),
                     }}
                 />
                 <Stack.Screen
                     name="licenses"
                     options={{
-                        drawerLabel: 'Licenses',
-                        title: 'Licenses',
+                        drawerLabel: t('nav.licenses'),
+                        title: t('nav.licenses'),
                     }}
                 />
                 <Stack.Screen
                     name="settings"
                     options={{
-                        drawerLabel: 'Settings',
-                        title: 'Settings',
+                        drawerLabel: t('nav.settings'),
+                        title: t('nav.settings'),
                     }}
                 />
                 <Stack.Screen

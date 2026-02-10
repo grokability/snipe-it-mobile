@@ -15,10 +15,12 @@ import {CheckoutPicker} from "@/components/CheckoutPicker";
 import Datepicker from "@/components/Datepicker";
 import {useColors} from "@/hooks/useThemeColors";
 import {Spacing, Typography, FontWeight, BorderRadius} from "@/constants/sizes";
+import {useTranslation} from "react-i18next";
 
 export default function CheckoutScreen() {
     const colors = useColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
+    const { t } = useTranslation();
     const { id } = useLocalSearchParams();
     const { user } = useContext(AuthContext);
     const [error, setError] = useState(null);
@@ -66,9 +68,9 @@ export default function CheckoutScreen() {
     function checkout() {
         if (!selectedStatus && (!selectedUser || !selectedLocation || !selectedAsset)) {
             Burnt.alert({
-                title: "Error",
+                title: t('common.error'),
                 preset: "error",
-                message: "Status and User|Location|Asset are Required",
+                message: t('checkout.statusAndTargetRequired'),
                 duration: 2,
             })
             return;
@@ -96,15 +98,15 @@ export default function CheckoutScreen() {
                    console.log(res);
                    console.log('validation error');
                    Burnt.alert({
-                       title: "Error",
+                       title: t('common.error'),
                        preset: "error",
-                       message: res.messages?.assigned_asset?.[0] || 'Checkout failed',
+                       message: res.messages?.assigned_asset?.[0] || t('checkout.failed'),
                        duration: 4,
                    })
                     return;
                 }
                 Burnt.alert({
-                    title: "Success!",
+                    title: t('common.success'),
                     preset: "heart",
                     duration: 4
                 })
@@ -117,17 +119,17 @@ export default function CheckoutScreen() {
 
     return (
         <SafeAreaProvider style={styles.container}>
-            <Text style={styles.headerText}>Checkout Asset #{id}</Text>
+            <Text style={styles.headerText}>{t('checkout.title', { id })}</Text>
             {/* asset name */}
-            <Text style={styles.labelText}>Asset Name: {selectedAsset?.name}</Text>
-            <TextInput placeholder="Asset Name" onChangeText={setAssetName} style={styles.input}></TextInput>
+            <Text style={styles.labelText}>{t('checkout.assetName', { name: selectedAsset?.name })}</Text>
+            <TextInput placeholder={t('checkout.assetNamePlaceholder')} onChangeText={setAssetName} style={styles.input}></TextInput>
 
             {/* status select sheet */}
-            <Button title="Select Status" onPress={handleOpenStatusBottomSheet} />
-            <SelectStatusBottomSheet title="Select Status" ref={statusBottomSheetRef} setSelectedStatus={setSelectedStatus}/>
-            <Text style={styles.selectedText}>Selected Status: {selectedStatus?.name}</Text>
+            <Button title={t('checkout.selectStatus')} onPress={handleOpenStatusBottomSheet} />
+            <SelectStatusBottomSheet title={t('checkout.selectStatus')} ref={statusBottomSheetRef} setSelectedStatus={setSelectedStatus}/>
+            <Text style={styles.selectedText}>{t('checkout.selectedStatus', { name: selectedStatus?.name })}</Text>
 
-            <Text style={styles.labelText}>Checkout to: </Text>
+            <Text style={styles.labelText}>{t('checkout.checkoutTo')}</Text>
 
             <CheckoutPicker selectedCheckoutTo={selectedCheckoutTo} setSelectedCheckoutTo={setSelectedCheckoutTo} availableOptions={['User', 'Location', 'Asset']} />
 
@@ -136,43 +138,43 @@ export default function CheckoutScreen() {
             {/* user select sheet */}
             {selectedCheckoutTo === 'user' && (
                 <>
-                    <Button title="Select User" onPress={handleOpenUserBottomSheet} />
-                    <SelectUserBottomSheet title="Select User" ref={userBottomSheetRef} setSelectedUser={setSelectedUser}/>
-                    <Text style={styles.selectedText}>Selected User: {selectedUser?.name}</Text>
+                    <Button title={t('checkout.selectUser')} onPress={handleOpenUserBottomSheet} />
+                    <SelectUserBottomSheet title={t('checkout.selectUser')} ref={userBottomSheetRef} setSelectedUser={setSelectedUser}/>
+                    <Text style={styles.selectedText}>{t('checkout.selectedUser', { name: selectedUser?.name })}</Text>
                 </>
             )}
 
             {/* location select sheet */}
             {selectedCheckoutTo === 'location' && (
             <>
-                <Button title="Select Location" onPress={handleOpenLocationBottomSheet} />
-                <SelectLocationBottomSheet title="Select Location" ref={locationBottomSheetRef} setSelectedLocation={setSelectedLocation}/>
-                <Text style={styles.selectedText}>Selected Location: {selectedLocation?.name}</Text>
+                <Button title={t('checkout.selectLocation')} onPress={handleOpenLocationBottomSheet} />
+                <SelectLocationBottomSheet title={t('checkout.selectLocation')} ref={locationBottomSheetRef} setSelectedLocation={setSelectedLocation}/>
+                <Text style={styles.selectedText}>{t('checkout.selectedLocation', { name: selectedLocation?.name })}</Text>
             </>
             )}
 
             {/* asset select sheet */}
             {selectedCheckoutTo === 'asset' && (
             <>
-                <Button title="Select Asset" onPress={handleOpenAssetBottomSheet} />
-                <SelectAssetBottomSheet title="Select Asset" ref={assetBottomSheetRef} setSelectedAsset={setSelectedAsset}/>
-                <Text style={styles.selectedText}>Selected Asset: {selectedAsset?.name}</Text>
+                <Button title={t('checkout.selectAsset')} onPress={handleOpenAssetBottomSheet} />
+                <SelectAssetBottomSheet title={t('checkout.selectAsset')} ref={assetBottomSheetRef} setSelectedAsset={setSelectedAsset}/>
+                <Text style={styles.selectedText}>{t('checkout.selectedAsset', { name: selectedAsset?.name })}</Text>
             </>
             )}
 
             {/* checkout/in dates */}
-            <Text style={styles.headerText}>Checkout Date</Text>
+            <Text style={styles.headerText}>{t('checkout.checkoutDate')}</Text>
             <Datepicker onDateChange={handleCheckoutDate} />
 
 
-            <Text style={styles.headerText}>Expected Checkin Date</Text>
+            <Text style={styles.headerText}>{t('checkout.expectedCheckinDate')}</Text>
             <Datepicker onDateChange={handleExpectedCheckinDate}/>
 
             {/*/ notes */}
-            <Text style={styles.headerText}>Notes</Text>
-            <TextInput placeholder="Notes" onChange={setNotes} value={notes} style={styles.input} />
+            <Text style={styles.headerText}>{t('common.notes')}</Text>
+            <TextInput placeholder={t('checkout.notesPlaceholder')} onChange={setNotes} value={notes} style={styles.input} />
             {/* submit button */}
-            <Button title="Checkout" onPress={() => checkout()} />
+            <Button title={t('common.checkout')} onPress={() => checkout()} />
 
 
         </SafeAreaProvider>

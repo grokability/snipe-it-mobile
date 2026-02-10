@@ -6,11 +6,13 @@ import {SafeAreaProvider, useSafeAreaInsets} from "react-native-safe-area-contex
 import {useColors} from "@/hooks/useThemeColors";
 import {Spacing, BorderRadius, Typography, FontWeight} from "@/constants/sizes";
 import {FlashList} from "@shopify/flash-list";
+import {useTranslation} from "react-i18next";
 
 export default function ComponentsScreen() {
     const colors = useColors();
     const insets = useSafeAreaInsets();
     const styles = useMemo(() => createStyles(colors), [colors]);
+    const { t } = useTranslation();
 
     const { user } = useContext(AuthContext);
     const [data, setData] = useState({});
@@ -56,7 +58,7 @@ export default function ComponentsScreen() {
             </View>
             <View style={styles.contentContainer}>
                 <Text style={styles.itemName}>{name}</Text>
-                <Text style={styles.qtyText}>Qty: {qty}</Text>
+                <Text style={styles.qtyText}>{t('common.qty', { count: qty })}</Text>
             </View>
         </View>
     );
@@ -81,7 +83,7 @@ export default function ComponentsScreen() {
                 />
             ) : (
                 <View style={styles.emptyContainer}>
-                    <Text style={styles.emptyText}>No components found</Text>
+                    <Text style={styles.emptyText}>{t('components.empty')}</Text>
                 </View>
             )}
         </SafeAreaProvider>

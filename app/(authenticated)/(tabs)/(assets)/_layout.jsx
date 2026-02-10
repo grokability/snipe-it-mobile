@@ -1,9 +1,11 @@
 import {Stack} from 'expo-router';
 import TopNavMenu from "@/components/overlays/TopNavMenu";
 import {useColors} from "@/hooks/useThemeColors";
+import {useTranslation} from "react-i18next";
 
 export default function AssetsLayout() {
     const colors = useColors();
+    const { t } = useTranslation();
 
     return (
         <>
@@ -20,27 +22,27 @@ export default function AssetsLayout() {
                 <Stack.Screen
                     name="index"
                     options={{
-                        title: 'Assets',
+                        title: t('tabs.assets'),
                     }}
                 />
                 <Stack.Screen
                     name="[id]"
                     options={{
-                        title: 'Asset Details',
+                        title: t('screens.assetDetails'),
                         headerBackTitle: '',
                     }}
                 />
                 <Stack.Screen
                     name="checkout/[id]"
                     options={{
-                        title: 'Checkout Screen',
+                        title: t('screens.checkoutScreen'),
                         headerBackTitle: '',
                     }}
                     />
                 <Stack.Screen
                     name="checkin/[id]"
                     options={{
-                        title: 'Checkin Screen',
+                        title: t('screens.checkinScreen'),
                         headerBackTitle: '',
                     }}
                     />

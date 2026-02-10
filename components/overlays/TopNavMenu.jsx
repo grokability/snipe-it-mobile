@@ -5,10 +5,12 @@ import { Ionicons } from '@expo/vector-icons';
 import {ContextMenu, Button} from '@expo/ui/jetpack-compose';
 import {useColors} from "@/hooks/useThemeColors";
 import {BorderRadius} from "@/constants/sizes";
+import {useTranslation} from "react-i18next";
 
 export default function TopNavMenu() {
     const colors = useColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
+    const { t } = useTranslation();
 
     return (
         <ContextMenu>
@@ -24,19 +26,19 @@ export default function TopNavMenu() {
                     onPress={() => router.push('/(authenticated)/(tabs)/home')}
                     elementColors={{ contentColor: colors.text }}
                 >
-                    Home
+                    {t('nav.home')}
                 </Button>
                 <Button
                     onPress={() => router.push('/(authenticated)/licenses')}
                     elementColors={{ contentColor: colors.text }}
                 >
-                    License
+                    {t('nav.license')}
                 </Button>
                 <Button
                     onPress={() => router.push('/(authenticated)/settings')}
                     elementColors={{ contentColor: colors.text }}
                 >
-                    Settings
+                    {t('nav.settings')}
                 </Button>
             </ContextMenu.Items>
         </ContextMenu>

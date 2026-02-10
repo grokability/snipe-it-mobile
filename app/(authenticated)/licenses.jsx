@@ -5,10 +5,12 @@ import {makeRequest} from "@/helpers/axiosConfig";
 import {SafeAreaProvider, SafeAreaView} from "react-native-safe-area-context";
 import {useColors} from "@/hooks/useThemeColors";
 import {Spacing, BorderRadius, Typography, FontWeight} from "@/constants/sizes";
+import {useTranslation} from "react-i18next";
 
 export default function LicensesScreen() {
     const colors = useColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
+    const { t } = useTranslation();
 
     const { user } = useContext(AuthContext);
     const [data, setData] = useState({});
@@ -54,7 +56,7 @@ export default function LicensesScreen() {
 
     return (
         <SafeAreaView style={styles.container}>
-            <Text style={styles.title}>Licenses Index</Text>
+            <Text style={styles.title}>{t('licenses.title')}</Text>
             <SafeAreaProvider>
                 <SafeAreaView style={styles.container}>
                     <FlatList

@@ -8,11 +8,13 @@ import {useColors} from "@/hooks/useThemeColors";
 import {Spacing, BorderRadius, Typography, FontWeight} from "@/constants/sizes";
 import {decodeEntity} from "html-entities";
 import {FlashList} from "@shopify/flash-list";
+import {useTranslation} from "react-i18next";
 
 export default function AssetsScreen() {
     const colors = useColors();
     const insets = useSafeAreaInsets();
     const styles = useMemo(() => createStyles(colors), [colors]);
+    const { t } = useTranslation();
 
     const { user } = useContext(AuthContext);
     const [data, setData] = useState([]);
@@ -80,7 +82,7 @@ export default function AssetsScreen() {
                 <Text style={styles.assetName}>{decodeEntity(name, {level: "xml"})}</Text>
                 {checkedOut && (
                     <Text style={styles.checkedOutText}>
-                        Checked out to: <Text style={styles.userName}>{checkedOut.name}</Text>
+                        {t('assets.checkedOutTo')}<Text style={styles.userName}>{checkedOut.name}</Text>
                     </Text>
                 )}
                 {status.status_type === 'deployable' ?
@@ -89,7 +91,7 @@ export default function AssetsScreen() {
                     ) :
                     <Text style={styles.notAvailableText}>{status.name}</Text>
                 }
-                <Text style={styles.serialText}>SN: {serial || 'N/A'}</Text>
+                <Text style={styles.serialText}>{serial ? t('assets.serialNumber', { serial }) : t('assets.serialNumberEmpty')}</Text>
             </View>
         </Pressable>
     );

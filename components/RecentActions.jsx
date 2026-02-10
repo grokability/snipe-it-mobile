@@ -6,10 +6,12 @@ import {AuthContext} from "@/context/AuthProvider";
 import {SafeAreaProvider} from "react-native-safe-area-context";
 import {useColors} from "@/hooks/useThemeColors";
 import {Typography, FontWeight, Spacing} from "@/constants/sizes";
+import {useTranslation} from "react-i18next";
 
 const RecentActions = () => {
     const colors = useColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
+    const { t } = useTranslation();
     const { user } = useContext(AuthContext);
     const [data, setData] = useState({})
     const [loading, setLoading] = useState(true);
@@ -67,7 +69,7 @@ const RecentActions = () => {
 
     return (
         <View style={styles.container}>
-            <Text style={styles.title}>Recent Actions</Text>
+            <Text style={styles.title}>{t('recentActions.title')}</Text>
             <FlatList
                 data={data.actions?.slice(0, 12)}
                 renderItem={({item}) =>
@@ -83,7 +85,7 @@ const RecentActions = () => {
                 scrollEnabled={true}
                 nestedScrollEnabled={true}
             />
-            <Button title='Show More' onPress={() => console.log('show action log index')} />
+            <Button title={t('common.showMore')} onPress={() => console.log('show action log index')} />
         </View>
 
     )

@@ -6,17 +6,19 @@ import {SafeAreaView} from "react-native-safe-area-context";
 import * as SecureStore from 'expo-secure-store';
 import {useColors} from "@/hooks/useThemeColors";
 import {Typography, FontWeight, Spacing} from "@/constants/sizes";
+import {useTranslation} from "react-i18next";
 
 export default function SettingsScreen() {
     const colors = useColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const { logout } = useContext(AuthContext);
+    const { t } = useTranslation();
     return (
         <SafeAreaView style={styles.container}>
-            <Text style={styles.text}>Your domain is set as {SecureStore.getItem('domain')}</Text>
-            <Text style={[styles.text, {paddingBottom: Spacing.lg}]}>Settings</Text>
+            <Text style={styles.text}>{t('settings.domainMessage', { domain: SecureStore.getItem('domain') })}</Text>
+            <Text style={[styles.text, {paddingBottom: Spacing.lg}]}>{t('settings.title')}</Text>
                 <TouchableOpacity onPress={logout}>
-                   <Text style={styles.text}>Logout</Text>
+                   <Text style={styles.text}>{t('common.logout')}</Text>
                 </TouchableOpacity>
         </SafeAreaView>
     );

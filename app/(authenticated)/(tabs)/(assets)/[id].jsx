@@ -6,6 +6,7 @@ import {AuthContext} from "@/context/AuthProvider";
 import {SafeAreaProvider} from "react-native-safe-area-context";
 import {useColors} from "@/hooks/useThemeColors";
 import {Spacing, BorderRadius, Typography, FontWeight} from "@/constants/sizes";
+import {useTranslation} from "react-i18next";
 
 
 export const unstable_settings = {
@@ -16,6 +17,7 @@ export const unstable_settings = {
 export default function AssetScreen() {
     const colors = useColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
+    const { t } = useTranslation();
 
     const [data, setData] = useState({});
     const [loading, setLoading] = useState(true);
@@ -80,24 +82,24 @@ export default function AssetScreen() {
                     </View>
 
                     <View style={styles.infoContainer}>
-                        <Text style={styles.assetTitle}>Asset #{id}</Text>
+                        <Text style={styles.assetTitle}>{t('assets.title', { id })}</Text>
                         <View style={styles.detailsContainer}>
-                            <DetailRow label="Age" value={data.asset?.age || 'N/A'}/>
-                            <DetailRow label="Name" value={data.asset?.name || 'N/A'}/>
-                            <DetailRow label="Serial" value={data.asset?.serial || 'N/A'}/>
+                            <DetailRow label={t('assets.age')} value={data.asset?.age || t('common.na')}/>
+                            <DetailRow label={t('assets.name')} value={data.asset?.name || t('common.na')}/>
+                            <DetailRow label={t('assets.serial')} value={data.asset?.serial || t('common.na')}/>
                         </View>
 
                         <View style={styles.assignmentContainer}>
                             {data.asset.assigned_to ? (
                                 <>
                                     <Text style={styles.assignedText}>
-                                        Assigned to: <Text style={styles.userName}>{data.asset.assigned_to.name}</Text>
+                                        {t('assets.assignedTo')}<Text style={styles.userName}>{data.asset.assigned_to.name}</Text>
                                     </Text>
                                     <Pressable
                                         style={({pressed}) => [styles.button, styles.checkinButton, pressed && styles.buttonPressed]}
                                         onPress={() => router.push(`/(tabs)/(assets)/checkin/${id}`)}
                                     >
-                                        <Text style={styles.buttonText}>Check In</Text>
+                                        <Text style={styles.buttonText}>{t('assets.checkIn')}</Text>
                                     </Pressable>
                                 </>
                             ) : (
@@ -105,7 +107,7 @@ export default function AssetScreen() {
                                     style={({pressed}) => [styles.button, styles.checkoutButton, pressed && styles.buttonPressed]}
                                     onPress={() => router.push(`/(tabs)/(assets)/checkout/${id}`)}
                                 >
-                                    <Text style={styles.buttonText}>Check Out</Text>
+                                    <Text style={styles.buttonText}>{t('assets.checkOut')}</Text>
                                 </Pressable>
                             )}
                         </View>

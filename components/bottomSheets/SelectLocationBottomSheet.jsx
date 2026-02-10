@@ -13,15 +13,18 @@ import {AuthContext} from "@/context/AuthProvider";
 import {useColors} from "@/hooks/useThemeColors";
 import {Spacing, BorderRadius, Typography, FontWeight} from "@/constants/sizes";
 import {GestureHandlerRootView} from "react-native-gesture-handler";
+import {useTranslation} from "react-i18next";
 
 const CloseBtn = () => {
     const { close } = useBottomSheet();
-    return <Button title="Close" onPress={() => close()} />;
+    const { t } = useTranslation();
+    return <Button title={t('common.close')} onPress={() => close()} />;
 };
 
 const SelectLocationBottomSheet = forwardRef((props, ref) => {
     const colors = useColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
+    const { t } = useTranslation();
 
     const { user } = useContext(AuthContext);
     const [locations, setLocations] = useState([])
@@ -80,8 +83,8 @@ const SelectLocationBottomSheet = forwardRef((props, ref) => {
                 <View style={styles.searchContainer}>
                     <BottomSheetTextInput
                         style={styles.searchInput}
-                        label="Search..."
-                        placeholder={'Search...'}
+                        label={t('common.search')}
+                        placeholder={t('common.search')}
                         placeholderTextColor={colors.textMuted}
                         onChangeText={(text) => {setSearchText(text)}}
                     />

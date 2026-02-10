@@ -3,11 +3,13 @@ import * as WebBrowser from 'expo-web-browser';
 import { makeRedirectUri, useAuthRequest } from 'expo-auth-session';
 import { Button } from 'react-native';
 import {AuthContext, useAuth} from "@/context/AuthProvider";
+import {useTranslation} from "react-i18next";
 
 WebBrowser.maybeCompleteAuthSession();
 
 const BrowserLoginButton = ({ domain }) => {
     const { oAuthLogin } = useContext(AuthContext);
+    const { t } = useTranslation();
     const discovery = {
         authorizationEndpoint: domain + '/oauth/authorize',
         tokenEndpoint: domain + '/oauth/token',
@@ -47,7 +49,7 @@ const BrowserLoginButton = ({ domain }) => {
     return (
         <Button
             disabled={!request}
-            title="Login"
+            title={t('common.login')}
             onPress={handleLogin}
         />
     );

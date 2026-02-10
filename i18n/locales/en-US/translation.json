@@ -1,5 +1,100 @@
 {
-  "home":  {
-    "welcome": "Welcome to Snipe IT Mobile!"
+  "common": {
+    "cancel": "Cancel",
+    "close": "Close",
+    "error": "Error",
+    "success": "Success",
+    "login": "Login",
+    "logout": "Logout",
+    "search": "Search...",
+    "notes": "Notes",
+    "na": "N/A",
+    "version": "Version: {{version}} ({{build}})",
+    "showMore": "Show More",
+    "checkout": "Checkout",
+    "checkin": "Checkin",
+    "qty": "Qty: {{count}}",
+    "noEmail": "No Email Provided"
+  },
+  "login": {
+    "title": "Login Screen",
+    "domain": "Domain",
+    "failed": "Login Failed",
+    "failedMessage": "Please check your domain"
+  },
+  "home": {
+    "welcome": "Welcome to Snipe IT Mobile!",
+    "requestCameraPermissions": "Request Camera Permissions for Scanner",
+    "openScanner": "Open Scanner"
+  },
+  "assets": {
+    "checkedOutTo": "Checked out to: ",
+    "serialNumber": "SN: {{serial}}",
+    "serialNumberEmpty": "SN: N/A",
+    "title": "Asset #{{id}}",
+    "age": "Age",
+    "name": "Name",
+    "serial": "Serial",
+    "assignedTo": "Assigned to: ",
+    "checkIn": "Check In",
+    "checkOut": "Check Out"
+  },
+  "checkout": {
+    "title": "Checkout Asset #{{id}}",
+    "assetName": "Asset Name: {{name}}",
+    "assetNamePlaceholder": "Asset Name",
+    "selectStatus": "Select Status",
+    "selectedStatus": "Selected Status: {{name}}",
+    "checkoutTo": "Checkout to: ",
+    "selectUser": "Select User",
+    "selectedUser": "Selected User: {{name}}",
+    "selectLocation": "Select Location",
+    "selectedLocation": "Selected Location: {{name}}",
+    "selectAsset": "Select Asset",
+    "selectedAsset": "Selected Asset: {{name}}",
+    "checkoutDate": "Checkout Date",
+    "expectedCheckinDate": "Expected Checkin Date",
+    "notesPlaceholder": "Notes",
+    "statusAndTargetRequired": "Status and User|Location|Asset are Required",
+    "failed": "Checkout failed"
+  },
+  "checkin": {
+    "title": "Checkin Asset {{id}}"
+  },
+  "accessories": {
+  },
+  "components": {
+    "empty": "No components found"
+  },
+  "consumables": {
+  },
+  "licenses": {
+    "title": "Licenses Index"
+  },
+  "settings": {
+    "title": "Settings",
+    "domainMessage": "Your domain is set as {{domain}}"
+  },
+  "recentActions": {
+    "title": "Recent Actions"
+  },
+  "tabs": {
+    "home": "Home",
+    "assets": "Assets",
+    "accessories": "Accessories",
+    "consumables": "Consumables",
+    "components": "Components",
+    "search": "Search"
+  },
+  "screens": {
+    "assetDetails": "Asset Details",
+    "checkoutScreen": "Checkout Screen",
+    "checkinScreen": "Checkin Screen"
+  },
+  "nav": {
+    "home": "Home",
+    "licenses": "Licenses",
+    "license": "License",
+    "settings": "Settings"
   }
 }
