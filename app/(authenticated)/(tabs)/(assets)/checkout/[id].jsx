@@ -13,6 +13,7 @@ import {Host, Picker} from '@expo/ui/swift-ui';
 import * as Burnt from 'burnt';
 import {CheckoutPicker} from "@/components/CheckoutPicker";
 import Datepicker from "@/components/Datepicker";
+import {decode} from "html-entities";
 import {useColors} from "@/hooks/useThemeColors";
 import {Spacing, Typography, FontWeight, BorderRadius} from "@/constants/sizes";
 import {useTranslation} from "react-i18next";
@@ -121,13 +122,13 @@ export default function CheckoutScreen() {
         <SafeAreaProvider style={styles.container}>
             <Text style={styles.headerText}>{t('mobile.checkout_title', { id })}</Text>
             {/* asset name */}
-            <Text style={styles.labelText}>{t('mobile.asset_name_display', { name: selectedAsset?.name })}</Text>
+            <Text style={styles.labelText}>{t('mobile.asset_name_display', { name: decode(selectedAsset?.name ?? '') })}</Text>
             <TextInput placeholder={t('general.asset_name')} onChangeText={setAssetName} style={styles.input}></TextInput>
 
             {/* status select sheet */}
             <Button title={t('general.select_statuslabel')} onPress={handleOpenStatusBottomSheet} />
             <SelectStatusBottomSheet title={t('general.select_statuslabel')} ref={statusBottomSheetRef} setSelectedStatus={setSelectedStatus}/>
-            <Text style={styles.selectedText}>{t('mobile.selected_status', { name: selectedStatus?.name })}</Text>
+            <Text style={styles.selectedText}>{t('mobile.selected_status', { name: decode(selectedStatus?.name ?? '') })}</Text>
 
             <Text style={styles.labelText}>{t('mobile.checkout_to')}</Text>
 
@@ -140,7 +141,7 @@ export default function CheckoutScreen() {
                 <>
                     <Button title={t('general.select_user')} onPress={handleOpenUserBottomSheet} />
                     <SelectUserBottomSheet title={t('general.select_user')} ref={userBottomSheetRef} setSelectedUser={setSelectedUser}/>
-                    <Text style={styles.selectedText}>{t('mobile.selected_user', { name: selectedUser?.name })}</Text>
+                    <Text style={styles.selectedText}>{t('mobile.selected_user', { name: decode(selectedUser?.name ?? '') })}</Text>
                 </>
             )}
 
@@ -149,7 +150,7 @@ export default function CheckoutScreen() {
             <>
                 <Button title={t('general.select_location')} onPress={handleOpenLocationBottomSheet} />
                 <SelectLocationBottomSheet title={t('general.select_location')} ref={locationBottomSheetRef} setSelectedLocation={setSelectedLocation}/>
-                <Text style={styles.selectedText}>{t('mobile.selected_location', { name: selectedLocation?.name })}</Text>
+                <Text style={styles.selectedText}>{t('mobile.selected_location', { name: decode(selectedLocation?.name ?? '') })}</Text>
             </>
             )}
 
@@ -158,7 +159,7 @@ export default function CheckoutScreen() {
             <>
                 <Button title={t('general.select_asset')} onPress={handleOpenAssetBottomSheet} />
                 <SelectAssetBottomSheet title={t('general.select_asset')} ref={assetBottomSheetRef} setSelectedAsset={setSelectedAsset}/>
-                <Text style={styles.selectedText}>{t('mobile.selected_asset', { name: selectedAsset?.name })}</Text>
+                <Text style={styles.selectedText}>{t('mobile.selected_asset', { name: decode(selectedAsset?.name ?? '') })}</Text>
             </>
             )}
 

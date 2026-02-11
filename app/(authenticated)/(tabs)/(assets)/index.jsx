@@ -6,7 +6,7 @@ import {SafeAreaProvider, useSafeAreaInsets} from "react-native-safe-area-contex
 import {router, useFocusEffect} from "expo-router";
 import {useColors} from "@/hooks/useThemeColors";
 import {Spacing, BorderRadius, Typography, FontWeight} from "@/constants/sizes";
-import {decodeEntity} from "html-entities";
+import {decode} from "html-entities";
 import {FlashList} from "@shopify/flash-list";
 import {useTranslation} from "react-i18next";
 
@@ -79,7 +79,7 @@ export default function AssetsScreen() {
             </View>
             <View style={styles.contentContainer}>
                 <Text style={styles.assetTag}>#{asset_tag}</Text>
-                <Text style={styles.assetName}>{decodeEntity(name, {level: "xml"})}</Text>
+                <Text style={styles.assetName}>{decode(name)}</Text>
                 {checkedOut && (
                     <Text style={styles.checkedOutText}>
                         {t('general.checked_out_to')}<Text style={styles.userName}>{checkedOut.name}</Text>
