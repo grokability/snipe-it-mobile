@@ -5,6 +5,7 @@ import {makeRequest} from "@/helpers/axiosConfig";
 import {SafeAreaProvider, SafeAreaView} from "react-native-safe-area-context";
 import {useColors} from "@/hooks/useThemeColors";
 import {Spacing, BorderRadius, Typography, FontWeight} from "@/constants/sizes";
+import {decode} from "html-entities";
 import {useTranslation} from "react-i18next";
 
 export default function LicensesScreen() {
@@ -32,9 +33,9 @@ export default function LicensesScreen() {
     const Item = ({license_name, image, product_key, supplier_name, manufacturer_name}) => (
         <View style={styles.itemContainer}>
             <Image style={styles.image} src={image} />
-            <Text style={styles.name}>{license_name}</Text>
-            <Text style={styles.name}>{manufacturer_name} ({supplier_name})</Text>
-            <Text style={styles.productKey}>{product_key}</Text>
+            <Text style={styles.name}>{decode(license_name)}</Text>
+            <Text style={styles.name}>{decode(manufacturer_name)} ({decode(supplier_name)})</Text>
+            <Text style={styles.productKey}>{decode(product_key)}</Text>
         </View>
     );
 

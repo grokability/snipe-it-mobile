@@ -6,6 +6,7 @@ import {SafeAreaProvider, useSafeAreaInsets} from "react-native-safe-area-contex
 import {useColors} from "@/hooks/useThemeColors";
 import {Spacing, BorderRadius, Typography, FontWeight} from "@/constants/sizes";
 import {FlashList} from "@shopify/flash-list";
+import {decode} from "html-entities";
 import {useTranslation} from "react-i18next";
 
 export default function AccessoriesScreen() {
@@ -57,7 +58,7 @@ export default function AccessoriesScreen() {
                 <Image style={styles.image} src={image} />
             </View>
             <View style={styles.contentContainer}>
-                <Text style={styles.itemName}>{name}</Text>
+                <Text style={styles.itemName}>{decode(name)}</Text>
                 <Text style={styles.qtyText}>{t('general.qty', { count: qty })}</Text>
             </View>
         </View>
