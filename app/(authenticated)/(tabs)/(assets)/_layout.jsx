@@ -22,27 +22,27 @@ export default function AssetsLayout() {
                 <Stack.Screen
                     name="index"
                     options={{
-                        title: t('tabs.assets'),
+                        title: t('general.assets'),
                     }}
                 />
                 <Stack.Screen
                     name="[id]"
                     options={{
-                        title: t('screens.assetDetails'),
+                        title: t('mobile.screen_asset_details'),
                         headerBackTitle: '',
                     }}
                 />
                 <Stack.Screen
                     name="checkout/[id]"
                     options={{
-                        title: t('screens.checkoutScreen'),
+                        title: t('mobile.screen_checkout'),
                         headerBackTitle: '',
                     }}
                     />
                 <Stack.Screen
                     name="checkin/[id]"
                     options={{
-                        title: t('screens.checkinScreen'),
+                        title: t('mobile.screen_checkin'),
                         headerBackTitle: '',
                     }}
                     />

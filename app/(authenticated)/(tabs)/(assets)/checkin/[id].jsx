@@ -35,8 +35,8 @@ export default function CheckinScreen() {
 
     return (
         <SafeAreaProvider style={styles.container}>
-            <Text style={styles.title}>{t('checkin.title', { id })}</Text>
-            <Button title={t('common.checkin')} onPress={() => checkin()} />
+            <Text style={styles.title}>{t('mobile.checkin_title', { id })}</Text>
+            <Button title={t('general.checkin')} onPress={() => checkin()} />
         </SafeAreaProvider>
     )
 }

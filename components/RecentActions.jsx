@@ -69,7 +69,7 @@ const RecentActions = () => {
 
     return (
         <View style={styles.container}>
-            <Text style={styles.title}>{t('recentActions.title')}</Text>
+            <Text style={styles.title}>{t('mobile.recent_actions')}</Text>
             <FlatList
                 data={data.actions?.slice(0, 12)}
                 renderItem={({item}) =>
@@ -85,7 +85,7 @@ const RecentActions = () => {
                 scrollEnabled={true}
                 nestedScrollEnabled={true}
             />
-            <Button title={t('common.showMore')} onPress={() => console.log('show action log index')} />
+            <Button title={t('mobile.show_more')} onPress={() => console.log('show action log index')} />
         </View>
 
     )

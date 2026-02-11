@@ -18,7 +18,7 @@ import {useTranslation} from "react-i18next";
 const CloseBtn = () => {
     const { close } = useBottomSheet();
     const { t } = useTranslation();
-    return <Button title={t('common.close')} onPress={() => close()} />;
+    return <Button title={t('general.close')} onPress={() => close()} />;
 };
 
 const SelectUserBottomSheet = forwardRef((props, ref) => {
@@ -76,7 +76,7 @@ const SelectUserBottomSheet = forwardRef((props, ref) => {
                 </View>
                 <View style={styles.userInfoContainer}>
                     <Text style={styles.userName}>{item.name}</Text>
-                    <Text style={styles.userEmail}>{item.email || t('common.noEmail')}</Text>
+                    <Text style={styles.userEmail}>{item.email || t('mobile.no_email')}</Text>
                 </View>
             </Pressable>
         )
@@ -95,8 +95,8 @@ const SelectUserBottomSheet = forwardRef((props, ref) => {
                 <View style={styles.searchContainer}>
                 <BottomSheetTextInput
                     style={styles.searchInput}
-                    label={t('common.search')}
-                    placeholder={t('common.search')}
+                    label={t('general.search')}
+                    placeholder={t('general.search')}
                     placeholderTextColor={colors.textMuted}
                     onChangeText={(text) => {setSearchText(text)}}
                 />

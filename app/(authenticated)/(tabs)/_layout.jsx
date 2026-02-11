@@ -29,32 +29,32 @@ export default function TabLayout() {
                 labelVisibilityMode="labeled"
             >
                 <NativeTabs.Trigger name="home">
-                    <Label>{t('tabs.home')}</Label>
+                    <Label>{t('general.dashboard')}</Label>
                     <Icon src={<VectorIcon family={FontAwesome} name="home" />} />
                 </NativeTabs.Trigger>
 
                 <NativeTabs.Trigger name="(assets)">
-                    <Label>{t('tabs.assets')}</Label>
+                    <Label>{t('general.assets')}</Label>
                     <Icon src={<VectorIcon family={FontAwesome} name="barcode" />} />
                 </NativeTabs.Trigger>
 
                 <NativeTabs.Trigger name="accessories">
-                    <Label>{t('tabs.accessories')}</Label>
+                    <Label>{t('general.accessories')}</Label>
                     <Icon src={<VectorIcon family={FontAwesome} name="keyboard-o" />} />
                 </NativeTabs.Trigger>
 
                 <NativeTabs.Trigger name="consumables">
-                    <Label>{t('tabs.consumables')}</Label>
+                    <Label>{t('general.consumables')}</Label>
                     <Icon src={<VectorIcon family={FontAwesome} name="tint" />} />
                 </NativeTabs.Trigger>
 
                 <NativeTabs.Trigger name="components">
-                    <Label>{t('tabs.components')}</Label>
+                    <Label>{t('general.components')}</Label>
                     <Icon src={<VectorIcon family={FontAwesome} name="hdd-o" />} />
                 </NativeTabs.Trigger>
 
                 <NativeTabs.Trigger name="search" role="search">
-                    <Label>{t('tabs.search')}</Label>
+                    <Label>{t('general.search')}</Label>
                 </NativeTabs.Trigger>
             </NativeTabs>
     );

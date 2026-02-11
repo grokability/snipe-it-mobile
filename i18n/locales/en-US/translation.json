@@ -1,100 +1,70 @@
 {
-  "common": {
+  "general": {
     "cancel": "Cancel",
     "close": "Close",
     "error": "Error",
-    "success": "Success",
-    "login": "Login",
+    "notification_success": "Success",
+    "sign_in": "Login",
     "logout": "Logout",
     "search": "Search...",
     "notes": "Notes",
-    "na": "N/A",
-    "version": "Version: {{version}} ({{build}})",
-    "showMore": "Show More",
     "checkout": "Checkout",
     "checkin": "Checkin",
     "qty": "Qty: {{count}}",
-    "noEmail": "No Email Provided"
-  },
-  "login": {
-    "title": "Login Screen",
-    "domain": "Domain",
-    "failed": "Login Failed",
-    "failedMessage": "Please check your domain"
-  },
-  "home": {
-    "welcome": "Welcome to Snipe IT Mobile!",
-    "requestCameraPermissions": "Request Camera Permissions for Scanner",
-    "openScanner": "Open Scanner"
-  },
-  "assets": {
-    "checkedOutTo": "Checked out to: ",
-    "serialNumber": "SN: {{serial}}",
-    "serialNumberEmpty": "SN: N/A",
-    "title": "Asset #{{id}}",
     "age": "Age",
     "name": "Name",
     "serial": "Serial",
-    "assignedTo": "Assigned to: ",
-    "checkIn": "Check In",
-    "checkOut": "Check Out"
-  },
-  "checkout": {
-    "title": "Checkout Asset #{{id}}",
-    "assetName": "Asset Name: {{name}}",
-    "assetNamePlaceholder": "Asset Name",
-    "selectStatus": "Select Status",
-    "selectedStatus": "Selected Status: {{name}}",
-    "checkoutTo": "Checkout to: ",
-    "selectUser": "Select User",
-    "selectedUser": "Selected User: {{name}}",
-    "selectLocation": "Select Location",
-    "selectedLocation": "Selected Location: {{name}}",
-    "selectAsset": "Select Asset",
-    "selectedAsset": "Selected Asset: {{name}}",
-    "checkoutDate": "Checkout Date",
-    "expectedCheckinDate": "Expected Checkin Date",
-    "notesPlaceholder": "Notes",
-    "statusAndTargetRequired": "Status and User|Location|Asset are Required",
-    "failed": "Checkout failed"
-  },
-  "checkin": {
-    "title": "Checkin Asset {{id}}"
-  },
-  "accessories": {
-  },
-  "components": {
-    "empty": "No components found"
-  },
-  "consumables": {
-  },
-  "licenses": {
-    "title": "Licenses Index"
-  },
-  "settings": {
-    "title": "Settings",
-    "domainMessage": "Your domain is set as {{domain}}"
-  },
-  "recentActions": {
-    "title": "Recent Actions"
-  },
-  "tabs": {
-    "home": "Home",
+    "assigned_to": "Assigned to: ",
+    "checked_out_to": "Checked out to: ",
     "assets": "Assets",
     "accessories": "Accessories",
     "consumables": "Consumables",
     "components": "Components",
-    "search": "Search"
-  },
-  "screens": {
-    "assetDetails": "Asset Details",
-    "checkoutScreen": "Checkout Screen",
-    "checkinScreen": "Checkin Screen"
-  },
-  "nav": {
-    "home": "Home",
+    "dashboard": "Home",
     "licenses": "Licenses",
     "license": "License",
-    "settings": "Settings"
+    "settings": "Settings",
+    "checkout_date": "Checkout Date",
+    "expected_checkin": "Expected Checkin Date",
+    "select_user": "Select User",
+    "select_location": "Select Location",
+    "select_asset": "Select Asset",
+    "select_statuslabel": "Select Status",
+    "asset_name": "Asset Name"
+  },
+  "mobile": {
+    "na": "N/A",
+    "version": "Version: {{version}} ({{build}})",
+    "show_more": "Show More",
+    "no_email": "No Email Provided",
+    "login_title": "Login Screen",
+    "domain": "Domain",
+    "login_failed": "Login Failed",
+    "login_failed_message": "Please check your domain",
+    "welcome": "Welcome to Snipe IT Mobile!",
+    "request_camera_permissions": "Request Camera Permissions for Scanner",
+    "open_scanner": "Open Scanner",
+    "serial_number_display": "SN: {{serial}}",
+    "serial_number_empty": "SN: N/A",
+    "asset_title": "Asset #{{id}}",
+    "check_in_button": "Check In",
+    "check_out_button": "Check Out",
+    "checkout_title": "Checkout Asset #{{id}}",
+    "asset_name_display": "Asset Name: {{name}}",
+    "selected_status": "Selected Status: {{name}}",
+    "checkout_to": "Checkout to: ",
+    "selected_user": "Selected User: {{name}}",
+    "selected_location": "Selected Location: {{name}}",
+    "selected_asset": "Selected Asset: {{name}}",
+    "status_and_target_required": "Status and User|Location|Asset are Required",
+    "checkout_failed": "Checkout failed",
+    "checkin_title": "Checkin Asset {{id}}",
+    "no_components": "No components found",
+    "licenses_title": "Licenses Index",
+    "domain_message": "Your domain is set as {{domain}}",
+    "recent_actions": "Recent Actions",
+    "screen_asset_details": "Asset Details",
+    "screen_checkout": "Checkout Screen",
+    "screen_checkin": "Checkin Screen"
   }
 }

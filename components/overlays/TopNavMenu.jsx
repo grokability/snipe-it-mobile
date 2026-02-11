@@ -26,19 +26,19 @@ export default function TopNavMenu() {
                     onPress={() => router.push('/(authenticated)/(tabs)/home')}
                     elementColors={{ contentColor: colors.text }}
                 >
-                    {t('nav.home')}
+                    {t('general.dashboard')}
                 </Button>
                 <Button
                     onPress={() => router.push('/(authenticated)/licenses')}
                     elementColors={{ contentColor: colors.text }}
                 >
-                    {t('nav.license')}
+                    {t('general.license')}
                 </Button>
                 <Button
                     onPress={() => router.push('/(authenticated)/settings')}
                     elementColors={{ contentColor: colors.text }}
                 >
-                    {t('nav.settings')}
+                    {t('general.settings')}
                 </Button>
             </ContextMenu.Items>
         </ContextMenu>

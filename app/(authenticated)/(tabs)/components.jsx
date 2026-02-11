@@ -58,7 +58,7 @@ export default function ComponentsScreen() {
             </View>
             <View style={styles.contentContainer}>
                 <Text style={styles.itemName}>{name}</Text>
-                <Text style={styles.qtyText}>{t('common.qty', { count: qty })}</Text>
+                <Text style={styles.qtyText}>{t('general.qty', { count: qty })}</Text>
             </View>
         </View>
     );
@@ -83,7 +83,7 @@ export default function ComponentsScreen() {
                 />
             ) : (
                 <View style={styles.emptyContainer}>
-                    <Text style={styles.emptyText}>{t('components.empty')}</Text>
+                    <Text style={styles.emptyText}>{t('mobile.no_components')}</Text>
                 </View>
             )}
         </SafeAreaProvider>

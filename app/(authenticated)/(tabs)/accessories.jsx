@@ -58,7 +58,7 @@ export default function AccessoriesScreen() {
             </View>
             <View style={styles.contentContainer}>
                 <Text style={styles.itemName}>{name}</Text>
-                <Text style={styles.qtyText}>{t('common.qty', { count: qty })}</Text>
+                <Text style={styles.qtyText}>{t('general.qty', { count: qty })}</Text>
             </View>
         </View>
     );

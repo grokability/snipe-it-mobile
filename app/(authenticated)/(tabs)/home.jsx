@@ -42,13 +42,13 @@ export default function HomeScreen() {
                 {user?.permissions?.superuser === 1 && (
                     <RecentActions />
                 )}
-                    <Text style={styles.text}>{t('home.welcome')}</Text>
-                    <Text style={styles.text}>{t('common.version', { version: ExpoApplication.nativeApplicationVersion, build: ExpoApplication.nativeBuildVersion })}</Text>
+                    <Text style={styles.text}>{t('mobile.welcome')}</Text>
+                    <Text style={styles.text}>{t('mobile.version', { version: ExpoApplication.nativeApplicationVersion, build: ExpoApplication.nativeBuildVersion })}</Text>
                 {!permission.granted &&
-                    <Button style={styles.text} title={t('home.requestCameraPermissions')} onPress={requestPermission}/>
+                    <Button style={styles.text} title={t('mobile.request_camera_permissions')} onPress={requestPermission}/>
                 }
                 {permission.granted &&
-                    <Button style={styles.text} title={t('home.openScanner')} onPress={() => router.push('/scanner')}/>
+                    <Button style={styles.text} title={t('mobile.open_scanner')} onPress={() => router.push('/scanner')}/>
                 }
                 <LottieView
                     source={require('@/assets/spinning_star_eye.json')}

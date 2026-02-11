@@ -36,22 +36,22 @@ export default function AuthenticatedLayout() {
                 <Stack.Screen
                     name="(tabs)"
                     options={{
-                        title: t('nav.home'),
-                        drawerLabel: t('nav.home'),
+                        title: t('general.dashboard'),
+                        drawerLabel: t('general.dashboard'),
                     }}
                 />
                 <Stack.Screen
                     name="licenses"
                     options={{
-                        drawerLabel: t('nav.licenses'),
-                        title: t('nav.licenses'),
+                        drawerLabel: t('general.licenses'),
+                        title: t('general.licenses'),
                     }}
                 />
                 <Stack.Screen
                     name="settings"
                     options={{
-                        drawerLabel: t('nav.settings'),
-                        title: t('nav.settings'),
+                        drawerLabel: t('general.settings'),
+                        title: t('general.settings'),
                     }}
                 />
                 <Stack.Screen

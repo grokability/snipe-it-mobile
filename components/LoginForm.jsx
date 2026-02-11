@@ -35,14 +35,14 @@ const LoginForm = ({ onLogin, onDomainChange }) => {
         try {
             await onLogin(domain);
         } catch (error) {
-            Alert.alert(t('login.failed'), t('login.failedMessage'));
+            Alert.alert(t('mobile.login_failed'), t('mobile.login_failed_message'));
         }
     };
 
     return (
         <>
             <TextInput
-                placeholder={t('login.domain')}
+                placeholder={t('mobile.domain')}
                 onChangeText={handleDomainChange}
                 value={domain}
                 style={styles.input}

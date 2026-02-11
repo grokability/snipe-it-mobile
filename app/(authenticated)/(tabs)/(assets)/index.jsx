@@ -82,7 +82,7 @@ export default function AssetsScreen() {
                 <Text style={styles.assetName}>{decodeEntity(name, {level: "xml"})}</Text>
                 {checkedOut && (
                     <Text style={styles.checkedOutText}>
-                        {t('assets.checkedOutTo')}<Text style={styles.userName}>{checkedOut.name}</Text>
+                        {t('general.checked_out_to')}<Text style={styles.userName}>{checkedOut.name}</Text>
                     </Text>
                 )}
                 {status.status_type === 'deployable' ?
@@ -91,7 +91,7 @@ export default function AssetsScreen() {
                     ) :
                     <Text style={styles.notAvailableText}>{status.name}</Text>
                 }
-                <Text style={styles.serialText}>{serial ? t('assets.serialNumber', { serial }) : t('assets.serialNumberEmpty')}</Text>
+                <Text style={styles.serialText}>{serial ? t('mobile.serial_number_display', { serial }) : t('mobile.serial_number_empty')}</Text>
             </View>
         </Pressable>
     );

@@ -82,24 +82,24 @@ export default function AssetScreen() {
                     </View>
 
                     <View style={styles.infoContainer}>
-                        <Text style={styles.assetTitle}>{t('assets.title', { id })}</Text>
+                        <Text style={styles.assetTitle}>{t('mobile.asset_title', { id })}</Text>
                         <View style={styles.detailsContainer}>
-                            <DetailRow label={t('assets.age')} value={data.asset?.age || t('common.na')}/>
-                            <DetailRow label={t('assets.name')} value={data.asset?.name || t('common.na')}/>
-                            <DetailRow label={t('assets.serial')} value={data.asset?.serial || t('common.na')}/>
+                            <DetailRow label={t('general.age')} value={data.asset?.age || t('mobile.na')}/>
+                            <DetailRow label={t('general.name')} value={data.asset?.name || t('mobile.na')}/>
+                            <DetailRow label={t('general.serial')} value={data.asset?.serial || t('mobile.na')}/>
                         </View>
 
                         <View style={styles.assignmentContainer}>
                             {data.asset.assigned_to ? (
                                 <>
                                     <Text style={styles.assignedText}>
-                                        {t('assets.assignedTo')}<Text style={styles.userName}>{data.asset.assigned_to.name}</Text>
+                                        {t('general.assigned_to')}<Text style={styles.userName}>{data.asset.assigned_to.name}</Text>
                                     </Text>
                                     <Pressable
                                         style={({pressed}) => [styles.button, styles.checkinButton, pressed && styles.buttonPressed]}
                                         onPress={() => router.push(`/(tabs)/(assets)/checkin/${id}`)}
                                     >
-                                        <Text style={styles.buttonText}>{t('assets.checkIn')}</Text>
+                                        <Text style={styles.buttonText}>{t('mobile.check_in_button')}</Text>
                                     </Pressable>
                                 </>
                             ) : (
@@ -107,7 +107,7 @@ export default function AssetScreen() {
                                     style={({pressed}) => [styles.button, styles.checkoutButton, pressed && styles.buttonPressed]}
                                     onPress={() => router.push(`/(tabs)/(assets)/checkout/${id}`)}
                                 >
-                                    <Text style={styles.buttonText}>{t('assets.checkOut')}</Text>
+                                    <Text style={styles.buttonText}>{t('mobile.check_out_button')}</Text>
                                 </Pressable>
                             )}
                         </View>

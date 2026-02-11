@@ -49,7 +49,7 @@ const BrowserLoginButton = ({ domain }) => {
     return (
         <Button
             disabled={!request}
-            title={t('common.login')}
+            title={t('general.sign_in')}
             onPress={handleLogin}
         />
     );

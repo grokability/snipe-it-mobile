@@ -68,9 +68,9 @@ export default function CheckoutScreen() {
     function checkout() {
         if (!selectedStatus && (!selectedUser || !selectedLocation || !selectedAsset)) {
             Burnt.alert({
-                title: t('common.error'),
+                title: t('general.error'),
                 preset: "error",
-                message: t('checkout.statusAndTargetRequired'),
+                message: t('mobile.status_and_target_required'),
                 duration: 2,
             })
             return;
@@ -98,15 +98,15 @@ export default function CheckoutScreen() {
                    console.log(res);
                    console.log('validation error');
                    Burnt.alert({
-                       title: t('common.error'),
+                       title: t('general.error'),
                        preset: "error",
-                       message: res.messages?.assigned_asset?.[0] || t('checkout.failed'),
+                       message: res.messages?.assigned_asset?.[0] || t('mobile.checkout_failed'),
                        duration: 4,
                    })
                     return;
                 }
                 Burnt.alert({
-                    title: t('common.success'),
+                    title: t('general.notification_success'),
                     preset: "heart",
                     duration: 4
                 })
@@ -119,17 +119,17 @@ export default function CheckoutScreen() {
 
     return (
         <SafeAreaProvider style={styles.container}>
-            <Text style={styles.headerText}>{t('checkout.title', { id })}</Text>
+            <Text style={styles.headerText}>{t('mobile.checkout_title', { id })}</Text>
             {/* asset name */}
-            <Text style={styles.labelText}>{t('checkout.assetName', { name: selectedAsset?.name })}</Text>
-            <TextInput placeholder={t('checkout.assetNamePlaceholder')} onChangeText={setAssetName} style={styles.input}></TextInput>
+            <Text style={styles.labelText}>{t('mobile.asset_name_display', { name: selectedAsset?.name })}</Text>
+            <TextInput placeholder={t('general.asset_name')} onChangeText={setAssetName} style={styles.input}></TextInput>
 
             {/* status select sheet */}
-            <Button title={t('checkout.selectStatus')} onPress={handleOpenStatusBottomSheet} />
-            <SelectStatusBottomSheet title={t('checkout.selectStatus')} ref={statusBottomSheetRef} setSelectedStatus={setSelectedStatus}/>
-            <Text style={styles.selectedText}>{t('checkout.selectedStatus', { name: selectedStatus?.name })}</Text>
+            <Button title={t('general.select_statuslabel')} onPress={handleOpenStatusBottomSheet} />
+            <SelectStatusBottomSheet title={t('general.select_statuslabel')} ref={statusBottomSheetRef} setSelectedStatus={setSelectedStatus}/>
+            <Text style={styles.selectedText}>{t('mobile.selected_status', { name: selectedStatus?.name })}</Text>
 
-            <Text style={styles.labelText}>{t('checkout.checkoutTo')}</Text>
+            <Text style={styles.labelText}>{t('mobile.checkout_to')}</Text>
 
             <CheckoutPicker selectedCheckoutTo={selectedCheckoutTo} setSelectedCheckoutTo={setSelectedCheckoutTo} availableOptions={['User', 'Location', 'Asset']} />
 
@@ -138,43 +138,43 @@ export default function CheckoutScreen() {
             {/* user select sheet */}
             {selectedCheckoutTo === 'user' && (
                 <>
-                    <Button title={t('checkout.selectUser')} onPress={handleOpenUserBottomSheet} />
-                    <SelectUserBottomSheet title={t('checkout.selectUser')} ref={userBottomSheetRef} setSelectedUser={setSelectedUser}/>
-                    <Text style={styles.selectedText}>{t('checkout.selectedUser', { name: selectedUser?.name })}</Text>
+                    <Button title={t('general.select_user')} onPress={handleOpenUserBottomSheet} />
+                    <SelectUserBottomSheet title={t('general.select_user')} ref={userBottomSheetRef} setSelectedUser={setSelectedUser}/>
+                    <Text style={styles.selectedText}>{t('mobile.selected_user', { name: selectedUser?.name })}</Text>
                 </>
             )}
 
             {/* location select sheet */}
             {selectedCheckoutTo === 'location' && (
             <>
-                <Button title={t('checkout.selectLocation')} onPress={handleOpenLocationBottomSheet} />
-                <SelectLocationBottomSheet title={t('checkout.selectLocation')} ref={locationBottomSheetRef} setSelectedLocation={setSelectedLocation}/>
-                <Text style={styles.selectedText}>{t('checkout.selectedLocation', { name: selectedLocation?.name })}</Text>
+                <Button title={t('general.select_location')} onPress={handleOpenLocationBottomSheet} />
+                <SelectLocationBottomSheet title={t('general.select_location')} ref={locationBottomSheetRef} setSelectedLocation={setSelectedLocation}/>
+                <Text style={styles.selectedText}>{t('mobile.selected_location', { name: selectedLocation?.name })}</Text>
             </>
             )}
 
             {/* asset select sheet */}
             {selectedCheckoutTo === 'asset' && (
             <>
-                <Button title={t('checkout.selectAsset')} onPress={handleOpenAssetBottomSheet} />
-                <SelectAssetBottomSheet title={t('checkout.selectAsset')} ref={assetBottomSheetRef} setSelectedAsset={setSelectedAsset}/>
-                <Text style={styles.selectedText}>{t('checkout.selectedAsset', { name: selectedAsset?.name })}</Text>
+                <Button title={t('general.select_asset')} onPress={handleOpenAssetBottomSheet} />
+                <SelectAssetBottomSheet title={t('general.select_asset')} ref={assetBottomSheetRef} setSelectedAsset={setSelectedAsset}/>
+                <Text style={styles.selectedText}>{t('mobile.selected_asset', { name: selectedAsset?.name })}</Text>
             </>
             )}
 
             {/* checkout/in dates */}
-            <Text style={styles.headerText}>{t('checkout.checkoutDate')}</Text>
+            <Text style={styles.headerText}>{t('general.checkout_date')}</Text>
             <Datepicker onDateChange={handleCheckoutDate} />
 
 
-            <Text style={styles.headerText}>{t('checkout.expectedCheckinDate')}</Text>
+            <Text style={styles.headerText}>{t('general.expected_checkin')}</Text>
             <Datepicker onDateChange={handleExpectedCheckinDate}/>
 
             {/*/ notes */}
-            <Text style={styles.headerText}>{t('common.notes')}</Text>
-            <TextInput placeholder={t('checkout.notesPlaceholder')} onChange={setNotes} value={notes} style={styles.input} />
+            <Text style={styles.headerText}>{t('general.notes')}</Text>
+            <TextInput placeholder={t('general.notes')} onChange={setNotes} value={notes} style={styles.input} />
             {/* submit button */}
-            <Button title={t('common.checkout')} onPress={() => checkout()} />
+            <Button title={t('general.checkout')} onPress={() => checkout()} />
 
 
         </SafeAreaProvider>

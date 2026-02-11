@@ -15,10 +15,10 @@ export default function SettingsScreen() {
     const { t } = useTranslation();
     return (
         <SafeAreaView style={styles.container}>
-            <Text style={styles.text}>{t('settings.domainMessage', { domain: SecureStore.getItem('domain') })}</Text>
-            <Text style={[styles.text, {paddingBottom: Spacing.lg}]}>{t('settings.title')}</Text>
+            <Text style={styles.text}>{t('mobile.domain_message', { domain: SecureStore.getItem('domain') })}</Text>
+            <Text style={[styles.text, {paddingBottom: Spacing.lg}]}>{t('general.settings')}</Text>
                 <TouchableOpacity onPress={logout}>
-                   <Text style={styles.text}>{t('common.logout')}</Text>
+                   <Text style={styles.text}>{t('general.logout')}</Text>
                 </TouchableOpacity>
         </SafeAreaView>
     );

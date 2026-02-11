@@ -11,7 +11,7 @@ import {useTranslation} from "react-i18next";
 const CloseBtn = () => {
     const { close } = useBottomSheet();
     const { t } = useTranslation();
-    return <Button title={t('common.close')} onPress={() => close()} />;
+    return <Button title={t('general.close')} onPress={() => close()} />;
 };
 
 const SelectStatusBottomSheet = forwardRef((props, ref) => {
@@ -72,8 +72,8 @@ const SelectStatusBottomSheet = forwardRef((props, ref) => {
                 <View style={styles.searchContainer}>
                     <BottomSheetTextInput
                         style={styles.searchInput}
-                        label={t('common.search')}
-                        placeholder={t('common.search')}
+                        label={t('general.search')}
+                        placeholder={t('general.search')}
                         placeholderTextColor={colors.textMuted}
                         onChangeText={(text) => {setSearchText(text)}}
                     />

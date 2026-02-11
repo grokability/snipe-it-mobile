@@ -56,7 +56,7 @@ export default function LicensesScreen() {
 
     return (
         <SafeAreaView style={styles.container}>
-            <Text style={styles.title}>{t('licenses.title')}</Text>
+            <Text style={styles.title}>{t('mobile.licenses_title')}</Text>
             <SafeAreaProvider>
                 <SafeAreaView style={styles.container}>
                     <FlatList

@@ -24,7 +24,7 @@ export default function LoginScreen() {
 
     return (
         <View style={styles.container}>
-            <Text style={styles.title}>{t('login.title')}</Text>
+            <Text style={styles.title}>{t('mobile.login_title')}</Text>
             <LoginForm onLogin={login} onDomainChange={handleDomainChange} />
         </View>
     );
