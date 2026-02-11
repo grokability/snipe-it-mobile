@@ -6,15 +6,18 @@ import {makeRequest} from "@/helpers/axiosConfig";
 import {AuthContext} from "@/context/AuthProvider";
 import {useColors} from "@/hooks/useThemeColors";
 import {Spacing, BorderRadius, Typography, FontWeight} from "@/constants/sizes";
+import {useTranslation} from "react-i18next";
 
 const CloseBtn = () => {
     const { close } = useBottomSheet();
-    return <Button title="Close" onPress={() => close()} />;
+    const { t } = useTranslation();
+    return <Button title={t('general.close')} onPress={() => close()} />;
 };
 
 const SelectStatusBottomSheet = forwardRef((props, ref) => {
     const colors = useColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
+    const { t } = useTranslation();
 
     const { user } = useContext(AuthContext);
     const snapPoints = useMemo(() => ['30%', '50%'], []);
@@ -69,8 +72,8 @@ const SelectStatusBottomSheet = forwardRef((props, ref) => {
                 <View style={styles.searchContainer}>
                     <BottomSheetTextInput
                         style={styles.searchInput}
-                        label="Search..."
-                        placeholder={'Search...'}
+                        label={t('general.search')}
+                        placeholder={t('general.search')}
                         placeholderTextColor={colors.textMuted}
                         onChangeText={(text) => {setSearchText(text)}}
                     />

@@ -6,10 +6,12 @@ import {makeRequest} from "@/helpers/axiosConfig";
 import {AuthContext} from "@/context/AuthProvider";
 import {useColors} from "@/hooks/useThemeColors";
 import {Typography, FontWeight, Spacing} from "@/constants/sizes";
+import {useTranslation} from "react-i18next";
 
 export default function CheckinScreen() {
     const colors = useColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
+    const { t } = useTranslation();
     const { user } = useContext(AuthContext);
     const { id } = useLocalSearchParams();
 
@@ -33,8 +35,8 @@ export default function CheckinScreen() {
 
     return (
         <SafeAreaProvider style={styles.container}>
-            <Text style={styles.title}>Checkin Asset {id}</Text>
-            <Button title="Checkin" onPress={() => checkin()} />
+            <Text style={styles.title}>{t('mobile.checkin_title', { id })}</Text>
+            <Button title={t('general.checkin')} onPress={() => checkin()} />
         </SafeAreaProvider>
     )
 }

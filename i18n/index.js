@@ -1,35 +1,25 @@
 import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
-import * as Localization from "expo-localization";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { getLocales } from "expo-localization";
 import translationEn from "./locales/en-US/translation.json";
-import translationPt from "./locales/pt-PT/translation.json";
 
-const initI18n = async () => {
-    let savedLanguage = await AsyncStorage.getItem("locale");
+const locales = getLocales();
+const deviceLanguage = locales?.[0]?.languageTag ?? "en-US";
 
-    if (!savedLanguage) {
-        savedLanguage = Localization.locale; // this doesn't seem to work for some reason, leaving here for now though
-    }
-
-    const resources = {
+i18n.use(initReactI18next).init({
+    compatibilityJSON: "v3",
+    resources: {
         "en-US": { translation: translationEn },
-        "pt-PT": { translation: translationPt },
-    };
-
-    if (!i18n.isInitialized) {
-        await i18n.use(initReactI18next).init({
-            compatibilityJSON: "v3",
-            resources,
-            lng: savedLanguage,
-            fallbackLng: "pt-BR",
-            interpolation: {
-                escapeValue: false,
-            },
-        });
-    }
-}
-
-initI18n();
+    },
+    lng: deviceLanguage,
+    fallbackLng: "en-US",
+    interpolation: {
+        escapeValue: false,
+    },
+    react: {
+        useSuspense: false,
+    },
+    initImmediate: false,
+});
 
 export default i18n;

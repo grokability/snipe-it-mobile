@@ -4,10 +4,12 @@ import * as SecureStore from 'expo-secure-store';
 import BrowserLoginButton from "@/components/BrowserLoginButton";
 import {useColors} from "@/hooks/useThemeColors";
 import {Spacing, BorderRadius, Typography} from "@/constants/sizes";
+import {useTranslation} from "react-i18next";
 
 const LoginForm = ({ onLogin, onDomainChange }) => {
     const colors = useColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
+    const { t } = useTranslation();
 
     const [domain, setDomain] = useState('https://example.example.com');
     const [username, setUsername] = useState('');
@@ -33,14 +35,14 @@ const LoginForm = ({ onLogin, onDomainChange }) => {
         try {
             await onLogin(domain);
         } catch (error) {
-            Alert.alert("Login Failed", "Please check your domain");
+            Alert.alert(t('mobile.login_failed'), t('mobile.login_failed_message'));
         }
     };
 
     return (
         <>
             <TextInput
-                placeholder="Domain"
+                placeholder={t('mobile.domain')}
                 onChangeText={handleDomainChange}
                 value={domain}
                 style={styles.input}

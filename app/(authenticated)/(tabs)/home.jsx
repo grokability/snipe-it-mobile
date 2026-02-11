@@ -9,8 +9,6 @@ import ExpoApplication from "expo-application/src/ExpoApplication";
 import RecentActions from "@/components/RecentActions";
 import {AuthContext} from "@/context/AuthProvider";
 import {useTranslation} from "react-i18next";
-import i18n from "@/i18n";
-import ExpoLocalization from "expo-localization/src/ExpoLocalization";
 import {useColors} from "@/hooks/useThemeColors";
 import {Typography, FontWeight} from "@/constants/sizes";
 
@@ -25,7 +23,7 @@ export default function HomeScreen() {
 
         console.log(permission?.granted);
     })
-    const { t, i18n } = useTranslation();
+    const { t } = useTranslation();
 
 
 
@@ -44,13 +42,13 @@ export default function HomeScreen() {
                 {user?.permissions?.superuser === 1 && (
                     <RecentActions />
                 )}
-                    <Text style={styles.text}>{t('home.welcome')}</Text>
-                    <Text style={styles.text}>Version: {ExpoApplication.nativeApplicationVersion} ({ExpoApplication.nativeBuildVersion})</Text>
+                    <Text style={styles.text}>{t('mobile.welcome')}</Text>
+                    <Text style={styles.text}>{t('mobile.version', { version: ExpoApplication.nativeApplicationVersion, build: ExpoApplication.nativeBuildVersion })}</Text>
                 {!permission.granted &&
-                    <Button style={styles.text} title='Request Camera Permissions for Scanner' onPress={requestPermission}/>
+                    <Button style={styles.text} title={t('mobile.request_camera_permissions')} onPress={requestPermission}/>
                 }
                 {permission.granted &&
-                    <Button style={styles.text} title='Open Scanner' onPress={() => router.push('/scanner')}/>
+                    <Button style={styles.text} title={t('mobile.open_scanner')} onPress={() => router.push('/scanner')}/>
                 }
                 <LottieView
                     source={require('@/assets/spinning_star_eye.json')}
