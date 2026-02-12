@@ -6,10 +6,9 @@ import {
     useBottomSheet
 } from "@gorhom/bottom-sheet";
 import {Text, Button, Pressable, View, StyleSheet, Image} from "react-native";
-import React, {forwardRef, useContext, useEffect, useMemo, useState, useImperativeHandle} from "react";
+import React, {forwardRef, useEffect, useMemo, useState, useImperativeHandle} from "react";
 import BottomSheet from "@gorhom/bottom-sheet";
 import {makeRequest} from "@/helpers/axiosConfig";
-import {AuthContext} from "@/context/AuthProvider";
 import {useColors} from "@/hooks/useThemeColors";
 import {Spacing, BorderRadius, Typography, FontWeight} from "@/constants/sizes";
 import {GestureHandlerRootView} from "react-native-gesture-handler";
@@ -26,7 +25,6 @@ const SelectLocationBottomSheet = forwardRef((props, ref) => {
     const styles = useMemo(() => createStyles(colors), [colors]);
     const { t } = useTranslation();
 
-    const { user } = useContext(AuthContext);
     const [locations, setLocations] = useState([])
     const [searchText, setSearchText] = useState('')
     const snapPoints = useMemo(() => ['25%', '50%', '70%'], []);
@@ -39,7 +37,6 @@ const SelectLocationBottomSheet = forwardRef((props, ref) => {
         makeRequest({
             url: `/locations?sort=first_name&order=asc&search=${searchText}`,
             method: 'GET',
-            headers: { 'Authorization': `Bearer ${user.token}` }
         })
             .then((res) => {
                 setLocations(res.rows)

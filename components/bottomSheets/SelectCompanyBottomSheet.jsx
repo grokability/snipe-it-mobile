@@ -1,17 +1,10 @@
-import {
-    BottomSheetFlatList,
-    BottomSheetModal,
-    BottomSheetTextInput,
-    BottomSheetView,
-    useBottomSheet
-} from "@gorhom/bottom-sheet";
-import {Text, Button, Pressable, View, StyleSheet, Image} from "react-native";
-import React, {forwardRef, useEffect, useMemo, useState, useImperativeHandle} from "react";
-import BottomSheet from "@gorhom/bottom-sheet";
+import {Text, View, StyleSheet, Button, Pressable} from "react-native";
+import {BottomSheetFlatList, BottomSheetModal, BottomSheetTextInput, useBottomSheet} from "@gorhom/bottom-sheet";
+import {GestureHandlerRootView} from "react-native-gesture-handler";
+import React, {useMemo, useState, forwardRef, useEffect} from "react";
 import {makeRequest} from "@/helpers/axiosConfig";
 import {useColors} from "@/hooks/useThemeColors";
 import {Spacing, BorderRadius, Typography, FontWeight} from "@/constants/sizes";
-import {GestureHandlerRootView} from "react-native-gesture-handler";
 import {useTranslation} from "react-i18next";
 
 const CloseBtn = () => {
@@ -20,52 +13,48 @@ const CloseBtn = () => {
     return <Button title={t('general.close')} onPress={() => close()} />;
 };
 
-const SelectAssetBottomSheet = forwardRef((props, ref) => {
+const SelectCompanyBottomSheet = forwardRef((props, ref) => {
     const colors = useColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const { t } = useTranslation();
 
-    const [assets, setAssets] = useState([])
-    const [searchText, setSearchText] = useState('')
     const snapPoints = useMemo(() => ['25%', '50%', '70%'], []);
+    const [searchText, setSearchText] = useState('');
+    const [companies, setCompanies] = useState([]);
 
     useEffect(() => {
-        fetchAssets();
-    }, [searchText])
+        fetchCompanies();
+    }, [searchText]);
 
-    const fetchAssets = () => {
+    const fetchCompanies = () => {
         makeRequest({
-            url: `/hardware?sort=first_name&order=asc&search=${searchText}`,
+            url: `/companies?search=${searchText}`,
             method: 'GET',
         })
             .then((res) => {
-                setAssets(res.rows)
+                setCompanies(res.rows);
             })
             .catch((err) => {
                 console.error(err);
             });
-    }
+    };
 
-    const selectAsset = (asset) => {
-        props.setSelectedAsset(asset)
-        ref.current.close()
-    }
+    const selectCompany = (company) => {
+        props.setSelectedCompany(company);
+        ref.current.close();
+    };
 
-    const Item = ({item}) => {
-        return (
-            <Pressable
-                onPress={() => selectAsset(item)}
-                style={({pressed}) => [
-                    styles.itemContainer,
-                    pressed && styles.itemPressed
-                ]}
-            >
-                <View style={styles.assetInfoContainer}>
-                    <Text style={styles.assetName}>{item.asset_tag}</Text>
-                </View>
-            </Pressable>
-        )
-    }
+    const Item = ({item}) => (
+        <Pressable
+            onPress={() => selectCompany(item)}
+            style={({pressed}) => [
+                styles.itemContainer,
+                pressed && styles.itemPressed
+            ]}
+        >
+            <Text style={styles.name}>{item.name}</Text>
+        </Pressable>
+    );
 
     return (
         <BottomSheetModal
@@ -87,7 +76,7 @@ const SelectAssetBottomSheet = forwardRef((props, ref) => {
                     />
                 </View>
                 <BottomSheetFlatList
-                    data={assets}
+                    data={companies}
                     renderItem={({item}) => <Item item={item} />}
                     keyExtractor={item => item.id}
                     contentContainerStyle={styles.listContent}
@@ -95,8 +84,8 @@ const SelectAssetBottomSheet = forwardRef((props, ref) => {
                 <CloseBtn />
             </GestureHandlerRootView>
         </BottomSheetModal>
-    )
-})
+    );
+});
 
 const createStyles = (colors) => StyleSheet.create({
     container: {
@@ -132,18 +121,7 @@ const createStyles = (colors) => StyleSheet.create({
     itemPressed: {
         backgroundColor: colors.backgroundTertiary,
     },
-    imageContainer: {
-        marginRight: Spacing.md,
-    },
-    placeholderText: {
-        fontSize: Typography.bodyLarge,
-        fontWeight: FontWeight.bold,
-        color: colors.textMuted,
-    },
-    assetInfoContainer: {
-        flex: 1,
-    },
-    assetName: {
+    name: {
         fontSize: Typography.bodyLarge,
         fontWeight: FontWeight.medium,
         color: colors.text,
@@ -153,4 +131,4 @@ const createStyles = (colors) => StyleSheet.create({
     },
 });
 
-export default SelectAssetBottomSheet;
+export default SelectCompanyBottomSheet;

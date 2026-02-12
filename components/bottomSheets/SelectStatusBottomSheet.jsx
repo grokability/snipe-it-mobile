@@ -1,9 +1,8 @@
 import {Text, View, StyleSheet, Button, Pressable} from "react-native";
 import {BottomSheetFlatList, BottomSheetModal, BottomSheetTextInput, useBottomSheet} from "@gorhom/bottom-sheet";
 import {GestureHandlerRootView} from "react-native-gesture-handler";
-import React, {useMemo, useState, forwardRef, useContext, useEffect} from "react";
+import React, {useMemo, useState, forwardRef, useEffect} from "react";
 import {makeRequest} from "@/helpers/axiosConfig";
-import {AuthContext} from "@/context/AuthProvider";
 import {useColors} from "@/hooks/useThemeColors";
 import {Spacing, BorderRadius, Typography, FontWeight} from "@/constants/sizes";
 import {useTranslation} from "react-i18next";
@@ -19,7 +18,6 @@ const SelectStatusBottomSheet = forwardRef((props, ref) => {
     const styles = useMemo(() => createStyles(colors), [colors]);
     const { t } = useTranslation();
 
-    const { user } = useContext(AuthContext);
     const snapPoints = useMemo(() => ['30%', '50%'], []);
     const [searchText, setSearchText] = useState('')
     const [statuses, setStatuses] = useState([])
@@ -32,7 +30,6 @@ const SelectStatusBottomSheet = forwardRef((props, ref) => {
         makeRequest({
             url: `statuslabels?search=${searchText}`,
             method: 'GET',
-            headers: { 'Authorization': `Bearer ${user.token}` }
         })
             .then((res) => {
                 setStatuses(res.rows)

@@ -57,7 +57,10 @@
     "custom_fields": "Custom Fields",
     "checkin_counter": "Checkins",
     "checkout_counter": "Checkouts",
-    "requests_counter": "Requests"
+    "requests_counter": "Requests",
+    "edit": "Edit",
+    "save": "Save",
+    "select": "Select..."
   },
   "mobile": {
     "na": "N/A",
@@ -102,6 +105,14 @@
     "section_custom_fields": "Custom Fields",
     "section_notes": "Notes",
     "yes": "Yes",
-    "no": "No"
+    "no": "No",
+    "screen_edit_asset": "Edit Asset",
+    "edit_success": "Asset updated successfully",
+    "edit_failed": "Failed to update asset",
+    "asset_tag_required": "Asset tag is required",
+    "select_model": "Select Model",
+    "select_company": "Select Company",
+    "select_supplier": "Select Supplier",
+    "save_changes": "Save Changes"
   }
 }
