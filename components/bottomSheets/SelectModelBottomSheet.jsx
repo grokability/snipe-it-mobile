@@ -6,6 +6,7 @@ import {makeRequest} from "@/helpers/axiosConfig";
 import {useColors} from "@/hooks/useThemeColors";
 import {Spacing, BorderRadius, Typography, FontWeight} from "@/constants/sizes";
 import {useTranslation} from "react-i18next";
+import {decode} from "html-entities";
 
 const CloseBtn = () => {
     const { close } = useBottomSheet();
@@ -53,7 +54,7 @@ const SelectModelBottomSheet = forwardRef((props, ref) => {
             ]}
         >
             <View style={styles.infoContainer}>
-                <Text style={styles.name}>{item.name}</Text>
+                <Text style={styles.name}>{decode(item.name)}</Text>
                 {item.model_number && (
                     <Text style={styles.subtitle}>{item.model_number}</Text>
                 )}

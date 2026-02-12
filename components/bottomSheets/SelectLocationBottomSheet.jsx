@@ -13,6 +13,7 @@ import {useColors} from "@/hooks/useThemeColors";
 import {Spacing, BorderRadius, Typography, FontWeight} from "@/constants/sizes";
 import {GestureHandlerRootView} from "react-native-gesture-handler";
 import {useTranslation} from "react-i18next";
+import {decode} from "html-entities";
 
 const CloseBtn = () => {
     const { close } = useBottomSheet();
@@ -61,7 +62,7 @@ const SelectLocationBottomSheet = forwardRef((props, ref) => {
                 ]}
             >
                 <View style={styles.locationInfoContainer}>
-                    <Text style={styles.locationName}>{item.name}</Text>
+                    <Text style={styles.locationName}>{decode(item.name)}</Text>
                 </View>
             </Pressable>
         )

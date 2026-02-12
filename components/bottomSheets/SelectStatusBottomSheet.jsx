@@ -6,6 +6,7 @@ import {makeRequest} from "@/helpers/axiosConfig";
 import {useColors} from "@/hooks/useThemeColors";
 import {Spacing, BorderRadius, Typography, FontWeight} from "@/constants/sizes";
 import {useTranslation} from "react-i18next";
+import {decode} from "html-entities";
 
 const CloseBtn = () => {
     const { close } = useBottomSheet();
@@ -52,7 +53,7 @@ const SelectStatusBottomSheet = forwardRef((props, ref) => {
                 pressed && styles.itemPressed
             ]}
         >
-            <Text style={styles.name}>{item.name}</Text>
+            <Text style={styles.name}>{decode(item.name)}</Text>
         </Pressable>
     )
 

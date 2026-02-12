@@ -13,6 +13,7 @@ import {useColors} from "@/hooks/useThemeColors";
 import {Spacing, BorderRadius, Typography, FontWeight} from "@/constants/sizes";
 import {GestureHandlerRootView} from "react-native-gesture-handler";
 import {useTranslation} from "react-i18next";
+import {decode} from "html-entities";
 
 const CloseBtn = () => {
     const { close } = useBottomSheet();
@@ -66,13 +67,13 @@ const SelectUserBottomSheet = forwardRef((props, ref) => {
                     ) : (
                         <View style={styles.placeholderImage}>
                             <Text style={styles.placeholderText}>
-                                {item.name ? item.name.charAt(0).toUpperCase() : "U"}
+                                {item.name ? decode(item.name).charAt(0).toUpperCase() : "U"}
                             </Text>
                         </View>
                     )}
                 </View>
                 <View style={styles.userInfoContainer}>
-                    <Text style={styles.userName}>{item.name}</Text>
+                    <Text style={styles.userName}>{decode(item.name)}</Text>
                     <Text style={styles.userEmail}>{item.email || t('mobile.no_email')}</Text>
                 </View>
             </Pressable>

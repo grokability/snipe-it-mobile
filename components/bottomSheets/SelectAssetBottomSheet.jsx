@@ -13,6 +13,7 @@ import {useColors} from "@/hooks/useThemeColors";
 import {Spacing, BorderRadius, Typography, FontWeight} from "@/constants/sizes";
 import {GestureHandlerRootView} from "react-native-gesture-handler";
 import {useTranslation} from "react-i18next";
+import {decode} from "html-entities";
 
 const CloseBtn = () => {
     const { close } = useBottomSheet();
@@ -61,7 +62,7 @@ const SelectAssetBottomSheet = forwardRef((props, ref) => {
                 ]}
             >
                 <View style={styles.assetInfoContainer}>
-                    <Text style={styles.assetName}>{item.asset_tag}</Text>
+                    <Text style={styles.assetName}>{decode(item.asset_tag)}</Text>
                 </View>
             </Pressable>
         )
