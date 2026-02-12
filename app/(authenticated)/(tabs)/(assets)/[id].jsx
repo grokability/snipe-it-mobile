@@ -1,6 +1,8 @@
-import React, {useCallback, useContext, useState, useMemo} from 'react';
+import React, {useCallback, useContext, useState, useMemo, useLayoutEffect} from 'react';
 import {ActivityIndicator, Image, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View} from 'react-native';
-import {router, useFocusEffect, useLocalSearchParams} from "expo-router";
+import {router, useFocusEffect, useLocalSearchParams, useNavigation} from "expo-router";
+import {Ionicons} from '@expo/vector-icons';
+import TopNavMenu from "@/components/overlays/TopNavMenu";
 import {makeRequest} from "@/helpers/axiosConfig";
 import {decode} from "html-entities";
 import {AuthContext} from "@/context/AuthProvider";
@@ -26,6 +28,20 @@ export default function AssetScreen() {
     const [refreshing, setRefreshing] = useState(false);
     const { user } = useContext(AuthContext);
     const { id } = useLocalSearchParams();
+    const navigation = useNavigation();
+
+    useLayoutEffect(() => {
+        navigation.setOptions({
+            headerRight: () => (
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                    <Pressable onPress={() => router.push(`/(tabs)/(assets)/edit/${id}`)}>
+                        <Ionicons name="pencil" size={22} color={colors.text} />
+                    </Pressable>
+                    <TopNavMenu />
+                </View>
+            ),
+        });
+    }, [navigation, id, colors.text]);
 
     const getAsset = useCallback(() => {
         setLoading(true);

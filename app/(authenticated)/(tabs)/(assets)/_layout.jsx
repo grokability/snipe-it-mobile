@@ -46,6 +46,13 @@ export default function AssetsLayout() {
                         headerBackTitle: '',
                     }}
                     />
+                <Stack.Screen
+                    name="edit/[id]"
+                    options={{
+                        title: t('mobile.screen_edit_asset'),
+                        headerBackTitle: '',
+                    }}
+                    />
             </Stack>
 
         </>
