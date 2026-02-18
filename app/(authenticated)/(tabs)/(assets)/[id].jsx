@@ -51,15 +51,19 @@ export default function AssetScreen() {
             makeRequest({ url: '/fields', method: 'get' }),
         ])
             .then(([assetRes, fieldsRes]) => {
-                // Merge field_values from field definitions into asset custom_fields
+                // Merge field_values and field_encrypted from field definitions into asset custom_fields
                 if (assetRes.custom_fields && fieldsRes?.rows) {
                     const fieldDefs = {};
                     fieldsRes.rows.forEach(fieldDefinition => {
-                        fieldDefs[fieldDefinition.db_column_name] = fieldDefinition.field_values_array;
+                        fieldDefs[fieldDefinition.db_column_name] = fieldDefinition;
                     });
                     Object.values(assetRes.custom_fields).forEach(field => {
-                        if (fieldDefs[field.field]) {
-                            field.field_values = fieldDefs[field.field];
+                        const fieldDefinition = fieldDefs[field.field];
+                        if (fieldDefinition) {
+                            if (fieldDefinition.field_values_array) {
+                                field.field_values = fieldDefinition.field_values_array;
+                            }
+                            field.field_encrypted = Boolean(fieldDefinition.field_encrypted);
                         }
                     });
                 }
@@ -91,6 +95,27 @@ export default function AssetScreen() {
                 <Text selectable style={styles.detailValue}>{value}</Text>
             </View>
         )
+    };
+
+    const EncryptedDetailRow = ({label, value}) => {
+        const [revealed, setRevealed] = useState(false);
+        return (
+            <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>{label}</Text>
+                {revealed ? (
+                    <View style={{flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: Spacing.sm}}>
+                        <Text selectable style={[styles.detailValue, {flex: 1}]}>{value}</Text>
+                        <Pressable onPress={() => setRevealed(false)} hitSlop={8}>
+                            <Ionicons name="lock-open-outline" size={16} color={colors.textSecondary} />
+                        </Pressable>
+                    </View>
+                ) : (
+                    <Pressable onPress={() => setRevealed(true)} hitSlop={8}>
+                        <Ionicons name="lock-closed-outline" size={20} color={colors.textSecondary} />
+                    </Pressable>
+                )}
+            </View>
+        );
     };
 
     const SectionHeader = ({title}) => (
@@ -236,6 +261,10 @@ export default function AssetScreen() {
                             const label = key;
                             const format = field.field_format;
                             const element = field.element;
+
+                            if (field.field_encrypted) {
+                                return <EncryptedDetailRow key={key} label={label} value={displayValue(field.value)} />;
+                            }
 
                             if (element === 'checkbox' || format === 'boolean') {
                                 if (field.field_values) {
