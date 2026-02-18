@@ -10,6 +10,7 @@ import {SafeAreaProvider, useSafeAreaInsets} from "react-native-safe-area-contex
 import {useColors} from "@/hooks/useThemeColors";
 import {Spacing, BorderRadius, Typography, FontWeight} from "@/constants/sizes";
 import {useTranslation} from "react-i18next";
+import Checkbox from "@/components/Checkbox";
 
 
 export const unstable_settings = {
@@ -45,17 +46,31 @@ export default function AssetScreen() {
 
     const getAsset = useCallback(() => {
         setLoading(true);
-        return makeRequest({
-            url: `/hardware/${id}`,
-            method: 'get'
-        })
-            .then(res => {
-                setData({
-                    asset: res,
-                });
+        return Promise.all([
+            makeRequest({ url: `/hardware/${id}`, method: 'get' }),
+            makeRequest({ url: '/fields', method: 'get' }),
+        ])
+            .then(([assetRes, fieldsRes]) => {
+                // Merge field_values and field_encrypted from field definitions into asset custom_fields
+                if (assetRes.custom_fields && fieldsRes?.rows) {
+                    const fieldDefs = {};
+                    fieldsRes.rows.forEach(fieldDefinition => {
+                        fieldDefs[fieldDefinition.db_column_name] = fieldDefinition;
+                    });
+                    Object.values(assetRes.custom_fields).forEach(field => {
+                        const fieldDefinition = fieldDefs[field.field];
+                        if (fieldDefinition) {
+                            if (fieldDefinition.field_values_array) {
+                                field.field_values = fieldDefinition.field_values_array;
+                            }
+                            field.field_encrypted = Boolean(fieldDefinition.field_encrypted);
+                        }
+                    });
+                }
+                setData({ asset: assetRes });
             })
-            .catch(err => {
-                console.log(err);
+            .catch(error => {
+                console.log(error);
             })
             .finally(() => {
                 setLoading(false);
@@ -82,6 +97,27 @@ export default function AssetScreen() {
         )
     };
 
+    const EncryptedDetailRow = ({label, value}) => {
+        const [revealed, setRevealed] = useState(false);
+        return (
+            <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>{label}</Text>
+                {revealed ? (
+                    <View style={{flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: Spacing.sm}}>
+                        <Text selectable style={[styles.detailValue, {flex: 1}]}>{value}</Text>
+                        <Pressable onPress={() => setRevealed(false)} hitSlop={8}>
+                            <Ionicons name="lock-open-outline" size={16} color={colors.textSecondary} />
+                        </Pressable>
+                    </View>
+                ) : (
+                    <Pressable onPress={() => setRevealed(true)} hitSlop={8}>
+                        <Ionicons name="lock-closed-outline" size={20} color={colors.textSecondary} />
+                    </Pressable>
+                )}
+            </View>
+        );
+    };
+
     const SectionHeader = ({title}) => (
         <Text style={styles.sectionTitle}>{title}</Text>
     );
@@ -96,10 +132,10 @@ export default function AssetScreen() {
     );
 
     const na = t('mobile.na');
-    const val = (v) => v ? decode(String(v)) : na;
-    const nestedName = (obj) => obj?.name ? decode(obj.name) : na;
-    const formatDate = (obj) => obj?.formatted || na;
-    const formatBool = (v) => v ? t('mobile.yes') : t('mobile.no');
+    const displayValue = (value) => value ? decode(String(value)) : na;
+    const nestedName = (object) => object?.name ? decode(object.name) : na;
+    const formatDate = (dateObject) => dateObject?.formatted || na;
+    const formatBool = (value) => value ? t('mobile.yes') : t('mobile.no');
 
     if (loading || !data.asset) {
         return (
@@ -134,7 +170,7 @@ export default function AssetScreen() {
 
                 {/* Header */}
                 <View style={styles.headerContainer}>
-                    <Text style={styles.assetTitle}>{val(asset.name)}</Text>
+                    <Text style={styles.assetTitle}>{displayValue(asset.name)}</Text>
                     {asset.asset_tag && (
                         <Text selectable style={styles.assetTag}>{asset.asset_tag}</Text>
                     )}
@@ -174,7 +210,7 @@ export default function AssetScreen() {
 
                 {/* Details */}
                 <Section title={t('mobile.section_details')}>
-                    <DetailRow label={t('general.serial')} value={val(asset.serial)}/>
+                    <DetailRow label={t('general.serial')} value={displayValue(asset.serial)}/>
                     <DetailRow label={t('general.model')} value={nestedName(asset.model)}/>
                     <DetailRow label={t('general.model_number')} value={asset.model_number || na}/>
                     <DetailRow label={t('general.category')} value={nestedName(asset.category)}/>
@@ -193,12 +229,12 @@ export default function AssetScreen() {
                 {/* Purchase */}
                 <Section title={t('mobile.section_purchase')}>
                     <DetailRow label={t('general.purchase_date')} value={formatDate(asset.purchase_date)}/>
-                    <DetailRow label={t('general.purchase_cost')} value={val(asset.purchase_cost)}/>
-                    <DetailRow label={t('general.order_number')} value={val(asset.order_number)}/>
+                    <DetailRow label={t('general.purchase_cost')} value={displayValue(asset.purchase_cost)}/>
+                    <DetailRow label={t('general.order_number')} value={displayValue(asset.order_number)}/>
                     <DetailRow label={t('general.supplier')} value={nestedName(asset.supplier)}/>
                     <DetailRow label={t('general.warranty_months')} value={asset.warranty_months ? `${asset.warranty_months} months` : na}/>
                     <DetailRow label={t('general.warranty_expires')} value={formatDate(asset.warranty_expires)}/>
-                    <DetailRow label={t('general.eol')} value={val(asset.eol)}/>
+                    <DetailRow label={t('general.eol')} value={displayValue(asset.eol)}/>
                 </Section>
 
                 {/* Dates */}
@@ -221,9 +257,95 @@ export default function AssetScreen() {
                 {/* Custom Fields */}
                 {customFields.length > 0 && (
                     <Section title={t('mobile.section_custom_fields')}>
-                        {customFields.map(([key, field]) => (
-                            <DetailRow key={key} label={field.field} value={val(field.value)}/>
-                        ))}
+                        {customFields.map(([key, field]) => {
+                            const label = key;
+                            const format = field.field_format;
+                            const element = field.element;
+
+                            if (field.field_encrypted) {
+                                return <EncryptedDetailRow key={key} label={label} value={displayValue(field.value)} />;
+                            }
+
+                            if (element === 'checkbox' || format === 'boolean') {
+                                if (field.field_values) {
+                                    const options = typeof field.field_values === 'string'
+                                        ? field.field_values.split('\n').map(value => value.trim()).filter(Boolean)
+                                        : Array.isArray(field.field_values) ? field.field_values : [];
+                                    const selected = field.value ? field.value.split(',').map(value => value.trim()) : [];
+                                    return (
+                                        <View key={key} style={{gap: Spacing.xs}}>
+                                            <Text style={styles.detailLabel}>{label}</Text>
+                                            {options.map((option) => (
+                                                <View key={option} style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'}}>
+                                                    <Text style={{fontSize: Typography.body, color: colors.text}}>{option}</Text>
+                                                    <Checkbox value={selected.includes(option)} disabled />
+                                                </View>
+                                            ))}
+                                        </View>
+                                    );
+                                }
+                                return (
+                                    <View key={key} style={styles.detailRow}>
+                                        <Text style={styles.detailLabel}>{label}</Text>
+                                        <Checkbox value={field.value === '1'} disabled />
+                                    </View>
+                                );
+                            }
+
+                            if ((element === 'radio' || format === 'radio') && field.field_values) {
+                                const options = typeof field.field_values === 'string'
+                                    ? field.field_values.split('\n').map(value => value.trim()).filter(Boolean)
+                                    : Array.isArray(field.field_values) ? field.field_values : [];
+                                return (
+                                    <View key={key} style={{gap: Spacing.xs}}>
+                                        <Text style={styles.detailLabel}>{label}</Text>
+                                        {options.map((option) => (
+                                            <View key={option} style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'}}>
+                                                <Text style={{fontSize: Typography.body, color: colors.text}}>{option}</Text>
+                                                <View style={{
+                                                    width: 18, height: 18, borderRadius: 9,
+                                                    borderWidth: 2,
+                                                    borderColor: field.value === option ? colors.primary : colors.textSecondary,
+                                                    alignItems: 'center', justifyContent: 'center',
+                                                }}>
+                                                    {field.value === option && (
+                                                        <View style={{width: 10, height: 10, borderRadius: 5, backgroundColor: colors.primary}} />
+                                                    )}
+                                                </View>
+                                            </View>
+                                        ))}
+                                    </View>
+                                );
+                            }
+
+                            if ((element === 'listbox' || format === 'listbox') && field.field_values) {
+                                const options = typeof field.field_values === 'string'
+                                    ? field.field_values.split('\n').map(value => value.trim()).filter(Boolean)
+                                    : Array.isArray(field.field_values) ? field.field_values : [];
+                                return (
+                                    <View key={key} style={{gap: Spacing.xs}}>
+                                        <Text style={styles.detailLabel}>{label}</Text>
+                                        <View style={{flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm}}>
+                                            {options.map((option) => (
+                                                <View key={option} style={{
+                                                    paddingHorizontal: Spacing.md, paddingVertical: Spacing.xs,
+                                                    borderRadius: BorderRadius.sm,
+                                                    backgroundColor: field.value === option ? colors.primary : colors.backgroundTertiary,
+                                                }}>
+                                                    <Text style={{
+                                                        fontSize: Typography.caption,
+                                                        color: field.value === option ? '#fff' : colors.text,
+                                                        fontWeight: field.value === option ? FontWeight.semibold : FontWeight.normal,
+                                                    }}>{option}</Text>
+                                                </View>
+                                            ))}
+                                        </View>
+                                    </View>
+                                );
+                            }
+
+                            return <DetailRow key={key} label={label} value={displayValue(field.value)}/>;
+                        })}
                     </Section>
                 )}
 

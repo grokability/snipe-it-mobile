@@ -24,6 +24,7 @@ import SelectSupplierBottomSheet from "@/components/bottomSheets/SelectSupplierB
 import SelectLocationBottomSheet from "@/components/bottomSheets/SelectLocationBottomSheet";
 import Datepicker from "@/components/Datepicker";
 import Switch from "@/components/Switch";
+import Checkbox from "@/components/Checkbox";
 
 // Parse "YYYY-MM-DD" as local date to avoid UTC timezone shift
 // (dates without times were shifting before this)
@@ -122,75 +123,84 @@ export default function EditAssetScreen() {
 
     const getAsset = useCallback(() => {
         setLoading(true);
-        return makeRequest({
-            url: `/hardware/${id}`,
-            method: 'get'
-        })
-            .then(res => {
-                setAsset(res);
-                populateFields(res);
+        return Promise.all([
+            makeRequest({ url: `/hardware/${id}`, method: 'get' }),
+            makeRequest({ url: '/fields', method: 'get' }),
+        ])
+            .then(([asset, fields]) => {
+                setAsset(asset);
+                const fieldDefs = {};
+                if (fields?.rows) {
+                    fields.rows.forEach(fieldDefinition => {
+                        fieldDefs[fieldDefinition.db_column_name] = fieldDefinition.field_values_array;
+                    });
+                }
+                populateFields(asset, fieldDefs);
             })
-            .catch(err => {
-                console.error(err);
+            .catch(error => {
+                console.error(error);
             })
             .finally(() => {
                 setLoading(false);
             });
     }, [id]);
 
-    const populateFields = (a) => {
-        setName(a.name ? decode(a.name) : '');
-        setAssetTag(a.asset_tag ? decode(a.asset_tag) : '');
-        setSerial(a.serial ? decode(a.serial) : '');
-        setOrderNumber(a.order_number ? decode(a.order_number) : '');
-        setPurchaseCost(a.purchase_cost || '');
-        setWarrantyMonths(a.warranty_months ? String(a.warranty_months) : '');
-        setNotes(a.notes ? decode(a.notes) : '');
+    const populateFields = (asset, fieldDefs = {}) => {
+        setName(asset.name ? decode(asset.name) : '');
+        setAssetTag(asset.asset_tag ? decode(asset.asset_tag) : '');
+        setSerial(asset.serial ? decode(asset.serial) : '');
+        setOrderNumber(asset.order_number ? decode(asset.order_number) : '');
+        setPurchaseCost(asset.purchase_cost || '');
+        setWarrantyMonths(asset.warranty_months ? String(asset.warranty_months) : '');
+        setNotes(asset.notes ? decode(asset.notes) : '');
 
-        if (a.status_label) {
-            setSelectedStatus({ id: a.status_label.id, name: decode(a.status_label.name), value: a.status_label.id });
+        if (asset.status_label) {
+            setSelectedStatus({ id: asset.status_label.id, name: decode(asset.status_label.name), value: asset.status_label.id });
         }
-        if (a.model) {
-            setSelectedModel({ id: a.model.id, name: decode(a.model.name) });
+        if (asset.model) {
+            setSelectedModel({ id: asset.model.id, name: decode(asset.model.name) });
         }
-        if (a.company) {
-            setSelectedCompany({ id: a.company.id, name: decode(a.company.name) });
+        if (asset.company) {
+            setSelectedCompany({ id: asset.company.id, name: decode(asset.company.name) });
         }
-        if (a.supplier) {
-            setSelectedSupplier({ id: a.supplier.id, name: decode(a.supplier.name) });
+        if (asset.supplier) {
+            setSelectedSupplier({ id: asset.supplier.id, name: decode(asset.supplier.name) });
         }
-        if (a.location) {
-            setSelectedLocation({ id: a.location.id, name: decode(a.location.name) });
+        if (asset.location) {
+            setSelectedLocation({ id: asset.location.id, name: decode(asset.location.name) });
         }
-        if (a.rtd_location) {
-            setSelectedRtdLocation({ id: a.rtd_location.id, name: decode(a.rtd_location.name) });
-        }
-
-        if (a.purchase_date?.date) {
-            setPurchaseDate(parseLocalDate(a.purchase_date.date));
-        }
-        if (a.next_audit_date?.date) {
-            setNextAuditDate(parseLocalDate(a.next_audit_date.date));
-        }
-        if (a.expected_checkin?.date) {
-            setExpectedCheckin(parseLocalDate(a.expected_checkin.date));
+        if (asset.rtd_location) {
+            setSelectedRtdLocation({ id: asset.rtd_location.id, name: decode(asset.rtd_location.name) });
         }
 
-        setRequestable(!!a.requestable);
-        setByod(!!a.byod);
+        if (asset.purchase_date?.date) {
+            setPurchaseDate(parseLocalDate(asset.purchase_date.date));
+        }
+        if (asset.next_audit_date?.date) {
+            setNextAuditDate(parseLocalDate(asset.next_audit_date.date));
+        }
+        if (asset.expected_checkin?.date) {
+            setExpectedCheckin(parseLocalDate(asset.expected_checkin.date));
+        }
+
+        setRequestable(!!asset.requestable);
+        setByod(!!asset.byod);
 
         // Custom fields
-        if (a.custom_fields) {
-            const cfValues = {};
-            Object.entries(a.custom_fields).forEach(([key, field]) => {
-                cfValues[field.field] = {
+        if (asset.custom_fields) {
+            const initialCustomFieldValues = {};
+            Object.entries(asset.custom_fields).forEach(([key, field]) => {
+                const options = fieldDefs[field.field] || null;
+                initialCustomFieldValues[key] = {
                     value: field.value ? decode(field.value) : '',
                     field_format: field.field_format,
-                    field_values: field.field_values,
-                    db_column: field.db_column,
+                    element: field.element,
+                    field_values: options,
+                    db_column: field.field,
+                    name: key,
                 };
             });
-            setCustomFieldValues(cfValues);
+            setCustomFieldValues(initialCustomFieldValues);
         }
     };
 
@@ -202,10 +212,10 @@ export default function EditAssetScreen() {
 
     const formatDateForApi = (date) => {
         if (!date) return undefined;
-        const y = date.getFullYear();
-        const m = String(date.getMonth() + 1).padStart(2, '0');
-        const d = String(date.getDate()).padStart(2, '0');
-        return `${y}-${m}-${d}`;
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
     };
 
     const handleSubmit = () => {
@@ -243,9 +253,9 @@ export default function EditAssetScreen() {
         };
 
         // Custom fields
-        Object.values(customFieldValues).forEach((cf) => {
-            if (cf.db_column) {
-                data[cf.db_column] = cf.value;
+        Object.values(customFieldValues).forEach((customField) => {
+            if (customField.db_column) {
+                data[customField.db_column] = customField.value;
             }
         });
 
@@ -254,12 +264,12 @@ export default function EditAssetScreen() {
             method: 'PUT',
             data,
         })
-            .then(res => {
-                if (res.status === 'error') {
+            .then(response => {
+                if (response.status === 'error') {
                     Burnt.alert({
                         title: t('general.error'),
                         preset: "error",
-                        message: res.messages ? Object.values(res.messages).flat().join('\n') : t('mobile.edit_failed'),
+                        message: response.messages ? Object.values(response.messages).flat().join('\n') : t('mobile.edit_failed'),
                         duration: 4,
                     });
                     return;
@@ -272,8 +282,8 @@ export default function EditAssetScreen() {
                 });
                 router.replace(`/(tabs)/(assets)/${id}`);
             })
-            .catch(err => {
-                console.error(err);
+            .catch(error => {
+                console.error(error);
                 Burnt.alert({
                     title: t('general.error'),
                     preset: "error",
@@ -297,33 +307,66 @@ export default function EditAssetScreen() {
 
     const renderCustomField = (fieldName, field) => {
         const format = field.field_format;
+        const element = field.element;
+        const label = field.name || fieldName;
 
-        if (format === 'checkbox' || format === 'boolean') {
+        if (element === 'checkbox') {
+            if (field.field_values) {
+                const options = typeof field.field_values === 'string'
+                    ? field.field_values.split('\n').map(value => value.trim()).filter(Boolean)
+                    : Array.isArray(field.field_values) ? field.field_values : [];
+                const selected = field.value ? field.value.split(',').map(value => value.trim()) : [];
+                return (
+                    <FormRow key={fieldName} label={label} styles={styles}>
+                        <View style={{gap: Spacing.sm}}>
+                            {options.map((option) => {
+                                const isSelected = selected.includes(option);
+                                return (
+                                    <Pressable
+                                        key={option}
+                                        onPress={() => {
+                                            const newSelected = isSelected
+                                                ? selected.filter(value => value !== option)
+                                                : [...selected, option];
+                                            updateCustomField(fieldName, newSelected.join(', '));
+                                        }}
+                                        style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: Spacing.xs}}
+                                    >
+                                        <Text style={{fontSize: Typography.bodyLarge, color: colors.text}}>{option}</Text>
+                                        <Checkbox value={isSelected} onValueChange={() => {
+                                            const newSelected = isSelected
+                                                ? selected.filter(value => value !== option)
+                                                : [...selected, option];
+                                            updateCustomField(fieldName, newSelected.join(', '));
+                                        }} />
+                                    </Pressable>
+                                );
+                            })}
+                        </View>
+                    </FormRow>
+                );
+            }
             return (
-                <FormRow key={fieldName} label={fieldName} styles={styles}>
-                    <Pressable
-                        onPress={() => updateCustomField(fieldName, field.value === '1' ? '0' : '1')}
-                        style={styles.toggleRow}
-                    >
-                        <Text style={styles.toggleText}>
-                            {field.value === '1' ? t('mobile.yes') : t('mobile.no')}
-                        </Text>
-                    </Pressable>
+                <FormRow key={fieldName} label={label} styles={styles} horizontal>
+                    <Checkbox
+                        value={field.value === '1'}
+                        onValueChange={(isChecked) => updateCustomField(fieldName, isChecked ? '1' : '0')}
+                    />
                 </FormRow>
             );
         }
 
-        if (format === 'date') {
+        if (format === 'DATE' || format === 'date') {
             return (
-                <FormRow key={fieldName} label={fieldName} styles={styles}>
+                <FormRow key={fieldName} label={label} styles={styles}>
                     <Datepicker
                         initialDate={field.value ? new Date(field.value) : undefined}
                         onDateChange={(event, date) => {
                             if (date) {
-                                const y = date.getFullYear();
-                                const m = String(date.getMonth() + 1).padStart(2, '0');
-                                const d = String(date.getDate()).padStart(2, '0');
-                                updateCustomField(fieldName, `${y}-${m}-${d}`);
+                                const year = date.getFullYear();
+                                const month = String(date.getMonth() + 1).padStart(2, '0');
+                                const day = String(date.getDate()).padStart(2, '0');
+                                updateCustomField(fieldName, `${year}-${month}-${day}`);
                             }
                         }}
                     />
@@ -331,28 +374,59 @@ export default function EditAssetScreen() {
             );
         }
 
-        if ((format === 'listbox' || format === 'radio') && field.field_values) {
+        if ((element === 'radio') && field.field_values) {
             const options = typeof field.field_values === 'string'
-                ? field.field_values.split('\n').map(v => v.trim()).filter(Boolean)
+                ? field.field_values.split('\n').map(value => value.trim()).filter(Boolean)
                 : Array.isArray(field.field_values) ? field.field_values : [];
             return (
-                <FormRow key={fieldName} label={fieldName} styles={styles}>
-                    <View style={styles.listboxContainer}>
-                        {options.map((opt) => (
+                <FormRow key={fieldName} label={label} styles={styles}>
+                    <View style={{gap: Spacing.sm}}>
+                        {options.map((option) => (
                             <Pressable
-                                key={opt}
-                                onPress={() => updateCustomField(fieldName, opt)}
+                                key={option}
+                                onPress={() => updateCustomField(fieldName, option)}
+                                style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: Spacing.xs}}
+                            >
+                                <Text style={{fontSize: Typography.bodyLarge, color: colors.text}}>{option}</Text>
+                                <View style={{
+                                    width: 20, height: 20, borderRadius: 10,
+                                    borderWidth: 2,
+                                    borderColor: field.value === option ? colors.primary : colors.border,
+                                    alignItems: 'center', justifyContent: 'center',
+                                }}>
+                                    {field.value === option && (
+                                        <View style={{width: 12, height: 12, borderRadius: 6, backgroundColor: colors.primary}} />
+                                    )}
+                                </View>
+                            </Pressable>
+                        ))}
+                    </View>
+                </FormRow>
+            );
+        }
+
+        if ((element === 'listbox' || format === 'listbox') && field.field_values) {
+            const options = typeof field.field_values === 'string'
+                ? field.field_values.split('\n').map(value => value.trim()).filter(Boolean)
+                : Array.isArray(field.field_values) ? field.field_values : [];
+            return (
+                <FormRow key={fieldName} label={label} styles={styles}>
+                    <View style={styles.listboxContainer}>
+                        {options.map((option) => (
+                            <Pressable
+                                key={option}
+                                onPress={() => updateCustomField(fieldName, option)}
                                 style={({pressed}) => [
                                     styles.listboxOption,
-                                    field.value === opt && styles.listboxOptionSelected,
+                                    field.value === option && styles.listboxOptionSelected,
                                     pressed && styles.selectorButtonPressed,
                                 ]}
                             >
                                 <Text style={[
                                     styles.listboxOptionText,
-                                    field.value === opt && styles.listboxOptionTextSelected,
+                                    field.value === option && styles.listboxOptionTextSelected,
                                 ]}>
-                                    {opt}
+                                    {option}
                                 </Text>
                             </Pressable>
                         ))}
@@ -363,7 +437,7 @@ export default function EditAssetScreen() {
 
         // Default: text / textarea
         return (
-            <FormRow key={fieldName} label={fieldName} styles={styles}>
+            <FormRow key={fieldName} label={label} styles={styles}>
                 <TextInput
                     style={[styles.input, format === 'textarea' && styles.textareaInput]}
                     value={field.value}
