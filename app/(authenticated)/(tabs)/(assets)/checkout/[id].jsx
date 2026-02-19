@@ -11,8 +11,8 @@ import SelectAssetBottomSheet from "@/components/bottomSheets/SelectAssetBottomS
 import RNDateTimePicker from "@react-native-community/datetimepicker";
 import {Host, Picker} from '@expo/ui/swift-ui';
 import * as Burnt from 'burnt';
-import {CheckoutPicker} from "@/components/CheckoutPicker";
-import Datepicker from "@/components/Datepicker";
+import {CheckoutPicker} from "@/components/misc/CheckoutPicker";
+import Datepicker from "@/components/forms/Datepicker";
 import {decode} from "html-entities";
 import {useColors} from "@/hooks/useThemeColors";
 import {Spacing, Typography, FontWeight, BorderRadius} from "@/constants/sizes";

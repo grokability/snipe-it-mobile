@@ -6,7 +6,7 @@ import {SafeAreaView} from "react-native-safe-area-context";
 import LottieView from "lottie-react-native";
 import Constants from "expo-constants/src/Constants";
 import ExpoApplication from "expo-application/src/ExpoApplication";
-import RecentActions from "@/components/RecentActions";
+import RecentActions from "@/components/misc/RecentActions";
 import {AuthContext} from "@/context/AuthProvider";
 import {useTranslation} from "react-i18next";
 import {useColors} from "@/hooks/useThemeColors";

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { StyleSheet, TextInput, Text, TouchableOpacity, Alert } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
-import BrowserLoginButton from "@/components/BrowserLoginButton";
+import BrowserLoginButton from "@/components/auth/BrowserLoginButton";
 import {useColors} from "@/hooks/useThemeColors";
 import {Spacing, BorderRadius, Typography} from "@/constants/sizes";
 import {useTranslation} from "react-i18next";
