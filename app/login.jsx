@@ -1,9 +1,9 @@
 import React, {useContext, useEffect, useState, useMemo} from 'react';
 import { StyleSheet, View, Text } from 'react-native';
 import { AuthContext } from '@/context/AuthProvider';
-import LoginForm from '@/components/LoginForm';
-import BrowserLoginButton from '@/components/BrowserLoginButton';
-import BearerTokenLogin from "@/components/BearerTokenLogin";
+import LoginForm from '@/components/auth/LoginForm';
+import BrowserLoginButton from '@/components/auth/BrowserLoginButton';
+import BearerTokenLogin from "@/components/auth/BearerTokenLogin";
 import {useColors} from "@/hooks/useThemeColors";
 import {Spacing, Typography, FontWeight} from "@/constants/sizes";
 import {useTranslation} from "react-i18next";

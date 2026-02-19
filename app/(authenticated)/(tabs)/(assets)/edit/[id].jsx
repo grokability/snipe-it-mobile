@@ -6,7 +6,6 @@ import {
     ScrollView,
     StyleSheet,
     Text,
-    TextInput,
     View,
 } from 'react-native';
 import {router, useFocusEffect, useLocalSearchParams} from "expo-router";
@@ -22,9 +21,13 @@ import SelectModelBottomSheet from "@/components/bottomSheets/SelectModelBottomS
 import SelectCompanyBottomSheet from "@/components/bottomSheets/SelectCompanyBottomSheet";
 import SelectSupplierBottomSheet from "@/components/bottomSheets/SelectSupplierBottomSheet";
 import SelectLocationBottomSheet from "@/components/bottomSheets/SelectLocationBottomSheet";
-import Datepicker from "@/components/Datepicker";
-import Switch from "@/components/Switch";
-import Checkbox from "@/components/Checkbox";
+import Datepicker from "@/components/forms/Datepicker";
+import Switch from "@/components/forms/Switch";
+import Checkbox from "@/components/forms/Checkbox";
+import {Section} from "@/components/ui/Section";
+import {FormRow} from "@/components/forms/FormRow";
+import {FormTextInput} from "@/components/forms/FormTextInput";
+import {SelectorButton} from "@/components/forms/SelectorButton";
 
 // Parse "YYYY-MM-DD" as local date to avoid UTC timezone shift
 // (dates without times were shifting before this)
@@ -35,42 +38,6 @@ function parseLocalDate(dateStr) {
     }
     return new Date(dateStr);
 }
-
-const SectionHeader = ({title, styles}) => (
-    <Text style={styles.sectionTitle}>{title}</Text>
-);
-
-const Section = ({title, children, styles}) => (
-    <View>
-        <SectionHeader title={title} styles={styles} />
-        <View style={styles.detailsContainer}>
-            {children}
-        </View>
-    </View>
-);
-
-const FormRow = ({label, children, styles, horizontal}) => (
-    <View style={[styles.formRow, horizontal && styles.formRowHorizontal]}>
-        <Text style={styles.formLabel}>{label}</Text>
-        {children}
-    </View>
-);
-
-const SelectorButton = ({label, value, onPress, styles, mutedColor, placeholder}) => (
-    <FormRow label={label} styles={styles}>
-        <Pressable
-            onPress={onPress}
-            style={({pressed}) => [
-                styles.selectorButton,
-                pressed && styles.selectorButtonPressed,
-            ]}
-        >
-            <Text style={[styles.selectorButtonText, !value && {color: mutedColor}]}>
-                {value || placeholder}
-            </Text>
-        </Pressable>
-    </FormRow>
-);
 
 export default function EditAssetScreen() {
     const colors = useColors();
@@ -317,7 +284,7 @@ export default function EditAssetScreen() {
                     : Array.isArray(field.field_values) ? field.field_values : [];
                 const selected = field.value ? field.value.split(',').map(value => value.trim()) : [];
                 return (
-                    <FormRow key={fieldName} label={label} styles={styles}>
+                    <FormRow key={fieldName} label={label}>
                         <View style={{gap: Spacing.sm}}>
                             {options.map((option) => {
                                 const isSelected = selected.includes(option);
@@ -347,7 +314,7 @@ export default function EditAssetScreen() {
                 );
             }
             return (
-                <FormRow key={fieldName} label={label} styles={styles} horizontal>
+                <FormRow key={fieldName} label={label} horizontal>
                     <Checkbox
                         value={field.value === '1'}
                         onValueChange={(isChecked) => updateCustomField(fieldName, isChecked ? '1' : '0')}
@@ -358,7 +325,7 @@ export default function EditAssetScreen() {
 
         if (format === 'DATE' || format === 'date') {
             return (
-                <FormRow key={fieldName} label={label} styles={styles}>
+                <FormRow key={fieldName} label={label}>
                     <Datepicker
                         initialDate={field.value ? new Date(field.value) : undefined}
                         onDateChange={(event, date) => {
@@ -379,7 +346,7 @@ export default function EditAssetScreen() {
                 ? field.field_values.split('\n').map(value => value.trim()).filter(Boolean)
                 : Array.isArray(field.field_values) ? field.field_values : [];
             return (
-                <FormRow key={fieldName} label={label} styles={styles}>
+                <FormRow key={fieldName} label={label}>
                     <View style={{gap: Spacing.sm}}>
                         {options.map((option) => (
                             <Pressable
@@ -410,7 +377,7 @@ export default function EditAssetScreen() {
                 ? field.field_values.split('\n').map(value => value.trim()).filter(Boolean)
                 : Array.isArray(field.field_values) ? field.field_values : [];
             return (
-                <FormRow key={fieldName} label={label} styles={styles}>
+                <FormRow key={fieldName} label={label}>
                     <View style={styles.listboxContainer}>
                         {options.map((option) => (
                             <Pressable
@@ -437,16 +404,13 @@ export default function EditAssetScreen() {
 
         // Default: text / textarea
         return (
-            <FormRow key={fieldName} label={label} styles={styles}>
-                <TextInput
-                    style={[styles.input, format === 'textarea' && styles.textareaInput]}
-                    value={field.value}
-                    onChangeText={(text) => updateCustomField(fieldName, text)}
-                    multiline={format === 'textarea'}
-                    numberOfLines={format === 'textarea' ? 4 : 1}
-                    placeholderTextColor={colors.textMuted}
-                />
-            </FormRow>
+            <FormTextInput
+                key={fieldName}
+                label={label}
+                value={field.value}
+                onChangeText={(text) => updateCustomField(fieldName, text)}
+                multiline={format === 'textarea'}
+            />
         );
     };
 
@@ -466,54 +430,39 @@ export default function EditAssetScreen() {
                 keyboardShouldPersistTaps="handled"
             >
                 {/* General Info */}
-                <Section styles={styles} title={t('mobile.section_details')}>
-                    <FormRow styles={styles} label={t('general.asset_name')}>
-                        <TextInput
-                            style={styles.input}
-                            value={name}
-                            onChangeText={setName}
-                            placeholder={t('general.asset_name')}
-                            placeholderTextColor={colors.textMuted}
-                        />
-                    </FormRow>
-                    <FormRow styles={styles} label={t('general.asset_tag')}>
-                        <TextInput
-                            style={styles.input}
-                            value={assetTag}
-                            onChangeText={setAssetTag}
-                            placeholder={t('general.asset_tag')}
-                            placeholderTextColor={colors.textMuted}
-                        />
-                    </FormRow>
-                    <FormRow styles={styles} label={t('general.serial')}>
-                        <TextInput
-                            style={styles.input}
-                            value={serial}
-                            onChangeText={setSerial}
-                            placeholder={t('general.serial')}
-                            placeholderTextColor={colors.textMuted}
-                        />
-                    </FormRow>
+                <Section title={t('mobile.section_details')}>
+                    <FormTextInput
+                        label={t('general.asset_name')}
+                        value={name}
+                        onChangeText={setName}
+                        placeholder={t('general.asset_name')}
+                    />
+                    <FormTextInput
+                        label={t('general.asset_tag')}
+                        value={assetTag}
+                        onChangeText={setAssetTag}
+                        placeholder={t('general.asset_tag')}
+                    />
+                    <FormTextInput
+                        label={t('general.serial')}
+                        value={serial}
+                        onChangeText={setSerial}
+                        placeholder={t('general.serial')}
+                    />
 
                     <SelectorButton
-                        styles={styles}
-                        mutedColor={colors.textMuted}
                         placeholder={selectPlaceholder}
                         label={t('general.status_label')}
                         value={selectedStatus?.name}
                         onPress={() => statusRef.current?.present()}
                     />
                     <SelectorButton
-                        styles={styles}
-                        mutedColor={colors.textMuted}
                         placeholder={selectPlaceholder}
                         label={t('general.model')}
                         value={selectedModel?.name}
                         onPress={() => modelRef.current?.present()}
                     />
                     <SelectorButton
-                        styles={styles}
-                        mutedColor={colors.textMuted}
                         placeholder={selectPlaceholder}
                         label={t('general.company')}
                         value={selectedCompany?.name}
@@ -522,18 +471,14 @@ export default function EditAssetScreen() {
                 </Section>
 
                 {/* Location */}
-                <Section styles={styles} title={t('mobile.section_location')}>
+                <Section title={t('mobile.section_location')}>
                     <SelectorButton
-                        styles={styles}
-                        mutedColor={colors.textMuted}
                         placeholder={selectPlaceholder}
                         label={t('general.location')}
                         value={selectedLocation?.name}
                         onPress={() => locationRef.current?.present()}
                     />
                     <SelectorButton
-                        styles={styles}
-                        mutedColor={colors.textMuted}
                         placeholder={selectPlaceholder}
                         label={t('general.rtd_location')}
                         value={selectedRtdLocation?.name}
@@ -542,61 +487,50 @@ export default function EditAssetScreen() {
                 </Section>
 
                 {/* Purchase Info */}
-                <Section styles={styles} title={t('mobile.section_purchase')}>
-                    <FormRow styles={styles} label={t('general.purchase_date')}>
+                <Section title={t('mobile.section_purchase')}>
+                    <FormRow label={t('general.purchase_date')}>
                         <Datepicker
                             initialDate={purchaseDate}
                             onDateChange={(event, date) => date && setPurchaseDate(date)}
                         />
                     </FormRow>
-                    <FormRow styles={styles} label={t('general.purchase_cost')}>
-                        <TextInput
-                            style={styles.input}
-                            value={purchaseCost}
-                            onChangeText={setPurchaseCost}
-                            placeholder="0.00"
-                            keyboardType="decimal-pad"
-                            placeholderTextColor={colors.textMuted}
-                        />
-                    </FormRow>
-                    <FormRow styles={styles} label={t('general.order_number')}>
-                        <TextInput
-                            style={styles.input}
-                            value={orderNumber}
-                            onChangeText={setOrderNumber}
-                            placeholder={t('general.order_number')}
-                            placeholderTextColor={colors.textMuted}
-                        />
-                    </FormRow>
+                    <FormTextInput
+                        label={t('general.purchase_cost')}
+                        value={purchaseCost}
+                        onChangeText={setPurchaseCost}
+                        placeholder="0.00"
+                        keyboardType="decimal-pad"
+                    />
+                    <FormTextInput
+                        label={t('general.order_number')}
+                        value={orderNumber}
+                        onChangeText={setOrderNumber}
+                        placeholder={t('general.order_number')}
+                    />
                     <SelectorButton
-                        styles={styles}
-                        mutedColor={colors.textMuted}
                         placeholder={selectPlaceholder}
                         label={t('general.supplier')}
                         value={selectedSupplier?.name}
                         onPress={() => supplierRef.current?.present()}
                     />
-                    <FormRow styles={styles} label={t('general.warranty_months')}>
-                        <TextInput
-                            style={styles.input}
-                            value={warrantyMonths}
-                            onChangeText={setWarrantyMonths}
-                            placeholder="0"
-                            keyboardType="number-pad"
-                            placeholderTextColor={colors.textMuted}
-                        />
-                    </FormRow>
+                    <FormTextInput
+                        label={t('general.warranty_months')}
+                        value={warrantyMonths}
+                        onChangeText={setWarrantyMonths}
+                        placeholder="0"
+                        keyboardType="number-pad"
+                    />
                 </Section>
 
                 {/* Dates */}
-                <Section styles={styles} title={t('mobile.section_dates')}>
-                    <FormRow styles={styles} label={t('general.next_audit_date')}>
+                <Section title={t('mobile.section_dates')}>
+                    <FormRow label={t('general.next_audit_date')}>
                         <Datepicker
                             initialDate={nextAuditDate}
                             onDateChange={(event, date) => date && setNextAuditDate(date)}
                         />
                     </FormRow>
-                    <FormRow styles={styles} label={t('general.expected_checkin')}>
+                    <FormRow label={t('general.expected_checkin')}>
                         <Datepicker
                             initialDate={expectedCheckin}
                             onDateChange={(event, date) => date && setExpectedCheckin(date)}
@@ -605,18 +539,18 @@ export default function EditAssetScreen() {
                 </Section>
 
                 {/* Toggles */}
-                <Section styles={styles} title={t('mobile.section_details')}>
-                    <FormRow styles={styles} label={t('general.requestable')} horizontal>
+                <Section title={t('mobile.section_details')}>
+                    <FormRow label={t('general.requestable')} horizontal>
                         <Switch value={requestable} onValueChange={setRequestable} />
                     </FormRow>
-                    <FormRow styles={styles} label={t('general.byod')} horizontal>
+                    <FormRow label={t('general.byod')} horizontal>
                         <Switch value={byod} onValueChange={setByod} />
                     </FormRow>
                 </Section>
 
                 {/* Custom Fields */}
                 {Object.keys(customFieldValues).length > 0 && (
-                    <Section styles={styles} title={t('mobile.section_custom_fields')}>
+                    <Section title={t('mobile.section_custom_fields')}>
                         {Object.entries(customFieldValues).map(([fieldName, field]) =>
                             renderCustomField(fieldName, field)
                         )}
@@ -624,15 +558,12 @@ export default function EditAssetScreen() {
                 )}
 
                 {/* Notes */}
-                <Section styles={styles} title={t('mobile.section_notes')}>
-                    <TextInput
-                        style={[styles.input, styles.textareaInput]}
+                <Section title={t('mobile.section_notes')}>
+                    <FormTextInput
                         value={notes}
                         onChangeText={setNotes}
                         placeholder={t('general.notes')}
                         multiline
-                        numberOfLines={4}
-                        placeholderTextColor={colors.textMuted}
                     />
                 </Section>
 
@@ -705,71 +636,8 @@ const createStyles = (colors) => StyleSheet.create({
         paddingBottom: 100,
         gap: Spacing.xxl,
     },
-    sectionTitle: {
-        fontSize: Typography.subtitle,
-        fontWeight: FontWeight.bold,
-        color: colors.text,
-        marginBottom: Spacing.sm,
-    },
-    detailsContainer: {
-        backgroundColor: colors.backgroundSecondary,
-        padding: Spacing.lg,
-        borderRadius: BorderRadius.md,
-        gap: Spacing.lg,
-    },
-    formRow: {
-        gap: Spacing.xs,
-    },
-    formRowHorizontal: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-    },
-    formLabel: {
-        fontSize: Typography.body,
-        color: colors.textSecondary,
-        fontWeight: FontWeight.medium,
-    },
-    input: {
-        borderWidth: 1,
-        borderColor: colors.border,
-        borderRadius: BorderRadius.sm,
-        padding: Spacing.md,
-        fontSize: Typography.bodyLarge,
-        color: colors.text,
-        backgroundColor: colors.backgroundTertiary,
-    },
-    textareaInput: {
-        minHeight: 100,
-        textAlignVertical: 'top',
-    },
-    selectorButton: {
-        borderWidth: 1,
-        borderColor: colors.border,
-        borderRadius: BorderRadius.sm,
-        padding: Spacing.md,
-        backgroundColor: colors.backgroundTertiary,
-    },
     selectorButtonPressed: {
         opacity: 0.7,
-    },
-    selectorButtonText: {
-        fontSize: Typography.bodyLarge,
-        color: colors.text,
-    },
-    toggleRow: {
-        borderWidth: 1,
-        borderColor: colors.border,
-        borderRadius: BorderRadius.sm,
-        padding: Spacing.md,
-        backgroundColor: colors.backgroundTertiary,
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    toggleText: {
-        fontSize: Typography.bodyLarge,
-        color: colors.text,
-        fontWeight: FontWeight.medium,
     },
     listboxContainer: {
         flexDirection: 'row',

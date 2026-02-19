@@ -10,7 +10,9 @@ import {SafeAreaProvider, useSafeAreaInsets} from "react-native-safe-area-contex
 import {useColors} from "@/hooks/useThemeColors";
 import {Spacing, BorderRadius, Typography, FontWeight} from "@/constants/sizes";
 import {useTranslation} from "react-i18next";
-import Checkbox from "@/components/Checkbox";
+import Checkbox from "@/components/forms/Checkbox";
+import {Section, SectionHeader} from "@/components/ui/Section";
+import {DetailRow, EncryptedDetailRow} from "@/components/ui/DetailRow";
 
 
 export const unstable_settings = {
@@ -87,49 +89,6 @@ export default function AssetScreen() {
         setRefreshing(true);
         getAsset().finally(() => setRefreshing(false));
     }, [getAsset]);
-
-    const DetailRow = ({label, value}) => {
-        return (
-            <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>{label}</Text>
-                <Text selectable style={styles.detailValue}>{value}</Text>
-            </View>
-        )
-    };
-
-    const EncryptedDetailRow = ({label, value}) => {
-        const [revealed, setRevealed] = useState(false);
-        return (
-            <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>{label}</Text>
-                {revealed ? (
-                    <View style={{flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: Spacing.sm}}>
-                        <Text selectable style={[styles.detailValue, {flex: 1}]}>{value}</Text>
-                        <Pressable onPress={() => setRevealed(false)} hitSlop={8}>
-                            <Ionicons name="lock-open-outline" size={16} color={colors.textSecondary} />
-                        </Pressable>
-                    </View>
-                ) : (
-                    <Pressable onPress={() => setRevealed(true)} hitSlop={8}>
-                        <Ionicons name="lock-closed-outline" size={20} color={colors.textSecondary} />
-                    </Pressable>
-                )}
-            </View>
-        );
-    };
-
-    const SectionHeader = ({title}) => (
-        <Text style={styles.sectionTitle}>{title}</Text>
-    );
-
-    const Section = ({title, children}) => (
-        <View>
-            <SectionHeader title={title} />
-            <View style={styles.detailsContainer}>
-                {children}
-            </View>
-        </View>
-    );
 
     const na = t('mobile.na');
     const displayValue = (value) => value ? decode(String(value)) : na;
@@ -351,12 +310,9 @@ export default function AssetScreen() {
 
                 {/* Notes */}
                 {asset.notes && (
-                    <View>
-                        <SectionHeader title={t('mobile.section_notes')} />
-                        <View style={styles.detailsContainer}>
-                            <Text selectable style={styles.notesText}>{asset.notes}</Text>
-                        </View>
-                    </View>
+                    <Section title={t('mobile.section_notes')}>
+                        <Text selectable style={styles.notesText}>{asset.notes}</Text>
+                    </Section>
                 )}
             </ScrollView>
         </SafeAreaProvider>
@@ -414,18 +370,6 @@ const createStyles = (colors) => StyleSheet.create({
         fontSize: Typography.caption,
         fontWeight: FontWeight.semibold,
     },
-    sectionTitle: {
-        fontSize: Typography.subtitle,
-        fontWeight: FontWeight.bold,
-        color: colors.text,
-        marginBottom: Spacing.sm,
-    },
-    detailsContainer: {
-        backgroundColor: colors.backgroundSecondary,
-        padding: Spacing.lg,
-        borderRadius: BorderRadius.md,
-        gap: Spacing.md,
-    },
     detailRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
@@ -436,13 +380,6 @@ const createStyles = (colors) => StyleSheet.create({
         color: colors.textSecondary,
         fontWeight: FontWeight.medium,
         flex: 1,
-    },
-    detailValue: {
-        fontSize: Typography.bodyLarge,
-        color: colors.text,
-        fontWeight: FontWeight.semibold,
-        flex: 1,
-        textAlign: 'right',
     },
     assignmentContainer: {
         backgroundColor: colors.backgroundSecondary,
