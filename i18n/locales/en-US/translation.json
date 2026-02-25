@@ -115,6 +115,9 @@
     "select_model": "Select Model",
     "select_company": "Select Company",
     "select_supplier": "Select Supplier",
-    "save_changes": "Save Changes"
+    "save_changes": "Save Changes",
+    "available": "Available",
+    "out_of_stock": "Out of Stock",
+    "remaining_qty_display": "{{remaining}} of {{total}} available"
   }
 }

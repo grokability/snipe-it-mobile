@@ -1,13 +1,15 @@
-import {View, Text, StyleSheet, Image, RefreshControl, Platform} from 'react-native';
-import {useContext, useState, useEffect, useCallback, useMemo} from "react";
+import {View, Text, StyleSheet, RefreshControl, Pressable, Platform} from 'react-native';
+import {useContext, useState, useCallback, useMemo} from "react";
 import {AuthContext} from "@/context/AuthProvider";
 import {makeRequest} from "@/helpers/axiosConfig";
 import {SafeAreaProvider, useSafeAreaInsets} from "react-native-safe-area-context";
+import {router, useFocusEffect} from "expo-router";
 import {useColors} from "@/hooks/useThemeColors";
 import {Spacing, BorderRadius, Typography, FontWeight} from "@/constants/sizes";
 import {FlashList} from "@shopify/flash-list";
 import {decode} from "html-entities";
 import {useTranslation} from "react-i18next";
+import {Image} from "react-native";
 
 export default function AccessoriesScreen() {
     const colors = useColors();
@@ -40,6 +42,12 @@ export default function AccessoriesScreen() {
             });
     }, []);
 
+    useFocusEffect(
+        useCallback(() => {
+            getAccessories();
+        }, [getAccessories])
+    );
+
     const onRefresh = useCallback(() => {
         setRefreshing(true);
         getAccessories()
@@ -48,21 +56,42 @@ export default function AccessoriesScreen() {
             });
     }, [getAccessories]);
 
-    useEffect(() => {
-        getAccessories();
-    }, []);
-
-    const Item = ({image, name, qty}) => (
-        <View style={styles.itemContainer}>
-            <View style={styles.imageContainer}>
-                <Image style={styles.image} src={image} />
-            </View>
-            <View style={styles.contentContainer}>
-                <Text style={styles.itemName}>{decode(name)}</Text>
-                <Text style={styles.qtyText}>{t('general.qty', { count: qty })}</Text>
-            </View>
-        </View>
-    );
+    const Item = ({id, image, name, category, manufacturer, qty, remaining_qty}) => {
+        const available = remaining_qty > 0;
+        return (
+            <Pressable
+                onPress={() => router.push(`/(accessories)/${id}`)}
+                style={({pressed}) => [
+                    styles.itemContainer,
+                    pressed && styles.itemPressed
+                ]}
+            >
+                <View style={styles.imageContainer}>
+                    <Image style={styles.image} src={image} />
+                </View>
+                <View style={styles.contentContainer}>
+                    <Text style={styles.itemName}>{decode(name)}</Text>
+                    {category?.name ? (
+                        <Text style={styles.metaText}>{category.name}</Text>
+                    ) : null}
+                    {manufacturer?.name ? (
+                        <Text style={styles.metaText}>{manufacturer.name}</Text>
+                    ) : null}
+                    <View style={styles.footer}>
+                        <View style={[styles.qtyBadge, available ? styles.qtyBadgeAvailable : styles.qtyBadgeEmpty]}>
+                            <Text style={[styles.qtyBadgeText, available ? styles.qtyBadgeTextAvailable : styles.qtyBadgeTextEmpty]}>
+                                {remaining_qty}/{qty}
+                            </Text>
+                        </View>
+                        <View style={[styles.availDot, available ? styles.availDotGreen : styles.availDotRed]} />
+                        <Text style={[styles.availText, available ? styles.availTextGreen : styles.availTextRed]}>
+                            {available ? t('mobile.available') : t('mobile.out_of_stock')}
+                        </Text>
+                    </View>
+                </View>
+            </Pressable>
+        );
+    };
 
     return (
         <SafeAreaProvider style={styles.container}>
@@ -73,10 +102,15 @@ export default function AccessoriesScreen() {
                 }}
                 style={styles.flatlist}
                 data={data.accessories}
+                estimatedItemSize={120}
                 renderItem={({item}) => <Item
+                    id={item.id}
                     image={item.image}
                     name={item.name}
+                    category={item.category}
+                    manufacturer={item.manufacturer}
                     qty={item.qty}
+                    remaining_qty={item.remaining_qty}
                 />}
                 keyExtractor={item => item.id}
                 refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
@@ -117,6 +151,10 @@ const createStyles = (colors) => StyleSheet.create({
         shadowRadius: 8,
         elevation: 3,
     },
+    itemPressed: {
+        backgroundColor: colors.backgroundSecondary,
+        transform: [{ scale: 0.995 }],
+    },
     imageContainer: {
         width: '25%',
         height: 100,
@@ -132,15 +170,63 @@ const createStyles = (colors) => StyleSheet.create({
     },
     contentContainer: {
         flex: 1,
-        gap: 6,
+        gap: 4,
     },
     itemName: {
         fontSize: Typography.bodyLarge,
         fontWeight: FontWeight.semibold,
         color: colors.text,
     },
-    qtyText: {
+    metaText: {
         fontSize: Typography.body,
         color: colors.textSecondary,
+    },
+    footer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: Spacing.sm,
+        marginTop: Spacing.xs,
+    },
+    qtyBadge: {
+        paddingHorizontal: Spacing.sm,
+        paddingVertical: 2,
+        borderRadius: BorderRadius.sm,
+    },
+    qtyBadgeAvailable: {
+        backgroundColor: colors.successBackground ?? colors.success + '22',
+    },
+    qtyBadgeEmpty: {
+        backgroundColor: colors.dangerBackground ?? colors.danger + '22',
+    },
+    qtyBadgeText: {
+        fontSize: Typography.caption,
+        fontWeight: FontWeight.semibold,
+    },
+    qtyBadgeTextAvailable: {
+        color: colors.success,
+    },
+    qtyBadgeTextEmpty: {
+        color: colors.danger,
+    },
+    availDot: {
+        width: 7,
+        height: 7,
+        borderRadius: 4,
+    },
+    availDotGreen: {
+        backgroundColor: colors.success,
+    },
+    availDotRed: {
+        backgroundColor: colors.danger,
+    },
+    availText: {
+        fontSize: Typography.caption,
+        fontWeight: FontWeight.medium,
+    },
+    availTextGreen: {
+        color: colors.success,
+    },
+    availTextRed: {
+        color: colors.danger,
     },
 });
