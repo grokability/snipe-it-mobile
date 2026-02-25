@@ -152,7 +152,7 @@ export default function AccessoryScreen() {
                         checkedOut.map((record) => (
                             <View key={record.id} style={styles.checkoutRow}>
                                 <View style={styles.checkoutInfo}>
-                                    <Text style={styles.checkoutName}>{record.assigned_to?.name ?? na}</Text>
+                                    <Text style={styles.checkoutName}>{record.assigned_to?.name ? decode(record.assigned_to.name) : na}</Text>
                                     {record.created_at?.formatted && (
                                         <Text style={styles.checkoutDate}>{record.created_at.formatted}</Text>
                                     )}

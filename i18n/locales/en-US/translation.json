@@ -61,7 +61,9 @@
     "edit": "Edit",
     "save": "Save",
     "select": "Select...",
-    "total_cost": "Total Cost"
+    "total_cost": "Total Cost",
+    "select_category": "Select Category",
+    "select_manufacturer": "Select Manufacturer"
   },
   "mobile": {
     "na": "N/A",
@@ -122,6 +124,10 @@
     "remaining_qty_display": "{{remaining}} of {{total}} available",
     "section_checked_out": "Checked Out",
     "min_qty_alert": "Min Qty Alert",
-    "no_checkouts": "No active checkouts"
+    "no_checkouts": "No active checkouts",
+    "edit_accessory_success": "Accessory updated successfully",
+    "edit_accessory_failed": "Failed to update accessory",
+    "accessory_name_required": "Accessory name is required",
+    "accessory_qty_required": "Quantity is required"
   }
 }
