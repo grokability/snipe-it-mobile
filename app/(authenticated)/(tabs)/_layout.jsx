@@ -38,7 +38,7 @@ export default function TabLayout() {
                     <Icon src={<VectorIcon family={FontAwesome} name="barcode" />} />
                 </NativeTabs.Trigger>
 
-                <NativeTabs.Trigger name="accessories">
+                <NativeTabs.Trigger name="(accessories)">
                     <Label>{t('general.accessories')}</Label>
                     <Icon src={<VectorIcon family={FontAwesome} name="keyboard-o" />} />
                 </NativeTabs.Trigger>

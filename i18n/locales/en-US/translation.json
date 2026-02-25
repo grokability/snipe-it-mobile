@@ -106,6 +106,8 @@
     "section_notes": "Notes",
     "yes": "Yes",
     "no": "No",
+    "screen_accessory_details": "Accessory Details",
+    "screen_edit_accessory": "Edit Accessory",
     "screen_edit_asset": "Edit Asset",
     "edit_success": "Asset updated successfully",
     "edit_failed": "Failed to update asset",
