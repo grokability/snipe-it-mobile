@@ -60,7 +60,8 @@
     "requests_counter": "Requests",
     "edit": "Edit",
     "save": "Save",
-    "select": "Select..."
+    "select": "Select...",
+    "total_cost": "Total Cost"
   },
   "mobile": {
     "na": "N/A",
@@ -118,6 +119,9 @@
     "save_changes": "Save Changes",
     "available": "Available",
     "out_of_stock": "Out of Stock",
-    "remaining_qty_display": "{{remaining}} of {{total}} available"
+    "remaining_qty_display": "{{remaining}} of {{total}} available",
+    "section_checked_out": "Checked Out",
+    "min_qty_alert": "Min Qty Alert",
+    "no_checkouts": "No active checkouts"
   }
 }
