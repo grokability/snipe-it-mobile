@@ -60,7 +60,10 @@
     "requests_counter": "Requests",
     "edit": "Edit",
     "save": "Save",
-    "select": "Select..."
+    "select": "Select...",
+    "total_cost": "Total Cost",
+    "select_category": "Select Category",
+    "select_manufacturer": "Select Manufacturer"
   },
   "mobile": {
     "na": "N/A",
@@ -106,6 +109,8 @@
     "section_notes": "Notes",
     "yes": "Yes",
     "no": "No",
+    "screen_accessory_details": "Accessory Details",
+    "screen_edit_accessory": "Edit Accessory",
     "screen_edit_asset": "Edit Asset",
     "edit_success": "Asset updated successfully",
     "edit_failed": "Failed to update asset",
@@ -113,6 +118,16 @@
     "select_model": "Select Model",
     "select_company": "Select Company",
     "select_supplier": "Select Supplier",
-    "save_changes": "Save Changes"
+    "save_changes": "Save Changes",
+    "available": "Available",
+    "out_of_stock": "Out of Stock",
+    "remaining_qty_display": "{{remaining}} of {{total}} available",
+    "section_checked_out": "Checked Out",
+    "min_qty_alert": "Min Qty Alert",
+    "no_checkouts": "No active checkouts",
+    "edit_accessory_success": "Accessory updated successfully",
+    "edit_accessory_failed": "Failed to update accessory",
+    "accessory_name_required": "Accessory name is required",
+    "accessory_qty_required": "Quantity is required"
   }
 }
