@@ -36,7 +36,6 @@ export default function AccessoryCheckinScreen() {
             data: {note: note || null},
         })
             .then((res) => {
-                console.log('checkin response', JSON.stringify(res));
                 if (res.status === 'error') {
                     const msg = typeof res.messages === 'string'
                         ? res.messages
