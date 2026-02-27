@@ -7,7 +7,6 @@ import {
     Text,
     View,
 } from 'react-native';
-import {decode} from 'html-entities';
 import {router, useLocalSearchParams} from 'expo-router';
 import {makeRequest} from '@/helpers/axiosConfig';
 import {SafeAreaProvider, useSafeAreaInsets} from 'react-native-safe-area-context';
@@ -15,28 +14,26 @@ import {useColors} from '@/hooks/useThemeColors';
 import {Spacing, BorderRadius, Typography, FontWeight} from '@/constants/sizes';
 import {useTranslation} from 'react-i18next';
 import * as Burnt from 'burnt';
+import {decode} from 'html-entities';
 import {Section} from '@/components/ui/Section';
 import {FormTextInput} from '@/components/forms/FormTextInput';
 
-export default function CheckinScreen() {
+export default function AccessoryCheckinScreen() {
     const colors = useColors();
     const insets = useSafeAreaInsets();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const {t} = useTranslation();
-    const {id, assetName, assetTag, assignedToName} = useLocalSearchParams();
 
+    const {id, checkoutRecordId, assignedToName, assignedDate} = useLocalSearchParams();
     const [note, setNote] = useState('');
     const [submitting, setSubmitting] = useState(false);
 
     const handleSubmit = () => {
         setSubmitting(true);
         makeRequest({
-            url: `/hardware/${id}/checkin`,
+            url: `/accessories/${checkoutRecordId}/checkin`,
             method: 'POST',
-            data: {
-                status_id: 1,
-                note: note || null,
-            },
+            data: {note: note || null},
         })
             .then((res) => {
                 if (res.status === 'error') {
@@ -58,7 +55,7 @@ export default function CheckinScreen() {
                     preset: 'heart',
                     duration: 2,
                 });
-                router.replace(`/(tabs)/(assets)/${id}`);
+                router.replace(`/(tabs)/(accessories)/${id}`);
             })
             .catch((err) => {
                 console.error(err);
@@ -78,18 +75,20 @@ export default function CheckinScreen() {
                 contentContainerStyle={[styles.contentContainer, {paddingTop: insets.top}]}
                 keyboardShouldPersistTaps="handled"
             >
-                {/* Asset info */}
+                {/* Record info */}
                 <View style={styles.infoCard}>
-                    {assetName ? <Text style={styles.infoName}>{decode(assetName)}</Text> : null}
-                    {assetTag ? <Text style={styles.infoTag}>{assetTag}</Text> : null}
                     {assignedToName ? (
                         <>
                             <Text style={styles.infoLabel}>{t('general.assigned_to')}</Text>
-                            <Text style={styles.infoAssigned}>{decode(assignedToName)}</Text>
+                            <Text style={styles.infoName}>{decode(assignedToName)}</Text>
                         </>
+                    ) : null}
+                    {assignedDate ? (
+                        <Text style={styles.infoDate}>{assignedDate}</Text>
                     ) : null}
                 </View>
 
+                {/* Note */}
                 <Section title={t('general.notes')}>
                     <FormTextInput
                         value={note}
@@ -99,6 +98,7 @@ export default function CheckinScreen() {
                     />
                 </Section>
 
+                {/* Submit */}
                 <Pressable
                     onPress={handleSubmit}
                     disabled={submitting}
@@ -135,26 +135,20 @@ const createStyles = (colors) => StyleSheet.create({
         padding: Spacing.lg,
         gap: Spacing.sm,
     },
-    infoName: {
-        fontSize: Typography.titleLarge,
-        fontWeight: FontWeight.bold,
-        color: colors.text,
-    },
-    infoTag: {
-        fontSize: Typography.body,
-        color: colors.textSecondary,
-    },
     infoLabel: {
         fontSize: Typography.caption,
         color: colors.textSecondary,
         textTransform: 'uppercase',
         letterSpacing: 0.5,
-        marginTop: Spacing.sm,
     },
-    infoAssigned: {
-        fontSize: Typography.body,
-        fontWeight: FontWeight.medium,
+    infoName: {
+        fontSize: Typography.titleLarge,
+        fontWeight: FontWeight.bold,
         color: colors.text,
+    },
+    infoDate: {
+        fontSize: Typography.body,
+        color: colors.textSecondary,
     },
     submitButton: {
         backgroundColor: colors.danger,

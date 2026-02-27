@@ -1,64 +1,72 @@
-import React, {useContext, useMemo, useRef, useState} from 'react';
-import {ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View} from 'react-native';
-import {router, useLocalSearchParams} from 'expo-router';
-import {SafeAreaProvider, useSafeAreaInsets} from 'react-native-safe-area-context';
+import React, {useCallback, useContext, useMemo, useRef, useState} from 'react';
+import {
+    ActivityIndicator,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    View,
+} from 'react-native';
+import {router, useFocusEffect, useLocalSearchParams} from 'expo-router';
 import {makeRequest} from '@/helpers/axiosConfig';
 import {AuthContext} from '@/context/AuthProvider';
+import {SafeAreaProvider, useSafeAreaInsets} from 'react-native-safe-area-context';
+import {useColors} from '@/hooks/useThemeColors';
+import {Spacing, BorderRadius, Typography, FontWeight} from '@/constants/sizes';
+import {useTranslation} from 'react-i18next';
+import * as Burnt from 'burnt';
+import {decode} from 'html-entities';
+import {CheckoutPicker} from '@/components/misc/CheckoutPicker';
 import SelectUserBottomSheet from '@/components/bottomSheets/SelectUserBottomSheet';
-import SelectStatusBottomSheet from '@/components/bottomSheets/SelectStatusBottomSheet';
 import SelectLocationBottomSheet from '@/components/bottomSheets/SelectLocationBottomSheet';
 import SelectAssetBottomSheet from '@/components/bottomSheets/SelectAssetBottomSheet';
-import * as Burnt from 'burnt';
-import {CheckoutPicker} from '@/components/misc/CheckoutPicker';
-import Datepicker from '@/components/forms/Datepicker';
-import {decode} from 'html-entities';
-import {useColors} from '@/hooks/useThemeColors';
-import {Spacing, Typography, FontWeight, BorderRadius} from '@/constants/sizes';
-import {useTranslation} from 'react-i18next';
 import {Section} from '@/components/ui/Section';
 import {FormRow} from '@/components/forms/FormRow';
 import {FormTextInput} from '@/components/forms/FormTextInput';
 import {SelectorButton} from '@/components/forms/SelectorButton';
 
-export default function CheckoutScreen() {
+export default function AccessoryCheckoutScreen() {
     const colors = useColors();
     const insets = useSafeAreaInsets();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const {t} = useTranslation();
-    const {id, assetName: initialAssetName, assetTag} = useLocalSearchParams();
-    const {user} = useContext(AuthContext);
+    const {id} = useLocalSearchParams();
 
-    const userBottomSheetRef = useRef(null);
-    const statusBottomSheetRef = useRef(null);
-    const locationBottomSheetRef = useRef(null);
-    const assetBottomSheetRef = useRef(null);
-
-    const [selectedUser, setSelectedUser] = useState(null);
-    const [selectedStatus, setSelectedStatus] = useState(null);
-    const [selectedLocation, setSelectedLocation] = useState(null);
-    const [selectedAsset, setSelectedAsset] = useState(null);
-    const [selectedCheckoutTo, setSelectedCheckoutTo] = useState('user');
-    const [assetName, setAssetName] = useState('');
-    const [notes, setNotes] = useState('');
-    const [checkoutDate, setCheckoutDate] = useState(null);
-    const [expectedCheckinDate, setExpectedCheckinDate] = useState(null);
+    const [accessory, setAccessory] = useState(null);
+    const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
 
+    const [checkoutTo, setCheckoutTo] = useState('user');
+    const [selectedUser, setSelectedUser] = useState(null);
+    const [selectedLocation, setSelectedLocation] = useState(null);
+    const [selectedAsset, setSelectedAsset] = useState(null);
+    const [qty, setQty] = useState('1');
+    const [note, setNote] = useState('');
+
+    const userRef = useRef(null);
+    const locationRef = useRef(null);
+    const assetRef = useRef(null);
+
+    const fetchAccessory = useCallback(() => {
+        setLoading(true);
+        return makeRequest({url: `/accessories/${id}`, method: 'get'})
+            .then(setAccessory)
+            .catch(console.error)
+            .finally(() => setLoading(false));
+    }, [id]);
+
+    useFocusEffect(useCallback(() => {
+        fetchAccessory();
+    }, [fetchAccessory]));
+
+    const getTarget = () => {
+        if (checkoutTo === 'user') return selectedUser;
+        if (checkoutTo === 'location') return selectedLocation;
+        return selectedAsset;
+    };
+
     const handleSubmit = () => {
-        if (!selectedStatus) {
-            Burnt.alert({
-                title: t('general.error'),
-                preset: 'error',
-                message: t('mobile.status_and_target_required'),
-                duration: 2,
-            });
-            return;
-        }
-
-        const target = selectedCheckoutTo === 'user' ? selectedUser
-            : selectedCheckoutTo === 'location' ? selectedLocation
-            : selectedAsset;
-
+        const target = getTarget();
         if (!target) {
             Burnt.alert({
                 title: t('general.error'),
@@ -69,33 +77,38 @@ export default function CheckoutScreen() {
             return;
         }
 
+        const parsedQty = parseInt(qty);
+        const maxQty = accessory?.remaining_qty ?? 1;
+        if (!parsedQty || parsedQty < 1 || parsedQty > maxQty) {
+            Burnt.alert({
+                title: t('general.error'),
+                preset: 'error',
+                message: t('mobile.accessory_qty_required'),
+                duration: 2,
+            });
+            return;
+        }
+
         setSubmitting(true);
-        makeRequest({
-            url: `/hardware/${id}/checkout`,
-            method: 'POST',
-            data: {
-                name: assetName || undefined,
-                checkout_to_type: selectedCheckoutTo,
-                assigned_user: selectedUser?.id,
-                assigned_location: selectedLocation?.id,
-                assigned_asset: selectedAsset?.id,
-                status_id: selectedStatus.value,
-                checkout_at: checkoutDate,
-                expected_checkin: expectedCheckinDate,
-                note: notes || undefined,
-            },
-        })
+
+        const data = {
+            checkout_to_type: checkoutTo,
+            ...(checkoutTo === 'user' && {assigned_user: selectedUser.id}),
+            ...(checkoutTo === 'location' && {assigned_location: selectedLocation.id}),
+            ...(checkoutTo === 'asset' && {assigned_asset: selectedAsset.id}),
+            checkout_qty: parsedQty,
+            note: note || null,
+        };
+
+        makeRequest({url: `/accessories/${id}/checkout`, method: 'POST', data})
             .then((res) => {
                 if (res.status === 'error') {
-                    const msg = typeof res.messages === 'string'
-                        ? res.messages
-                        : res.messages
-                            ? Object.values(res.messages).flat().join('\n')
-                            : t('mobile.checkout_failed');
                     Burnt.alert({
                         title: t('general.error'),
                         preset: 'error',
-                        message: msg,
+                        message: res.messages
+                            ? Object.values(res.messages).flat().join('\n')
+                            : t('mobile.accessory_checkout_failed'),
                         duration: 4,
                     });
                     return;
@@ -103,21 +116,33 @@ export default function CheckoutScreen() {
                 Burnt.alert({
                     title: t('general.notification_success'),
                     preset: 'heart',
+                    message: t('mobile.accessory_checkout_success'),
                     duration: 2,
                 });
-                router.replace(`/(tabs)/(assets)/${id}`);
+                router.replace(`/(tabs)/(accessories)/${id}`);
             })
             .catch((err) => {
                 console.error(err);
                 Burnt.alert({
                     title: t('general.error'),
                     preset: 'error',
-                    message: t('mobile.checkout_failed'),
+                    message: t('mobile.accessory_checkout_failed'),
                     duration: 4,
                 });
             })
             .finally(() => setSubmitting(false));
     };
+
+    if (loading || !accessory) {
+        return (
+            <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color={colors.primary} />
+            </View>
+        );
+    }
+
+    const remaining = accessory.remaining_qty ?? 0;
+    const total = accessory.qty ?? 0;
 
     return (
         <SafeAreaProvider>
@@ -126,88 +151,71 @@ export default function CheckoutScreen() {
                 contentContainerStyle={[styles.contentContainer, {paddingTop: insets.top}]}
                 keyboardShouldPersistTaps="handled"
             >
-                {/* Asset info */}
-                {(initialAssetName || assetTag) && (
-                    <View style={styles.infoCard}>
-                        {initialAssetName ? <Text style={styles.infoName}>{decode(initialAssetName)}</Text> : null}
-                        {assetTag ? <Text style={styles.infoTag}>{assetTag}</Text> : null}
-                    </View>
-                )}
-
-                {/* Asset name override */}
-                <Section title={t('general.asset_name')}>
-                    <FormTextInput
-                        value={assetName}
-                        onChangeText={setAssetName}
-                        placeholder={t('general.asset_name')}
-                    />
-                    {selectedAsset && (
-                        <Text style={styles.hint}>{decode(selectedAsset.name)}</Text>
-                    )}
-                </Section>
-
-                {/* Status */}
-                <Section title={t('general.select_statuslabel')}>
-                    <SelectorButton
-                        label={t('general.select_statuslabel')}
-                        value={selectedStatus ? decode(selectedStatus.name) : undefined}
-                        placeholder={t('general.select')}
-                        onPress={() => statusBottomSheetRef.current?.present()}
-                    />
-                </Section>
+                {/* Accessory info header */}
+                <View style={styles.infoCard}>
+                    <Text style={styles.infoName}>{decode(accessory.name ?? '')}</Text>
+                    <Text style={styles.infoQty}>
+                        {t('mobile.remaining_qty_display', {remaining, total})}
+                    </Text>
+                </View>
 
                 {/* Checkout to */}
                 <Section title={t('mobile.checkout_to')}>
                     <CheckoutPicker
-                        selectedCheckoutTo={selectedCheckoutTo}
+                        selectedCheckoutTo={checkoutTo}
                         setSelectedCheckoutTo={(val) => {
-                            setSelectedCheckoutTo(val);
+                            setCheckoutTo(val);
                             setSelectedUser(null);
                             setSelectedLocation(null);
                             setSelectedAsset(null);
                         }}
                     />
-                    {selectedCheckoutTo === 'user' && (
+
+                    {checkoutTo === 'user' && (
                         <SelectorButton
                             label={t('general.select_user')}
                             value={selectedUser ? decode(selectedUser.name) : undefined}
                             placeholder={t('general.select')}
-                            onPress={() => userBottomSheetRef.current?.present()}
+                            onPress={() => userRef.current?.present()}
                         />
                     )}
-                    {selectedCheckoutTo === 'location' && (
+                    {checkoutTo === 'location' && (
                         <SelectorButton
                             label={t('general.select_location')}
                             value={selectedLocation ? decode(selectedLocation.name) : undefined}
                             placeholder={t('general.select')}
-                            onPress={() => locationBottomSheetRef.current?.present()}
+                            onPress={() => locationRef.current?.present()}
                         />
                     )}
-                    {selectedCheckoutTo === 'asset' && (
+                    {checkoutTo === 'asset' && (
                         <SelectorButton
                             label={t('general.select_asset')}
                             value={selectedAsset ? decode(selectedAsset.name) : undefined}
                             placeholder={t('general.select')}
-                            onPress={() => assetBottomSheetRef.current?.present()}
+                            onPress={() => assetRef.current?.present()}
                         />
                     )}
                 </Section>
 
-                {/* Dates */}
-                <Section title={t('general.checkout_date')}>
-                    <FormRow label={t('general.checkout_date')}>
-                        <Datepicker onDateChange={(_, date) => date && setCheckoutDate(date)} />
-                    </FormRow>
-                    <FormRow label={t('general.expected_checkin')}>
-                        <Datepicker onDateChange={(_, date) => date && setExpectedCheckinDate(date)} />
-                    </FormRow>
+                {/* Quantity */}
+                <Section title={t('mobile.checkout_qty_label')}>
+                    <FormTextInput
+                        label={t('mobile.checkout_qty_label')}
+                        value={qty}
+                        onChangeText={setQty}
+                        placeholder={t('mobile.checkout_qty_placeholder')}
+                        keyboardType="number-pad"
+                    />
+                    <Text style={styles.qtyHint}>
+                        {t('mobile.remaining_qty_display', {remaining, total})}
+                    </Text>
                 </Section>
 
-                {/* Notes */}
+                {/* Note */}
                 <Section title={t('general.notes')}>
                     <FormTextInput
-                        value={notes}
-                        onChangeText={setNotes}
+                        value={note}
+                        onChangeText={setNote}
                         placeholder={t('general.notes')}
                         multiline
                     />
@@ -231,24 +239,19 @@ export default function CheckoutScreen() {
                 </Pressable>
             </ScrollView>
 
-            <SelectStatusBottomSheet
-                title={t('general.select_statuslabel')}
-                ref={statusBottomSheetRef}
-                setSelectedStatus={setSelectedStatus}
-            />
             <SelectUserBottomSheet
                 title={t('general.select_user')}
-                ref={userBottomSheetRef}
+                ref={userRef}
                 setSelectedUser={setSelectedUser}
             />
             <SelectLocationBottomSheet
                 title={t('general.select_location')}
-                ref={locationBottomSheetRef}
+                ref={locationRef}
                 setSelectedLocation={setSelectedLocation}
             />
             <SelectAssetBottomSheet
                 title={t('general.select_asset')}
-                ref={assetBottomSheetRef}
+                ref={assetRef}
                 setSelectedAsset={setSelectedAsset}
             />
         </SafeAreaProvider>
@@ -256,6 +259,12 @@ export default function CheckoutScreen() {
 }
 
 const createStyles = (colors) => StyleSheet.create({
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: colors.background,
+    },
     container: {
         flex: 1,
         backgroundColor: colors.background,
@@ -269,18 +278,20 @@ const createStyles = (colors) => StyleSheet.create({
         backgroundColor: colors.backgroundSecondary,
         borderRadius: BorderRadius.md,
         padding: Spacing.lg,
+        alignItems: 'center',
         gap: Spacing.sm,
     },
     infoName: {
         fontSize: Typography.titleLarge,
         fontWeight: FontWeight.bold,
         color: colors.text,
+        textAlign: 'center',
     },
-    infoTag: {
+    infoQty: {
         fontSize: Typography.body,
         color: colors.textSecondary,
     },
-    hint: {
+    qtyHint: {
         fontSize: Typography.caption,
         color: colors.textSecondary,
         marginTop: -Spacing.sm,

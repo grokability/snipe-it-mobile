@@ -120,6 +120,47 @@ export default function AccessoryScreen() {
                     </Text>
                 </View>
 
+                {/* Checkout Action */}
+                {item.user_can_checkout && (
+                    <Pressable
+                        style={({pressed}) => [styles.checkoutButton, pressed && styles.buttonPressed]}
+                        onPress={() => router.push(`/(tabs)/(accessories)/checkout/${id}`)}
+                    >
+                        <Text style={styles.checkoutButtonText}>{t('mobile.check_out_button')}</Text>
+                    </Pressable>
+                )}
+
+                {/* Checked Out Records */}
+                <Section title={t('mobile.section_checked_out')}>
+                    {checkedOut.length === 0 ? (
+                        <Text style={styles.emptyText}>{t('mobile.no_checkouts')}</Text>
+                    ) : (
+                        checkedOut.map((record) => (
+                            <View key={record.id} style={styles.checkoutRow}>
+                                <View style={styles.checkoutInfo}>
+                                    <Text style={styles.checkoutName}>{record.assigned_to?.name ? decode(record.assigned_to.name) : na}</Text>
+                                    {record.created_at?.formatted && (
+                                        <Text style={styles.checkoutDate}>{record.created_at.formatted}</Text>
+                                    )}
+                                </View>
+                                <Pressable
+                                    style={({pressed}) => [styles.checkinButton, pressed && styles.buttonPressed]}
+                                    onPress={() => router.push({
+                                        pathname: `/(tabs)/(accessories)/checkin/${id}`,
+                                        params: {
+                                            checkoutRecordId: record.id,
+                                            assignedToName: record.assigned_to?.name ?? '',
+                                            assignedDate: record.created_at?.formatted ?? '',
+                                        },
+                                    })}
+                                >
+                                    <Text style={styles.checkinButtonText}>{t('mobile.check_in_button')}</Text>
+                                </Pressable>
+                            </View>
+                        ))
+                    )}
+                </Section>
+
                 {/* Details */}
                 <Section title={t('mobile.section_details')}>
                     <DetailRow label={t('general.category')} value={nestedName(item.category)}/>
@@ -144,48 +185,11 @@ export default function AccessoryScreen() {
                     <DetailRow label={t('general.total_cost')} value={displayValue(item.total_cost)}/>
                 </Section>
 
-                {/* Checked Out Records */}
-                <Section title={t('mobile.section_checked_out')}>
-                    {checkedOut.length === 0 ? (
-                        <Text style={styles.emptyText}>{t('mobile.no_checkouts')}</Text>
-                    ) : (
-                        checkedOut.map((record) => (
-                            <View key={record.id} style={styles.checkoutRow}>
-                                <View style={styles.checkoutInfo}>
-                                    <Text style={styles.checkoutName}>{record.assigned_to?.name ? decode(record.assigned_to.name) : na}</Text>
-                                    {record.created_at?.formatted && (
-                                        <Text style={styles.checkoutDate}>{record.created_at.formatted}</Text>
-                                    )}
-                                </View>
-                                <Pressable
-                                    style={({pressed}) => [styles.checkinButton, pressed && styles.buttonPressed]}
-                                    onPress={() => router.push({
-                                        pathname: `/(tabs)/(accessories)/checkin/${id}`,
-                                        params: { checkoutRecordId: record.id },
-                                    })}
-                                >
-                                    <Text style={styles.checkinButtonText}>{t('mobile.check_in_button')}</Text>
-                                </Pressable>
-                            </View>
-                        ))
-                    )}
-                </Section>
-
                 {/* Notes */}
                 {item.notes && (
                     <Section title={t('mobile.section_notes')}>
                         <Text selectable style={styles.notesText}>{item.notes}</Text>
                     </Section>
-                )}
-
-                {/* Checkout Action */}
-                {item.user_can_checkout && (
-                    <Pressable
-                        style={({pressed}) => [styles.checkoutButton, pressed && styles.buttonPressed]}
-                        onPress={() => router.push(`/(tabs)/(accessories)/checkout/${id}`)}
-                    >
-                        <Text style={styles.checkoutButtonText}>{t('mobile.check_out_button')}</Text>
-                    </Pressable>
                 )}
             </ScrollView>
         </SafeAreaProvider>

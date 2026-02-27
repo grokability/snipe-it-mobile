@@ -128,6 +128,11 @@
     "edit_accessory_success": "Accessory updated successfully",
     "edit_accessory_failed": "Failed to update accessory",
     "accessory_name_required": "Accessory name is required",
-    "accessory_qty_required": "Quantity is required"
+    "accessory_qty_required": "Quantity is required",
+    "accessory_checkout_success": "Accessory checked out successfully",
+    "accessory_checkout_failed": "Checkout failed",
+    "checkout_qty_label": "Quantity",
+    "checkout_qty_placeholder": "1",
+    "checkin_select_record": "Select a checkout record to return"
   }
 }
