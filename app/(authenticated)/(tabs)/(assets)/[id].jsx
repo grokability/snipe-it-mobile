@@ -151,7 +151,14 @@ export default function AssetScreen() {
                                 </Text>
                                 <Pressable
                                     style={({pressed}) => [styles.button, styles.checkinButton, pressed && styles.buttonPressed]}
-                                    onPress={() => router.push(`/(tabs)/(assets)/checkin/${id}`)}
+                                    onPress={() => router.push({
+                                    pathname: `/(tabs)/(assets)/checkin/${id}`,
+                                    params: {
+                                        assetName: asset.name ?? '',
+                                        assetTag: asset.asset_tag ?? '',
+                                        assignedToName: asset.assigned_to?.name ?? '',
+                                    },
+                                })}
                                 >
                                     <Text style={styles.buttonText}>{t('mobile.check_in_button')}</Text>
                                 </Pressable>
@@ -159,7 +166,13 @@ export default function AssetScreen() {
                         ) : (
                             <Pressable
                                 style={({pressed}) => [styles.button, styles.checkoutButton, pressed && styles.buttonPressed]}
-                                onPress={() => router.push(`/(tabs)/(assets)/checkout/${id}`)}
+                                onPress={() => router.push({
+                                    pathname: `/(tabs)/(assets)/checkout/${id}`,
+                                    params: {
+                                        assetName: asset.name ?? '',
+                                        assetTag: asset.asset_tag ?? '',
+                                    },
+                                })}
                             >
                                 <Text style={styles.buttonText}>{t('mobile.check_out_button')}</Text>
                             </Pressable>
