@@ -147,7 +147,11 @@ export default function AccessoryScreen() {
                                     style={({pressed}) => [styles.checkinButton, pressed && styles.buttonPressed]}
                                     onPress={() => router.push({
                                         pathname: `/(tabs)/(accessories)/checkin/${id}`,
-                                        params: { checkoutRecordId: record.id },
+                                        params: {
+                                            checkoutRecordId: record.id,
+                                            assignedToName: record.assigned_to?.name ?? '',
+                                            assignedDate: record.created_at?.formatted ?? '',
+                                        },
                                     })}
                                 >
                                     <Text style={styles.checkinButtonText}>{t('mobile.check_in_button')}</Text>
