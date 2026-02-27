@@ -120,29 +120,15 @@ export default function AccessoryScreen() {
                     </Text>
                 </View>
 
-                {/* Details */}
-                <Section title={t('mobile.section_details')}>
-                    <DetailRow label={t('general.category')} value={nestedName(item.category)}/>
-                    <DetailRow label={t('general.manufacturer')} value={nestedName(item.manufacturer)}/>
-                    <DetailRow label={t('general.supplier')} value={nestedName(item.supplier)}/>
-                    <DetailRow label={t('general.model_number')} value={displayValue(item.model_number)}/>
-                    <DetailRow label={t('general.order_number')} value={displayValue(item.order_number)}/>
-                    <DetailRow label={t('mobile.min_qty_alert')} value={displayValue(item.min_amt)}/>
-                    <DetailRow label={t('general.requestable')} value={formatBool(item.requestable)}/>
-                </Section>
-
-                {/* Location */}
-                <Section title={t('mobile.section_location')}>
-                    <DetailRow label={t('general.location')} value={nestedName(item.location)}/>
-                    <DetailRow label={t('general.company')} value={nestedName(item.company)}/>
-                </Section>
-
-                {/* Purchase */}
-                <Section title={t('mobile.section_purchase')}>
-                    <DetailRow label={t('general.purchase_date')} value={formatDate(item.purchase_date)}/>
-                    <DetailRow label={t('general.purchase_cost')} value={displayValue(item.purchase_cost)}/>
-                    <DetailRow label={t('general.total_cost')} value={displayValue(item.total_cost)}/>
-                </Section>
+                {/* Checkout Action */}
+                {item.user_can_checkout && (
+                    <Pressable
+                        style={({pressed}) => [styles.checkoutButton, pressed && styles.buttonPressed]}
+                        onPress={() => router.push(`/(tabs)/(accessories)/checkout/${id}`)}
+                    >
+                        <Text style={styles.checkoutButtonText}>{t('mobile.check_out_button')}</Text>
+                    </Pressable>
+                )}
 
                 {/* Checked Out Records */}
                 <Section title={t('mobile.section_checked_out')}>
@@ -171,21 +157,35 @@ export default function AccessoryScreen() {
                     )}
                 </Section>
 
+                {/* Details */}
+                <Section title={t('mobile.section_details')}>
+                    <DetailRow label={t('general.category')} value={nestedName(item.category)}/>
+                    <DetailRow label={t('general.manufacturer')} value={nestedName(item.manufacturer)}/>
+                    <DetailRow label={t('general.supplier')} value={nestedName(item.supplier)}/>
+                    <DetailRow label={t('general.model_number')} value={displayValue(item.model_number)}/>
+                    <DetailRow label={t('general.order_number')} value={displayValue(item.order_number)}/>
+                    <DetailRow label={t('mobile.min_qty_alert')} value={displayValue(item.min_amt)}/>
+                    <DetailRow label={t('general.requestable')} value={formatBool(item.requestable)}/>
+                </Section>
+
+                {/* Location */}
+                <Section title={t('mobile.section_location')}>
+                    <DetailRow label={t('general.location')} value={nestedName(item.location)}/>
+                    <DetailRow label={t('general.company')} value={nestedName(item.company)}/>
+                </Section>
+
+                {/* Purchase */}
+                <Section title={t('mobile.section_purchase')}>
+                    <DetailRow label={t('general.purchase_date')} value={formatDate(item.purchase_date)}/>
+                    <DetailRow label={t('general.purchase_cost')} value={displayValue(item.purchase_cost)}/>
+                    <DetailRow label={t('general.total_cost')} value={displayValue(item.total_cost)}/>
+                </Section>
+
                 {/* Notes */}
                 {item.notes && (
                     <Section title={t('mobile.section_notes')}>
                         <Text selectable style={styles.notesText}>{item.notes}</Text>
                     </Section>
-                )}
-
-                {/* Checkout Action */}
-                {item.user_can_checkout && (
-                    <Pressable
-                        style={({pressed}) => [styles.checkoutButton, pressed && styles.buttonPressed]}
-                        onPress={() => router.push(`/(tabs)/(accessories)/checkout/${id}`)}
-                    >
-                        <Text style={styles.checkoutButtonText}>{t('mobile.check_out_button')}</Text>
-                    </Pressable>
                 )}
             </ScrollView>
         </SafeAreaProvider>
