@@ -1,5 +1,5 @@
 import { CameraView } from "expo-camera";
-import { router, Stack } from "expo-router";
+import { router, Stack, useLocalSearchParams } from "expo-router";
 import {
     AppState,
     Platform,
@@ -13,8 +13,13 @@ import { useEffect, useRef, useState } from "react";
 import * as Haptics from 'expo-haptics';
 import BarcodeOverlay from "@/components/camera/BarcodeOverlay";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useTranslation } from "react-i18next";
 
 export default function Home() {
+    const { mode } = useLocalSearchParams();
+    const { t } = useTranslation();
+    const isAuditMode = mode === 'audit';
+
     const [barcodes, setBarcodes] = useState([]);
     const [scanningPaused, setScanningPaused] = useState(false);
     const [scanCount, setScanCount] = useState(0);
@@ -105,17 +110,31 @@ export default function Home() {
     const handleBarcodeSelect = (data) => {
         if (data) {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+
+            if (isAuditMode) {
+                // In audit mode, extract the asset ID from the scanned value
+                let id = data;
+                try {
+                    const parsedUrl = new URL(data);
+                    const segments = parsedUrl.pathname.split("/");
+                    id = segments[segments.length - 1];
+                } catch {
+                    // Not a URL — use raw value as ID
+                }
+                clearBarcodes();
+                router.replace(`/(authenticated)/audit/confirm?asset_id=${encodeURIComponent(id)}&from_scanner=true`);
+                return;
+            }
+
             try {
                 const parsedUrl = new URL(data);
                 const segments = parsedUrl.pathname.split("/");
                 const id = segments[segments.length - 1];
 
                 setTimeout(async () => {
-                    console.log(id);
                     await router.replace(`(tabs)/(assets)/${id}`);
                 }, 300);
             } catch (error) {
-                console.log("Invalid URL format:", error);
                 // Handle non-URL QR codes if needed
                 router.replace(`(tabs)/(assets)/${data}`);
             }
@@ -146,8 +165,15 @@ export default function Home() {
                 style={styles.camera}
                 facing="back"
                 onBarcodeScanned={scanningPaused ? undefined : handleBarcodeScan}
-                onCameraReady={() => console.log("Camera ready")}
+                onCameraReady={() => {}}
             />
+
+            {/* Audit mode banner */}
+            {isAuditMode && (
+                <View style={[styles.auditBanner, { top: insets.top }]}>
+                    <Text style={styles.auditBannerText}>{t('mobile.audit_mode')}</Text>
+                </View>
+            )}
 
             {/* Barcode Mask Overlay */}
             <BarcodeOverlay
@@ -210,5 +236,20 @@ const styles = StyleSheet.create({
         color: 'white',
         fontSize: 16,
         fontWeight: 'bold',
-    }
+    },
+    auditBanner: {
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        backgroundColor: '#6200ee',
+        paddingVertical: 8,
+        alignItems: 'center',
+        zIndex: 10,
+    },
+    auditBannerText: {
+        color: 'white',
+        fontSize: 16,
+        fontWeight: 'bold',
+        letterSpacing: 1,
+    },
 });

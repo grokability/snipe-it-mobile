@@ -21,7 +21,7 @@ export default function AuthenticatedLayout() {
             <Stack
                 screenOptions={({ navigation, route }) => {
                     const routeName = getFocusedRouteNameFromRoute(route);
-                    const hasOwnHeader = routeName === '(assets)' || routeName === '(accessories)';
+                    const hasOwnHeader = routeName === '(assets)' || routeName === '(accessories)' || routeName === 'audit';
                     return {
                         headerShown: !hasOwnHeader,
                         headerTransparent: true,
@@ -52,6 +52,12 @@ export default function AuthenticatedLayout() {
                     options={{
                         drawerLabel: t('general.settings'),
                         title: t('general.settings'),
+                    }}
+                />
+                <Stack.Screen
+                    name="audit"
+                    options={{
+                        headerShown: false,
                     }}
                 />
                 <Stack.Screen

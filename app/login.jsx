@@ -8,7 +8,6 @@ import {useColors} from "@/hooks/useThemeColors";
 import {Spacing, Typography, FontWeight} from "@/constants/sizes";
 import {useTranslation} from "react-i18next";
 
-console.log('login rendered')
 export default function LoginScreen() {
     const colors = useColors();
     const styles = useMemo(() => createStyles(colors), [colors]);

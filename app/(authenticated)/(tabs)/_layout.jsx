@@ -59,9 +59,6 @@ export default function TabLayout() {
                     <NativeTabs.Trigger.Icon src={<NativeTabs.Trigger.VectorIcon family={FontAwesome} name="hdd-o" />} />
                 </NativeTabs.Trigger>
 
-                <NativeTabs.Trigger name="search" role="search">
-                    <NativeTabs.Trigger.Label>{t('general.search')}</NativeTabs.Trigger.Label>
-                </NativeTabs.Trigger>
             </NativeTabs>
     );
 }
