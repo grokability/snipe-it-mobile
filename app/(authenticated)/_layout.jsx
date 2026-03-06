@@ -1,11 +1,7 @@
-import { Drawer } from 'expo-router/drawer';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { TouchableOpacity, StyleSheet, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import {Stack, useRouter} from "expo-router";
+import { StyleSheet, View } from "react-native";
+import {Stack} from "expo-router";
 import {useColors} from "@/hooks/useThemeColors";
 import {Spacing, BorderRadius, Typography, FontWeight} from "@/constants/sizes";
-import {SafeAreaView} from "react-native-safe-area-context";
 import TopNavMenu from "@/components/overlays/TopNavMenu";
 import { getFocusedRouteNameFromRoute } from '@react-navigation/native';
 import {useMemo} from "react";
@@ -21,7 +17,7 @@ export default function AuthenticatedLayout() {
             <Stack
                 screenOptions={({ navigation, route }) => {
                     const routeName = getFocusedRouteNameFromRoute(route);
-                    const hasOwnHeader = routeName === '(assets)' || routeName === '(accessories)';
+                    const hasOwnHeader = routeName === '(assets)' || routeName === '(accessories)' || routeName === 'audit';
                     return {
                         headerShown: !hasOwnHeader,
                         headerTransparent: true,
@@ -52,6 +48,12 @@ export default function AuthenticatedLayout() {
                     options={{
                         drawerLabel: t('general.settings'),
                         title: t('general.settings'),
+                    }}
+                />
+                <Stack.Screen
+                    name="audit"
+                    options={{
+                        headerShown: false,
                     }}
                 />
                 <Stack.Screen

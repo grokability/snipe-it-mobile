@@ -29,7 +29,6 @@ export default function AssetScreen() {
     const [data, setData] = useState({});
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
-    const { user } = useContext(AuthContext);
     const { id } = useLocalSearchParams();
     const navigation = useNavigation();
 
@@ -140,9 +139,9 @@ export default function AssetScreen() {
                     )}
                 </View>
 
-                {/* Assignment */}
+                {/* Actions */}
                 <View>
-                    <SectionHeader title={t('mobile.section_assignment')} />
+                    <SectionHeader title={t('mobile.section_actions')} />
                     <View style={styles.assignmentContainer}>
                         {asset.assigned_to ? (
                             <>
@@ -177,6 +176,15 @@ export default function AssetScreen() {
                                 <Text style={styles.buttonText}>{t('mobile.check_out_button')}</Text>
                             </Pressable>
                         )}
+                        <Pressable
+                            style={({pressed}) => [styles.buttonSmall, styles.auditButton, pressed && styles.buttonPressed]}
+                            onPress={() => router.push({
+                                pathname: '/(authenticated)/audit/confirm',
+                                params: { asset_id: id },
+                            })}
+                        >
+                            <Text style={styles.buttonSmallText}>{t('general.audit')}</Text>
+                        </Pressable>
                     </View>
                 </View>
 
@@ -421,6 +429,9 @@ const createStyles = (colors) => StyleSheet.create({
     checkoutButton: {
         backgroundColor: colors.success,
     },
+    auditButton: {
+        backgroundColor: colors.primary,
+    },
     buttonPressed: {
         opacity: 0.8,
         transform: [{scale: 0.98}],
@@ -429,6 +440,17 @@ const createStyles = (colors) => StyleSheet.create({
         color: '#fff',
         fontSize: Typography.bodyLarge,
         fontWeight: FontWeight.semibold,
+    },
+    buttonSmall: {
+        width: '100%',
+        padding: Spacing.md,
+        borderRadius: BorderRadius.md,
+        alignItems: 'center',
+    },
+    buttonSmallText: {
+        color: '#fff',
+        fontSize: Typography.body,
+        fontWeight: FontWeight.medium,
     },
     notesText: {
         fontSize: Typography.bodyLarge,

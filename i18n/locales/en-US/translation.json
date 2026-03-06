@@ -63,7 +63,10 @@
     "select": "Select...",
     "total_cost": "Total Cost",
     "select_category": "Select Category",
-    "select_manufacturer": "Select Manufacturer"
+    "select_manufacturer": "Select Manufacturer",
+    "audit": "Audit",
+    "audit_due": "Audit Due",
+    "audit_overdue": "Audit Overdue"
   },
   "mobile": {
     "na": "N/A",
@@ -102,6 +105,7 @@
     "section_details": "Details",
     "section_location": "Location",
     "section_purchase": "Purchase Information",
+    "section_actions": "Actions",
     "section_assignment": "Assignment",
     "section_dates": "Dates",
     "section_counters": "Counters",
@@ -133,6 +137,28 @@
     "accessory_checkout_failed": "Checkout failed",
     "checkout_qty_label": "Quantity",
     "checkout_qty_placeholder": "1",
-    "checkin_select_record": "Select a checkout record to return"
+    "checkin_select_record": "Select a checkout record to return",
+    "screen_audit_confirm": "Confirm Audit",
+    "screen_audit_dashboard": "Audit Dashboard",
+    "audit_submit": "Submit Audit",
+    "audit_success": "Asset audited successfully",
+    "audit_failed": "Audit failed",
+    "audit_scan": "Scan to Audit",
+    "audit_due_count": "{{count}} due",
+    "audit_overdue_count": "{{count}} overdue",
+    "audit_no_items": "No assets found",
+    "open_audit_scanner": "Open Audit Scanner",
+    "audit_quick": "Quick Audit",
+    "audit_detailed": "Detailed Audit",
+    "audit_notes_placeholder": "Add audit notes...",
+    "audit_location_update": "Update Location",
+    "audit_mode": "AUDIT MODE",
+    "audit_session_count": "{{count}} audited this session",
+    "audit_session_audited": "Audited",
+    "audit_session_duration": "Duration",
+    "audit_session_empty": "No assets audited yet",
+    "audit_end_session": "End Session",
+    "audit_view_session": "View Session",
+    "screen_audit_session": "Audit Session"
   }
 }
