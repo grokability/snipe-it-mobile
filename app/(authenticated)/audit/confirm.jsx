@@ -23,6 +23,7 @@ import {SelectorButton} from '@/components/forms/SelectorButton';
 import {FormRow} from '@/components/forms/FormRow';
 import Datepicker from '@/components/forms/Datepicker';
 import SelectLocationBottomSheet from '@/components/bottomSheets/SelectLocationBottomSheet';
+import {useAuditSession} from '@/context/AuditSessionProvider';
 
 function formatDate(dateObj) {
     if (!dateObj) return null;
@@ -45,6 +46,7 @@ export default function AuditConfirmScreen() {
     const styles = useMemo(() => createStyles(colors), [colors]);
     const {t} = useTranslation();
     const {asset_id, asset_tag, from_scanner} = useLocalSearchParams();
+    const {addAuditedAsset} = useAuditSession();
 
     const locationBottomSheetRef = useRef(null);
 
@@ -113,6 +115,9 @@ export default function AuditConfirmScreen() {
                     preset: 'done',
                     duration: 2,
                 });
+                if (asset) {
+                    addAuditedAsset(asset);
+                }
                 if (from_scanner === 'true') {
                     router.replace('/scanner?mode=audit');
                 } else {

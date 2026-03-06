@@ -1,5 +1,6 @@
 import { Stack, router } from 'expo-router';
 import { useAuth, AuthProvider } from "@/context/AuthProvider";
+import { AuditSessionProvider } from "@/context/AuditSessionProvider";
 import { ActivityIndicator, View } from "react-native";
 import React, {useEffect} from "react";
 import {GestureHandlerRootView} from "react-native-gesture-handler";
@@ -12,11 +13,13 @@ export default function RootLayout() {
 
     return (
         <AuthProvider>
-            <SafeAreaProvider>
-                <GestureHandlerRootView style={{ flex: 1 }}>
-                        <AuthLayoutContent/>
-                </GestureHandlerRootView>
-            </SafeAreaProvider>
+            <AuditSessionProvider>
+                <SafeAreaProvider>
+                    <GestureHandlerRootView style={{ flex: 1 }}>
+                            <AuthLayoutContent/>
+                    </GestureHandlerRootView>
+                </SafeAreaProvider>
+            </AuditSessionProvider>
         </AuthProvider>
     )
 

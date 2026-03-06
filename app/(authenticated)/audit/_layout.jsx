@@ -37,6 +37,13 @@ export default function AuditLayout() {
                     headerBackTitle: '',
                 }}
             />
+            <Stack.Screen
+                name="session"
+                options={{
+                    title: t('mobile.screen_audit_session'),
+                    headerBackTitle: '',
+                }}
+            />
         </Stack>
     );
 }

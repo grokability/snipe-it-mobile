@@ -152,6 +152,13 @@
     "audit_detailed": "Detailed Audit",
     "audit_notes_placeholder": "Add audit notes...",
     "audit_location_update": "Update Location",
-    "audit_mode": "AUDIT MODE"
+    "audit_mode": "AUDIT MODE",
+    "audit_session_count": "{{count}} audited this session",
+    "audit_session_audited": "Audited",
+    "audit_session_duration": "Duration",
+    "audit_session_empty": "No assets audited yet",
+    "audit_end_session": "End Session",
+    "audit_view_session": "View Session",
+    "screen_audit_session": "Audit Session"
   }
 }

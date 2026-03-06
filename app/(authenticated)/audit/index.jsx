@@ -16,12 +16,14 @@ import {FlashList} from '@shopify/flash-list';
 import {useTranslation} from 'react-i18next';
 import {SegmentedPicker} from '@/components/ui/SegmentedPicker';
 import AuditListItem from '@/components/audit/AuditListItem';
+import {useAuditSession} from '@/context/AuditSessionProvider';
 
 export default function AuditListScreen() {
     const colors = useColors();
     const insets = useSafeAreaInsets();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const {t} = useTranslation();
+    const {sessionCount, isActive} = useAuditSession();
 
     const [tab, setTab] = useState('due'); // 'due' | 'overdue'
     const [data, setData] = useState([]);
@@ -112,6 +114,18 @@ export default function AuditListScreen() {
                 />
             </View>
 
+            {isActive && (
+                <Pressable
+                    onPress={() => router.push('/(authenticated)/audit/session')}
+                    style={({pressed}) => [styles.sessionBanner, pressed && styles.sessionBannerPressed]}
+                >
+                    <Text style={styles.sessionBannerText}>
+                        {t('mobile.audit_session_count', {count: sessionCount})}
+                    </Text>
+                    <Text style={styles.sessionBannerLink}>{t('mobile.audit_view_session')}</Text>
+                </Pressable>
+            )}
+
             <FlashList
                 data={data}
                 renderItem={({item}) => (
@@ -161,6 +175,29 @@ const createStyles = (colors) => StyleSheet.create({
         paddingHorizontal: Spacing.lg,
         paddingBottom: Spacing.md,
         backgroundColor: colors.background,
+    },
+    sessionBanner: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginHorizontal: Spacing.lg,
+        marginBottom: Spacing.sm,
+        padding: Spacing.md,
+        backgroundColor: colors.primary + '15',
+        borderRadius: BorderRadius.sm,
+    },
+    sessionBannerPressed: {
+        opacity: 0.7,
+    },
+    sessionBannerText: {
+        fontSize: Typography.body,
+        fontWeight: FontWeight.medium,
+        color: colors.text,
+    },
+    sessionBannerLink: {
+        fontSize: Typography.caption,
+        fontWeight: FontWeight.semibold,
+        color: colors.primary,
     },
     emptyContainer: {
         padding: Spacing.xxl,
