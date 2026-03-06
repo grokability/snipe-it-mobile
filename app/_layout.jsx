@@ -6,6 +6,7 @@ import React, {useEffect} from "react";
 import {GestureHandlerRootView} from "react-native-gesture-handler";
 import {BottomSheetModalProvider} from "@gorhom/bottom-sheet";
 import {SafeAreaProvider} from "react-native-safe-area-context";
+import i18n from "@/i18n"; //this says unused but it's just providing for the entire app
 
 
 export default function RootLayout() {
