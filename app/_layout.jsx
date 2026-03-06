@@ -5,7 +5,6 @@ import { ActivityIndicator, View } from "react-native";
 import React, {useEffect} from "react";
 import {GestureHandlerRootView} from "react-native-gesture-handler";
 import {BottomSheetModalProvider} from "@gorhom/bottom-sheet";
-import i18n from "@/i18n";
 import {SafeAreaProvider} from "react-native-safe-area-context";
 
 

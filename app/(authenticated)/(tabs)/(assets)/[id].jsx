@@ -29,7 +29,6 @@ export default function AssetScreen() {
     const [data, setData] = useState({});
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
-    const { user } = useContext(AuthContext);
     const { id } = useLocalSearchParams();
     const navigation = useNavigation();
 

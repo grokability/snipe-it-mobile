@@ -1,9 +1,7 @@
-import React, {useContext, useEffect, useState, useMemo} from 'react';
+import React, {useContext, useState, useMemo} from 'react';
 import { StyleSheet, View, Text } from 'react-native';
 import { AuthContext } from '@/context/AuthProvider';
 import LoginForm from '@/components/auth/LoginForm';
-import BrowserLoginButton from '@/components/auth/BrowserLoginButton';
-import BearerTokenLogin from "@/components/auth/BearerTokenLogin";
 import {useColors} from "@/hooks/useThemeColors";
 import {Spacing, Typography, FontWeight} from "@/constants/sizes";
 import {useTranslation} from "react-i18next";
@@ -13,7 +11,7 @@ export default function LoginScreen() {
     const styles = useMemo(() => createStyles(colors), [colors]);
     const { t } = useTranslation();
 
-    const { login, bearerLogin } = useContext(AuthContext);
+    const { login } = useContext(AuthContext);
     const [domain, setDomain] = useState('https://example.example.com');
     const [token, setToken] = useState('');
 
