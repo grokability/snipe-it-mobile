@@ -1,4 +1,4 @@
-import {Picker} from "@expo/ui/jetpack-compose";
+import {Picker, Host} from "@expo/ui/jetpack-compose";
 import {StyleSheet, View} from "react-native";
 import ExpoDevice from "expo-device/src/ExpoDevice";
 import {indexOf} from "lodash";
@@ -21,6 +21,7 @@ export function CheckoutPicker({ selectedCheckoutTo, setSelectedCheckoutTo }) {
                 paddingVertical: isIpad ? Math.round(4 * SPACE_SCALE) : 4,
             }}
         >
+            <Host matchContents>
                 <Picker
                     options={options.map(option => option.label)}
                     selectedIndex={indexOf(options, options.find(option => option.value === selectedCheckoutTo))}
@@ -42,6 +43,7 @@ export function CheckoutPicker({ selectedCheckoutTo, setSelectedCheckoutTo }) {
                         width: 300,
                     }}
                 />
+            </Host>
         </View>
     )
 }

@@ -7,7 +7,6 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
     "plugins": [
       "expo-build-properties",
       "expo-router",
@@ -21,12 +20,7 @@
           "recordAudioAndroid": true
         }
       ],
-      [
-        "expo-web-browser",
-        {
-          "experimentalLauncherActivity": true
-        }
-      ],
+      "expo-web-browser",
       "expo-font"
     ],
     "splash": {

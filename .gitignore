@@ -5,11 +5,19 @@ node_modules/
 
 # Expo
 .expo/
+.claude
+.junie
+.idea
+CLADE.local.md
+/tasks
 dist/
 web-build/
 expo-env.d.ts
 
 # Native
+android/
+ios/
+.output.txt
 *.orig.*
 *.jks
 *.p8
