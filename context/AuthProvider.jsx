@@ -137,7 +137,7 @@ export const AuthProvider = ({children}) => {
                         isAuth: true,
                         url: '/oauth/token',
                         method: 'POST',
-                        data: params,
+                        data: params.toString(),
                     })
                     // take response and set up the user object
                     .then(async response => {

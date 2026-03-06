@@ -2,7 +2,7 @@ import React, {useMemo} from 'react';
 import {StyleSheet, View} from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import {ContextMenu, Button} from '@expo/ui/jetpack-compose';
+import {ContextMenu, Button, Host} from '@expo/ui/jetpack-compose';
 import {useColors} from "@/hooks/useThemeColors";
 import {BorderRadius} from "@/constants/sizes";
 import {useTranslation} from "react-i18next";
@@ -13,35 +13,37 @@ export default function TopNavMenu() {
     const { t } = useTranslation();
 
     return (
-        <ContextMenu>
-            <ContextMenu.Trigger>
-                <Button
-                    variant={'default'}
-                    systemImage={"filled.MoreVert"}
-                    elementColors={{ contentColor: colors.text }}
-                />
-            </ContextMenu.Trigger>
-            <ContextMenu.Items>
-                <Button
-                    onPress={() => router.push('/(authenticated)/(tabs)/home')}
-                    elementColors={{ contentColor: colors.text }}
-                >
-                    {t('general.dashboard')}
-                </Button>
-                <Button
-                    onPress={() => router.push('/(authenticated)/licenses')}
-                    elementColors={{ contentColor: colors.text }}
-                >
-                    {t('general.license')}
-                </Button>
-                <Button
-                    onPress={() => router.push('/(authenticated)/settings')}
-                    elementColors={{ contentColor: colors.text }}
-                >
-                    {t('general.settings')}
-                </Button>
-            </ContextMenu.Items>
-        </ContextMenu>
+        <Host matchContents>
+            <ContextMenu>
+                <ContextMenu.Trigger>
+                    <Button
+                        variant={'default'}
+                        systemImage={"filled.MoreVert"}
+                        elementColors={{ contentColor: colors.text }}
+                    />
+                </ContextMenu.Trigger>
+                <ContextMenu.Items>
+                    <Button
+                        onPress={() => router.push('/(authenticated)/(tabs)/home')}
+                        elementColors={{ contentColor: colors.text }}
+                    >
+                        {t('general.dashboard')}
+                    </Button>
+                    <Button
+                        onPress={() => router.push('/(authenticated)/licenses')}
+                        elementColors={{ contentColor: colors.text }}
+                    >
+                        {t('general.license')}
+                    </Button>
+                    <Button
+                        onPress={() => router.push('/(authenticated)/settings')}
+                        elementColors={{ contentColor: colors.text }}
+                    >
+                        {t('general.settings')}
+                    </Button>
+                </ContextMenu.Items>
+            </ContextMenu>
+        </Host>
     );
 }
 
