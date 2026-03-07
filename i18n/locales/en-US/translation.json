@@ -159,6 +159,9 @@
     "audit_session_empty": "No assets audited yet",
     "audit_end_session": "End Session",
     "audit_view_session": "View Session",
-    "screen_audit_session": "Audit Session"
+    "screen_audit_session": "Audit Session",
+    "empty_state_title": "No Data Available",
+    "empty_state_message": "Could not load data. Check your connection and try again.",
+    "retry": "Retry"
   }
 }
