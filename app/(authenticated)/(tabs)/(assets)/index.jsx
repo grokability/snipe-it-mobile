@@ -9,6 +9,7 @@ import {Spacing, BorderRadius, Typography, FontWeight} from "@/constants/sizes";
 import {decode} from "html-entities";
 import {FlashList} from "@shopify/flash-list";
 import {useTranslation} from "react-i18next";
+import EmptyState from "@/components/ui/EmptyState";
 
 export default function AssetsScreen() {
     const colors = useColors();
@@ -34,9 +35,11 @@ export default function AssetsScreen() {
             method: 'get'
         })
             .then((res) => {
-                setData((existingItems) => {
-                    return [...existingItems, ...res.rows]
-                });
+                if (res?.rows) {
+                    setData((existingItems) => {
+                        return [...existingItems, ...res.rows]
+                    });
+                }
             })
             .catch(err => {
                 console.log(err);
@@ -54,6 +57,8 @@ export default function AssetsScreen() {
 
     const onRefresh = useCallback(() => {
         setRefreshing(true);
+        setData([]);
+        setOffset(0);
         getAssets()
             .finally(() => {
                 setRefreshing(false);
@@ -96,6 +101,14 @@ export default function AssetsScreen() {
         </Pressable>
     );
 
+
+    if (!loading && data.length === 0) {
+        return (
+            <SafeAreaProvider style={styles.container}>
+                <EmptyState onRetry={() => { setOffset(0); getAssets(); }} />
+            </SafeAreaProvider>
+        );
+    }
 
     return (
             <SafeAreaProvider style={styles.container}>

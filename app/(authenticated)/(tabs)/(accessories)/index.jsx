@@ -10,6 +10,7 @@ import {FlashList} from "@shopify/flash-list";
 import {decode} from "html-entities";
 import {useTranslation} from "react-i18next";
 import {Image} from "react-native";
+import EmptyState from "@/components/ui/EmptyState";
 
 export default function AccessoriesScreen() {
     const colors = useColors();
@@ -29,10 +30,12 @@ export default function AccessoriesScreen() {
             url: '/accessories'
         })
             .then(res => {
-                setData({
-                    accessories: res.rows,
-                    count: res.total
-                });
+                if (res?.rows) {
+                    setData({
+                        accessories: res.rows,
+                        count: res.total
+                    });
+                }
             })
             .catch(err => {
                 console.log(err);
@@ -92,6 +95,14 @@ export default function AccessoriesScreen() {
             </Pressable>
         );
     };
+
+    if (!loading && (!data.accessories || data.accessories.length === 0)) {
+        return (
+            <SafeAreaProvider style={styles.container}>
+                <EmptyState onRetry={getAccessories} />
+            </SafeAreaProvider>
+        );
+    }
 
     return (
         <SafeAreaProvider style={styles.container}>
