@@ -17,6 +17,9 @@ import {useTranslation} from 'react-i18next';
 import {SegmentedPicker} from '@/components/ui/SegmentedPicker';
 import AuditListItem from '@/components/audit/AuditListItem';
 import {useAuditSession} from '@/context/AuditSessionProvider';
+import {useNetworkStatus} from '@/hooks/useNetworkStatus';
+import {cacheAssets, getCachedAssets, getCacheMeta} from '@/helpers/cacheManager';
+import {CacheBadge} from '@/components/ui/CacheBadge';
 
 export default function AuditListScreen() {
     const colors = useColors();
@@ -24,6 +27,7 @@ export default function AuditListScreen() {
     const styles = useMemo(() => createStyles(colors), [colors]);
     const {t} = useTranslation();
     const {sessionCount, isActive} = useAuditSession();
+    const {isConnected} = useNetworkStatus();
 
     const [tab, setTab] = useState('due'); // 'due' | 'overdue'
     const [data, setData] = useState([]);
@@ -31,16 +35,41 @@ export default function AuditListScreen() {
     const [refreshing, setRefreshing] = useState(false);
     const [offset, setOffset] = useState(0);
     const [hasMore, setHasMore] = useState(true);
+    const [isFromCache, setIsFromCache] = useState(false);
+    const [cachedAt, setCachedAt] = useState(null);
+
+    const cacheSource = tab === 'due' ? 'audit_due' : 'audit_overdue';
+
+    const fetchFromApi = useCallback((currentOffset, reset) => {
+        return makeRequest({
+            url: `/hardware/audits/${tab}?limit=25&offset=${currentOffset}&sort=next_audit_date&order=asc`,
+            method: 'GET',
+        }).then((res) => {
+            const rows = res.rows || [];
+
+            // Cache the results in the background
+            if (rows.length > 0) {
+                cacheAssets(rows, cacheSource).catch(() => {});
+            }
+
+            return rows;
+        });
+    }, [tab, cacheSource]);
+
+    const loadFromCache = useCallback(async () => {
+        const cached = await getCachedAssets(cacheSource);
+        const meta = await getCacheMeta(cacheSource);
+        setData(cached);
+        setIsFromCache(cached.length > 0);
+        setCachedAt(meta?.last_synced_at || (cached[0]?._cachedAt) || null);
+        setHasMore(false); // Cache doesn't support pagination
+    }, [cacheSource]);
 
     const fetchAudits = useCallback((reset = false) => {
         const currentOffset = reset ? 0 : offset;
         setLoading(true);
-        return makeRequest({
-            url: `/hardware/audits/${tab}?limit=25&offset=${currentOffset}&sort=next_audit_date&order=asc`,
-            method: 'GET',
-        })
-            .then((res) => {
-                const rows = res.rows || [];
+        return fetchFromApi(currentOffset, reset)
+            .then((rows) => {
                 if (reset) {
                     setData(rows);
                     setOffset(rows.length);
@@ -49,12 +78,14 @@ export default function AuditListScreen() {
                     setOffset(currentOffset + rows.length);
                 }
                 setHasMore(rows.length === 25);
+                setIsFromCache(false);
+                setCachedAt(null);
             })
             .catch((err) => {
                 console.error('Error fetching audits:', err);
             })
             .finally(() => setLoading(false));
-    }, [tab, offset]);
+    }, [tab, offset, fetchFromApi]);
 
     useFocusEffect(
         useCallback(() => {
@@ -62,40 +93,56 @@ export default function AuditListScreen() {
             setOffset(0);
             setHasMore(true);
             setLoading(true);
-            makeRequest({
-                url: `/hardware/audits/${tab}?limit=25&offset=0&sort=next_audit_date&order=asc`,
-                method: 'GET',
-            })
-                .then((res) => {
-                    const rows = res.rows || [];
+            setIsFromCache(false);
+            setCachedAt(null);
+
+            if (!isConnected) {
+                loadFromCache().finally(() => setLoading(false));
+                return;
+            }
+
+            fetchFromApi(0, true)
+                .then((rows) => {
                     setData(rows);
                     setOffset(rows.length);
                     setHasMore(rows.length === 25);
+                    setIsFromCache(false);
                 })
-                .catch((err) => console.error(err))
+                .catch((err) => {
+                    console.error(err);
+                    // Fall back to cache on failure
+                    loadFromCache();
+                })
                 .finally(() => setLoading(false));
-        }, [tab])
+        }, [tab, isConnected])
     );
 
     const onRefresh = useCallback(() => {
         setRefreshing(true);
         setOffset(0);
-        makeRequest({
-            url: `/hardware/audits/${tab}?limit=25&offset=0&sort=next_audit_date&order=asc`,
-            method: 'GET',
-        })
-            .then((res) => {
-                const rows = res.rows || [];
+
+        if (!isConnected) {
+            loadFromCache().finally(() => setRefreshing(false));
+            return;
+        }
+
+        fetchFromApi(0, true)
+            .then((rows) => {
                 setData(rows);
                 setOffset(rows.length);
                 setHasMore(rows.length === 25);
+                setIsFromCache(false);
+                setCachedAt(null);
             })
-            .catch((err) => console.error(err))
+            .catch((err) => {
+                console.error(err);
+                loadFromCache();
+            })
             .finally(() => setRefreshing(false));
-    }, [tab]);
+    }, [tab, isConnected, fetchFromApi, loadFromCache]);
 
     const loadMore = () => {
-        if (loading || !hasMore) return;
+        if (loading || !hasMore || isFromCache) return;
         fetchAudits(false);
     };
 
@@ -113,6 +160,12 @@ export default function AuditListScreen() {
                     onValueChange={setTab}
                 />
             </View>
+
+            {isFromCache && cachedAt && (
+                <View style={styles.cacheBadgeContainer}>
+                    <CacheBadge cachedAt={cachedAt} />
+                </View>
+            )}
 
             {isActive && (
                 <Pressable
@@ -144,7 +197,11 @@ export default function AuditListScreen() {
                 ListEmptyComponent={
                     !loading ? (
                         <View style={styles.emptyContainer}>
-                            <Text style={styles.emptyText}>{t('mobile.audit_no_items')}</Text>
+                            <Text style={styles.emptyText}>
+                                {!isConnected && data.length === 0
+                                    ? t('mobile.offline_no_cache')
+                                    : t('mobile.audit_no_items')}
+                            </Text>
                         </View>
                     ) : null
                 }
@@ -175,6 +232,10 @@ const createStyles = (colors) => StyleSheet.create({
         paddingHorizontal: Spacing.lg,
         paddingBottom: Spacing.md,
         backgroundColor: colors.background,
+    },
+    cacheBadgeContainer: {
+        paddingHorizontal: Spacing.lg,
+        paddingBottom: Spacing.sm,
     },
     sessionBanner: {
         flexDirection: 'row',

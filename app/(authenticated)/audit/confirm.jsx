@@ -24,6 +24,9 @@ import {FormRow} from '@/components/forms/FormRow';
 import Datepicker from '@/components/forms/Datepicker';
 import SelectLocationBottomSheet from '@/components/bottomSheets/SelectLocationBottomSheet';
 import {useAuditSession} from '@/context/AuditSessionProvider';
+import {useNetworkStatus} from '@/hooks/useNetworkStatus';
+import {cacheAsset, getCachedAssetByTag, getCachedAssetById} from '@/helpers/cacheManager';
+import {CacheBadge} from '@/components/ui/CacheBadge';
 
 function formatDate(dateObj) {
     if (!dateObj) return null;
@@ -47,12 +50,15 @@ export default function AuditConfirmScreen() {
     const {t} = useTranslation();
     const {asset_id, asset_tag, from_scanner} = useLocalSearchParams();
     const {addAuditedAsset} = useAuditSession();
+    const {isConnected} = useNetworkStatus();
 
     const locationBottomSheetRef = useRef(null);
 
     const [asset, setAsset] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [isFromCache, setIsFromCache] = useState(false);
+    const [cachedAt, setCachedAt] = useState(null);
 
     const [selectedLocation, setSelectedLocation] = useState(null);
     const [nextAuditDate, setNextAuditDate] = useState(null);
@@ -66,6 +72,28 @@ export default function AuditConfirmScreen() {
             ? `/hardware/${encodeURIComponent(asset_id)}`
             : `/hardware/bytag/${encodeURIComponent(asset_tag)}`;
 
+        if (!isConnected) {
+            // Offline: look up asset in cache
+            const lookupCache = async () => {
+                const cached = asset_id
+                    ? await getCachedAssetById(asset_id)
+                    : await getCachedAssetByTag(asset_tag);
+
+                if (cached) {
+                    setAsset(cached);
+                    setIsFromCache(true);
+                    setCachedAt(cached._cachedAt);
+                    const interval = cached.model?.audit_interval;
+                    setNextAuditDate(calculateNextAuditDate(interval));
+                } else {
+                    setError(t('mobile.offline_not_cached'));
+                }
+                setLoading(false);
+            };
+            lookupCache();
+            return;
+        }
+
         makeRequest({url, method: 'GET'})
             .then((res) => {
                 if (res.status === 'error') {
@@ -73,15 +101,32 @@ export default function AuditConfirmScreen() {
                     return;
                 }
                 setAsset(res);
+                setIsFromCache(false);
                 const interval = res.model?.audit_interval;
                 setNextAuditDate(calculateNextAuditDate(interval));
+
+                // Cache the fetched asset in background
+                cacheAsset(res, 'fetch').catch(() => {});
             })
-            .catch((err) => {
+            .catch(async (err) => {
                 console.error(err);
-                setError(t('mobile.audit_failed'));
+                // Try cache fallback on network error
+                const cached = asset_id
+                    ? await getCachedAssetById(asset_id)
+                    : await getCachedAssetByTag(asset_tag);
+
+                if (cached) {
+                    setAsset(cached);
+                    setIsFromCache(true);
+                    setCachedAt(cached._cachedAt);
+                    const interval = cached.model?.audit_interval;
+                    setNextAuditDate(calculateNextAuditDate(interval));
+                } else {
+                    setError(t('mobile.audit_failed'));
+                }
             })
             .finally(() => setLoading(false));
-    }, [asset_id, asset_tag]);
+    }, [asset_id, asset_tag, isConnected]);
 
     const handleSubmit = () => {
         setSubmitting(true);
@@ -159,6 +204,11 @@ export default function AuditConfirmScreen() {
                 contentContainerStyle={[styles.contentContainer, {paddingTop: insets.top}]}
                 keyboardShouldPersistTaps="handled"
             >
+                {/* Cache indicator */}
+                {isFromCache && cachedAt && (
+                    <CacheBadge cachedAt={cachedAt} />
+                )}
+
                 {/* Asset info card */}
                 <View style={styles.infoCard}>
                     {asset?.image && (
@@ -190,15 +240,18 @@ export default function AuditConfirmScreen() {
                     />
                 </Section>
 
-                {/* Location update (optional) */}
-                <Section title={t('mobile.audit_location_update')}>
-                    <SelectorButton
-                        label={t('general.select_location')}
-                        value={selectedLocation ? decode(selectedLocation.name) : undefined}
-                        placeholder={t('general.select')}
-                        onPress={() => locationBottomSheetRef.current?.present()}
-                    />
-                </Section>
+                {/* Location update (optional) - hide when offline since we can't search locations */}
+                {/* we should probably try to cache location's as well for this - seems like it'll be important in some cases */}
+                {isConnected && (
+                    <Section title={t('mobile.audit_location_update')}>
+                        <SelectorButton
+                            label={t('general.select_location')}
+                            value={selectedLocation ? decode(selectedLocation.name) : undefined}
+                            placeholder={t('general.select')}
+                            onPress={() => locationBottomSheetRef.current?.present()}
+                        />
+                    </Section>
+                )}
 
                 {/* Next audit date */}
                 <Section title={t('general.next_audit_date')}>
@@ -228,26 +281,36 @@ export default function AuditConfirmScreen() {
                 {/* Submit */}
                 <Pressable
                     onPress={handleSubmit}
-                    disabled={submitting}
+                    disabled={submitting || (!isConnected)}
                     style={({pressed}) => [
                         styles.submitButton,
                         pressed && styles.submitButtonPressed,
-                        submitting && styles.submitButtonDisabled,
+                        (submitting || !isConnected) && styles.submitButtonDisabled,
                     ]}
                 >
                     {submitting ? (
                         <ActivityIndicator color="#fff" />
                     ) : (
-                        <Text style={styles.submitButtonText}>{t('mobile.audit_submit')}</Text>
+                        <Text style={styles.submitButtonText}>
+                            {isConnected ? t('mobile.audit_submit') : t('mobile.offline_queue_audit')}
+                        </Text>
                     )}
                 </Pressable>
+
+                {!isConnected && (
+                    <Text style={styles.offlineHint}>
+                        {t('mobile.offline_banner')}
+                    </Text>
+                )}
             </ScrollView>
 
-            <SelectLocationBottomSheet
-                title={t('general.select_location')}
-                ref={locationBottomSheetRef}
-                setSelectedLocation={setSelectedLocation}
-            />
+            {isConnected && (
+                <SelectLocationBottomSheet
+                    title={t('general.select_location')}
+                    ref={locationBottomSheetRef}
+                    setSelectedLocation={setSelectedLocation}
+                />
+            )}
         </View>
     );
 }
@@ -311,5 +374,10 @@ const createStyles = (colors) => StyleSheet.create({
         color: '#fff',
         fontSize: Typography.bodyLarge,
         fontWeight: FontWeight.semibold,
+    },
+    offlineHint: {
+        fontSize: Typography.caption,
+        color: colors.textSecondary,
+        textAlign: 'center',
     },
 });

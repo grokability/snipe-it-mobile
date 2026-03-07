@@ -162,6 +162,12 @@
     "screen_audit_session": "Audit Session",
     "empty_state_title": "No Data Available",
     "empty_state_message": "Could not load data. Check your connection and try again.",
-    "retry": "Retry"
+    "retry": "Retry",
+    "offline_banner": "You are offline. Cached data may be outdated.",
+    "cached_ago": "Cached {{time}}",
+    "offline_no_cache": "No cached data. Connect to load.",
+    "offline_cached_data": "Offline - cached data",
+    "offline_not_cached": "Asset not in offline cache. Cannot audit offline.",
+    "offline_queue_audit": "Queue Audit (Offline)"
   }
 }

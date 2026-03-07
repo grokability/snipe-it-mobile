@@ -21,7 +21,8 @@
         }
       ],
       "expo-web-browser",
-      "expo-font"
+      "expo-font",
+      "expo-sqlite"
     ],
     "splash": {
       "image": "./assets/splash-icon.png",

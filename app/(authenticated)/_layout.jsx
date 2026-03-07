@@ -6,6 +6,7 @@ import TopNavMenu from "@/components/overlays/TopNavMenu";
 import { getFocusedRouteNameFromRoute } from '@react-navigation/native';
 import {useMemo} from "react";
 import {useTranslation} from "react-i18next";
+import {OfflineBanner} from "@/components/ui/OfflineBanner";
 
 export default function AuthenticatedLayout() {
     const colors = useColors();
@@ -14,6 +15,7 @@ export default function AuthenticatedLayout() {
 
     return (
         <View style={{ flex: 1 }}>
+            <OfflineBanner />
             <Stack
                 screenOptions={({ navigation, route }) => {
                     const routeName = getFocusedRouteNameFromRoute(route);
