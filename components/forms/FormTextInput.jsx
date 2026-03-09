@@ -1,23 +1,26 @@
 import React, {useMemo} from 'react';
-import {StyleSheet, TextInput} from 'react-native';
+import {StyleSheet, Text, TextInput, View} from 'react-native';
 import {FormRow} from "@/components/forms/FormRow";
 import {useColors} from "@/hooks/useThemeColors";
 import {Spacing, BorderRadius, Typography} from "@/constants/sizes";
 
-export const FormTextInput = ({label, value, onChangeText, placeholder, keyboardType, multiline}) => {
+export const FormTextInput = ({label, value, onChangeText, placeholder, keyboardType, multiline, helperText}) => {
     const colors = useColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const input = (
-        <TextInput
-            style={[styles.input, multiline && styles.textareaInput]}
-            value={value}
-            onChangeText={onChangeText}
-            placeholder={placeholder}
-            placeholderTextColor={colors.textMuted}
-            keyboardType={keyboardType}
-            multiline={multiline}
-            numberOfLines={multiline ? 4 : 1}
-        />
+        <View>
+            <TextInput
+                style={[styles.input, multiline && styles.textareaInput]}
+                value={value}
+                onChangeText={onChangeText}
+                placeholder={placeholder}
+                placeholderTextColor={colors.textMuted}
+                keyboardType={keyboardType}
+                multiline={multiline}
+                numberOfLines={multiline ? 4 : 1}
+            />
+            {helperText && <Text style={styles.helperText}>{helperText}</Text>}
+        </View>
     );
     if (!label) return input;
     return <FormRow label={label}>{input}</FormRow>;
@@ -36,5 +39,10 @@ const createStyles = (colors) => StyleSheet.create({
     textareaInput: {
         minHeight: 100,
         textAlignVertical: 'top',
+    },
+    helperText: {
+        fontSize: Typography.caption,
+        color: colors.textSecondary,
+        marginTop: Spacing.xs,
     },
 });

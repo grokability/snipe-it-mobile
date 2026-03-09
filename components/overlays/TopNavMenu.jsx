@@ -1,26 +1,19 @@
-import React, {useMemo} from 'react';
-import {StyleSheet, View} from 'react-native';
+import React from 'react';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import {ContextMenu, Button, Host} from '@expo/ui/jetpack-compose';
 import {useColors} from "@/hooks/useThemeColors";
-import {BorderRadius} from "@/constants/sizes";
 import {useTranslation} from "react-i18next";
 
 export default function TopNavMenu() {
     const colors = useColors();
-    const styles = useMemo(() => createStyles(colors), [colors]);
     const { t } = useTranslation();
 
     return (
         <Host matchContents>
             <ContextMenu>
                 <ContextMenu.Trigger>
-                    <Button
-                        variant={'default'}
-                        systemImage={"filled.MoreVert"}
-                        elementColors={{ contentColor: colors.text }}
-                    />
+                    <Ionicons name="menu" size={24} color={colors.text} />
                 </ContextMenu.Trigger>
                 <ContextMenu.Items>
                     <Button
@@ -46,16 +39,3 @@ export default function TopNavMenu() {
         </Host>
     );
 }
-
-const createStyles = (colors) => StyleSheet.create({
-    button: {
-        width: 44,
-        height: 44,
-        borderRadius: BorderRadius.lg,
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: colors.background,
-        textColor: colors.text,
-        elevation: 2,
-    },
-});

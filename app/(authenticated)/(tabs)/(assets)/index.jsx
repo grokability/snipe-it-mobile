@@ -1,14 +1,16 @@
 import {View, Text, StyleSheet, Image, RefreshControl, Pressable, Platform} from 'react-native';
-import {useContext, useState, useCallback, useMemo} from "react";
+import {useContext, useState, useCallback, useMemo, useLayoutEffect} from "react";
 import {AuthContext} from "@/context/AuthProvider";
 import {makeRequest} from "@/helpers/axiosConfig";
 import {SafeAreaProvider, useSafeAreaInsets} from "react-native-safe-area-context";
-import {router, useFocusEffect} from "expo-router";
+import {router, useFocusEffect, useNavigation} from "expo-router";
 import {useColors} from "@/hooks/useThemeColors";
 import {Spacing, BorderRadius, Typography, FontWeight} from "@/constants/sizes";
 import {decode} from "html-entities";
 import {FlashList} from "@shopify/flash-list";
 import {useTranslation} from "react-i18next";
+import {Ionicons} from '@expo/vector-icons';
+import TopNavMenu from "@/components/overlays/TopNavMenu";
 import EmptyState from "@/components/ui/EmptyState";
 
 export default function AssetsScreen() {
@@ -16,6 +18,20 @@ export default function AssetsScreen() {
     const insets = useSafeAreaInsets();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const { t } = useTranslation();
+    const navigation = useNavigation();
+
+    useLayoutEffect(() => {
+        navigation.setOptions({
+            headerRight: () => (
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                    <Pressable onPress={() => router.push('/(tabs)/(assets)/create')}>
+                        <Ionicons name="add" size={26} color={colors.text} />
+                    </Pressable>
+                    <TopNavMenu />
+                </View>
+            ),
+        });
+    }, [navigation, colors.text]);
 
     const { user } = useContext(AuthContext);
     const [data, setData] = useState([]);
