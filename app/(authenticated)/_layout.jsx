@@ -14,7 +14,7 @@ export default function AuthenticatedLayout() {
     const { t } = useTranslation();
 
     return (
-        <View style={{ flex: 1 }}>
+        <View style={{ flex: 1, backgroundColor: colors.background }}>
             <OfflineBanner />
             <Stack
                 screenOptions={({ navigation, route }) => {
@@ -36,6 +36,8 @@ export default function AuthenticatedLayout() {
                     options={{
                         title: t('general.dashboard'),
                         drawerLabel: t('general.dashboard'),
+                        headerStyle: { backgroundColor: 'transparent' },
+                        headerShadowVisible: false,
                     }}
                 />
                 <Stack.Screen

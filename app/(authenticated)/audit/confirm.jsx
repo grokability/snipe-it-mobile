@@ -25,8 +25,9 @@ import Datepicker from '@/components/forms/Datepicker';
 import SelectLocationBottomSheet from '@/components/bottomSheets/SelectLocationBottomSheet';
 import {useAuditSession} from '@/context/AuditSessionProvider';
 import {useNetworkStatus} from '@/hooks/useNetworkStatus';
-import {cacheAsset, getCachedAssetByTag, getCachedAssetById} from '@/helpers/cacheManager';
+import {cacheAsset, getCachedAssetByTag, getCachedAssetById} from '@/helpers/db/cacheManager';
 import {CacheBadge} from '@/components/ui/CacheBadge';
+import {queueAudit} from '@/helpers/db/syncManager';
 
 function formatDate(dateObj) {
     if (!dateObj) return null;
@@ -128,35 +129,28 @@ export default function AuditConfirmScreen() {
             .finally(() => setLoading(false));
     }, [asset_id, asset_tag, isConnected]);
 
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
         setSubmitting(true);
-        makeRequest({
-            url: '/hardware/audit',
-            method: 'POST',
-            data: {
-                asset_tag: asset?.asset_tag || asset_tag,
-                location_id: selectedLocation?.id || null,
-                next_audit_date: nextAuditDate || null,
-                note: note || null,
-            },
-        })
-            .then((res) => {
-                if (res.status === 'error') {
-                    const msg = typeof res.messages === 'string'
-                        ? res.messages
-                        : res.messages
-                            ? Object.values(res.messages).flat().join('\n')
-                            : t('mobile.audit_failed');
-                    Burnt.alert({
-                        title: t('general.error'),
-                        preset: 'error',
-                        message: msg,
-                        duration: 4,
-                    });
-                    return;
-                }
+        const auditData = {
+            asset_tag: asset?.asset_tag || asset_tag,
+            location_id: selectedLocation?.id || null,
+            next_audit_date: nextAuditDate || null,
+            note: note || null,
+        };
+
+        if (!isConnected) {
+            // Queue for later sync
+            try {
+                await queueAudit({
+                    asset_id: asset?.id,
+                    asset_tag: auditData.asset_tag,
+                    asset_name: asset?.name,
+                    location_id: auditData.location_id,
+                    next_audit_date: auditData.next_audit_date,
+                    note: auditData.note,
+                });
                 Burnt.alert({
-                    title: t('mobile.audit_success'),
+                    title: t('mobile.audit_queued'),
                     preset: 'done',
                     duration: 2,
                 });
@@ -168,17 +162,69 @@ export default function AuditConfirmScreen() {
                 } else {
                     router.back();
                 }
-            })
-            .catch((err) => {
-                console.error(err);
+            } catch (err) {
+                const msgKey = err.message === 'duplicate_pending'
+                    ? 'mobile.audit_already_queued'
+                    : err.message === 'queue_full'
+                        ? 'mobile.audit_queue_full'
+                        : 'mobile.audit_failed';
                 Burnt.alert({
                     title: t('general.error'),
                     preset: 'error',
-                    message: t('mobile.audit_failed'),
+                    message: t(msgKey),
                     duration: 4,
                 });
-            })
-            .finally(() => setSubmitting(false));
+            } finally {
+                setSubmitting(false);
+            }
+            return;
+        }
+
+        // Online: submit directly
+        try {
+            const res = await makeRequest({
+                url: '/hardware/audit',
+                method: 'POST',
+                data: auditData,
+            });
+            if (res.status === 'error') {
+                const msg = typeof res.messages === 'string'
+                    ? res.messages
+                    : res.messages
+                        ? Object.values(res.messages).flat().join('\n')
+                        : t('mobile.audit_failed');
+                Burnt.alert({
+                    title: t('general.error'),
+                    preset: 'error',
+                    message: msg,
+                    duration: 4,
+                });
+                return;
+            }
+            Burnt.alert({
+                title: t('mobile.audit_success'),
+                preset: 'done',
+                duration: 2,
+            });
+            if (asset) {
+                addAuditedAsset(asset);
+            }
+            if (from_scanner === 'true') {
+                router.replace('/scanner?mode=audit');
+            } else {
+                router.back();
+            }
+        } catch (err) {
+            console.error(err);
+            Burnt.alert({
+                title: t('general.error'),
+                preset: 'error',
+                message: t('mobile.audit_failed'),
+                duration: 4,
+            });
+        } finally {
+            setSubmitting(false);
+        }
     };
 
     if (loading) {
@@ -281,11 +327,11 @@ export default function AuditConfirmScreen() {
                 {/* Submit */}
                 <Pressable
                     onPress={handleSubmit}
-                    disabled={submitting || (!isConnected)}
+                    disabled={submitting}
                     style={({pressed}) => [
                         styles.submitButton,
                         pressed && styles.submitButtonPressed,
-                        (submitting || !isConnected) && styles.submitButtonDisabled,
+                        submitting && styles.submitButtonDisabled,
                     ]}
                 >
                     {submitting ? (

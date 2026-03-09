@@ -66,7 +66,8 @@
     "select_manufacturer": "Select Manufacturer",
     "audit": "Audit",
     "audit_due": "Audit Due",
-    "audit_overdue": "Audit Overdue"
+    "audit_overdue": "Audit Overdue",
+    "delete": "Delete"
   },
   "mobile": {
     "na": "N/A",
@@ -168,6 +169,21 @@
     "offline_no_cache": "No cached data. Connect to load.",
     "offline_cached_data": "Offline - cached data",
     "offline_not_cached": "Asset not in offline cache. Cannot audit offline.",
-    "offline_queue_audit": "Queue Audit (Offline)"
+    "offline_queue_audit": "Queue Audit (Offline)",
+    "audit_queued": "Audit saved. Will submit when online.",
+    "audit_already_queued": "This asset already has a pending audit in the queue.",
+    "audit_queue_full": "Audit queue is full. Please sync existing audits first.",
+    "pending_syncs": "{{count}} pending sync",
+    "pending_syncs_plural": "{{count}} pending syncs",
+    "sync_failed": "Failed",
+    "sync_pending": "Pending",
+    "sync_attempts": "{{count}} attempts",
+    "synced_count": "{{count}} audits synced",
+    "sync_failed_count": "{{count}} audits failed to sync",
+    "download_for_offline": "Download for Offline",
+    "downloading": "Downloading...",
+    "download_complete": "{{count}} assets cached for offline use",
+    "clear_cache": "Clear Cache",
+    "cache_cleared": "Cache cleared"
   }
 }

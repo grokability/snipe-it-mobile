@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useColors } from '@/hooks/useThemeColors';
 import { Spacing, Typography, FontWeight, BorderRadius } from '@/constants/sizes';
-import { formatCacheAge, getCacheAgeColor } from '@/helpers/cacheManager';
+import { formatCacheAge, getCacheAgeColor } from '@/helpers/db/cacheManager';
 import { useTranslation } from 'react-i18next';
 
 export function CacheBadge({ cachedAt }) {

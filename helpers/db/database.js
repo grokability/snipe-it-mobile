@@ -11,7 +11,8 @@ export async function getDatabase() {
 }
 
 async function runMigrations(database) {
-    await database.execAsync(`
+    // language=SQL format=false
+await database.execAsync(`
         CREATE TABLE IF NOT EXISTS assets (
             id INTEGER PRIMARY KEY,
             asset_tag TEXT NOT NULL,
@@ -58,6 +59,18 @@ async function runMigrations(database) {
             total_items INTEGER,
             pages_cached INTEGER DEFAULT 0
         );
+
+        CREATE TABLE IF NOT EXISTS audit_session_items (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            asset_id INTEGER NOT NULL,
+            asset_tag TEXT NOT NULL,
+            name TEXT,
+            model TEXT,
+            timestamp TEXT NOT NULL,
+            session_start TEXT NOT NULL
+        );
+
+        DROP TABLE IF EXISTS kv_store;
     `);
 }
 
@@ -74,5 +87,6 @@ export async function clearAllData() {
         DELETE FROM assets;
         DELETE FROM audit_queue;
         DELETE FROM cache_meta;
+        DELETE FROM audit_session_items;
     `);
 }

@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
-import { getCachedAssets, cacheAssets, getCacheMeta } from '@/helpers/cacheManager';
+import { getCachedAssets, cacheAssets, getCacheMeta } from '@/helpers/db/cacheManager';
 
 export function useCachedData({ source, fetchFn }) {
     const { isConnected } = useNetworkStatus();

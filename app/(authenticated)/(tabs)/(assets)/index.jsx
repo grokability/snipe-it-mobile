@@ -1,15 +1,19 @@
 import {View, Text, StyleSheet, Image, RefreshControl, Pressable, Platform} from 'react-native';
-import {useContext, useState, useCallback, useMemo} from "react";
+import {useContext, useState, useCallback, useMemo, useLayoutEffect} from "react";
 import {AuthContext} from "@/context/AuthProvider";
 import {makeRequest} from "@/helpers/axiosConfig";
 import {SafeAreaProvider, useSafeAreaInsets} from "react-native-safe-area-context";
-import {router, useFocusEffect} from "expo-router";
+import {router, useFocusEffect, useNavigation} from "expo-router";
 import {useColors} from "@/hooks/useThemeColors";
 import {Spacing, BorderRadius, Typography, FontWeight} from "@/constants/sizes";
 import {decode} from "html-entities";
 import {FlashList} from "@shopify/flash-list";
 import {useTranslation} from "react-i18next";
 import EmptyState from "@/components/ui/EmptyState";
+import TopNavMenu from "@/components/overlays/TopNavMenu";
+import {useNetworkStatus} from "@/hooks/useNetworkStatus";
+import {cacheAssets, getCachedAssets, getCacheMeta} from "@/helpers/db/cacheManager";
+import {CacheBadge} from "@/components/ui/CacheBadge";
 
 export default function AssetsScreen() {
     const colors = useColors();
@@ -17,58 +21,95 @@ export default function AssetsScreen() {
     const styles = useMemo(() => createStyles(colors), [colors]);
     const { t } = useTranslation();
 
+    const navigation = useNavigation();
     const { user } = useContext(AuthContext);
+    const { isConnected } = useNetworkStatus();
     const [data, setData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
+    const [isFromCache, setIsFromCache] = useState(false);
+    const [cachedAt, setCachedAt] = useState(null);
 
     const [offset, setOffset] = useState(0);
 
-    const getAssets = useCallback(() => {
+    useLayoutEffect(() => {
+        navigation.setOptions({
+            headerRight: () => (
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.sm }}>
+                    {isFromCache && cachedAt && <CacheBadge cachedAt={cachedAt} />}
+                    <TopNavMenu />
+                </View>
+            ),
+        });
+    }, [isFromCache, cachedAt]);
+
+    const loadFromCache = useCallback(async () => {
+        const cached = await getCachedAssets('index');
+        const meta = await getCacheMeta('index');
+        setData(cached);
+        setIsFromCache(cached.length > 0);
+        setCachedAt(meta?.last_synced_at || cached[0]?._cachedAt || null);
+    }, []);
+
+    const getAssets = useCallback((currentOffset = offset, reset = false) => {
+        if (!isConnected) {
+            return loadFromCache();
+        }
+
         setLoading(true);
         return makeRequest({
             url: '/hardware?' +
                 'limit=25&' +
-                `offset=${offset}&` +
+                `offset=${currentOffset}&` +
                 'sort=created_at&' +
                 'order=asc',
             method: 'get'
         })
             .then((res) => {
                 if (res?.rows) {
-                    setData((existingItems) => {
-                        return [...existingItems, ...res.rows]
-                    });
+                    if (reset) {
+                        setData(res.rows);
+                    } else {
+                        setData((existingItems) => [...existingItems, ...res.rows]);
+                    }
+                    setIsFromCache(false);
+                    setCachedAt(null);
+
+                    if (res.rows.length > 0) {
+                        cacheAssets(res.rows, 'index').catch(() => {});
+                    }
                 }
             })
             .catch(err => {
                 console.log(err);
+                if (currentOffset === 0) {
+                    return loadFromCache();
+                }
             })
             .finally(() => {
                 setLoading(false);
             });
-    }, [offset]);
+    }, [offset, isConnected, loadFromCache]);
 
     useFocusEffect(
         useCallback(() => {
-            getAssets();
-        }, [getAssets])
+            setLoading(true);
+            getAssets(0, true).finally(() => setLoading(false));
+        }, [isConnected])
     );
 
     const onRefresh = useCallback(() => {
         setRefreshing(true);
         setData([]);
         setOffset(0);
-        getAssets()
-            .finally(() => {
-                setRefreshing(false);
-            });
+        getAssets(0, true).finally(() => setRefreshing(false));
     }, [getAssets]);
 
     const loadMore = () => {
-        if (loading) return;
-        setOffset(offset + 25);
-        getAssets();
+        if (loading || isFromCache) return;
+        const newOffset = offset + 25;
+        setOffset(newOffset);
+        getAssets(newOffset);
     }
 
     const Item = ({id, asset_tag, name, serial, image, checkedOut, status}) => (

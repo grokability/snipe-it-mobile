@@ -13,6 +13,9 @@ import {useTranslation} from "react-i18next";
 import Checkbox from "@/components/forms/Checkbox";
 import {Section, SectionHeader} from "@/components/ui/Section";
 import {DetailRow, EncryptedDetailRow} from "@/components/ui/DetailRow";
+import {useNetworkStatus} from "@/hooks/useNetworkStatus";
+import {cacheAsset, getCachedAssetById} from "@/helpers/db/cacheManager";
+import {CacheBadge} from "@/components/ui/CacheBadge";
 
 
 export const unstable_settings = {
@@ -29,13 +32,17 @@ export default function AssetScreen() {
     const [data, setData] = useState({});
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
+    const [isFromCache, setIsFromCache] = useState(false);
+    const [cachedAt, setCachedAt] = useState(null);
     const { id } = useLocalSearchParams();
     const navigation = useNavigation();
+    const { isConnected } = useNetworkStatus();
 
     useLayoutEffect(() => {
         navigation.setOptions({
             headerRight: () => (
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.sm }}>
+                    {isFromCache && cachedAt && <CacheBadge cachedAt={cachedAt} />}
                     <Pressable onPress={() => router.push(`/(tabs)/(assets)/edit/${id}`)}>
                         <Ionicons name="pencil" size={22} color={colors.text} />
                     </Pressable>
@@ -43,10 +50,24 @@ export default function AssetScreen() {
                 </View>
             ),
         });
-    }, [navigation, id, colors.text]);
+    }, [colors.text, isFromCache, cachedAt]);
 
-    const getAsset = useCallback(() => {
+    const loadFromCache = async () => {
+        const cached = await getCachedAssetById(id);
+        if (cached) {
+            setData({ asset: cached });
+            setIsFromCache(true);
+            setCachedAt(cached._cachedAt);
+        }
+    };
+
+    const getAsset = () => {
         setLoading(true);
+
+        if (!isConnected) {
+            return loadFromCache().finally(() => setLoading(false));
+        }
+
         return Promise.all([
             makeRequest({ url: `/hardware/${id}`, method: 'get' }),
             makeRequest({ url: '/fields', method: 'get' }),
@@ -69,25 +90,30 @@ export default function AssetScreen() {
                     });
                 }
                 setData({ asset: assetRes });
+                setIsFromCache(false);
+                setCachedAt(null);
+
+                cacheAsset(assetRes, 'fetch').catch(() => {});
             })
             .catch(error => {
                 console.log(error);
+                return loadFromCache();
             })
             .finally(() => {
                 setLoading(false);
             });
-    }, [id]);
+    };
 
     useFocusEffect(
         useCallback(() => {
             getAsset();
-        }, [getAsset])
+        }, [isConnected])
     );
 
-    const onRefresh = useCallback(() => {
+    const onRefresh = () => {
         setRefreshing(true);
         getAsset().finally(() => setRefreshing(false));
-    }, [getAsset]);
+    };
 
     const na = t('mobile.na');
     const displayValue = (value) => value ? decode(String(value)) : na;

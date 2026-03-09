@@ -8,6 +8,7 @@ import {FlashList} from '@shopify/flash-list';
 import {useTranslation} from 'react-i18next';
 import {decode} from 'html-entities';
 import {useAuditSession} from '@/context/AuditSessionProvider';
+import PendingSyncs from '@/components/audit/PendingSyncs';
 
 function formatTime(isoString) {
     const d = new Date(isoString);
@@ -73,11 +74,14 @@ export default function AuditSessionScreen() {
                 </View>
             </View>
 
+            {/* Pending syncs */}
+            <PendingSyncs />
+
             {/* Asset list */}
             <FlashList
                 data={auditedAssets}
                 renderItem={renderItem}
-                keyExtractor={(item, index) => `${item.id}-${index}`}
+                keyExtractor={(item, index) => `${item.asset_id}-${index}`}
                 estimatedItemSize={80}
                 contentContainerStyle={{paddingBottom: 160}}
                 ListEmptyComponent={

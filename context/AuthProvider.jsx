@@ -1,10 +1,11 @@
 import React, {createContext, useState, useEffect, useContext} from "react";
-import {makeRequest} from "../helpers/axiosConfig";
+import {makeRequest} from "@/helpers/axiosConfig";
 import * as SecureStore from 'expo-secure-store';
 import { deviceName } from "expo-device";
 import {useRouter} from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {makeRedirectUri} from "expo-auth-session";
+import {clearAllData} from "@/helpers/db/database";
 
 export const AuthContext = createContext();
 
@@ -53,6 +54,7 @@ export const AuthProvider = ({children}) => {
                     // }).then(response => {
                     //     console.log('logout response');
                         SecureStore.deleteItemAsync('user');
+                        clearAllData().catch(() => {});
                         setUser(null);
                         setIsAuthenticated(false);
                     //     console.log(response);

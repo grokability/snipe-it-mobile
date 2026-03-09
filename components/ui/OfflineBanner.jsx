@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo } from 'react';
 import { StyleSheet, Text } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { useColors } from '@/hooks/useThemeColors';
 import { Spacing, Typography, FontWeight } from '@/constants/sizes';
@@ -11,19 +12,21 @@ export function OfflineBanner() {
     const colors = useColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const { t } = useTranslation();
+    const insets = useSafeAreaInsets();
 
+    const expandedHeight = 40 + insets.top;
     const height = useSharedValue(0);
     const opacity = useSharedValue(0);
 
     useEffect(() => {
         if (!isConnected) {
-            height.value = withTiming(40, { duration: 300 });
+            height.value = withTiming(expandedHeight, { duration: 300 });
             opacity.value = withTiming(1, { duration: 300 });
         } else {
             height.value = withTiming(0, { duration: 300 });
             opacity.value = withTiming(0, { duration: 200 });
         }
-    }, [isConnected]);
+    }, [isConnected, expandedHeight]);
 
     const animatedStyle = useAnimatedStyle(() => ({
         height: height.value,
@@ -31,7 +34,7 @@ export function OfflineBanner() {
     }));
 
     return (
-        <Animated.View style={[styles.banner, animatedStyle]}>
+        <Animated.View style={[styles.banner, { paddingTop: insets.top }, animatedStyle]}>
             <Text style={styles.bannerText} numberOfLines={1}>
                 {t('mobile.offline_banner')}
             </Text>
