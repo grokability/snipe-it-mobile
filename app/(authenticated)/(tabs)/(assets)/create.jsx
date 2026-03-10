@@ -1,5 +1,4 @@
-import React, {useCallback, useContext, useState, useMemo, useRef} from 'react';
-import {decode} from "html-entities";
+import React, {useContext, useState, useEffect, useMemo, useRef} from 'react';
 import {
     ActivityIndicator,
     Pressable,
@@ -8,7 +7,7 @@ import {
     Text,
     View,
 } from 'react-native';
-import {router, useFocusEffect, useLocalSearchParams} from "expo-router";
+import {router} from "expo-router";
 import {makeRequest} from "@/helpers/axiosConfig";
 import {AuthContext} from "@/context/AuthProvider";
 import {SafeAreaProvider, useSafeAreaInsets} from "react-native-safe-area-context";
@@ -16,6 +15,7 @@ import {useColors} from "@/hooks/useThemeColors";
 import {Spacing, BorderRadius, Typography, FontWeight} from "@/constants/sizes";
 import {useTranslation} from "react-i18next";
 import * as Burnt from 'burnt';
+import {decode} from 'html-entities';
 import SelectStatusBottomSheet from "@/components/bottomSheets/SelectStatusBottomSheet";
 import SelectModelBottomSheet from "@/components/bottomSheets/SelectModelBottomSheet";
 import SelectCompanyBottomSheet from "@/components/bottomSheets/SelectCompanyBottomSheet";
@@ -30,27 +30,15 @@ import {FormRow} from "@/components/forms/FormRow";
 import {FormTextInput} from "@/components/forms/FormTextInput";
 import {SelectorButton} from "@/components/forms/SelectorButton";
 
-// Parse "YYYY-MM-DD" as local date to avoid UTC timezone shift
-// (dates without times were shifting before this)
-function parseLocalDate(dateStr) {
-    const parts = String(dateStr).split('-');
-    if (parts.length === 3) {
-        return new Date(parts[0], parts[1] - 1, parts[2]);
-    }
-    return new Date(dateStr);
-}
-
-export default function EditAssetScreen() {
+export default function CreateAssetScreen() {
     const colors = useColors();
     const insets = useSafeAreaInsets();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const { t } = useTranslation();
 
-    const [loading, setLoading] = useState(true);
+    const [loadingFields, setLoadingFields] = useState(false);
     const [submitting, setSubmitting] = useState(false);
-    const [asset, setAsset] = useState(null);
     const { user } = useContext(AuthContext);
-    const { id } = useLocalSearchParams();
 
     // Text fields
     const [name, setName] = useState('');
@@ -87,91 +75,49 @@ export default function EditAssetScreen() {
     const supplierRef = useRef(null);
     const rtdLocationRef = useRef(null);
 
-    const getAsset = useCallback(() => {
-        setLoading(true);
-        return Promise.all([
-            makeRequest({ url: `/hardware/${id}`, method: 'get' }),
-            makeRequest({ url: '/fields', method: 'get' }),
-        ])
-            .then(([asset, fields]) => {
-                setAsset(asset);
-                const fieldDefs = {};
-                if (fields?.rows) {
-                    fields.rows.forEach(fieldDefinition => {
-                        fieldDefs[fieldDefinition.db_column_name] = fieldDefinition.field_values_array;
+    useEffect(() => {
+        if (!selectedModel) {
+            setCustomFieldValues({});
+            return;
+        }
+
+        const fieldsetId = selectedModel.fieldset?.id;
+        if (!fieldsetId) {
+            setCustomFieldValues({});
+            return;
+        }
+
+        setLoadingFields(true);
+        console.log(`Fetching custom fields for fieldset ID: ${fieldsetId}`);
+        makeRequest({ url: `/fieldsets/${fieldsetId}/fields`, method: 'GET' })
+            .then((response) => {
+                const rows = response?.rows;
+                if (rows) {
+                    const mapped = {};
+                    rows.forEach(field => {
+                        const key = field.name;
+                        mapped[key] = {
+                            value: '',
+                            field_format: field.format,
+                            element: field.element,
+                            field_values: field.field_values_array || null,
+                            db_column: field.db_column_name,
+                            name: key,
+                        };
                     });
+                    setCustomFieldValues(mapped);
+                } else {
+                    setCustomFieldValues({});
                 }
-                populateFields(asset, fieldDefs);
             })
             .catch(error => {
                 console.error(error);
+                setCustomFieldValues({});
             })
             .finally(() => {
-                setLoading(false);
+                setLoadingFields(false);
             });
-    }, [id]);
-
-    const populateFields = (asset, fieldDefs = {}) => {
-        setName(asset.name ? decode(asset.name) : '');
-        setAssetTag(asset.asset_tag ? decode(asset.asset_tag) : '');
-        setSerial(asset.serial ? decode(asset.serial) : '');
-        setOrderNumber(asset.order_number ? decode(asset.order_number) : '');
-        setPurchaseCost(asset.purchase_cost || '');
-        setWarrantyMonths(asset.warranty_months ? String(asset.warranty_months) : '');
-        setNotes(asset.notes ? decode(asset.notes) : '');
-
-        if (asset.status_label) {
-            setSelectedStatus({ id: asset.status_label.id, name: decode(asset.status_label.name), value: asset.status_label.id });
-        }
-        if (asset.model) {
-            setSelectedModel({ id: asset.model.id, name: decode(asset.model.name) });
-        }
-        if (asset.company) {
-            setSelectedCompany({ id: asset.company.id, name: decode(asset.company.name) });
-        }
-        if (asset.supplier) {
-            setSelectedSupplier({ id: asset.supplier.id, name: decode(asset.supplier.name) });
-        }
-        if (asset.rtd_location) {
-            setSelectedRtdLocation({ id: asset.rtd_location.id, name: decode(asset.rtd_location.name) });
-        }
-
-        if (asset.purchase_date?.date) {
-            setPurchaseDate(parseLocalDate(asset.purchase_date.date));
-        }
-        if (asset.next_audit_date?.date) {
-            setNextAuditDate(parseLocalDate(asset.next_audit_date.date));
-        }
-        if (asset.expected_checkin?.date) {
-            setExpectedCheckin(parseLocalDate(asset.expected_checkin.date));
-        }
-
-        setRequestable(!!asset.requestable);
-        setByod(!!asset.byod);
-
-        // Custom fields
-        if (asset.custom_fields) {
-            const initialCustomFieldValues = {};
-            Object.entries(asset.custom_fields).forEach(([key, field]) => {
-                const options = fieldDefs[field.field] || null;
-                initialCustomFieldValues[key] = {
-                    value: field.value ? decode(field.value) : '',
-                    field_format: field.field_format,
-                    element: field.element,
-                    field_values: options,
-                    db_column: field.field,
-                    name: key,
-                };
-            });
-            setCustomFieldValues(initialCustomFieldValues);
-        }
-    };
-
-    useFocusEffect(
-        useCallback(() => {
-            getAsset();
-        }, [getAsset])
-    );
+    }, [selectedModel]);
 
     const formatDateForApi = (date) => {
         if (!date) return undefined;
@@ -182,11 +128,21 @@ export default function EditAssetScreen() {
     };
 
     const handleSubmit = () => {
-        if (!assetTag.trim()) {
+        if (!selectedStatus) {
             Burnt.alert({
                 title: t('general.error'),
                 preset: "error",
-                message: t('mobile.asset_tag_required'),
+                message: t('mobile.status_required'),
+                duration: 2,
+            });
+            return;
+        }
+
+        if (!selectedModel) {
+            Burnt.alert({
+                title: t('general.error'),
+                preset: "error",
+                message: t('mobile.model_required'),
                 duration: 2,
             });
             return;
@@ -196,7 +152,7 @@ export default function EditAssetScreen() {
 
         const data = {
             name: name || null,
-            asset_tag: assetTag,
+            asset_tag: assetTag || null,
             serial: serial || null,
             order_number: orderNumber || null,
             purchase_cost: purchaseCost || null,
@@ -222,8 +178,8 @@ export default function EditAssetScreen() {
         });
 
         makeRequest({
-            url: `/hardware/${id}`,
-            method: 'PUT',
+            url: '/hardware',
+            method: 'POST',
             data,
         })
             .then(response => {
@@ -231,7 +187,7 @@ export default function EditAssetScreen() {
                     Burnt.alert({
                         title: t('general.error'),
                         preset: "error",
-                        message: response.messages ? Object.values(response.messages).flat().join('\n') : t('mobile.edit_failed'),
+                        message: response.messages ? Object.values(response.messages).flat().join('\n') : t('mobile.create_failed'),
                         duration: 4,
                     });
                     return;
@@ -239,17 +195,17 @@ export default function EditAssetScreen() {
                 Burnt.alert({
                     title: t('general.notification_success'),
                     preset: "heart",
-                    message: t('mobile.edit_success'),
+                    message: t('mobile.create_success'),
                     duration: 2,
                 });
-                router.replace(`/(tabs)/(assets)/${id}`);
+                router.replace(`/(tabs)/(assets)/${response.payload.id}`);
             })
             .catch(error => {
                 console.error(error);
                 Burnt.alert({
                     title: t('general.error'),
                     preset: "error",
-                    message: t('mobile.edit_failed'),
+                    message: t('mobile.create_failed'),
                     duration: 4,
                 });
             })
@@ -411,14 +367,6 @@ export default function EditAssetScreen() {
         );
     };
 
-    if (loading || !asset) {
-        return (
-            <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color={colors.primary}/>
-            </View>
-        );
-    }
-
     return (
         <SafeAreaProvider>
             <ScrollView
@@ -426,7 +374,7 @@ export default function EditAssetScreen() {
                 contentContainerStyle={[styles.contentContainer, {paddingTop: insets.top}]}
                 keyboardShouldPersistTaps="handled"
             >
-                {/* Core Details — matches web UI top section */}
+                {/* Required / Core Info — matches web UI top section */}
                 <Section title={t('mobile.section_details')}>
                     <SelectorButton
                         placeholder={selectPlaceholder}
@@ -439,6 +387,7 @@ export default function EditAssetScreen() {
                         value={assetTag}
                         onChangeText={setAssetTag}
                         placeholder={t('general.asset_tag')}
+                        helperText={t('mobile.asset_tag_hint')}
                     />
                     <FormTextInput
                         label={t('general.serial')}
@@ -449,7 +398,7 @@ export default function EditAssetScreen() {
                     <SelectorButton
                         placeholder={selectPlaceholder}
                         label={t('general.model')}
-                        value={selectedModel?.name}
+                        value={selectedModel?.name ? decode(selectedModel.name) : undefined}
                         onPress={() => modelRef.current?.present()}
                     />
                     <SelectorButton
@@ -475,15 +424,6 @@ export default function EditAssetScreen() {
                         <Switch value={requestable} onValueChange={setRequestable} />
                     </FormRow>
                 </Section>
-
-                {/* Custom Fields */}
-                {Object.keys(customFieldValues).length > 0 && (
-                    <Section title={t('mobile.section_custom_fields')}>
-                        {Object.entries(customFieldValues).map(([fieldName, field]) =>
-                            renderCustomField(fieldName, field)
-                        )}
-                    </Section>
-                )}
 
                 {/* Optional Information — collapsible */}
                 <Section title={t('mobile.section_optional')} collapsible>
@@ -546,6 +486,20 @@ export default function EditAssetScreen() {
                     />
                 </Section>
 
+                {/* Custom Fields */}
+                {loadingFields && (
+                    <Section title={t('mobile.section_custom_fields')}>
+                        <ActivityIndicator size="small" color={colors.primary} />
+                    </Section>
+                )}
+                {!loadingFields && Object.keys(customFieldValues).length > 0 && (
+                    <Section title={t('mobile.section_custom_fields')}>
+                        {Object.entries(customFieldValues).map(([fieldName, field]) =>
+                            renderCustomField(fieldName, field)
+                        )}
+                    </Section>
+                )}
+
                 {/* Submit */}
                 <Pressable
                     onPress={handleSubmit}
@@ -559,7 +513,7 @@ export default function EditAssetScreen() {
                     {submitting ? (
                         <ActivityIndicator color="#fff" />
                     ) : (
-                        <Text style={styles.submitButtonText}>{t('mobile.save_changes')}</Text>
+                        <Text style={styles.submitButtonText}>{t('mobile.create_asset')}</Text>
                     )}
                 </Pressable>
             </ScrollView>
@@ -595,12 +549,6 @@ export default function EditAssetScreen() {
 }
 
 const createStyles = (colors) => StyleSheet.create({
-    loadingContainer: {
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-        backgroundColor: colors.background,
-    },
     container: {
         flex: 1,
         backgroundColor: colors.background,

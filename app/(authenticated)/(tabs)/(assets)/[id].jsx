@@ -36,6 +36,9 @@ export default function AssetScreen() {
         navigation.setOptions({
             headerRight: () => (
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                    <Pressable onPress={() => router.push('/(tabs)/(assets)/create')}>
+                        <Ionicons name="add" size={26} color={colors.text} />
+                    </Pressable>
                     <Pressable onPress={() => router.push(`/(tabs)/(assets)/edit/${id}`)}>
                         <Ionicons name="pencil" size={22} color={colors.text} />
                     </Pressable>

@@ -53,6 +53,13 @@ export default function AssetsLayout() {
                         headerBackTitle: '',
                     }}
                     />
+                <Stack.Screen
+                    name="create"
+                    options={{
+                        title: t('mobile.screen_create_asset'),
+                        headerBackTitle: '',
+                    }}
+                    />
             </Stack>
 
         </>

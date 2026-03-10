@@ -1,5 +1,5 @@
-import {Button, Text, View} from "react-native";
-import RNDateTimePicker, {DateTimePickerAndroid} from "@react-native-community/datetimepicker";
+import {Button, View} from "react-native";
+import {DateTimePickerAndroid} from "@react-native-community/datetimepicker";
 import React, {useState} from "react";
 
 function parseLocalDate(dateInput) {
@@ -15,7 +15,6 @@ function parseLocalDate(dateInput) {
 
 export default function Datepicker({onDateChange, initialDate}) {
     const [date, setDate] = useState(parseLocalDate(initialDate));
-
 
     const showMode = (currentMode) => {
         DateTimePickerAndroid.open({

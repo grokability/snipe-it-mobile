@@ -162,6 +162,16 @@
     "screen_audit_session": "Audit Session",
     "empty_state_title": "No Data Available",
     "empty_state_message": "Could not load data. Check your connection and try again.",
-    "retry": "Retry"
+    "retry": "Retry",
+    "screen_create_asset": "Create Asset",
+    "create_asset": "Create Asset",
+    "create_success": "Asset created successfully",
+    "create_failed": "Failed to create asset",
+    "status_required": "Status is required",
+    "model_required": "Model is required",
+    "asset_tag_hint": "Leave blank if auto-incrementing is enabled in your Snipe-IT settings",
+    "section_optional": "Optional Information",
+    "section_order": "Order Related Information",
+    "select_date": "Select Date (YYYY-MM-DD)"
   }
 }
