@@ -1,4 +1,4 @@
-import React, {useCallback, useContext, useState, useMemo, useRef} from 'react';
+import React, {useContext, useState, useEffect, useMemo, useRef} from 'react';
 import {
     ActivityIndicator,
     Pressable,
@@ -7,7 +7,7 @@ import {
     Text,
     View,
 } from 'react-native';
-import {router, useFocusEffect} from "expo-router";
+import {router} from "expo-router";
 import {makeRequest} from "@/helpers/axiosConfig";
 import {AuthContext} from "@/context/AuthProvider";
 import {SafeAreaProvider, useSafeAreaInsets} from "react-native-safe-area-context";
@@ -15,12 +15,14 @@ import {useColors} from "@/hooks/useThemeColors";
 import {Spacing, BorderRadius, Typography, FontWeight} from "@/constants/sizes";
 import {useTranslation} from "react-i18next";
 import * as Burnt from 'burnt';
+import {decode} from 'html-entities';
 import SelectStatusBottomSheet from "@/components/bottomSheets/SelectStatusBottomSheet";
 import SelectModelBottomSheet from "@/components/bottomSheets/SelectModelBottomSheet";
 import SelectCompanyBottomSheet from "@/components/bottomSheets/SelectCompanyBottomSheet";
 import SelectSupplierBottomSheet from "@/components/bottomSheets/SelectSupplierBottomSheet";
 import SelectLocationBottomSheet from "@/components/bottomSheets/SelectLocationBottomSheet";
 import Datepicker from "@/components/forms/Datepicker";
+import OptionalDatepicker from "@/components/forms/OptionalDatepicker";
 import Switch from "@/components/forms/Switch";
 import Checkbox from "@/components/forms/Checkbox";
 import {Section} from "@/components/ui/Section";
@@ -34,7 +36,7 @@ export default function CreateAssetScreen() {
     const styles = useMemo(() => createStyles(colors), [colors]);
     const { t } = useTranslation();
 
-    const [loading, setLoading] = useState(true);
+    const [loadingFields, setLoadingFields] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const { user } = useContext(AuthContext);
 
@@ -52,7 +54,6 @@ export default function CreateAssetScreen() {
     const [selectedModel, setSelectedModel] = useState(null);
     const [selectedCompany, setSelectedCompany] = useState(null);
     const [selectedSupplier, setSelectedSupplier] = useState(null);
-    const [selectedLocation, setSelectedLocation] = useState(null);
     const [selectedRtdLocation, setSelectedRtdLocation] = useState(null);
 
     // Dates
@@ -72,42 +73,51 @@ export default function CreateAssetScreen() {
     const modelRef = useRef(null);
     const companyRef = useRef(null);
     const supplierRef = useRef(null);
-    const locationRef = useRef(null);
     const rtdLocationRef = useRef(null);
 
-    const fetchFields = useCallback(() => {
-        setLoading(true);
-        return makeRequest({ url: '/fields', method: 'get' })
-            .then((fields) => {
-                if (fields?.rows) {
-                    const initialCustomFieldValues = {};
-                    fields.rows.forEach(fieldDefinition => {
-                        const key = fieldDefinition.name;
-                        initialCustomFieldValues[key] = {
+    useEffect(() => {
+        if (!selectedModel) {
+            setCustomFieldValues({});
+            return;
+        }
+
+        const fieldsetId = selectedModel.fieldset?.id;
+        if (!fieldsetId) {
+            setCustomFieldValues({});
+            return;
+        }
+
+        setLoadingFields(true);
+        console.log(`Fetching custom fields for fieldset ID: ${fieldsetId}`);
+        makeRequest({ url: `/fieldsets/${fieldsetId}/fields`, method: 'GET' })
+            .then((response) => {
+                const rows = response?.rows;
+                if (rows) {
+                    const mapped = {};
+                    rows.forEach(field => {
+                        const key = field.name;
+                        mapped[key] = {
                             value: '',
-                            field_format: fieldDefinition.format,
-                            element: fieldDefinition.element,
-                            field_values: fieldDefinition.field_values_array || null,
-                            db_column: fieldDefinition.db_column_name,
+                            field_format: field.format,
+                            element: field.element,
+                            field_values: field.field_values_array || null,
+                            db_column: field.db_column_name,
                             name: key,
                         };
                     });
-                    setCustomFieldValues(initialCustomFieldValues);
+                    setCustomFieldValues(mapped);
+                } else {
+                    setCustomFieldValues({});
                 }
             })
             .catch(error => {
                 console.error(error);
+                setCustomFieldValues({});
             })
             .finally(() => {
-                setLoading(false);
+                setLoadingFields(false);
             });
-    }, []);
-
-    useFocusEffect(
-        useCallback(() => {
-            fetchFields();
-        }, [fetchFields])
-    );
+    }, [selectedModel]);
 
     const formatDateForApi = (date) => {
         if (!date) return undefined;
@@ -152,7 +162,6 @@ export default function CreateAssetScreen() {
             model_id: selectedModel?.id,
             company_id: selectedCompany?.id || null,
             supplier_id: selectedSupplier?.id || null,
-            location_id: selectedLocation?.id || null,
             rtd_location_id: selectedRtdLocation?.id || null,
             purchase_date: formatDateForApi(purchaseDate),
             next_audit_date: formatDateForApi(nextAuditDate),
@@ -268,7 +277,7 @@ export default function CreateAssetScreen() {
         if (format === 'DATE' || format === 'date') {
             return (
                 <FormRow key={fieldName} label={label}>
-                    <Datepicker
+                    <OptionalDatepicker
                         initialDate={field.value ? new Date(field.value) : undefined}
                         onDateChange={(event, date) => {
                             if (date) {
@@ -276,6 +285,8 @@ export default function CreateAssetScreen() {
                                 const month = String(date.getMonth() + 1).padStart(2, '0');
                                 const day = String(date.getDate()).padStart(2, '0');
                                 updateCustomField(fieldName, `${year}-${month}-${day}`);
+                            } else {
+                                updateCustomField(fieldName, '');
                             }
                         }}
                     />
@@ -356,14 +367,6 @@ export default function CreateAssetScreen() {
         );
     };
 
-    if (loading) {
-        return (
-            <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color={colors.primary}/>
-            </View>
-        );
-    }
-
     return (
         <SafeAreaProvider>
             <ScrollView
@@ -371,13 +374,13 @@ export default function CreateAssetScreen() {
                 contentContainerStyle={[styles.contentContainer, {paddingTop: insets.top}]}
                 keyboardShouldPersistTaps="handled"
             >
-                {/* General Info */}
+                {/* Required / Core Info — matches web UI top section */}
                 <Section title={t('mobile.section_details')}>
-                    <FormTextInput
-                        label={t('general.asset_name')}
-                        value={name}
-                        onChangeText={setName}
-                        placeholder={t('general.asset_name')}
+                    <SelectorButton
+                        placeholder={selectPlaceholder}
+                        label={t('general.company')}
+                        value={selectedCompany?.name}
+                        onPress={() => companyRef.current?.present()}
                     />
                     <FormTextInput
                         label={t('general.asset_tag')}
@@ -392,34 +395,24 @@ export default function CreateAssetScreen() {
                         onChangeText={setSerial}
                         placeholder={t('general.serial')}
                     />
-
+                    <SelectorButton
+                        placeholder={selectPlaceholder}
+                        label={t('general.model')}
+                        value={selectedModel?.name ? decode(selectedModel.name) : undefined}
+                        onPress={() => modelRef.current?.present()}
+                    />
                     <SelectorButton
                         placeholder={selectPlaceholder}
                         label={t('general.status_label')}
                         value={selectedStatus?.name}
                         onPress={() => statusRef.current?.present()}
                     />
-                    <SelectorButton
-                        placeholder={selectPlaceholder}
-                        label={t('general.model')}
-                        value={selectedModel?.name}
-                        onPress={() => modelRef.current?.present()}
-                    />
-                    <SelectorButton
-                        placeholder={selectPlaceholder}
-                        label={t('general.company')}
-                        value={selectedCompany?.name}
-                        onPress={() => companyRef.current?.present()}
-                    />
-                </Section>
-
-                {/* Location */}
-                <Section title={t('mobile.section_location')}>
-                    <SelectorButton
-                        placeholder={selectPlaceholder}
-                        label={t('general.location')}
-                        value={selectedLocation?.name}
-                        onPress={() => locationRef.current?.present()}
+                    <FormTextInput
+                        label={t('general.notes')}
+                        value={notes}
+                        onChangeText={setNotes}
+                        placeholder={t('general.notes')}
+                        multiline
                     />
                     <SelectorButton
                         placeholder={selectPlaceholder}
@@ -427,34 +420,18 @@ export default function CreateAssetScreen() {
                         value={selectedRtdLocation?.name}
                         onPress={() => rtdLocationRef.current?.present()}
                     />
+                    <FormRow label={t('general.requestable')} horizontal>
+                        <Switch value={requestable} onValueChange={setRequestable} />
+                    </FormRow>
                 </Section>
 
-                {/* Purchase Info */}
-                <Section title={t('mobile.section_purchase')}>
-                    <FormRow label={t('general.purchase_date')}>
-                        <Datepicker
-                            initialDate={purchaseDate}
-                            onDateChange={(event, date) => date && setPurchaseDate(date)}
-                        />
-                    </FormRow>
+                {/* Optional Information — collapsible */}
+                <Section title={t('mobile.section_optional')} collapsible>
                     <FormTextInput
-                        label={t('general.purchase_cost')}
-                        value={purchaseCost}
-                        onChangeText={setPurchaseCost}
-                        placeholder="0.00"
-                        keyboardType="decimal-pad"
-                    />
-                    <FormTextInput
-                        label={t('general.order_number')}
-                        value={orderNumber}
-                        onChangeText={setOrderNumber}
-                        placeholder={t('general.order_number')}
-                    />
-                    <SelectorButton
-                        placeholder={selectPlaceholder}
-                        label={t('general.supplier')}
-                        value={selectedSupplier?.name}
-                        onPress={() => supplierRef.current?.present()}
+                        label={t('general.asset_name')}
+                        value={name}
+                        onChangeText={setName}
+                        placeholder={t('general.asset_name')}
                     />
                     <FormTextInput
                         label={t('general.warranty_months')}
@@ -463,52 +440,65 @@ export default function CreateAssetScreen() {
                         placeholder="0"
                         keyboardType="number-pad"
                     />
-                </Section>
-
-                {/* Dates */}
-                <Section title={t('mobile.section_dates')}>
-                    <FormRow label={t('general.next_audit_date')}>
-                        <Datepicker
-                            initialDate={nextAuditDate}
-                            onDateChange={(event, date) => date && setNextAuditDate(date)}
-                        />
-                    </FormRow>
                     <FormRow label={t('general.expected_checkin')}>
-                        <Datepicker
+                        <OptionalDatepicker
                             initialDate={expectedCheckin}
-                            onDateChange={(event, date) => date && setExpectedCheckin(date)}
+                            onDateChange={(event, date) => setExpectedCheckin(date)}
                         />
                     </FormRow>
-                </Section>
-
-                {/* Toggles */}
-                <Section title={t('mobile.section_details')}>
-                    <FormRow label={t('general.requestable')} horizontal>
-                        <Switch value={requestable} onValueChange={setRequestable} />
+                    <FormRow label={t('general.next_audit_date')}>
+                        <OptionalDatepicker
+                            initialDate={nextAuditDate}
+                            onDateChange={(event, date) => setNextAuditDate(date)}
+                        />
                     </FormRow>
                     <FormRow label={t('general.byod')} horizontal>
                         <Switch value={byod} onValueChange={setByod} />
                     </FormRow>
                 </Section>
 
+                {/* Order Related Information — collapsible */}
+                <Section title={t('mobile.section_order')} collapsible>
+                    <FormTextInput
+                        label={t('general.order_number')}
+                        value={orderNumber}
+                        onChangeText={setOrderNumber}
+                        placeholder={t('general.order_number')}
+                    />
+                    <FormRow label={t('general.purchase_date')}>
+                        <OptionalDatepicker
+                            initialDate={purchaseDate}
+                            onDateChange={(event, date) => setPurchaseDate(date)}
+                        />
+                    </FormRow>
+                    <SelectorButton
+                        placeholder={selectPlaceholder}
+                        label={t('general.supplier')}
+                        value={selectedSupplier?.name}
+                        onPress={() => supplierRef.current?.present()}
+                    />
+                    <FormTextInput
+                        label={t('general.purchase_cost')}
+                        value={purchaseCost}
+                        onChangeText={setPurchaseCost}
+                        placeholder="0.00"
+                        keyboardType="decimal-pad"
+                    />
+                </Section>
+
                 {/* Custom Fields */}
-                {Object.keys(customFieldValues).length > 0 && (
+                {loadingFields && (
+                    <Section title={t('mobile.section_custom_fields')}>
+                        <ActivityIndicator size="small" color={colors.primary} />
+                    </Section>
+                )}
+                {!loadingFields && Object.keys(customFieldValues).length > 0 && (
                     <Section title={t('mobile.section_custom_fields')}>
                         {Object.entries(customFieldValues).map(([fieldName, field]) =>
                             renderCustomField(fieldName, field)
                         )}
                     </Section>
                 )}
-
-                {/* Notes */}
-                <Section title={t('mobile.section_notes')}>
-                    <FormTextInput
-                        value={notes}
-                        onChangeText={setNotes}
-                        placeholder={t('general.notes')}
-                        multiline
-                    />
-                </Section>
 
                 {/* Submit */}
                 <Pressable
@@ -550,11 +540,6 @@ export default function CreateAssetScreen() {
                 setSelectedSupplier={setSelectedSupplier}
             />
             <SelectLocationBottomSheet
-                title={t('general.select_location')}
-                ref={locationRef}
-                setSelectedLocation={setSelectedLocation}
-            />
-            <SelectLocationBottomSheet
                 title={t('general.rtd_location')}
                 ref={rtdLocationRef}
                 setSelectedLocation={setSelectedRtdLocation}
@@ -564,12 +549,6 @@ export default function CreateAssetScreen() {
 }
 
 const createStyles = (colors) => StyleSheet.create({
-    loadingContainer: {
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-        backgroundColor: colors.background,
-    },
     container: {
         flex: 1,
         backgroundColor: colors.background,

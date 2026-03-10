@@ -22,6 +22,7 @@ import SelectCompanyBottomSheet from "@/components/bottomSheets/SelectCompanyBot
 import SelectSupplierBottomSheet from "@/components/bottomSheets/SelectSupplierBottomSheet";
 import SelectLocationBottomSheet from "@/components/bottomSheets/SelectLocationBottomSheet";
 import Datepicker from "@/components/forms/Datepicker";
+import OptionalDatepicker from "@/components/forms/OptionalDatepicker";
 import Switch from "@/components/forms/Switch";
 import Checkbox from "@/components/forms/Checkbox";
 import {Section} from "@/components/ui/Section";
@@ -65,7 +66,6 @@ export default function EditAssetScreen() {
     const [selectedModel, setSelectedModel] = useState(null);
     const [selectedCompany, setSelectedCompany] = useState(null);
     const [selectedSupplier, setSelectedSupplier] = useState(null);
-    const [selectedLocation, setSelectedLocation] = useState(null);
     const [selectedRtdLocation, setSelectedRtdLocation] = useState(null);
 
     // Dates
@@ -85,7 +85,6 @@ export default function EditAssetScreen() {
     const modelRef = useRef(null);
     const companyRef = useRef(null);
     const supplierRef = useRef(null);
-    const locationRef = useRef(null);
     const rtdLocationRef = useRef(null);
 
     const getAsset = useCallback(() => {
@@ -132,9 +131,6 @@ export default function EditAssetScreen() {
         }
         if (asset.supplier) {
             setSelectedSupplier({ id: asset.supplier.id, name: decode(asset.supplier.name) });
-        }
-        if (asset.location) {
-            setSelectedLocation({ id: asset.location.id, name: decode(asset.location.name) });
         }
         if (asset.rtd_location) {
             setSelectedRtdLocation({ id: asset.rtd_location.id, name: decode(asset.rtd_location.name) });
@@ -210,7 +206,6 @@ export default function EditAssetScreen() {
             model_id: selectedModel?.id,
             company_id: selectedCompany?.id || null,
             supplier_id: selectedSupplier?.id || null,
-            location_id: selectedLocation?.id || null,
             rtd_location_id: selectedRtdLocation?.id || null,
             purchase_date: formatDateForApi(purchaseDate),
             next_audit_date: formatDateForApi(nextAuditDate),
@@ -326,7 +321,7 @@ export default function EditAssetScreen() {
         if (format === 'DATE' || format === 'date') {
             return (
                 <FormRow key={fieldName} label={label}>
-                    <Datepicker
+                    <OptionalDatepicker
                         initialDate={field.value ? new Date(field.value) : undefined}
                         onDateChange={(event, date) => {
                             if (date) {
@@ -334,6 +329,8 @@ export default function EditAssetScreen() {
                                 const month = String(date.getMonth() + 1).padStart(2, '0');
                                 const day = String(date.getDate()).padStart(2, '0');
                                 updateCustomField(fieldName, `${year}-${month}-${day}`);
+                            } else {
+                                updateCustomField(fieldName, '');
                             }
                         }}
                     />
@@ -429,13 +426,13 @@ export default function EditAssetScreen() {
                 contentContainerStyle={[styles.contentContainer, {paddingTop: insets.top}]}
                 keyboardShouldPersistTaps="handled"
             >
-                {/* General Info */}
+                {/* Core Details — matches web UI top section */}
                 <Section title={t('mobile.section_details')}>
-                    <FormTextInput
-                        label={t('general.asset_name')}
-                        value={name}
-                        onChangeText={setName}
-                        placeholder={t('general.asset_name')}
+                    <SelectorButton
+                        placeholder={selectPlaceholder}
+                        label={t('general.company')}
+                        value={selectedCompany?.name}
+                        onPress={() => companyRef.current?.present()}
                     />
                     <FormTextInput
                         label={t('general.asset_tag')}
@@ -449,13 +446,6 @@ export default function EditAssetScreen() {
                         onChangeText={setSerial}
                         placeholder={t('general.serial')}
                     />
-
-                    <SelectorButton
-                        placeholder={selectPlaceholder}
-                        label={t('general.status_label')}
-                        value={selectedStatus?.name}
-                        onPress={() => statusRef.current?.present()}
-                    />
                     <SelectorButton
                         placeholder={selectPlaceholder}
                         label={t('general.model')}
@@ -464,19 +454,16 @@ export default function EditAssetScreen() {
                     />
                     <SelectorButton
                         placeholder={selectPlaceholder}
-                        label={t('general.company')}
-                        value={selectedCompany?.name}
-                        onPress={() => companyRef.current?.present()}
+                        label={t('general.status_label')}
+                        value={selectedStatus?.name}
+                        onPress={() => statusRef.current?.present()}
                     />
-                </Section>
-
-                {/* Location */}
-                <Section title={t('mobile.section_location')}>
-                    <SelectorButton
-                        placeholder={selectPlaceholder}
-                        label={t('general.location')}
-                        value={selectedLocation?.name}
-                        onPress={() => locationRef.current?.present()}
+                    <FormTextInput
+                        label={t('general.notes')}
+                        value={notes}
+                        onChangeText={setNotes}
+                        placeholder={t('general.notes')}
+                        multiline
                     />
                     <SelectorButton
                         placeholder={selectPlaceholder}
@@ -484,67 +471,8 @@ export default function EditAssetScreen() {
                         value={selectedRtdLocation?.name}
                         onPress={() => rtdLocationRef.current?.present()}
                     />
-                </Section>
-
-                {/* Purchase Info */}
-                <Section title={t('mobile.section_purchase')}>
-                    <FormRow label={t('general.purchase_date')}>
-                        <Datepicker
-                            initialDate={purchaseDate}
-                            onDateChange={(event, date) => date && setPurchaseDate(date)}
-                        />
-                    </FormRow>
-                    <FormTextInput
-                        label={t('general.purchase_cost')}
-                        value={purchaseCost}
-                        onChangeText={setPurchaseCost}
-                        placeholder="0.00"
-                        keyboardType="decimal-pad"
-                    />
-                    <FormTextInput
-                        label={t('general.order_number')}
-                        value={orderNumber}
-                        onChangeText={setOrderNumber}
-                        placeholder={t('general.order_number')}
-                    />
-                    <SelectorButton
-                        placeholder={selectPlaceholder}
-                        label={t('general.supplier')}
-                        value={selectedSupplier?.name}
-                        onPress={() => supplierRef.current?.present()}
-                    />
-                    <FormTextInput
-                        label={t('general.warranty_months')}
-                        value={warrantyMonths}
-                        onChangeText={setWarrantyMonths}
-                        placeholder="0"
-                        keyboardType="number-pad"
-                    />
-                </Section>
-
-                {/* Dates */}
-                <Section title={t('mobile.section_dates')}>
-                    <FormRow label={t('general.next_audit_date')}>
-                        <Datepicker
-                            initialDate={nextAuditDate}
-                            onDateChange={(event, date) => date && setNextAuditDate(date)}
-                        />
-                    </FormRow>
-                    <FormRow label={t('general.expected_checkin')}>
-                        <Datepicker
-                            initialDate={expectedCheckin}
-                            onDateChange={(event, date) => date && setExpectedCheckin(date)}
-                        />
-                    </FormRow>
-                </Section>
-
-                {/* Toggles */}
-                <Section title={t('mobile.section_details')}>
                     <FormRow label={t('general.requestable')} horizontal>
                         <Switch value={requestable} onValueChange={setRequestable} />
-                    </FormRow>
-                    <FormRow label={t('general.byod')} horizontal>
-                        <Switch value={byod} onValueChange={setByod} />
                     </FormRow>
                 </Section>
 
@@ -557,13 +485,64 @@ export default function EditAssetScreen() {
                     </Section>
                 )}
 
-                {/* Notes */}
-                <Section title={t('mobile.section_notes')}>
+                {/* Optional Information — collapsible */}
+                <Section title={t('mobile.section_optional')} collapsible>
                     <FormTextInput
-                        value={notes}
-                        onChangeText={setNotes}
-                        placeholder={t('general.notes')}
-                        multiline
+                        label={t('general.asset_name')}
+                        value={name}
+                        onChangeText={setName}
+                        placeholder={t('general.asset_name')}
+                    />
+                    <FormTextInput
+                        label={t('general.warranty_months')}
+                        value={warrantyMonths}
+                        onChangeText={setWarrantyMonths}
+                        placeholder="0"
+                        keyboardType="number-pad"
+                    />
+                    <FormRow label={t('general.expected_checkin')}>
+                        <OptionalDatepicker
+                            initialDate={expectedCheckin}
+                            onDateChange={(event, date) => setExpectedCheckin(date)}
+                        />
+                    </FormRow>
+                    <FormRow label={t('general.next_audit_date')}>
+                        <OptionalDatepicker
+                            initialDate={nextAuditDate}
+                            onDateChange={(event, date) => setNextAuditDate(date)}
+                        />
+                    </FormRow>
+                    <FormRow label={t('general.byod')} horizontal>
+                        <Switch value={byod} onValueChange={setByod} />
+                    </FormRow>
+                </Section>
+
+                {/* Order Related Information — collapsible */}
+                <Section title={t('mobile.section_order')} collapsible>
+                    <FormTextInput
+                        label={t('general.order_number')}
+                        value={orderNumber}
+                        onChangeText={setOrderNumber}
+                        placeholder={t('general.order_number')}
+                    />
+                    <FormRow label={t('general.purchase_date')}>
+                        <OptionalDatepicker
+                            initialDate={purchaseDate}
+                            onDateChange={(event, date) => setPurchaseDate(date)}
+                        />
+                    </FormRow>
+                    <SelectorButton
+                        placeholder={selectPlaceholder}
+                        label={t('general.supplier')}
+                        value={selectedSupplier?.name}
+                        onPress={() => supplierRef.current?.present()}
+                    />
+                    <FormTextInput
+                        label={t('general.purchase_cost')}
+                        value={purchaseCost}
+                        onChangeText={setPurchaseCost}
+                        placeholder="0.00"
+                        keyboardType="decimal-pad"
                     />
                 </Section>
 
@@ -605,11 +584,6 @@ export default function EditAssetScreen() {
                 title={t('mobile.select_supplier')}
                 ref={supplierRef}
                 setSelectedSupplier={setSelectedSupplier}
-            />
-            <SelectLocationBottomSheet
-                title={t('general.select_location')}
-                ref={locationRef}
-                setSelectedLocation={setSelectedLocation}
             />
             <SelectLocationBottomSheet
                 title={t('general.rtd_location')}
