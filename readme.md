@@ -8,7 +8,6 @@ A React Native mobile app for [Snipe-IT](https://snipeitapp.com), built with Exp
 - [Yarn](https://yarnpkg.com)
 - [Xcode](https://developer.apple.com/xcode/) (iOS)
 - [Android Studio](https://developer.android.com/studio) (Android)
-- Expo account — ask Spencer for an invite
 
 ## Setup
 
