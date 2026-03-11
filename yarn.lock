@@ -2881,6 +2881,11 @@ expo-device@~55.0.9:
   dependencies:
     ua-parser-js "^0.7.33"
 
+expo-document-picker@~55.0.8:
+  version "55.0.8"
+  resolved "https://registry.yarnpkg.com/expo-document-picker/-/expo-document-picker-55.0.8.tgz#e82da1d1dfde109a66f47696cb9df3d798714dcb"
+  integrity sha512-p6rYEQ1/h3UqGl3+hzTjv51fsNxoOVfMGSYjHX2/e3cvcy02MWWE+bpj4QEGo9MBwU4RyyIbuv/SCxGtAtG+eA==
+
 expo-file-system@~55.0.10:
   version "55.0.10"
   resolved "https://registry.npmjs.org/expo-file-system/-/expo-file-system-55.0.10.tgz"
@@ -2902,6 +2907,18 @@ expo-haptics@~55.0.8:
   version "55.0.8"
   resolved "https://registry.yarnpkg.com/expo-haptics/-/expo-haptics-55.0.8.tgz#9ccf3527f4622d5e267a7820da43075a257777b1"
   integrity sha512-yVR6EsQwl1WuhFITc0PpfI/7dsBdjK/F2YA8xB80UUW9iTa+Tqz21FpH4n/vtbargpzFxkhl5WNYMa419+QWFQ==
+
+expo-image-loader@~55.0.0:
+  version "55.0.0"
+  resolved "https://registry.yarnpkg.com/expo-image-loader/-/expo-image-loader-55.0.0.tgz#56ae6631a0f43191432296a1f7f1e9737e653cfe"
+  integrity sha512-NOjp56wDrfuA5aiNAybBIjqIn1IxKeGJ8CECWZncQ/GzjZfyTYAHTCyeApYkdKkMBLHINzI4BbTGSlbCa0fXXQ==
+
+expo-image-picker@~55.0.11:
+  version "55.0.11"
+  resolved "https://registry.yarnpkg.com/expo-image-picker/-/expo-image-picker-55.0.11.tgz#817ab262a18dc5b52fced3a09af65c8349ddeb42"
+  integrity sha512-geJklIGdAR2N16iSk86oyJe7QgX5RpqDX1FjKpxO53fF4D0eBmg5Irm6gRwT0b+DHP1kJevZgzzbVJsRAV362g==
+  dependencies:
+    expo-image-loader "~55.0.0"
 
 expo-image@^55.0.5:
   version "55.0.5"

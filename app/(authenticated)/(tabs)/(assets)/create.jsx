@@ -29,6 +29,7 @@ import {Section} from "@/components/ui/Section";
 import {FormRow} from "@/components/forms/FormRow";
 import {FormTextInput} from "@/components/forms/FormTextInput";
 import {SelectorButton} from "@/components/forms/SelectorButton";
+import ImagePicker from "@/components/forms/ImagePicker";
 
 export default function CreateAssetScreen() {
     const colors = useColors();
@@ -65,6 +66,9 @@ export default function CreateAssetScreen() {
     const [requestable, setRequestable] = useState(false);
     const [byod, setByod] = useState(false);
 
+    // Image
+    const [image, setImage] = useState(null);
+
     // Custom fields
     const [customFieldValues, setCustomFieldValues] = useState({});
 
@@ -89,7 +93,7 @@ export default function CreateAssetScreen() {
 
         setLoadingFields(true);
         console.log(`Fetching custom fields for fieldset ID: ${fieldsetId}`);
-        makeRequest({ url: `/fieldsets/${fieldsetId}/fields`, method: 'GET' })
+        makeRequest({ url: `/fieldsets/${fieldsetId}/fields`, method: 'POST' })
             .then((response) => {
                 const rows = response?.rows;
                 if (rows) {
@@ -150,7 +154,7 @@ export default function CreateAssetScreen() {
 
         setSubmitting(true);
 
-        const data = {
+        const fields = {
             name: name || null,
             asset_tag: assetTag || null,
             serial: serial || null,
@@ -173,14 +177,18 @@ export default function CreateAssetScreen() {
         // Custom fields
         Object.values(customFieldValues).forEach((customField) => {
             if (customField.db_column) {
-                data[customField.db_column] = customField.value;
+                fields[customField.db_column] = customField.value;
             }
         });
+
+        if (image?.dataUri) {
+            fields.image = image.dataUri;
+        }
 
         makeRequest({
             url: '/hardware',
             method: 'POST',
-            data,
+            data: fields,
         })
             .then(response => {
                 if (response.status === 'error') {
@@ -371,9 +379,18 @@ export default function CreateAssetScreen() {
         <SafeAreaProvider>
             <ScrollView
                 style={styles.container}
-                contentContainerStyle={[styles.contentContainer, {paddingTop: insets.top}]}
+                contentContainerStyle={styles.contentContainer}
                 keyboardShouldPersistTaps="handled"
             >
+                {/* Image Upload */}
+                <Section title={t('general.image')}>
+                    <ImagePicker
+                        image={image}
+                        onImageSelected={setImage}
+                        onImageRemoved={() => setImage(null)}
+                    />
+                </Section>
+
                 {/* Required / Core Info — matches web UI top section */}
                 <Section title={t('mobile.section_details')}>
                     <SelectorButton

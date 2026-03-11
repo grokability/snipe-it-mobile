@@ -35,7 +35,7 @@ export default function AssetScreen() {
     useLayoutEffect(() => {
         navigation.setOptions({
             headerRight: () => (
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginRight: 8 }}>
                     <Pressable onPress={() => router.push('/(tabs)/(assets)/create')}>
                         <Ionicons name="add" size={26} color={colors.text} />
                     </Pressable>
@@ -119,7 +119,7 @@ export default function AssetScreen() {
         <SafeAreaProvider>
             <ScrollView
                 style={styles.container}
-                contentContainerStyle={[styles.contentContainer, {paddingTop: insets.top}]}
+                contentContainerStyle={[styles.contentContainer, {paddingTop: insets.top + 44}]}
                 refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
             >
                 {/* Image */}

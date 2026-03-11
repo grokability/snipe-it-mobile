@@ -20,6 +20,13 @@
           "recordAudioAndroid": true
         }
       ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow $(PRODUCT_NAME) to access your photos to upload images for assets",
+          "cameraPermission": "Allow $(PRODUCT_NAME) to take photos for asset images"
+        }
+      ],
       "expo-web-browser",
       "expo-font"
     ],
