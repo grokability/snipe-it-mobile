@@ -31,9 +31,11 @@ The `--device` flag will sometimes detect a connected physical device, but it's 
 ### Physical Device (iOS)
 
 1. Run `npx expo run:ios` to build the native project
-2. Open the `ios/` folder in Xcode
+2. Navigate to the `ios/` folder in Finder and open the `.xcworkspace` file in Xcode
 3. Select your device in the header toolbar
 4. Press `cmd+R` (or the play button)
+5. Run `npx expo start` to start the dev server and open the app on your device
+6. If the app does not automatically find the development server then you can manually connect using your machine's IP address and the port shown in the terminal for "Web" (usually 8081)
 
 Once the dev server is running you can leave it up — a new native build is only needed when a native module is added.
 
