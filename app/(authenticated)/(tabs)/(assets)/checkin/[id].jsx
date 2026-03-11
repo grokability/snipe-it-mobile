@@ -75,7 +75,7 @@ export default function CheckinScreen() {
         <SafeAreaProvider>
             <ScrollView
                 style={styles.container}
-                contentContainerStyle={[styles.contentContainer, {paddingTop: insets.top}]}
+                contentContainerStyle={styles.contentContainer}
                 keyboardShouldPersistTaps="handled"
             >
                 {/* Asset info */}

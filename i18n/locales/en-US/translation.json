@@ -66,7 +66,8 @@
     "select_manufacturer": "Select Manufacturer",
     "audit": "Audit",
     "audit_due": "Audit Due",
-    "audit_overdue": "Audit Overdue"
+    "audit_overdue": "Audit Overdue",
+    "image": "Image"
   },
   "mobile": {
     "na": "N/A",
@@ -172,6 +173,9 @@
     "asset_tag_hint": "Leave blank if auto-incrementing is enabled in your Snipe-IT settings",
     "section_optional": "Optional Information",
     "section_order": "Order Related Information",
-    "select_date": "Select Date (YYYY-MM-DD)"
+    "select_date": "Select Date (YYYY-MM-DD)",
+    "take_photo": "Take Photo",
+    "choose_from_library": "Photo Library",
+    "choose_from_files": "Files"
   }
 }

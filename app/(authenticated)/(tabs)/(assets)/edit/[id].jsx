@@ -29,6 +29,7 @@ import {Section} from "@/components/ui/Section";
 import {FormRow} from "@/components/forms/FormRow";
 import {FormTextInput} from "@/components/forms/FormTextInput";
 import {SelectorButton} from "@/components/forms/SelectorButton";
+import ImagePicker from "@/components/forms/ImagePicker";
 
 // Parse "YYYY-MM-DD" as local date to avoid UTC timezone shift
 // (dates without times were shifting before this)
@@ -76,6 +77,9 @@ export default function EditAssetScreen() {
     // Booleans
     const [requestable, setRequestable] = useState(false);
     const [byod, setByod] = useState(false);
+
+    // Image
+    const [image, setImage] = useState(null);
 
     // Custom fields
     const [customFieldValues, setCustomFieldValues] = useState({});
@@ -213,6 +217,10 @@ export default function EditAssetScreen() {
             requestable: requestable,
             byod: byod ? 1 : 0,
         };
+
+        if (image?.dataUri) {
+            data.image = image.dataUri;
+        }
 
         // Custom fields
         Object.values(customFieldValues).forEach((customField) => {
@@ -423,9 +431,18 @@ export default function EditAssetScreen() {
         <SafeAreaProvider>
             <ScrollView
                 style={styles.container}
-                contentContainerStyle={[styles.contentContainer, {paddingTop: insets.top}]}
+                contentContainerStyle={[styles.contentContainer, {paddingTop: insets.top + 44}]}
                 keyboardShouldPersistTaps="handled"
             >
+                {/* Image Upload */}
+                <Section title={t('general.image')}>
+                    <ImagePicker
+                        image={image}
+                        onImageSelected={setImage}
+                        onImageRemoved={() => setImage(null)}
+                    />
+                </Section>
+
                 {/* Core Details — matches web UI top section */}
                 <Section title={t('mobile.section_details')}>
                     <SelectorButton

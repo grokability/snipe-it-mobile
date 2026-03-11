@@ -25,7 +25,11 @@ export default function AuthenticatedLayout() {
                         headerTitle: '',
                         headerStyle: styles.header,
                         headerTintColor: colors.text,
-                        headerRight: () => <TopNavMenu />,
+                        headerRight: () => (
+                            <View style={{marginRight: 8}}>
+                                <TopNavMenu />
+                            </View>
+                        ),
                     };
                 }}
             >

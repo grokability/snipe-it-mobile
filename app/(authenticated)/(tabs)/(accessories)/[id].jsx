@@ -34,7 +34,7 @@ export default function AccessoryScreen() {
     useLayoutEffect(() => {
         navigation.setOptions({
             headerRight: () => (
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginRight: 8 }}>
                     <Pressable onPress={() => router.push(`/(tabs)/(accessories)/edit/${id}`)}>
                         <Ionicons name="pencil" size={22} color={colors.text} />
                     </Pressable>
