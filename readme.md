@@ -31,7 +31,7 @@ The `--device` flag will sometimes detect a connected physical device, but it's 
 ### Physical Device (iOS)
 
 1. Run `npx expo run:ios` to build the native project
-2. Open the `ios/` folder in Xcode
+2. Navigate to the `ios/` folder in Finder and open the `.xcworkspace` file in Xcode
 3. Select your device in the header toolbar
 4. Press `cmd+R` (or the play button)
 
