@@ -33,7 +33,10 @@
       "bundleIdentifier": "com.grokability.snipeitmobile",
       "associatedDomains": [
         "webcredentials:*.snipe-it.io"
-      ]
+      ],
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -48,7 +51,10 @@
       "intentFilters": [
         {
           "action": "VIEW",
-          "category": ["BROWSABLE", "DEFAULT"],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ],
           "data": {
             "scheme": "com.grokability.snipeitmobile",
             "host": "home"
