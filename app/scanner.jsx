@@ -9,7 +9,7 @@ import {
     Text,
     TouchableOpacity
 } from "react-native";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import * as Haptics from 'expo-haptics';
 import BarcodeOverlay from "@/components/camera/BarcodeOverlay";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -85,27 +85,21 @@ export default function Home() {
         };
     }, [scanningPaused]);
 
-    const handleBarcodeScan = (barcode) => {
-        if (!scanningPaused && barcode) {
-            // Add to barcodes if not already included
-            setBarcodes(prevBarcodes => {
-                // Check if barcode already exists
-                const exists = prevBarcodes.some(existing => existing.data === barcode.data);
-                
-                if (!exists) {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    
-                    // Limit the number of barcodes shown
-                    const newBarcodes = [...prevBarcodes, barcode];
-                    if (newBarcodes.length >= maxBarcodesShown) {
-                        setScanningPaused(true);
-                    }
-                    return newBarcodes.slice(0, maxBarcodesShown);
+    const handleBarcodeScan = useCallback((barcode) => {
+        if (scanningPaused || !barcode) return;
+        setBarcodes(prevBarcodes => {
+            const exists = prevBarcodes.some(existing => existing.data === barcode.data);
+            if (!exists) {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                const newBarcodes = [...prevBarcodes, barcode];
+                if (newBarcodes.length >= maxBarcodesShown) {
+                    setScanningPaused(true);
                 }
-                return prevBarcodes;
-            });
-        }
-    };
+                return newBarcodes.slice(0, maxBarcodesShown);
+            }
+            return prevBarcodes;
+        });
+    }, [scanningPaused]);
 
     const handleBarcodeSelect = (data) => {
         if (data) {
@@ -164,7 +158,7 @@ export default function Home() {
                 }}
                 style={styles.camera}
                 facing="back"
-                onBarcodeScanned={scanningPaused ? undefined : handleBarcodeScan}
+                onBarcodeScanned={handleBarcodeScan}
                 onCameraReady={() => {}}
             />
 
