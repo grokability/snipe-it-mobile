@@ -20,6 +20,7 @@ export default function MoreLayout() {
                     title: t('mobile.more'),
                     headerTransparent: false,
                     headerShadowVisible: false,
+                    headerStyle: { backgroundColor: colors.background },
                 }}
             />
             <Stack.Screen

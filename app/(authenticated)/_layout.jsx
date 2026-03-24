@@ -2,7 +2,6 @@ import { StyleSheet, View } from "react-native";
 import {Stack} from "expo-router";
 import {useColors} from "@/hooks/useThemeColors";
 import {Spacing, BorderRadius, Typography, FontWeight} from "@/constants/sizes";
-import TopNavMenu from "@/components/overlays/TopNavMenu";
 import { getFocusedRouteNameFromRoute } from '@react-navigation/native';
 import {useMemo} from "react";
 import {useTranslation} from "react-i18next";
@@ -13,8 +12,7 @@ export default function AuthenticatedLayout() {
     const { t } = useTranslation();
 
     return (
-        <View style={{ flex: 1 }}>
-            <Stack
+        <Stack
                 screenOptions={({ navigation, route }) => {
                     const routeName = getFocusedRouteNameFromRoute(route);
                     const hasOwnHeader = routeName === '(assets)' || routeName === '(accessories)' || routeName === 'audit' || routeName === '(more)';
@@ -25,11 +23,6 @@ export default function AuthenticatedLayout() {
                         headerTitle: '',
                         headerStyle: styles.header,
                         headerTintColor: colors.text,
-                        headerRight: () => (
-                            <View style={{marginRight: 8}}>
-                                <TopNavMenu />
-                            </View>
-                        ),
                     };
                 }}
             >
@@ -38,20 +31,6 @@ export default function AuthenticatedLayout() {
                     options={{
                         title: t('general.dashboard'),
                         drawerLabel: t('general.dashboard'),
-                    }}
-                />
-                <Stack.Screen
-                    name="licenses"
-                    options={{
-                        drawerLabel: t('general.licenses'),
-                        title: t('general.licenses'),
-                    }}
-                />
-                <Stack.Screen
-                    name="settings"
-                    options={{
-                        drawerLabel: t('general.settings'),
-                        title: t('general.settings'),
                     }}
                 />
                 <Stack.Screen
@@ -66,11 +45,7 @@ export default function AuthenticatedLayout() {
                         drawerItemStyle: { display: 'none' },
                     }}
                 />
-            </Stack>
-
-            <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
-            </View>
-        </View>
+        </Stack>
     );
 }
 
