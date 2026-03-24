@@ -176,6 +176,7 @@
     "select_date": "Select Date (YYYY-MM-DD)",
     "take_photo": "Take Photo",
     "choose_from_library": "Photo Library",
-    "choose_from_files": "Files"
+    "choose_from_files": "Files",
+    "more": "More"
   }
 }
