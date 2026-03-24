@@ -18,6 +18,8 @@ export default function MoreLayout() {
                 name="index"
                 options={{
                     title: t('mobile.more'),
+                    headerTransparent: false,
+                    headerShadowVisible: false,
                 }}
             />
             <Stack.Screen
