@@ -1,7 +1,6 @@
 import {Stack, useRouter} from 'expo-router';
-import {TouchableOpacity, View} from 'react-native';
+import {TouchableOpacity} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
-import TopNavMenu from "@/components/overlays/TopNavMenu";
 import {useColors} from "@/hooks/useThemeColors";
 import {useTranslation} from "react-i18next";
 
@@ -17,11 +16,6 @@ export default function AuditLayout() {
             headerShadowVisible: false,
             headerTitle: '',
             headerTintColor: colors.text,
-            headerRight: () => (
-                <View style={{marginRight: 8}}>
-                    <TopNavMenu />
-                </View>
-            ),
         }}>
             <Stack.Screen
                 name="index"

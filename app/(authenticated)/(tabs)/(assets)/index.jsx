@@ -10,7 +10,6 @@ import {decode} from "html-entities";
 import {FlashList} from "@shopify/flash-list";
 import {useTranslation} from "react-i18next";
 import {Ionicons} from '@expo/vector-icons';
-import TopNavMenu from "@/components/overlays/TopNavMenu";
 import EmptyState from "@/components/ui/EmptyState";
 
 export default function AssetsScreen() {
@@ -23,12 +22,9 @@ export default function AssetsScreen() {
     useLayoutEffect(() => {
         navigation.setOptions({
             headerRight: () => (
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                    <Pressable onPress={() => router.push('/(tabs)/(assets)/create')}>
-                        <Ionicons name="add" size={26} color={colors.text} />
-                    </Pressable>
-                    <TopNavMenu />
-                </View>
+                <Pressable onPress={() => router.push('/(tabs)/(assets)/create')}>
+                    <Ionicons name="add" size={26} color={colors.text} />
+                </Pressable>
             ),
         });
     }, [navigation, colors.text]);

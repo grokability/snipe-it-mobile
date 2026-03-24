@@ -54,9 +54,9 @@ export default function TabLayout() {
                     <NativeTabs.Trigger.Icon src={<NativeTabs.Trigger.VectorIcon family={FontAwesome} name="tint" />} />
                 </NativeTabs.Trigger>
 
-                <NativeTabs.Trigger name="components">
-                    <NativeTabs.Trigger.Label>{t('general.components')}</NativeTabs.Trigger.Label>
-                    <NativeTabs.Trigger.Icon src={<NativeTabs.Trigger.VectorIcon family={FontAwesome} name="hdd-o" />} />
+                <NativeTabs.Trigger name="(more)">
+                    <NativeTabs.Trigger.Label>{t('mobile.more')}</NativeTabs.Trigger.Label>
+                    <NativeTabs.Trigger.Icon sf="ellipsis" md="more_horiz" />
                 </NativeTabs.Trigger>
 
             </NativeTabs>

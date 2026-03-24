@@ -1,6 +1,4 @@
-import {View} from 'react-native';
 import {Stack} from 'expo-router';
-import TopNavMenu from "@/components/overlays/TopNavMenu";
 import {useColors} from "@/hooks/useThemeColors";
 import {useTranslation} from "react-i18next";
 
@@ -9,20 +7,13 @@ export default function AssetsLayout() {
     const { t } = useTranslation();
 
     return (
-        <>
-            <Stack screenOptions={{
-                headerShown: true,
-                headerTransparent: true,
-                headerShadowVisible: false,
-                headerTitle: '',
-                headerTintColor: colors.text,
-                headerRight: () => (
-                    <View style={{marginRight: 8}}>
-                        <TopNavMenu />
-                    </View>
-                ),
-            }}
-            >
+        <Stack screenOptions={{
+            headerShown: true,
+            headerTransparent: true,
+            headerShadowVisible: false,
+            headerTitle: '',
+            headerTintColor: colors.text,
+        }}>
 
                 <Stack.Screen
                     name="index"
@@ -65,9 +56,6 @@ export default function AssetsLayout() {
                         headerBackTitle: '',
                     }}
                     />
-            </Stack>
-
-        </>
-
+        </Stack>
     );
 }

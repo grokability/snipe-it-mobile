@@ -2,7 +2,7 @@ import {Stack} from 'expo-router';
 import {useColors} from "@/hooks/useThemeColors";
 import {useTranslation} from "react-i18next";
 
-export default function AccessoriesLayout() {
+export default function MoreLayout() {
     const colors = useColors();
     const { t } = useTranslation();
 
@@ -17,34 +17,30 @@ export default function AccessoriesLayout() {
             <Stack.Screen
                 name="index"
                 options={{
-                    title: t('general.accessories'),
+                    title: t('mobile.more'),
+                    headerTransparent: false,
+                    headerShadowVisible: false,
+                    headerStyle: { backgroundColor: colors.background },
                 }}
             />
             <Stack.Screen
-                name="[id]"
+                name="components"
                 options={{
-                    title: t('mobile.screen_accessory_details'),
+                    title: t('general.components'),
                     headerBackTitle: '',
                 }}
             />
             <Stack.Screen
-                name="checkout/[id]"
+                name="licenses"
                 options={{
-                    title: t('mobile.screen_checkout'),
+                    title: t('general.licenses'),
                     headerBackTitle: '',
                 }}
             />
             <Stack.Screen
-                name="checkin/[id]"
+                name="settings"
                 options={{
-                    title: t('mobile.screen_checkin'),
-                    headerBackTitle: '',
-                }}
-            />
-            <Stack.Screen
-                name="edit/[id]"
-                options={{
-                    title: t('mobile.screen_edit_accessory'),
+                    title: t('general.settings'),
                     headerBackTitle: '',
                 }}
             />

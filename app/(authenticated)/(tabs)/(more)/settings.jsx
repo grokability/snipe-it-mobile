@@ -1,11 +1,9 @@
 import {View, Text, StyleSheet, TouchableOpacity} from 'react-native';
-import {Link} from "expo-router";
-import { AuthContext } from "@/context/AuthProvider";
+import {AuthContext} from "@/context/AuthProvider";
 import {useContext, useMemo} from "react";
-import {SafeAreaView} from "react-native-safe-area-context";
 import * as SecureStore from 'expo-secure-store';
 import {useColors} from "@/hooks/useThemeColors";
-import {Typography, FontWeight, Spacing} from "@/constants/sizes";
+import {Typography, Spacing} from "@/constants/sizes";
 import {useTranslation} from "react-i18next";
 
 export default function SettingsScreen() {
@@ -14,13 +12,13 @@ export default function SettingsScreen() {
     const { logout } = useContext(AuthContext);
     const { t } = useTranslation();
     return (
-        <SafeAreaView style={styles.container}>
+        <View style={styles.container}>
             <Text style={styles.text}>{t('mobile.domain_message', { domain: SecureStore.getItem('domain') })}</Text>
             <Text style={[styles.text, {paddingBottom: Spacing.lg}]}>{t('general.settings')}</Text>
-                <TouchableOpacity onPress={logout}>
-                   <Text style={styles.text}>{t('general.logout')}</Text>
-                </TouchableOpacity>
-        </SafeAreaView>
+            <TouchableOpacity onPress={logout}>
+                <Text style={styles.text}>{t('general.logout')}</Text>
+            </TouchableOpacity>
+        </View>
     );
 }
 

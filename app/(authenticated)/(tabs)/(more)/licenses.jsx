@@ -2,7 +2,6 @@ import {View, Text, StyleSheet, FlatList, Image, RefreshControl} from 'react-nat
 import {useContext, useState, useEffect, useCallback, useMemo} from "react";
 import {AuthContext} from "@/context/AuthProvider";
 import {makeRequest} from "@/helpers/axiosConfig";
-import {SafeAreaProvider, SafeAreaView} from "react-native-safe-area-context";
 import {useColors} from "@/hooks/useThemeColors";
 import {Spacing, BorderRadius, Typography, FontWeight} from "@/constants/sizes";
 import {decode} from "html-entities";
@@ -18,17 +17,31 @@ export default function LicensesScreen() {
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
 
+    const getLicenses = useCallback(() => {
+        return makeRequest({
+            method: 'get',
+            url: '/licenses',
+            headers: { 'Authorization': `Bearer ${user.token}` }
+        }).then(res => {
+            setData({
+                licenses: res.rows,
+                count: res.total
+            });
+        }).catch(err => {
+            console.log(err);
+        }).finally(() => {
+            setLoading(false);
+        });
+    }, [user.token]);
+
     const onRefresh = useCallback(() => {
-        if(loading) {
-            setRefreshing(true);
-        }
-        getLicenses();
-        setRefreshing(false);
-    }, [getLicenses, loading]);
+        setRefreshing(true);
+        getLicenses().finally(() => setRefreshing(false));
+    }, [getLicenses]);
 
     useEffect(() => {
         getLicenses();
-    }, [loading]);
+    }, []);
 
     const Item = ({license_name, image, product_key, supplier_name, manufacturer_name}) => (
         <View style={styles.itemContainer}>
@@ -39,57 +52,28 @@ export default function LicensesScreen() {
         </View>
     );
 
-    function getLicenses() {
-        makeRequest({
-            method: 'get',
-            url: '/licenses',
-            headers: { 'Authorization': `Bearer ${user.token}` }
-        }).then(res => {
-            setData({
-                licenses: res.rows,
-                count: res.total
-            });
-            setLoading(false);
-        }).catch(err => {
-            console.log(err);
-        });
-    }
-
     return (
-        <SafeAreaView style={styles.container}>
-            <Text style={styles.title}>{t('mobile.licenses_title')}</Text>
-            <SafeAreaProvider>
-                <SafeAreaView style={styles.container}>
-                    <FlatList
-                        data={data.licenses}
-                        renderItem={({item}) => <Item
-                            license_name={item.license_name}
-                            product_key={item.product_key}
-                            manufacturer_name={item.manufacturer.name}
-                            supplier_name={item.supplier.name}
-                            image={item.image}
-                        />}
-                        keyExtractor={item => item.id}
-                        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-                    ></FlatList>
-                </SafeAreaView>
-            </SafeAreaProvider>
-        </SafeAreaView>
+        <View style={styles.container}>
+            <FlatList
+                data={data.licenses}
+                renderItem={({item}) => <Item
+                    license_name={item.license_name}
+                    product_key={item.product_key}
+                    manufacturer_name={item.manufacturer.name}
+                    supplier_name={item.supplier.name}
+                    image={item.image}
+                />}
+                keyExtractor={item => item.id}
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+            />
+        </View>
     );
 }
 
 const createStyles = (colors) => StyleSheet.create({
     container: {
         flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
         backgroundColor: colors.background,
-    },
-    title: {
-        fontSize: Typography.subtitle,
-        fontWeight: FontWeight.semibold,
-        color: colors.text,
-        marginBottom: Spacing.md,
     },
     itemContainer: {
         padding: Spacing.md,
