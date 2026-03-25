@@ -49,7 +49,7 @@ export default function TabLayout() {
                     <NativeTabs.Trigger.Icon src={<NativeTabs.Trigger.VectorIcon family={FontAwesome} name="keyboard-o" />} />
                 </NativeTabs.Trigger>
 
-                <NativeTabs.Trigger name="consumables">
+                <NativeTabs.Trigger name="(consumables)">
                     <NativeTabs.Trigger.Label>{t('general.consumables')}</NativeTabs.Trigger.Label>
                     <NativeTabs.Trigger.Icon src={<NativeTabs.Trigger.VectorIcon family={FontAwesome} name="tint" />} />
                 </NativeTabs.Trigger>

@@ -15,7 +15,7 @@ export default function AuthenticatedLayout() {
         <Stack
                 screenOptions={({ navigation, route }) => {
                     const routeName = getFocusedRouteNameFromRoute(route);
-                    const hasOwnHeader = routeName === '(assets)' || routeName === '(accessories)' || routeName === 'audit' || routeName === '(more)';
+                    const hasOwnHeader = routeName === '(assets)' || routeName === '(accessories)' || routeName === '(consumables)' || routeName === 'audit' || routeName === '(more)';
                     return {
                         headerShown: !hasOwnHeader,
                         headerTransparent: true,
