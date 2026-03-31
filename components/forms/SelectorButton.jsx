@@ -4,14 +4,21 @@ import {Ionicons} from '@expo/vector-icons';
 import {FormRow} from "@/components/forms/FormRow";
 import {useColors} from "@/hooks/useThemeColors";
 import {Spacing, BorderRadius, Typography} from "@/constants/sizes";
+import {useTranslation} from "react-i18next";
 
 export const SelectorButton = ({label, value, onPress, placeholder}) => {
     const colors = useColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
+    const {t} = useTranslation();
+    const a11yLabel = value
+        ? t('a11y.selector_button', {label, value})
+        : t('a11y.selector_button_empty', {label});
     return (
         <FormRow label={label}>
             <Pressable
                 onPress={onPress}
+                accessibilityRole="button"
+                accessibilityLabel={a11yLabel}
                 style={({pressed}) => [
                     styles.selectorButton,
                     pressed && styles.selectorButtonPressed,
@@ -20,7 +27,7 @@ export const SelectorButton = ({label, value, onPress, placeholder}) => {
                 <Text style={[styles.selectorButtonText, !value && {color: colors.textMuted}]}>
                     {value || placeholder}
                 </Text>
-                <Ionicons name="chevron-down" size={16} color={colors.textMuted} />
+                <Ionicons name="chevron-down" size={16} color={colors.textMuted} importantForAccessibility="no" accessibilityElementsHidden={true} />
             </Pressable>
         </FormRow>
     );

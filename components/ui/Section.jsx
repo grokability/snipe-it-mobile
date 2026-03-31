@@ -7,7 +7,7 @@ import {Ionicons} from '@expo/vector-icons';
 export const SectionHeader = ({title}) => {
     const colors = useColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
-    return <Text style={styles.sectionTitle}>{title}</Text>;
+    return <Text accessibilityRole="header" style={styles.sectionTitle}>{title}</Text>;
 };
 
 export const Section = ({title, children, collapsible = false, defaultCollapsed = true}) => {
@@ -18,7 +18,7 @@ export const Section = ({title, children, collapsible = false, defaultCollapsed 
     if (!collapsible) {
         return (
             <View>
-                <Text style={styles.sectionTitle}>{title}</Text>
+                <Text accessibilityRole="header" style={styles.sectionTitle}>{title}</Text>
                 <View style={styles.detailsContainer}>
                     {children}
                 </View>
@@ -30,16 +30,21 @@ export const Section = ({title, children, collapsible = false, defaultCollapsed 
         <View>
             <Pressable
                 onPress={() => setCollapsed(prev => !prev)}
+                accessibilityRole="button"
+                accessibilityLabel={title}
+                accessibilityState={{expanded: !collapsed}}
                 style={({pressed}) => [
                     styles.collapsibleHeader,
                     pressed && styles.collapsibleHeaderPressed,
                 ]}
             >
-                <Text style={styles.sectionTitle}>{title}</Text>
+                <Text accessibilityRole="header" style={styles.sectionTitle}>{title}</Text>
                 <Ionicons
                     name={collapsed ? 'chevron-forward' : 'chevron-down'}
                     size={18}
                     color={colors.textSecondary}
+                    importantForAccessibility="no"
+                    accessibilityElementsHidden={true}
                 />
             </Pressable>
             {!collapsed && (
