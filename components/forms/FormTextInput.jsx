@@ -4,7 +4,7 @@ import {FormRow} from "@/components/forms/FormRow";
 import {useColors} from "@/hooks/useThemeColors";
 import {Spacing, BorderRadius, Typography} from "@/constants/sizes";
 
-export const FormTextInput = ({label, value, onChangeText, placeholder, keyboardType, multiline, helperText}) => {
+export const FormTextInput = ({label, value, onChangeText, placeholder, keyboardType, multiline, helperText, accessibilityHint}) => {
     const colors = useColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const input = (
@@ -18,6 +18,8 @@ export const FormTextInput = ({label, value, onChangeText, placeholder, keyboard
                 keyboardType={keyboardType}
                 multiline={multiline}
                 numberOfLines={multiline ? 4 : 1}
+                accessibilityLabel={label}
+                accessibilityHint={accessibilityHint}
             />
             {helperText && <Text style={styles.helperText}>{helperText}</Text>}
         </View>

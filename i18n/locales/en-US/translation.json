@@ -191,5 +191,31 @@
     "search_no_results": "No assets match your search",
     "search_no_results_message": "Try different keywords or clear your search",
     "clear_search": "Clear Search"
+  },
+  "a11y": {
+    "edit_asset": "Edit asset",
+    "edit_accessory": "Edit accessory",
+    "open_menu": "Open menu",
+    "lock_reveal": "Reveal encrypted value for {{label}}",
+    "lock_hide": "Hide encrypted value for {{label}}",
+    "asset_image": "Image of {{name}}",
+    "accessory_image": "Image of {{name}}",
+    "status_badge": "Status: {{status}}",
+    "asset_list_item": "{{name}}, tag {{tag}}, status {{status}}",
+    "accessory_list_item": "{{name}}, {{qty}} available",
+    "checkin_button": "Check in asset assigned to {{name}}",
+    "checkout_button": "Check out asset",
+    "submit_checkout": "Submit checkout",
+    "submit_checkin": "Submit checkin",
+    "selector_button": "{{label}}, {{value}}. Double tap to change.",
+    "selector_button_empty": "{{label}}, not selected. Double tap to choose.",
+    "search_input": "Search {{context}}",
+    "bottom_sheet_item": "Select {{name}}",
+    "close_bottom_sheet": "Close {{title}} dialog",
+    "login_domain_input": "Server domain URL",
+    "login_button": "Sign in with browser",
+    "recent_action_item": "{{actionType}} by {{createdBy}}",
+    "loading": "Loading, please wait",
+    "refresh": "Refresh list"
   }
 }

@@ -48,6 +48,8 @@ const SelectCategoryBottomSheet = forwardRef((props, ref) => {
     const Item = ({item}) => (
         <Pressable
             onPress={() => selectCategory(item)}
+            accessibilityRole="button"
+            accessibilityLabel={t('a11y.bottom_sheet_item', {name: decode(item.name)})}
             style={({pressed}) => [
                 styles.itemContainer,
                 pressed && styles.itemPressed
@@ -65,13 +67,14 @@ const SelectCategoryBottomSheet = forwardRef((props, ref) => {
             backgroundStyle={{ backgroundColor: colors.background }}
             handleIndicatorStyle={{ backgroundColor: colors.textMuted }}
         >
-            <GestureHandlerRootView style={styles.container}>
+            <GestureHandlerRootView style={styles.container} accessibilityViewIsModal={true}>
                 <Text style={styles.title}>{props.title}</Text>
                 <View style={styles.searchContainer}>
                     <BottomSheetTextInput
                         style={styles.searchInput}
                         placeholder={t('general.search')}
                         placeholderTextColor={colors.textMuted}
+                        accessibilityLabel={t('a11y.search_input', {context: props.title})}
                         onChangeText={(text) => setSearchText(text)}
                     />
                 </View>
