@@ -187,6 +187,9 @@
     "take_photo": "Take Photo",
     "choose_from_library": "Photo Library",
     "choose_from_files": "Files",
-    "more": "More"
+    "more": "More",
+    "search_no_results": "No assets match your search",
+    "search_no_results_message": "Try different keywords or clear your search",
+    "clear_search": "Clear Search"
   }
 }

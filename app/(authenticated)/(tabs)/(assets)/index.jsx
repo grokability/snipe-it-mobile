@@ -1,5 +1,6 @@
 import {View, Text, StyleSheet, Image, RefreshControl, Pressable, Platform} from 'react-native';
-import {useContext, useState, useCallback, useMemo, useLayoutEffect} from "react";
+import {useContext, useState, useCallback, useMemo, useLayoutEffect, useRef, useEffect} from "react";
+import debounce from 'lodash/debounce';
 import {AuthContext} from "@/context/AuthProvider";
 import {makeRequest} from "@/helpers/axiosConfig";
 import {SafeAreaProvider, useSafeAreaInsets} from "react-native-safe-area-context";
@@ -19,6 +20,22 @@ export default function AssetsScreen() {
     const { t } = useTranslation();
     const navigation = useNavigation();
 
+    const { user } = useContext(AuthContext);
+    const [data, setData] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
+    const [offset, setOffset] = useState(0);
+    const [hasMore, setHasMore] = useState(true);
+
+    const [debouncedSearch, setDebouncedSearch] = useState('');
+    const debouncedSearchRef = useRef('');
+    const isFirstRenderRef = useRef(true);
+
+    const debouncedSetSearch = useMemo(
+        () => debounce((value) => setDebouncedSearch(value), 300),
+        []
+    );
+
     useLayoutEffect(() => {
         navigation.setOptions({
             headerRight: () => (
@@ -26,31 +43,46 @@ export default function AssetsScreen() {
                     <Ionicons name="add" size={26} color={colors.text} />
                 </Pressable>
             ),
+            headerSearchBarOptions: {
+                placeholder: t('general.search'),
+                hideWhenScrolling: false,
+                tintColor: colors.primary,
+                autoCapitalize: 'none',
+                onChangeText: (e) => {
+                    debouncedSetSearch(e.nativeEvent.text);
+                },
+                onCancelButtonPress: () => {
+                    debouncedSetSearch.cancel();
+                    setDebouncedSearch('');
+                },
+            },
         });
-    }, [navigation, colors.text]);
+    }, [navigation, colors.text, colors.primary, t, debouncedSetSearch]);
 
-    const { user } = useContext(AuthContext);
-    const [data, setData] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [refreshing, setRefreshing] = useState(false);
+    // cancel any pending debounce on unmount so we don't update state after user navigates away
+    useEffect(() => () => debouncedSetSearch.cancel(), [debouncedSetSearch]);
 
-    const [offset, setOffset] = useState(0);
+    // Keep ref in sync so useFocusEffect can always read the latest search without changing its callback
+    useEffect(() => {
+        debouncedSearchRef.current = debouncedSearch;
+    }, [debouncedSearch]);
 
-    const getAssets = useCallback(() => {
+    const getAssets = useCallback(({ offset: fetchOffset = 0, search: fetchSearch = '' } = {}) => {
         setLoading(true);
-        return makeRequest({
-            url: '/hardware?' +
-                'limit=25&' +
-                `offset=${offset}&` +
-                'sort=created_at&' +
-                'order=asc',
-            method: 'get'
-        })
+        const query = 'limit=25&' +
+            `offset=${fetchOffset}&` +
+            'sort=created_at&' +
+            'order=asc' +
+            (fetchSearch ? `&search=${encodeURIComponent(fetchSearch)}` : '');
+        return makeRequest({ url: `/hardware?${query}`, method: 'get' })
             .then((res) => {
                 if (res?.rows) {
-                    setData((existingItems) => {
-                        return [...existingItems, ...res.rows]
-                    });
+                    if (fetchOffset === 0) {
+                        setData(res.rows);
+                    } else {
+                        setData((prev) => [...prev, ...res.rows]);
+                    }
+                    setHasMore(res.rows.length === 25);
                 }
             })
             .catch(err => {
@@ -59,29 +91,45 @@ export default function AssetsScreen() {
             .finally(() => {
                 setLoading(false);
             });
-    }, [offset]);
+    }, []);
 
+    // Initial load + refetch when screen regains focus.
+    // Stable callback (getAssets has no deps) — reads current search via ref to avoid
+    // re-running on every debouncedSearch change while the screen is already focused.
     useFocusEffect(
         useCallback(() => {
-            getAssets();
+            setOffset(0);
+            setData([]);
+            getAssets({ offset: 0, search: debouncedSearchRef.current });
         }, [getAssets])
     );
 
+    // Re-fetch when debouncedSearch changes while the screen is focused.
+    // Skip the initial render — useFocusEffect handles that fetch.
+    useEffect(() => {
+        if (isFirstRenderRef.current) {
+            isFirstRenderRef.current = false;
+            return;
+        }
+        setOffset(0);
+        setData([]);
+        getAssets({ offset: 0, search: debouncedSearch });
+    }, [debouncedSearch, getAssets]);
+
     const onRefresh = useCallback(() => {
         setRefreshing(true);
-        setData([]);
         setOffset(0);
-        getAssets()
-            .finally(() => {
-                setRefreshing(false);
-            });
-    }, [getAssets]);
+        setData([]);
+        getAssets({ offset: 0, search: debouncedSearch })
+            .finally(() => setRefreshing(false));
+    }, [debouncedSearch, getAssets]);
 
-    const loadMore = () => {
-        if (loading) return;
-        setOffset(offset + 25);
-        getAssets();
-    }
+    const loadMore = useCallback(() => {
+        if (loading || !hasMore) return;
+        const nextOffset = offset + 25;
+        setOffset(nextOffset);
+        getAssets({ offset: nextOffset, search: debouncedSearch });
+    }, [loading, hasMore, offset, debouncedSearch, getAssets]);
 
     const Item = ({id, asset_tag, name, serial, image, checkedOut, status}) => (
         <Pressable
@@ -113,11 +161,25 @@ export default function AssetsScreen() {
         </Pressable>
     );
 
-
     if (!loading && data.length === 0) {
+        if (debouncedSearch) {
+            return (
+                <SafeAreaProvider style={styles.container}>
+                    <EmptyState
+                        title={t('mobile.search_no_results')}
+                        message={t('mobile.search_no_results_message')}
+                        onRetry={() => {
+                            debouncedSetSearch.cancel();
+                            setDebouncedSearch('');
+                        }}
+                        retryLabel={t('mobile.clear_search')}
+                    />
+                </SafeAreaProvider>
+            );
+        }
         return (
             <SafeAreaProvider style={styles.container}>
-                <EmptyState onRetry={() => { setOffset(0); getAssets(); }} />
+                <EmptyState onRetry={() => getAssets({ offset: 0, search: '' })} />
             </SafeAreaProvider>
         );
     }
@@ -125,8 +187,9 @@ export default function AssetsScreen() {
     return (
             <SafeAreaProvider style={styles.container}>
                 <FlashList
-                    onEndReached={() => loadMore()}
+                    onEndReached={loadMore}
                     onEndReachedThreshold={0.1}
+                    contentInsetAdjustmentBehavior="automatic"
                     contentContainerStyle={{
                         paddingTop: Platform.OS === 'android' ? insets.top + 56 : 0,
                         paddingBottom: 80
@@ -144,9 +207,8 @@ export default function AssetsScreen() {
                         />
                     }
                     keyExtractor={item => item.id}
-                    refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh}  />}
-
-                ></FlashList>
+                    refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+                />
             </SafeAreaProvider>
     );
 }
