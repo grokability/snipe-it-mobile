@@ -5,7 +5,7 @@ import {Spacing, BorderRadius, Typography, FontWeight} from '@/constants/sizes';
 import {useTranslation} from 'react-i18next';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
-export default function EmptyState({title, message, onRetry}) {
+export default function EmptyState({title, message, onRetry, retryLabel}) {
     const colors = useColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const {t} = useTranslation();
@@ -24,7 +24,7 @@ export default function EmptyState({title, message, onRetry}) {
                     ]}
                 >
                     <Ionicons name="refresh" size={18} color={colors.white} />
-                    <Text style={styles.retryText}>{t('mobile.retry')}</Text>
+                    <Text style={styles.retryText}>{retryLabel || t('mobile.retry')}</Text>
                 </Pressable>
             )}
         </View>
