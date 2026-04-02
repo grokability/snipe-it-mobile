@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { StyleSheet, TextInput, Text, TouchableOpacity, Alert } from 'react-native';
+import { StyleSheet, TextInput, Button, Alert } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import {useColors} from "@/hooks/useThemeColors";
 import {Spacing, BorderRadius} from "@/constants/sizes";
@@ -63,9 +63,7 @@ const BearerTokenLogin = ({ onLogin, onDomainChange }) => {
                 placeholderTextColor={colors.textMuted}
                 autoCapitalize="none"
             />
-            <TouchableOpacity onPress={handleLogin}>
-                <Text style={styles.buttonText}>Login</Text>
-            </TouchableOpacity>
+            <Button title="Login" onPress={handleLogin} />
         </>
     );
 };
@@ -81,9 +79,6 @@ const createStyles = (colors) => StyleSheet.create({
         width: '100%',
         color: colors.text,
         backgroundColor: colors.background,
-    },
-    buttonText: {
-        color: colors.primary,
     },
 });
 

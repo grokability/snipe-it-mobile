@@ -10,15 +10,16 @@ export const SectionHeader = ({title}) => {
     return <Text style={styles.sectionTitle}>{title}</Text>;
 };
 
-export const Section = ({title, children, collapsible = false, defaultCollapsed = true}) => {
+export const Section = ({title, children, collapsible = false, defaultCollapsed = true, compact = false}) => {
     const colors = useColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const [collapsed, setCollapsed] = useState(collapsible && defaultCollapsed);
+    const titleStyle = compact ? styles.sectionTitleCompact : styles.sectionTitle;
 
     if (!collapsible) {
         return (
             <View>
-                <Text style={styles.sectionTitle}>{title}</Text>
+                <Text style={titleStyle}>{title}</Text>
                 <View style={styles.detailsContainer}>
                     {children}
                 </View>
@@ -35,7 +36,7 @@ export const Section = ({title, children, collapsible = false, defaultCollapsed 
                     pressed && styles.collapsibleHeaderPressed,
                 ]}
             >
-                <Text style={styles.sectionTitle}>{title}</Text>
+                <Text style={titleStyle}>{title}</Text>
                 <Ionicons
                     name={collapsed ? 'chevron-forward' : 'chevron-down'}
                     size={18}
@@ -54,6 +55,12 @@ export const Section = ({title, children, collapsible = false, defaultCollapsed 
 const createStyles = (colors) => StyleSheet.create({
     sectionTitle: {
         fontSize: Typography.subtitle,
+        fontWeight: FontWeight.bold,
+        color: colors.text,
+        marginBottom: Spacing.sm,
+    },
+    sectionTitleCompact: {
+        fontSize: Typography.bodyLarge,
         fontWeight: FontWeight.bold,
         color: colors.text,
         marginBottom: Spacing.sm,
