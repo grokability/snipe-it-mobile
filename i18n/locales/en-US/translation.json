@@ -190,6 +190,11 @@
     "more": "More",
     "search_no_results": "No assets match your search",
     "search_no_results_message": "Try different keywords or clear your search",
-    "clear_search": "Clear Search"
+    "clear_search": "Clear Search",
+    "advanced_options": "Advanced Options",
+    "api_token": "API Token",
+    "token_login": "Login with Token",
+    "token_login_failed": "Login Failed",
+    "token_login_failed_message": "Please check your domain and API token"
   }
 }
