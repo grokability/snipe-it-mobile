@@ -195,6 +195,15 @@
     "api_token": "API Token",
     "token_login": "Login with Token",
     "token_login_failed": "Login Failed",
-    "token_login_failed_message": "Please check your domain and API token"
+    "token_login_failed_message": "Please check your domain and API token",
+    "filters": "Filters",
+    "filters_active": "{{count}} active",
+    "clear_all_filters": "Clear All",
+    "filter_assets": "Filter Assets",
+    "filter_any": "Any",
+    "apply_filters": "Apply Filters",
+    "filter_no_results": "No matching assets",
+    "filter_no_results_message": "No assets match your active filters. Try adjusting or clearing them.",
+    "clear_filters": "Clear Filters"
   }
 }

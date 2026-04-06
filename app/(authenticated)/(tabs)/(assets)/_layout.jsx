@@ -13,6 +13,8 @@ export default function AssetsLayout() {
             headerShadowVisible: false,
             headerTitle: '',
             headerTintColor: colors.text,
+            headerLeftContainerStyle: { paddingLeft: 16 },
+            headerRightContainerStyle: { paddingRight: 16 },
         }}>
 
                 <Stack.Screen

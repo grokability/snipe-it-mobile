@@ -33,16 +33,22 @@ export default function AssetScreen() {
 
     useLayoutEffect(() => {
         navigation.setOptions({
-            headerRight: () => (
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginRight: 8 }}>
-                    <Pressable onPress={() => router.push('/(tabs)/(assets)/create')}>
-                        <Ionicons name="add" size={26} color={colors.text} />
-                    </Pressable>
-                    <Pressable onPress={() => router.push(`/(tabs)/(assets)/edit/${id}`)}>
-                        <Ionicons name="pencil" size={22} color={colors.text} />
-                    </Pressable>
-                </View>
-            ),
+            unstable_headerRightItems: () => [
+                { type: 'spacing', spacing: 8 },
+                {
+                    type: 'custom',
+                    element: (
+                        <View style={styles.headerButtonGroup}>
+                            <Pressable onPress={() => router.push('/(tabs)/(assets)/create')} hitSlop={4}>
+                                <Ionicons name="add" size={26} color={colors.text} />
+                            </Pressable>
+                            <Pressable onPress={() => router.push(`/(tabs)/(assets)/edit/${id}`)} hitSlop={4}>
+                                <Ionicons name="pencil" size={22} color={colors.text} />
+                            </Pressable>
+                        </View>
+                    ),
+                },
+            ],
         });
     }, [navigation, id, colors.text]);
 
@@ -457,5 +463,13 @@ const createStyles = (colors) => StyleSheet.create({
         fontSize: Typography.bodyLarge,
         color: colors.text,
         lineHeight: Typography.bodyLarge * 1.5,
+    },
+    headerButtonGroup: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: Spacing.lg,
+        borderRadius: BorderRadius.lg,
+        paddingVertical: Spacing.sm,
+        paddingHorizontal: Spacing.md,
     },
 });
