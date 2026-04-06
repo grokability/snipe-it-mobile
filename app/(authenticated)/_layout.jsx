@@ -23,6 +23,8 @@ export default function AuthenticatedLayout() {
                         headerTitle: '',
                         headerStyle: styles.header,
                         headerTintColor: colors.text,
+                        headerLeftContainerStyle: { paddingLeft: 16 },
+                        headerRightContainerStyle: { paddingRight: 16 },
                     };
                 }}
             >

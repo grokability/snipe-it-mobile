@@ -16,16 +16,24 @@ export default function AuditLayout() {
             headerShadowVisible: false,
             headerTitle: '',
             headerTintColor: colors.text,
+            headerLeftContainerStyle: { paddingLeft: 16 },
+            headerRightContainerStyle: { paddingRight: 16 },
         }}>
             <Stack.Screen
                 name="index"
                 options={{
                     title: t('mobile.screen_audit_dashboard'),
-                    headerLeft: () => (
-                        <TouchableOpacity onPress={() => router.back()} hitSlop={8}>
-                            <Ionicons name="chevron-back" size={28} color={colors.text} />
-                        </TouchableOpacity>
-                    ),
+                    unstable_headerLeftItems: () => [
+                        { type: 'spacing', spacing: 8 },
+                        {
+                            type: 'custom',
+                            element: (
+                                <TouchableOpacity onPress={() => router.back()} hitSlop={8}>
+                                    <Ionicons name="chevron-back" size={28} color={colors.text} />
+                                </TouchableOpacity>
+                            ),
+                        },
+                    ],
                 }}
             />
             <Stack.Screen

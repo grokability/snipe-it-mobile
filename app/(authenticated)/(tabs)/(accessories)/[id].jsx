@@ -32,11 +32,19 @@ export default function AccessoryScreen() {
 
     useLayoutEffect(() => {
         navigation.setOptions({
-            headerRight: () => (
-                <Pressable onPress={() => router.push(`/(tabs)/(accessories)/edit/${id}`)}>
-                    <Ionicons name="pencil" size={22} color={colors.text} />
-                </Pressable>
-            ),
+            unstable_headerRightItems: () => [
+                { type: 'spacing', spacing: 8 },
+                {
+                    type: 'custom',
+                    element: (
+                        <View style={styles.headerButtonGroup}>
+                            <Pressable onPress={() => router.push(`/(tabs)/(accessories)/edit/${id}`)} hitSlop={4}>
+                                <Ionicons name="pencil" size={22} color={colors.text} />
+                            </Pressable>
+                        </View>
+                    ),
+                },
+            ],
         });
     }, [navigation, id, colors.text]);
 
@@ -314,5 +322,13 @@ const createStyles = (colors) => StyleSheet.create({
         fontSize: Typography.bodyLarge,
         color: colors.text,
         lineHeight: Typography.bodyLarge * 1.5,
+    },
+    headerButtonGroup: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: Spacing.lg,
+        borderRadius: BorderRadius.lg,
+        paddingVertical: Spacing.sm,
+        paddingHorizontal: Spacing.md,
     },
 });

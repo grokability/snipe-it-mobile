@@ -13,6 +13,8 @@ export default function MoreLayout() {
             headerShadowVisible: false,
             headerTitle: '',
             headerTintColor: colors.text,
+            headerLeftContainerStyle: { paddingLeft: 16 },
+            headerRightContainerStyle: { paddingRight: 16 },
         }}>
             <Stack.Screen
                 name="index"

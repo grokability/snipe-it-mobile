@@ -1,24 +1,24 @@
-import React, {useMemo} from 'react';
-import {StyleSheet, Text, View, Pressable} from 'react-native';
-import {useColors} from '@/hooks/useThemeColors';
-import {Spacing, BorderRadius, Typography, FontWeight} from '@/constants/sizes';
-import {useTranslation} from 'react-i18next';
+import React, { useMemo } from 'react';
+import { StyleSheet, Text, View, Pressable } from 'react-native';
+import { useColors } from '@/hooks/useThemeColors';
+import { Spacing, BorderRadius, Typography, FontWeight } from '@/constants/sizes';
+import { useTranslation } from 'react-i18next';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
-export default function EmptyState({title, message, onRetry, retryLabel}) {
+export default function EmptyState({ title, message, icon, onRetry, retryLabel }) {
     const colors = useColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
-    const {t} = useTranslation();
+    const { t } = useTranslation();
 
     return (
         <View style={styles.container}>
-            <Ionicons name="cloud-offline-outline" size={64} color={colors.textSecondary} />
+            <Ionicons name={icon ?? 'cloud-offline-outline'} size={64} color={colors.textSecondary} />
             <Text style={styles.title}>{title || t('mobile.empty_state_title')}</Text>
             <Text style={styles.message}>{message || t('mobile.empty_state_message')}</Text>
             {onRetry && (
                 <Pressable
                     onPress={onRetry}
-                    style={({pressed}) => [
+                    style={({ pressed }) => [
                         styles.retryButton,
                         pressed && styles.retryButtonPressed,
                     ]}
