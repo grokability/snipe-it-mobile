@@ -16,6 +16,7 @@ export default function SettingsScreen() {
             <Text style={styles.text}>{t('mobile.domain_message', { domain: SecureStore.getItem('domain') })}</Text>
             <Text style={[styles.text, {paddingBottom: Spacing.lg}]}>{t('general.settings')}</Text>
             <TouchableOpacity onPress={logout}>
+                <Text style={styles.text}>this is a testflight build</Text>
                 <Text style={styles.text}>{t('general.logout')}</Text>
             </TouchableOpacity>
         </View>
