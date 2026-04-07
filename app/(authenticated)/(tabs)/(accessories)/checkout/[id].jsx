@@ -1,6 +1,8 @@
 import React, {useCallback, useContext, useMemo, useRef, useState} from 'react';
 import {
     ActivityIndicator,
+    KeyboardAvoidingView,
+    Platform,
     Pressable,
     ScrollView,
     StyleSheet,
@@ -146,6 +148,10 @@ export default function AccessoryCheckoutScreen() {
 
     return (
         <SafeAreaProvider>
+            <KeyboardAvoidingView
+                style={styles.flex}
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            >
             <ScrollView
                 style={styles.container}
                 contentContainerStyle={[styles.contentContainer, {paddingTop: insets.top}]}
@@ -238,6 +244,7 @@ export default function AccessoryCheckoutScreen() {
                     )}
                 </Pressable>
             </ScrollView>
+            </KeyboardAvoidingView>
 
             <SelectUserBottomSheet
                 title={t('general.select_user')}
@@ -263,6 +270,10 @@ const createStyles = (colors) => StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
+        backgroundColor: colors.background,
+    },
+    flex: {
+        flex: 1,
         backgroundColor: colors.background,
     },
     container: {

@@ -1,5 +1,5 @@
 import React, {useContext, useMemo, useRef, useState} from 'react';
-import {ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View} from 'react-native';
+import {ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View} from 'react-native';
 import {router, useLocalSearchParams} from 'expo-router';
 import {SafeAreaProvider, useSafeAreaInsets} from 'react-native-safe-area-context';
 import {makeRequest} from '@/helpers/axiosConfig';
@@ -121,6 +121,10 @@ export default function CheckoutScreen() {
 
     return (
         <SafeAreaProvider>
+            <KeyboardAvoidingView
+                style={styles.flex}
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            >
             <ScrollView
                 style={styles.container}
                 contentContainerStyle={styles.contentContainer}
@@ -230,6 +234,7 @@ export default function CheckoutScreen() {
                     )}
                 </Pressable>
             </ScrollView>
+            </KeyboardAvoidingView>
 
             <SelectStatusBottomSheet
                 title={t('general.select_statuslabel')}
@@ -256,6 +261,10 @@ export default function CheckoutScreen() {
 }
 
 const createStyles = (colors) => StyleSheet.create({
+    flex: {
+        flex: 1,
+        backgroundColor: colors.background,
+    },
     container: {
         flex: 1,
         backgroundColor: colors.background,

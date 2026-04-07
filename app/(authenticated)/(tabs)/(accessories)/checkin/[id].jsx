@@ -1,6 +1,8 @@
 import React, {useMemo, useState} from 'react';
 import {
     ActivityIndicator,
+    KeyboardAvoidingView,
+    Platform,
     Pressable,
     ScrollView,
     StyleSheet,
@@ -70,6 +72,10 @@ export default function AccessoryCheckinScreen() {
 
     return (
         <SafeAreaProvider>
+            <KeyboardAvoidingView
+                style={styles.flex}
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            >
             <ScrollView
                 style={styles.container}
                 contentContainerStyle={[styles.contentContainer, {paddingTop: insets.top}]}
@@ -115,11 +121,16 @@ export default function AccessoryCheckinScreen() {
                     )}
                 </Pressable>
             </ScrollView>
+            </KeyboardAvoidingView>
         </SafeAreaProvider>
     );
 }
 
 const createStyles = (colors) => StyleSheet.create({
+    flex: {
+        flex: 1,
+        backgroundColor: colors.background,
+    },
     container: {
         flex: 1,
         backgroundColor: colors.background,

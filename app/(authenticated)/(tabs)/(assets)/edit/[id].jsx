@@ -2,6 +2,8 @@ import React, {useCallback, useContext, useState, useMemo, useRef} from 'react';
 import {decode} from "html-entities";
 import {
     ActivityIndicator,
+    KeyboardAvoidingView,
+    Platform,
     Pressable,
     ScrollView,
     StyleSheet,
@@ -429,157 +431,162 @@ export default function EditAssetScreen() {
 
     return (
         <SafeAreaProvider>
+            <KeyboardAvoidingView
+                style={styles.flex}
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            >
             <ScrollView
                 style={styles.container}
                 contentContainerStyle={[styles.contentContainer, {paddingTop: insets.top + 44}]}
                 keyboardShouldPersistTaps="handled"
             >
-                {/* Image Upload */}
-                <Section title={t('general.image')}>
-                    <ImagePicker
-                        image={image}
-                        onImageSelected={setImage}
-                        onImageRemoved={() => setImage(null)}
-                    />
-                </Section>
-
-                {/* Core Details — matches web UI top section */}
-                <Section title={t('mobile.section_details')}>
-                    <SelectorButton
-                        placeholder={selectPlaceholder}
-                        label={t('general.company')}
-                        value={selectedCompany?.name}
-                        onPress={() => companyRef.current?.present()}
-                    />
-                    <FormTextInput
-                        label={t('general.asset_tag')}
-                        value={assetTag}
-                        onChangeText={setAssetTag}
-                        placeholder={t('general.asset_tag')}
-                    />
-                    <FormTextInput
-                        label={t('general.serial')}
-                        value={serial}
-                        onChangeText={setSerial}
-                        placeholder={t('general.serial')}
-                    />
-                    <SelectorButton
-                        placeholder={selectPlaceholder}
-                        label={t('general.model')}
-                        value={selectedModel?.name}
-                        onPress={() => modelRef.current?.present()}
-                    />
-                    <SelectorButton
-                        placeholder={selectPlaceholder}
-                        label={t('general.status_label')}
-                        value={selectedStatus?.name}
-                        onPress={() => statusRef.current?.present()}
-                    />
-                    <FormTextInput
-                        label={t('general.notes')}
-                        value={notes}
-                        onChangeText={setNotes}
-                        placeholder={t('general.notes')}
-                        multiline
-                    />
-                    <SelectorButton
-                        placeholder={selectPlaceholder}
-                        label={t('general.rtd_location')}
-                        value={selectedRtdLocation?.name}
-                        onPress={() => rtdLocationRef.current?.present()}
-                    />
-                    <FormRow label={t('general.requestable')} horizontal>
-                        <Switch value={requestable} onValueChange={setRequestable} />
-                    </FormRow>
-                </Section>
-
-                {/* Custom Fields */}
-                {Object.keys(customFieldValues).length > 0 && (
-                    <Section title={t('mobile.section_custom_fields')}>
-                        {Object.entries(customFieldValues).map(([fieldName, field]) =>
-                            renderCustomField(fieldName, field)
-                        )}
+                    {/* Image Upload */}
+                    <Section title={t('general.image')}>
+                        <ImagePicker
+                            image={image}
+                            onImageSelected={setImage}
+                            onImageRemoved={() => setImage(null)}
+                        />
                     </Section>
-                )}
 
-                {/* Optional Information — collapsible */}
-                <Section title={t('mobile.section_optional')} collapsible>
-                    <FormTextInput
-                        label={t('general.asset_name')}
-                        value={name}
-                        onChangeText={setName}
-                        placeholder={t('general.asset_name')}
-                    />
-                    <FormTextInput
-                        label={t('general.warranty_months')}
-                        value={warrantyMonths}
-                        onChangeText={setWarrantyMonths}
-                        placeholder="0"
-                        keyboardType="number-pad"
-                    />
-                    <FormRow label={t('general.expected_checkin')}>
-                        <OptionalDatepicker
-                            initialDate={expectedCheckin}
-                            onDateChange={(event, date) => setExpectedCheckin(date)}
+                    {/* Core Details — matches web UI top section */}
+                    <Section title={t('mobile.section_details')}>
+                        <SelectorButton
+                            placeholder={selectPlaceholder}
+                            label={t('general.company')}
+                            value={selectedCompany?.name}
+                            onPress={() => companyRef.current?.present()}
                         />
-                    </FormRow>
-                    <FormRow label={t('general.next_audit_date')}>
-                        <OptionalDatepicker
-                            initialDate={nextAuditDate}
-                            onDateChange={(event, date) => setNextAuditDate(date)}
+                        <FormTextInput
+                            label={t('general.asset_tag')}
+                            value={assetTag}
+                            onChangeText={setAssetTag}
+                            placeholder={t('general.asset_tag')}
                         />
-                    </FormRow>
-                    <FormRow label={t('general.byod')} horizontal>
-                        <Switch value={byod} onValueChange={setByod} />
-                    </FormRow>
-                </Section>
+                        <FormTextInput
+                            label={t('general.serial')}
+                            value={serial}
+                            onChangeText={setSerial}
+                            placeholder={t('general.serial')}
+                        />
+                        <SelectorButton
+                            placeholder={selectPlaceholder}
+                            label={t('general.model')}
+                            value={selectedModel?.name}
+                            onPress={() => modelRef.current?.present()}
+                        />
+                        <SelectorButton
+                            placeholder={selectPlaceholder}
+                            label={t('general.status_label')}
+                            value={selectedStatus?.name}
+                            onPress={() => statusRef.current?.present()}
+                        />
+                        <FormTextInput
+                            label={t('general.notes')}
+                            value={notes}
+                            onChangeText={setNotes}
+                            placeholder={t('general.notes')}
+                            multiline
+                        />
+                        <SelectorButton
+                            placeholder={selectPlaceholder}
+                            label={t('general.rtd_location')}
+                            value={selectedRtdLocation?.name}
+                            onPress={() => rtdLocationRef.current?.present()}
+                        />
+                        <FormRow label={t('general.requestable')} horizontal>
+                            <Switch value={requestable} onValueChange={setRequestable} />
+                        </FormRow>
+                    </Section>
 
-                {/* Order Related Information — collapsible */}
-                <Section title={t('mobile.section_order')} collapsible>
-                    <FormTextInput
-                        label={t('general.order_number')}
-                        value={orderNumber}
-                        onChangeText={setOrderNumber}
-                        placeholder={t('general.order_number')}
-                    />
-                    <FormRow label={t('general.purchase_date')}>
-                        <OptionalDatepicker
-                            initialDate={purchaseDate}
-                            onDateChange={(event, date) => setPurchaseDate(date)}
-                        />
-                    </FormRow>
-                    <SelectorButton
-                        placeholder={selectPlaceholder}
-                        label={t('general.supplier')}
-                        value={selectedSupplier?.name}
-                        onPress={() => supplierRef.current?.present()}
-                    />
-                    <FormTextInput
-                        label={t('general.purchase_cost')}
-                        value={purchaseCost}
-                        onChangeText={setPurchaseCost}
-                        placeholder="0.00"
-                        keyboardType="decimal-pad"
-                    />
-                </Section>
-
-                {/* Submit */}
-                <Pressable
-                    onPress={handleSubmit}
-                    disabled={submitting}
-                    style={({pressed}) => [
-                        styles.submitButton,
-                        pressed && styles.submitButtonPressed,
-                        submitting && styles.submitButtonDisabled,
-                    ]}
-                >
-                    {submitting ? (
-                        <ActivityIndicator color="#fff" />
-                    ) : (
-                        <Text style={styles.submitButtonText}>{t('mobile.save_changes')}</Text>
+                    {/* Custom Fields */}
+                    {Object.keys(customFieldValues).length > 0 && (
+                        <Section title={t('mobile.section_custom_fields')}>
+                            {Object.entries(customFieldValues).map(([fieldName, field]) =>
+                                renderCustomField(fieldName, field)
+                            )}
+                        </Section>
                     )}
-                </Pressable>
+
+                    {/* Optional Information — collapsible */}
+                    <Section title={t('mobile.section_optional')} collapsible>
+                        <FormTextInput
+                            label={t('general.asset_name')}
+                            value={name}
+                            onChangeText={setName}
+                            placeholder={t('general.asset_name')}
+                        />
+                        <FormTextInput
+                            label={t('general.warranty_months')}
+                            value={warrantyMonths}
+                            onChangeText={setWarrantyMonths}
+                            placeholder="0"
+                            keyboardType="number-pad"
+                        />
+                        <FormRow label={t('general.expected_checkin')}>
+                            <OptionalDatepicker
+                                initialDate={expectedCheckin}
+                                onDateChange={(event, date) => setExpectedCheckin(date)}
+                            />
+                        </FormRow>
+                        <FormRow label={t('general.next_audit_date')}>
+                            <OptionalDatepicker
+                                initialDate={nextAuditDate}
+                                onDateChange={(event, date) => setNextAuditDate(date)}
+                            />
+                        </FormRow>
+                        <FormRow label={t('general.byod')} horizontal>
+                            <Switch value={byod} onValueChange={setByod} />
+                        </FormRow>
+                    </Section>
+
+                    {/* Order Related Information — collapsible */}
+                    <Section title={t('mobile.section_order')} collapsible>
+                        <FormTextInput
+                            label={t('general.order_number')}
+                            value={orderNumber}
+                            onChangeText={setOrderNumber}
+                            placeholder={t('general.order_number')}
+                        />
+                        <FormRow label={t('general.purchase_date')}>
+                            <OptionalDatepicker
+                                initialDate={purchaseDate}
+                                onDateChange={(event, date) => setPurchaseDate(date)}
+                            />
+                        </FormRow>
+                        <SelectorButton
+                            placeholder={selectPlaceholder}
+                            label={t('general.supplier')}
+                            value={selectedSupplier?.name}
+                            onPress={() => supplierRef.current?.present()}
+                        />
+                        <FormTextInput
+                            label={t('general.purchase_cost')}
+                            value={purchaseCost}
+                            onChangeText={setPurchaseCost}
+                            placeholder="0.00"
+                            keyboardType="decimal-pad"
+                        />
+                    </Section>
+
+                    {/* Submit */}
+                    <Pressable
+                        onPress={handleSubmit}
+                        disabled={submitting}
+                        style={({pressed}) => [
+                            styles.submitButton,
+                            pressed && styles.submitButtonPressed,
+                            submitting && styles.submitButtonDisabled,
+                        ]}
+                    >
+                        {submitting ? (
+                            <ActivityIndicator color="#fff" />
+                        ) : (
+                            <Text style={styles.submitButtonText}>{t('mobile.save_changes')}</Text>
+                        )}
+                    </Pressable>
             </ScrollView>
+            </KeyboardAvoidingView>
 
             {/* Bottom Sheets */}
             <SelectStatusBottomSheet
@@ -616,6 +623,10 @@ const createStyles = (colors) => StyleSheet.create({
         flex: 1,
         justifyContent: "center",
         alignItems: "center",
+        backgroundColor: colors.background,
+    },
+    flex: {
+        flex: 1,
         backgroundColor: colors.background,
     },
     container: {
