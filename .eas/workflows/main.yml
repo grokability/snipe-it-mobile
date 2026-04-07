@@ -1,0 +1,21 @@
+name: main-build
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build_ios:
+    name: Build iOS (Production)
+    type: build
+    params:
+      platform: ios
+      profile: production
+
+  build_android:
+    name: Build Android (Production)
+    type: build
+    params:
+      platform: android
+      profile: production

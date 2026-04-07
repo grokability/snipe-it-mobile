@@ -1,0 +1,37 @@
+name: testflight-build-submit
+
+on:
+  push:
+    branches:
+      - testflight
+
+jobs:
+  build_ios:
+    name: Build iOS (Beta)
+    type: build
+    params:
+      platform: ios
+      profile: beta
+
+  build_android:
+    name: Build Android (Beta)
+    type: build
+    params:
+      platform: android
+      profile: beta
+
+  submit_ios:
+    name: Submit to TestFlight (Initial Group)
+    type: submit
+    needs: [build_ios]
+    params:
+      build_id: ${{ needs.build_ios.outputs.build_id }}
+      profile: beta
+
+  submit_android:
+    name: Submit to Play Store (Alpha)
+    type: submit
+    needs: [build_android]
+    params:
+      build_id: ${{ needs.build_android.outputs.build_id }}
+      profile: beta
