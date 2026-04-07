@@ -1,6 +1,8 @@
 import React, {useContext, useState, useEffect, useMemo, useRef} from 'react';
 import {
     ActivityIndicator,
+    KeyboardAvoidingView,
+    Platform,
     Pressable,
     ScrollView,
     StyleSheet,
@@ -377,6 +379,10 @@ export default function CreateAssetScreen() {
 
     return (
         <SafeAreaProvider>
+            <KeyboardAvoidingView
+                style={styles.flex}
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            >
             <ScrollView
                 style={styles.container}
                 contentContainerStyle={styles.contentContainer}
@@ -534,6 +540,7 @@ export default function CreateAssetScreen() {
                     )}
                 </Pressable>
             </ScrollView>
+            </KeyboardAvoidingView>
 
             {/* Bottom Sheets */}
             <SelectStatusBottomSheet
@@ -566,6 +573,10 @@ export default function CreateAssetScreen() {
 }
 
 const createStyles = (colors) => StyleSheet.create({
+    flex: {
+        flex: 1,
+        backgroundColor: colors.background,
+    },
     container: {
         flex: 1,
         backgroundColor: colors.background,

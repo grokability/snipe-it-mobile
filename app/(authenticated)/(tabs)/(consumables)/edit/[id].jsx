@@ -2,6 +2,8 @@ import React, {useCallback, useState, useMemo, useRef} from 'react';
 import {decode} from 'html-entities';
 import {
     ActivityIndicator,
+    KeyboardAvoidingView,
+    Platform,
     Pressable,
     ScrollView,
     StyleSheet,
@@ -202,6 +204,10 @@ export default function EditConsumableScreen() {
 
     return (
         <SafeAreaProvider>
+            <KeyboardAvoidingView
+                style={styles.flex}
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            >
             <ScrollView
                 style={styles.container}
                 contentContainerStyle={[styles.contentContainer, {paddingTop: insets.top}]}
@@ -330,6 +336,7 @@ export default function EditConsumableScreen() {
                     )}
                 </Pressable>
             </ScrollView>
+            </KeyboardAvoidingView>
 
             <SelectCategoryBottomSheet
                 title={t('general.select_category')}
@@ -365,6 +372,10 @@ const createStyles = (colors) => StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
+        backgroundColor: colors.background,
+    },
+    flex: {
+        flex: 1,
         backgroundColor: colors.background,
     },
     container: {

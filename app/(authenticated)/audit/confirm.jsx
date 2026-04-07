@@ -2,6 +2,8 @@ import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {
     ActivityIndicator,
     Image,
+    KeyboardAvoidingView,
+    Platform,
     Pressable,
     ScrollView,
     StyleSheet,
@@ -154,6 +156,10 @@ export default function AuditConfirmScreen() {
 
     return (
         <View style={styles.container}>
+            <KeyboardAvoidingView
+                style={styles.flex}
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            >
             <ScrollView
                 style={styles.container}
                 contentContainerStyle={[styles.contentContainer, {paddingTop: insets.top}]}
@@ -242,6 +248,7 @@ export default function AuditConfirmScreen() {
                     )}
                 </Pressable>
             </ScrollView>
+            </KeyboardAvoidingView>
 
             <SelectLocationBottomSheet
                 title={t('general.select_location')}
@@ -253,6 +260,10 @@ export default function AuditConfirmScreen() {
 }
 
 const createStyles = (colors) => StyleSheet.create({
+    flex: {
+        flex: 1,
+        backgroundColor: colors.background,
+    },
     container: {
         flex: 1,
         backgroundColor: colors.background,
