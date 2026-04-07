@@ -52,7 +52,6 @@ export default function EditAssetScreen() {
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
     const [asset, setAsset] = useState(null);
-    const { user } = useContext(AuthContext);
     const { id } = useLocalSearchParams();
 
     // Text fields
@@ -205,7 +204,7 @@ export default function EditAssetScreen() {
             asset_tag: assetTag,
             serial: serial || null,
             order_number: orderNumber || null,
-            purchase_cost: purchaseCost || null,
+            purchase_cost: purchaseCost.replace(/,/g, '') || null,
             warranty_months: warrantyMonths ? parseInt(warrantyMonths, 10) : null,
             notes: notes || null,
             status_id: selectedStatus?.id || selectedStatus?.value,
