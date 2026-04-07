@@ -1,0 +1,20 @@
+name: Build-production
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build_ios:
+    name: Build iOS App
+    type: build
+    params:
+      platform: ios
+  submit:
+    name: Submit to App Store
+    type: submit
+    needs: [ build_ios ]
+    params:
+      build_id: ${{ needs.build_ios.outputs.build_id }}
+      profile: production
