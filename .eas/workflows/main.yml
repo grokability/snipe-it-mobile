@@ -50,4 +50,4 @@ jobs:
     if: always()
     steps:
       - name: Publish update
-        run: eas update --channel production --auto --non-interactive
+        run: npx eas-cli@latest update --channel production --auto --non-interactive
