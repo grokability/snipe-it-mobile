@@ -5,7 +5,7 @@
     "scheme": "com.grokability.snipeitmobile",
     "version": "1.0.0",
     "runtimeVersion": {
-      "policy": "fingerprintExperimental"
+      "policy": "fingerprint"
     },
     "updates": {
       "url": "https://u.expo.dev/0134b6e0-2879-4c07-8682-df003c08168a",
