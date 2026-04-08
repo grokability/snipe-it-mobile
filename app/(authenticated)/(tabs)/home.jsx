@@ -90,7 +90,7 @@ export default function HomeScreen() {
                         <TouchableOpacity style={styles.updateBanner} onPress={reloadAsync} activeOpacity={0.7}>
                             <Text style={styles.updateBannerLabel}>{t('mobile.update_pending')}</Text>
                             {pendingMessage ? (
-                                <Text style={styles.updateBannerMessage}>{pendingMessage}</Text>
+                                <Text style={styles.updateBannerMessage}>msg: {pendingMessage}</Text>
                             ) : null}
                         </TouchableOpacity>
                     ) : (
