@@ -30,7 +30,7 @@ jobs:
     name: Build iOS (Internal Testing)
     type: build
     needs: [get_build_ios]
-    if: ${{ needs.get_build_ios.outputs.build_id == '' }}
+    if: ${{ !needs.get_build_ios.outputs.build_id }}
     params:
       platform: ios
       profile: internal-testing
@@ -39,7 +39,7 @@ jobs:
     name: Build Android (Internal Testing)
     type: build
     needs: [get_build_android]
-    if: ${{ needs.get_build_android.outputs.build_id == '' }}
+    if: ${{ !needs.get_build_android.outputs.build_id }}
     params:
       platform: android
       profile: internal-testing

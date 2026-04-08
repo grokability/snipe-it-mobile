@@ -30,7 +30,7 @@ jobs:
     name: Build iOS (Production)
     type: build
     needs: [get_build_ios]
-    if: ${{ needs.get_build_ios.outputs.build_id == '' }}
+    if: ${{ !needs.get_build_ios.outputs.build_id }}
     params:
       platform: ios
       profile: production
@@ -39,7 +39,7 @@ jobs:
     name: Build Android (Production)
     type: build
     needs: [get_build_android]
-    if: ${{ needs.get_build_android.outputs.build_id == '' }}
+    if: ${{ !needs.get_build_android.outputs.build_id }}
     params:
       platform: android
       profile: production
