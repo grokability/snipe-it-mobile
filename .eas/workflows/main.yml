@@ -54,4 +54,4 @@ jobs:
       - name: Publish update
         run: |
           MSG=$(git log -1 --format=%s)
-          npx eas-cli@latest update --channel production --branch ${{ github.ref_name }} --message "$MSG" --environment production --non-interactive
+          npx eas-cli@latest update --branch ${{ github.ref_name }} --message "$MSG" --environment production --non-interactive
