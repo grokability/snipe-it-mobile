@@ -52,4 +52,4 @@ jobs:
       - uses: eas/use_npm_token
       - uses: eas/install_node_modules
       - name: Publish update
-        run: npx eas-cli@latest update --channel production --auto --non-interactive
+        run: npx eas-cli@latest update --channel production --branch ${{ github.ref_name }} --non-interactive
