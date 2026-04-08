@@ -5,7 +5,7 @@ import React, {useContext, useMemo} from "react";
 import {useSafeAreaInsets} from "react-native-safe-area-context";
 import LottieView from "lottie-react-native";
 import ExpoApplication from "expo-application/src/ExpoApplication";
-import { useUpdates, reloadAsync } from 'expo-updates';
+import { useUpdates, reloadAsync, checkForUpdateAsync, fetchUpdateAsync } from 'expo-updates';
 import RecentActions from "@/components/misc/RecentActions";
 import AuditDashboardCard from "@/components/audit/AuditDashboardCard";
 import {AuthContext} from "@/context/AuthProvider";
@@ -20,15 +20,26 @@ export default function HomeScreen() {
     const { user } = useContext(AuthContext);
     const [permission, requestPermission] = useCameraPermissions();
     const { t } = useTranslation();
-    const { currentlyRunning, isUpdatePending, downloadedUpdate } = useUpdates();
+    const { currentlyRunning, isUpdatePending, isChecking, isDownloading, downloadedUpdate } = useUpdates();
     const otaText = currentlyRunning.isEmbeddedLaunch
         ? t('mobile.update_embedded')
         : t('mobile.update_channel', {
             channel: currentlyRunning.channel,
             date: currentlyRunning.createdAt?.toLocaleString(),
           });
+    const runningMessage = process.env.EXPO_PUBLIC_UPDATE_MESSAGE;
     const pendingMessage = downloadedUpdate?.manifest?.metadata?.message;
-    const runningMessage = currentlyRunning.manifest?.metadata?.message;
+
+    const handleCheckForUpdate = async () => {
+        try {
+            const result = await checkForUpdateAsync();
+            if (result.isAvailable) {
+                await fetchUpdateAsync();
+            }
+        } catch (error) {
+            console.error('Update check failed:', error);
+        }
+    };
 
     if (!permission) {
         return (
@@ -74,12 +85,18 @@ export default function HomeScreen() {
                     {runningMessage ? (
                         <Text style={styles.versionText}>{runningMessage}</Text>
                     ) : null}
-                    {isUpdatePending && (
+                    {isUpdatePending ? (
                         <TouchableOpacity style={styles.updateBanner} onPress={reloadAsync} activeOpacity={0.7}>
                             <Text style={styles.updateBannerLabel}>{t('mobile.update_pending')}</Text>
                             {pendingMessage ? (
                                 <Text style={styles.updateBannerMessage}>{pendingMessage}</Text>
                             ) : null}
+                        </TouchableOpacity>
+                    ) : (
+                        <TouchableOpacity onPress={handleCheckForUpdate} disabled={isChecking || isDownloading} activeOpacity={0.6}>
+                            <Text style={styles.checkUpdateText}>
+                                {isDownloading ? t('mobile.update_downloading') : isChecking ? t('mobile.update_checking') : t('mobile.update_check')}
+                            </Text>
                         </TouchableOpacity>
                     )}
                 </View>
@@ -143,5 +160,11 @@ const createStyles = (colors) => StyleSheet.create({
         fontSize: Typography.caption,
         color: colors.textSecondary,
         textAlign: 'center',
+    },
+    checkUpdateText: {
+        fontSize: Typography.caption,
+        color: colors.textSecondary,
+        textAlign: 'center',
+        textDecorationLine: 'underline',
     },
 });

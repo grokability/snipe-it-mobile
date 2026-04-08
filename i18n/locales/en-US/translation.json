@@ -207,6 +207,9 @@
     "clear_filters": "Clear Filters",
     "update_channel": "Channel: {{channel}} · Updated {{date}}",
     "update_embedded": "Embedded build · No OTA update",
-    "update_pending": "Update ready · Tap to apply"
+    "update_pending": "Update ready · Tap to apply",
+    "update_check": "Check for updates",
+    "update_checking": "Checking...",
+    "update_downloading": "Downloading..."
   }
 }
