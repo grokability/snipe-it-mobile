@@ -78,7 +78,6 @@ export default function HomeScreen() {
                         loop
                     />
                     <Text style={styles.welcomeText}>{t('mobile.welcome')}</Text>
-                    <Text style={styles.welcomeText}>POOP</Text>
                     <Text style={styles.versionText}>
                         {t('mobile.version', { version: ExpoApplication.nativeApplicationVersion, build: ExpoApplication.nativeBuildVersion })}
                     </Text>
