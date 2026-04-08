@@ -68,4 +68,4 @@ jobs:
       - uses: eas/use_npm_token
       - uses: eas/install_node_modules
       - name: Publish update
-        run: npx eas-cli@latest update --channel internal-testing --branch ${{ github.ref_name }} --message "${{ github.event.head_commit.message }}" --environment production --non-interactive
+       run: npx eas-cli@latest update --auto --channel internal-testing --environment production --non-interactive
