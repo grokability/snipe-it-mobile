@@ -82,8 +82,7 @@ jobs:
 
   publish_ota:
     name: Publish OTA Update (beta)
-    needs: [submit_ios_reuse, submit_android_reuse, submit_ios_fresh, submit_android_fresh]
-    if: always()
+    needs: [get_build_ios, get_build_android]
     steps:
       - name: Publish update
         run: npx eas-cli@latest update --channel beta --auto --non-interactive

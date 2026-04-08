@@ -46,8 +46,7 @@ jobs:
 
   publish_ota:
     name: Publish OTA Update (production)
-    needs: [build_ios, build_android]
-    if: always()
+    needs: [get_build_ios, get_build_android]
     steps:
       - name: Publish update
         run: npx eas-cli@latest update --channel production --auto --non-interactive
