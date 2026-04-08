@@ -1,6 +1,5 @@
 import {Text, View, StyleSheet, Button, Pressable} from "react-native";
 import {BottomSheetFlatList, BottomSheetModal, BottomSheetTextInput, useBottomSheet} from "@gorhom/bottom-sheet";
-import {GestureHandlerRootView} from "react-native-gesture-handler";
 import React, {useMemo, useState, forwardRef, useEffect} from "react";
 import {makeRequest} from "@/helpers/axiosConfig";
 import {useColors} from "@/hooks/useThemeColors";
@@ -64,38 +63,36 @@ const SelectStatusBottomSheet = forwardRef((props, ref) => {
             snapPoints={snapPoints}
             backgroundStyle={{ backgroundColor: colors.background }}
             handleIndicatorStyle={{ backgroundColor: colors.textMuted }}
+            onDismiss={() => setSearchText('')}
         >
-            <GestureHandlerRootView style={styles.container}>
-                <Text style={styles.title}>{props.title}</Text>
-                <View style={styles.searchContainer}>
-                    <BottomSheetTextInput
-                        style={styles.searchInput}
-                        label={t('general.search')}
-                        placeholder={t('general.search')}
-                        placeholderTextColor={colors.textMuted}
-                        onChangeText={(text) => {setSearchText(text)}}
-                    />
-                </View>
-                <BottomSheetFlatList
-                    data={statuses}
-                    renderItem={({item}) => <Item item={item} />}
-                    keyExtractor={item => item.id}
-                    contentContainerStyle={styles.listContent}
-                />
-                <CloseBtn />
-            </GestureHandlerRootView>
+            <BottomSheetFlatList
+                data={statuses}
+                renderItem={({item}) => <Item item={item} />}
+                keyExtractor={item => item.id}
+                ListHeaderComponent={
+                    <View style={styles.header}>
+                        <Text style={styles.title}>{props.title}</Text>
+                        <View style={styles.searchContainer}>
+                            <BottomSheetTextInput
+                                style={styles.searchInput}
+                                placeholder={t('general.search')}
+                                placeholderTextColor={colors.textMuted}
+                                onChangeText={(text) => {setSearchText(text)}}
+                            />
+                        </View>
+                    </View>
+                }
+                ListFooterComponent={<CloseBtn />}
+                contentContainerStyle={styles.listContent}
+            />
         </BottomSheetModal>
     )
 })
 
 const createStyles = (colors) => StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: colors.background,
-        padding: Spacing.lg,
-        borderRadius: BorderRadius.sm,
-        elevation: 4,
-        shadowColor: '#000',
+    header: {
+        paddingHorizontal: Spacing.lg,
+        paddingTop: Spacing.lg,
     },
     title: {
         fontSize: Typography.subtitle,
@@ -123,6 +120,7 @@ const createStyles = (colors) => StyleSheet.create({
         flexDirection: 'row',
         flexWrap: 'wrap',
         gap: Spacing.md,
+        marginHorizontal: Spacing.lg,
     },
     itemPressed: {
         backgroundColor: colors.border,
@@ -133,8 +131,8 @@ const createStyles = (colors) => StyleSheet.create({
         color: colors.text,
     },
     listContent: {
-        paddingBottom: 50,
-    }
+        paddingBottom: Spacing.xl,
+    },
 })
 
 export default SelectStatusBottomSheet;
