@@ -54,8 +54,7 @@
     },
     "internal-testing": {
       "ios": {
-        "ascAppId": "6754097538",
-        "groups": ["Internal"]
+        "ascAppId": "6754097538"
       },
       "android": {
         "track": "internal"

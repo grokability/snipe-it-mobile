@@ -2,16 +2,13 @@ import {
     BottomSheetFlatList,
     BottomSheetModal,
     BottomSheetTextInput,
-    BottomSheetView,
     useBottomSheet
 } from "@gorhom/bottom-sheet";
-import {Text, Button, Pressable, View, StyleSheet, Image} from "react-native";
-import React, {forwardRef, useEffect, useMemo, useState, useImperativeHandle} from "react";
-import BottomSheet from "@gorhom/bottom-sheet";
+import {Text, Button, Pressable, View, StyleSheet} from "react-native";
+import React, {forwardRef, useEffect, useMemo, useState} from "react";
 import {makeRequest} from "@/helpers/axiosConfig";
 import {useColors} from "@/hooks/useThemeColors";
 import {Spacing, BorderRadius, Typography, FontWeight} from "@/constants/sizes";
-import {GestureHandlerRootView} from "react-native-gesture-handler";
 import {useTranslation} from "react-i18next";
 import {decode} from "html-entities";
 
@@ -52,21 +49,19 @@ const SelectAssetBottomSheet = forwardRef((props, ref) => {
         ref.current.close()
     }
 
-    const Item = ({item}) => {
-        return (
-            <Pressable
-                onPress={() => selectAsset(item)}
-                style={({pressed}) => [
-                    styles.itemContainer,
-                    pressed && styles.itemPressed
-                ]}
-            >
-                <View style={styles.assetInfoContainer}>
-                    <Text style={styles.assetName}>{decode(item.asset_tag)}</Text>
-                </View>
-            </Pressable>
-        )
-    }
+    const Item = ({item}) => (
+        <Pressable
+            onPress={() => selectAsset(item)}
+            style={({pressed}) => [
+                styles.itemContainer,
+                pressed && styles.itemPressed
+            ]}
+        >
+            <View style={styles.assetInfoContainer}>
+                <Text style={styles.assetName}>{decode(item.asset_tag)}</Text>
+            </View>
+        </Pressable>
+    )
 
     return (
         <BottomSheetModal
@@ -75,35 +70,36 @@ const SelectAssetBottomSheet = forwardRef((props, ref) => {
             snapPoints={snapPoints}
             backgroundStyle={{ backgroundColor: colors.background }}
             handleIndicatorStyle={{ backgroundColor: colors.textMuted }}
+            onDismiss={() => setSearchText('')}
         >
-            <GestureHandlerRootView style={styles.container}>
-                <Text style={styles.title}>{props.title}</Text>
-                <View style={styles.searchContainer}>
-                    <BottomSheetTextInput
-                        style={styles.searchInput}
-                        label={t('general.search')}
-                        placeholder={t('general.search')}
-                        placeholderTextColor={colors.textMuted}
-                        onChangeText={(text) => {setSearchText(text)}}
-                    />
-                </View>
-                <BottomSheetFlatList
-                    data={assets}
-                    renderItem={({item}) => <Item item={item} />}
-                    keyExtractor={item => item.id}
-                    contentContainerStyle={styles.listContent}
-                />
-                <CloseBtn />
-            </GestureHandlerRootView>
+            <BottomSheetFlatList
+                data={assets}
+                renderItem={({item}) => <Item item={item} />}
+                keyExtractor={item => item.id}
+                ListHeaderComponent={
+                    <View style={styles.header}>
+                        <Text style={styles.title}>{props.title}</Text>
+                        <View style={styles.searchContainer}>
+                            <BottomSheetTextInput
+                                style={styles.searchInput}
+                                placeholder={t('general.search')}
+                                placeholderTextColor={colors.textMuted}
+                                onChangeText={(text) => {setSearchText(text)}}
+                            />
+                        </View>
+                    </View>
+                }
+                ListFooterComponent={<CloseBtn />}
+                contentContainerStyle={styles.listContent}
+            />
         </BottomSheetModal>
     )
 })
 
 const createStyles = (colors) => StyleSheet.create({
-    container: {
-        flex: 1,
-        padding: Spacing.lg,
-        backgroundColor: colors.background,
+    header: {
+        paddingHorizontal: Spacing.lg,
+        paddingTop: Spacing.lg,
     },
     title: {
         fontSize: Typography.subtitle,
@@ -125,21 +121,14 @@ const createStyles = (colors) => StyleSheet.create({
     },
     itemContainer: {
         flexDirection: 'row',
-        padding: Spacing.md,
+        paddingVertical: Spacing.md,
+        paddingHorizontal: Spacing.lg,
         alignItems: 'center',
         borderBottomWidth: 1,
         borderBottomColor: colors.border,
     },
     itemPressed: {
         backgroundColor: colors.backgroundTertiary,
-    },
-    imageContainer: {
-        marginRight: Spacing.md,
-    },
-    placeholderText: {
-        fontSize: Typography.bodyLarge,
-        fontWeight: FontWeight.bold,
-        color: colors.textMuted,
     },
     assetInfoContainer: {
         flex: 1,
