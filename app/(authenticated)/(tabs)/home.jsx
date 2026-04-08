@@ -28,6 +28,7 @@ export default function HomeScreen() {
             date: currentlyRunning.createdAt?.toLocaleString(),
           });
     const pendingMessage = downloadedUpdate?.manifest?.metadata?.message;
+    const runningMessage = currentlyRunning.manifest?.metadata?.message;
 
     if (!permission) {
         return (
@@ -70,6 +71,9 @@ export default function HomeScreen() {
                         {t('mobile.version', { version: ExpoApplication.nativeApplicationVersion, build: ExpoApplication.nativeBuildVersion })}
                     </Text>
                     <Text style={styles.versionText}>{otaText}</Text>
+                    {runningMessage ? (
+                        <Text style={styles.versionText}>{runningMessage}</Text>
+                    ) : null}
                     {isUpdatePending && (
                         <TouchableOpacity style={styles.updateBanner} onPress={reloadAsync} activeOpacity={0.7}>
                             <Text style={styles.updateBannerLabel}>{t('mobile.update_pending')}</Text>
