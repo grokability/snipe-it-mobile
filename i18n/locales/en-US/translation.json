@@ -206,6 +206,7 @@
     "filter_no_results_message": "No assets match your active filters. Try adjusting or clearing them.",
     "clear_filters": "Clear Filters",
     "update_channel": "Channel: {{channel}} · Updated {{date}}",
-    "update_embedded": "Embedded build · No OTA update"
+    "update_embedded": "Embedded build · No OTA update",
+    "update_pending": "Update ready · Tap to apply"
   }
 }

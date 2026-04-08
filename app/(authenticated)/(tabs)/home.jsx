@@ -1,11 +1,11 @@
-import {View, Text, StyleSheet, ActivityIndicator, Button, ScrollView} from 'react-native';
+import {View, Text, StyleSheet, ActivityIndicator, Button, ScrollView, TouchableOpacity} from 'react-native';
 import {useCameraPermissions} from 'expo-camera';
 import {router} from "expo-router";
 import React, {useContext, useMemo} from "react";
 import {useSafeAreaInsets} from "react-native-safe-area-context";
 import LottieView from "lottie-react-native";
 import ExpoApplication from "expo-application/src/ExpoApplication";
-import { useUpdates } from 'expo-updates';
+import { useUpdates, reloadAsync } from 'expo-updates';
 import RecentActions from "@/components/misc/RecentActions";
 import AuditDashboardCard from "@/components/audit/AuditDashboardCard";
 import {AuthContext} from "@/context/AuthProvider";
@@ -20,13 +20,14 @@ export default function HomeScreen() {
     const { user } = useContext(AuthContext);
     const [permission, requestPermission] = useCameraPermissions();
     const { t } = useTranslation();
-    const { currentlyRunning } = useUpdates();
+    const { currentlyRunning, isUpdatePending, downloadedUpdate } = useUpdates();
     const otaText = currentlyRunning.isEmbeddedLaunch
         ? t('mobile.update_embedded')
         : t('mobile.update_channel', {
             channel: currentlyRunning.channel,
             date: currentlyRunning.createdAt?.toLocaleString(),
           });
+    const pendingMessage = downloadedUpdate?.manifest?.metadata?.message;
 
     if (!permission) {
         return (
@@ -69,7 +70,14 @@ export default function HomeScreen() {
                         {t('mobile.version', { version: ExpoApplication.nativeApplicationVersion, build: ExpoApplication.nativeBuildVersion })}
                     </Text>
                     <Text style={styles.versionText}>{otaText}</Text>
-                    <Text style={styles.versionText}>this is a test of an OTA update</Text>
+                    {isUpdatePending && (
+                        <TouchableOpacity style={styles.updateBanner} onPress={reloadAsync} activeOpacity={0.7}>
+                            <Text style={styles.updateBannerLabel}>{t('mobile.update_pending')}</Text>
+                            {pendingMessage ? (
+                                <Text style={styles.updateBannerMessage}>{pendingMessage}</Text>
+                            ) : null}
+                        </TouchableOpacity>
+                    )}
                 </View>
             </ScrollView>
         </View>
@@ -107,6 +115,27 @@ const createStyles = (colors) => StyleSheet.create({
         textAlign: 'center',
     },
     versionText: {
+        fontSize: Typography.caption,
+        color: colors.textSecondary,
+        textAlign: 'center',
+    },
+    updateBanner: {
+        marginTop: Spacing.sm,
+        paddingHorizontal: Spacing.md,
+        paddingVertical: Spacing.sm,
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: colors.primary,
+        alignItems: 'center',
+        gap: Spacing.xs,
+    },
+    updateBannerLabel: {
+        fontSize: Typography.caption,
+        color: colors.primary,
+        fontWeight: FontWeight.semibold,
+        textAlign: 'center',
+    },
+    updateBannerMessage: {
         fontSize: Typography.caption,
         color: colors.textSecondary,
         textAlign: 'center',
