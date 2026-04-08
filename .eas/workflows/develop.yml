@@ -64,5 +64,8 @@ jobs:
     name: Publish OTA Update (internal-testing)
     needs: [get_build_ios, get_build_android]
     steps:
+      - uses: eas/checkout
+      - uses: eas/use_npm_token
+      - uses: eas/install_node_modules
       - name: Publish update
         run: npx eas-cli@latest update --channel internal-testing --auto --non-interactive
