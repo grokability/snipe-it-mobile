@@ -4,6 +4,14 @@
     "slug": "snipe-it-mobile",
     "scheme": "com.grokability.snipeitmobile",
     "version": "1.0.0",
+    "runtimeVersion": {
+      "policy": "fingerprintExperimental"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/0134b6e0-2879-4c07-8682-df003c08168a",
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 0
+    },
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
@@ -28,7 +36,8 @@
         }
       ],
       "expo-web-browser",
-      "expo-font"
+      "expo-font",
+      "expo-updates"
     ],
     "splash": {
       "image": "./assets/splash-icon.png",

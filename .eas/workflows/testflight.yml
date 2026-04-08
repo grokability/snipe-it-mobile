@@ -6,9 +6,31 @@ on:
       - testflight
 
 jobs:
+  fingerprint:
+    name: Calculate Fingerprints
+    type: fingerprint
+
+  get_build_ios:
+    name: Find Existing iOS Build
+    type: get-build
+    needs: [fingerprint]
+    params:
+      platform: ios
+      fingerprint_hash: ${{ needs.fingerprint.outputs.ios_fingerprint_hash }}
+
+  get_build_android:
+    name: Find Existing Android Build
+    type: get-build
+    needs: [fingerprint]
+    params:
+      platform: android
+      fingerprint_hash: ${{ needs.fingerprint.outputs.android_fingerprint_hash }}
+
   build_ios:
     name: Build iOS (Beta)
     type: build
+    needs: [get_build_ios]
+    if: ${{ needs.get_build_ios.outputs.build_id == '' }}
     params:
       platform: ios
       profile: beta
@@ -16,22 +38,52 @@ jobs:
   build_android:
     name: Build Android (Beta)
     type: build
+    needs: [get_build_android]
+    if: ${{ needs.get_build_android.outputs.build_id == '' }}
     params:
       platform: android
       profile: beta
 
-  submit_ios:
-    name: Submit to TestFlight (Initial Group)
+  # Path A: existing build found — submit directly (develop binary promoted to beta)
+  submit_ios_reuse:
+    name: Submit iOS (Existing Build)
+    type: submit
+    needs: [get_build_ios]
+    if: ${{ needs.get_build_ios.outputs.build_id != '' }}
+    params:
+      build_id: ${{ needs.get_build_ios.outputs.build_id }}
+      profile: beta
+
+  submit_android_reuse:
+    name: Submit Android (Existing Build)
+    type: submit
+    needs: [get_build_android]
+    if: ${{ needs.get_build_android.outputs.build_id != '' }}
+    params:
+      build_id: ${{ needs.get_build_android.outputs.build_id }}
+      profile: beta
+
+  # Path B: no existing build — submit the fresh build
+  submit_ios_fresh:
+    name: Submit iOS (Fresh Build)
     type: submit
     needs: [build_ios]
     params:
       build_id: ${{ needs.build_ios.outputs.build_id }}
       profile: beta
 
-  submit_android:
-    name: Submit to Play Store (Alpha)
+  submit_android_fresh:
+    name: Submit Android (Fresh Build)
     type: submit
     needs: [build_android]
     params:
       build_id: ${{ needs.build_android.outputs.build_id }}
       profile: beta
+
+  publish_ota:
+    name: Publish OTA Update (beta)
+    needs: [submit_ios_reuse, submit_android_reuse, submit_ios_fresh, submit_android_fresh]
+    if: always()
+    steps:
+      - name: Publish update
+        run: eas update --channel beta --auto --non-interactive

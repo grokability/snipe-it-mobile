@@ -40,6 +40,7 @@
     "expo-status-bar": "~55.0.4",
     "expo-symbols": "~55.0.4",
     "expo-system-ui": "~55.0.9",
+    "expo-updates": "~55.0.19",
     "expo-web-browser": "~55.0.9",
     "html-entities": "^2.5.2",
     "i18next": "^25.6.3",

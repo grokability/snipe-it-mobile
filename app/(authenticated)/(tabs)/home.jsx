@@ -5,6 +5,7 @@ import React, {useContext, useMemo} from "react";
 import {useSafeAreaInsets} from "react-native-safe-area-context";
 import LottieView from "lottie-react-native";
 import ExpoApplication from "expo-application/src/ExpoApplication";
+import { useUpdates } from 'expo-updates';
 import RecentActions from "@/components/misc/RecentActions";
 import AuditDashboardCard from "@/components/audit/AuditDashboardCard";
 import {AuthContext} from "@/context/AuthProvider";
@@ -19,6 +20,13 @@ export default function HomeScreen() {
     const { user } = useContext(AuthContext);
     const [permission, requestPermission] = useCameraPermissions();
     const { t } = useTranslation();
+    const { currentlyRunning } = useUpdates();
+    const otaText = currentlyRunning.isEmbeddedLaunch
+        ? t('mobile.update_embedded')
+        : t('mobile.update_channel', {
+            channel: currentlyRunning.channel,
+            date: currentlyRunning.createdAt?.toLocaleString(),
+          });
 
     if (!permission) {
         return (
@@ -60,6 +68,7 @@ export default function HomeScreen() {
                     <Text style={styles.versionText}>
                         {t('mobile.version', { version: ExpoApplication.nativeApplicationVersion, build: ExpoApplication.nativeBuildVersion })}
                     </Text>
+                    <Text style={styles.versionText}>{otaText}</Text>
                 </View>
             </ScrollView>
         </View>
