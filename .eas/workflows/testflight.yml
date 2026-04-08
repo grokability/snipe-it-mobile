@@ -88,4 +88,6 @@ jobs:
       - uses: eas/use_npm_token
       - uses: eas/install_node_modules
       - name: Publish update
-        run: npx eas-cli@latest update --auto --channel beta --environment production --non-interactive
+        run: |
+          MSG=$(git log -1 --format=%s)
+          npx eas-cli@latest update --channel beta --branch ${{ github.ref_name }} --message "$MSG" --environment production --non-interactive
