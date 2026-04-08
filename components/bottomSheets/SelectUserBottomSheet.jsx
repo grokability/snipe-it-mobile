@@ -2,16 +2,13 @@ import {
     BottomSheetFlatList,
     BottomSheetModal,
     BottomSheetTextInput,
-    BottomSheetView,
     useBottomSheet
 } from "@gorhom/bottom-sheet";
 import {Text, Button, Pressable, View, StyleSheet, Image} from "react-native";
-import React, {forwardRef, useEffect, useMemo, useState, useImperativeHandle} from "react";
-import BottomSheet from "@gorhom/bottom-sheet";
+import React, {forwardRef, useEffect, useMemo, useState} from "react";
 import {makeRequest} from "@/helpers/axiosConfig";
 import {useColors} from "@/hooks/useThemeColors";
 import {Spacing, BorderRadius, Typography, FontWeight} from "@/constants/sizes";
-import {GestureHandlerRootView} from "react-native-gesture-handler";
 import {useTranslation} from "react-i18next";
 import {decode} from "html-entities";
 
@@ -52,33 +49,31 @@ const SelectUserBottomSheet = forwardRef((props, ref) => {
         ref.current.close()
     }
 
-    const Item = ({item}) => {
-        return (
-            <Pressable
-                onPress={() => selectUser(item)}
-                style={({pressed}) => [
-                    styles.itemContainer,
-                    pressed && styles.itemPressed
-                ]}
-            >
-                <View style={styles.imageContainer}>
-                    {item.avatar ? (
-                        <Image source={{ uri: item.avatar }} style={styles.userImage} />
-                    ) : (
-                        <View style={styles.placeholderImage}>
-                            <Text style={styles.placeholderText}>
-                                {item.name ? decode(item.name).charAt(0).toUpperCase() : "U"}
-                            </Text>
-                        </View>
-                    )}
-                </View>
-                <View style={styles.userInfoContainer}>
-                    <Text style={styles.userName}>{decode(item.name)}</Text>
-                    <Text style={styles.userEmail}>{item.email || t('mobile.no_email')}</Text>
-                </View>
-            </Pressable>
-        )
-    }
+    const Item = ({item}) => (
+        <Pressable
+            onPress={() => selectUser(item)}
+            style={({pressed}) => [
+                styles.itemContainer,
+                pressed && styles.itemPressed
+            ]}
+        >
+            <View style={styles.imageContainer}>
+                {item.avatar ? (
+                    <Image source={{ uri: item.avatar }} style={styles.userImage} />
+                ) : (
+                    <View style={styles.placeholderImage}>
+                        <Text style={styles.placeholderText}>
+                            {item.name ? decode(item.name).charAt(0).toUpperCase() : "U"}
+                        </Text>
+                    </View>
+                )}
+            </View>
+            <View style={styles.userInfoContainer}>
+                <Text style={styles.userName}>{decode(item.name)}</Text>
+                <Text style={styles.userEmail}>{item.email || t('mobile.no_email')}</Text>
+            </View>
+        </Pressable>
+    )
 
     return (
         <BottomSheetModal
@@ -87,35 +82,36 @@ const SelectUserBottomSheet = forwardRef((props, ref) => {
             snapPoints={snapPoints}
             backgroundStyle={{ backgroundColor: colors.background }}
             handleIndicatorStyle={{ backgroundColor: colors.textMuted }}
+            onDismiss={() => setSearchText('')}
         >
-            <GestureHandlerRootView style={styles.container}>
-                <Text style={styles.title}>{props.title}</Text>
-                <View style={styles.searchContainer}>
-                <BottomSheetTextInput
-                    style={styles.searchInput}
-                    label={t('general.search')}
-                    placeholder={t('general.search')}
-                    placeholderTextColor={colors.textMuted}
-                    onChangeText={(text) => {setSearchText(text)}}
-                />
-                </View>
-                <BottomSheetFlatList
-                    data={users}
-                    renderItem={({item}) => <Item item={item} />}
-                    keyExtractor={item => item.id}
-                    contentContainerStyle={styles.listContent}
-                />
-                <CloseBtn />
-            </GestureHandlerRootView>
+            <BottomSheetFlatList
+                data={users}
+                renderItem={({item}) => <Item item={item} />}
+                keyExtractor={item => item.id}
+                ListHeaderComponent={
+                    <View style={styles.header}>
+                        <Text style={styles.title}>{props.title}</Text>
+                        <View style={styles.searchContainer}>
+                            <BottomSheetTextInput
+                                style={styles.searchInput}
+                                placeholder={t('general.search')}
+                                placeholderTextColor={colors.textMuted}
+                                onChangeText={(text) => {setSearchText(text)}}
+                            />
+                        </View>
+                    </View>
+                }
+                ListFooterComponent={<CloseBtn />}
+                contentContainerStyle={styles.listContent}
+            />
         </BottomSheetModal>
     )
 })
 
 const createStyles = (colors) => StyleSheet.create({
-    container: {
-        flex: 1,
-        padding: Spacing.lg,
-        backgroundColor: colors.background,
+    header: {
+        paddingHorizontal: Spacing.lg,
+        paddingTop: Spacing.lg,
     },
     title: {
         fontSize: Typography.subtitle,
@@ -137,7 +133,8 @@ const createStyles = (colors) => StyleSheet.create({
     },
     itemContainer: {
         flexDirection: 'row',
-        padding: Spacing.md,
+        paddingVertical: Spacing.md,
+        paddingHorizontal: Spacing.lg,
         alignItems: 'center',
         borderBottomWidth: 1,
         borderBottomColor: colors.border,
