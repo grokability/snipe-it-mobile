@@ -69,6 +69,7 @@ export default function HomeScreen() {
                         {t('mobile.version', { version: ExpoApplication.nativeApplicationVersion, build: ExpoApplication.nativeBuildVersion })}
                     </Text>
                     <Text style={styles.versionText}>{otaText}</Text>
+                    <Text style={styles.versionText}>this is a test of an OTA update</Text>
                 </View>
             </ScrollView>
         </View>
