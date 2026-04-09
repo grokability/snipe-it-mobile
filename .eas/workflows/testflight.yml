@@ -79,7 +79,6 @@ jobs:
             --package_name com.grokability.snipeitmobile \
             --track internal \
             --track_promote_to alpha \
-            --version_codes "${{ needs.get_build_android.outputs.app_build_version }}" \
             --json_key "$GOOGLE_SERVICE_ACCOUNT_JSON" \
             --changes_not_sent_for_review false \
             --skip_upload_apk true \
