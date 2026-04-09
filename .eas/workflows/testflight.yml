@@ -51,14 +51,20 @@ jobs:
   # - Android uses fastlane supply --track_promote_to (promotes without re-uploading)
   distribute_ios_reuse:
     name: Distribute iOS to Initial Group (Reuse)
-    type: testflight
     needs: [get_build_ios]
     if: ${{ needs.get_build_ios.outputs.build_id }}
-    params:
-      build_id: ${{ needs.get_build_ios.outputs.build_id }}
-      profile: beta
-      external_groups: ["Initial Group"]
-      submit_beta_review: false
+    runs_on: linux-medium
+    steps:
+      - name: Add existing build to Initial Group
+        run: |
+          fastlane run pilot \
+            app_identifier:com.grokability.snipeitmobile \
+            api_key_path:"$ASC_API_KEY_JSON" \
+            distribute_only:true \
+            build_number:"${{ needs.get_build_ios.outputs.app_build_version }}" \
+            app_version:"${{ needs.get_build_ios.outputs.app_version }}" \
+            groups:"Initial Group" \
+            submit_beta_review:false
 
   distribute_android_reuse:
     name: Promote Android to Alpha (Reuse)
