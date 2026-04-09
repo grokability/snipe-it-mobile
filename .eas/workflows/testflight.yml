@@ -61,7 +61,7 @@ jobs:
             app_identifier:com.grokability.snipeitmobile \
             api_key_path:"$ASC_API_KEY_JSON" \
             distribute_only:true \
-            platform:ios \
+            app_platform:ios \
             build_number:"${{ needs.get_build_ios.outputs.app_build_version }}" \
             app_version:"${{ needs.get_build_ios.outputs.app_version }}" \
             groups:"Initial Group" \
