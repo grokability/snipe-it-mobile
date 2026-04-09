@@ -44,24 +44,42 @@ jobs:
       platform: android
       profile: beta
 
-  # Path A: existing build found — submit directly (develop binary promoted to beta)
-  submit_ios_reuse:
-    name: Submit iOS (Existing Build)
-    type: submit
+  # Path A: existing build found — distribute without re-uploading (develop binary promoted to beta)
+  # EAS Submit always re-uploads the binary, which fails when the same build number was already
+  # uploaded by the develop workflow. Instead:
+  # - iOS uses type: testflight (distributes to groups via ASC API, uses EAS-stored credentials)
+  # - Android uses fastlane supply --track_promote_to (promotes without re-uploading)
+  distribute_ios_reuse:
+    name: Distribute iOS to Initial Group (Reuse)
+    type: testflight
     needs: [get_build_ios]
     if: ${{ needs.get_build_ios.outputs.build_id }}
     params:
       build_id: ${{ needs.get_build_ios.outputs.build_id }}
       profile: beta
+      external_groups: ["Initial Group"]
+      submit_beta_review: false
 
-  submit_android_reuse:
-    name: Submit Android (Existing Build)
-    type: submit
+  distribute_android_reuse:
+    name: Promote Android to Alpha (Reuse)
     needs: [get_build_android]
     if: ${{ needs.get_build_android.outputs.build_id }}
-    params:
-      build_id: ${{ needs.get_build_android.outputs.build_id }}
-      profile: beta
+    runs_on: linux-medium
+    steps:
+      - name: Promote existing build from internal to alpha
+        run: |
+          fastlane supply \
+            --package_name com.grokability.snipeitmobile \
+            --track internal \
+            --track_promote_to alpha \
+            --version_codes "${{ needs.get_build_android.outputs.app_build_version }}" \
+            --json_key "$GOOGLE_SERVICE_ACCOUNT_JSON" \
+            --changes_not_sent_for_review false \
+            --skip_upload_apk true \
+            --skip_upload_aab true \
+            --skip_upload_metadata true \
+            --skip_upload_images true \
+            --skip_upload_screenshots true
 
   # Path B: no existing build — submit the fresh build
   submit_ios_fresh:
