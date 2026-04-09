@@ -210,6 +210,8 @@
     "update_pending": "Update ready · Tap to apply",
     "update_check": "Check for updates",
     "update_checking": "Checking...",
-    "update_downloading": "Downloading..."
+    "update_downloading": "Downloading...",
+    "no_results": "Nothing here yet",
+    "no_results_message": "No items have been added to your inventory."
   }
 }

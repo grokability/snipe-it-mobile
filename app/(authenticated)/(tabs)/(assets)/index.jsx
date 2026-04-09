@@ -241,10 +241,22 @@ export default function AssetsScreen() {
         </Pressable>
     );
 
-    const emptyComponent = useMemo(() => {
-        if (loading) return null;
-        if (debouncedSearch) {
-            return (
+    if (!loading && data.length === 0 && !debouncedSearch && activeFilterCount === 0) {
+        return (
+            <SafeAreaProvider style={styles.container}>
+                <EmptyState
+                    icon="file-tray-outline"
+                    title={t('mobile.no_results')}
+                    message={t('mobile.no_results_message')}
+                    onRetry={() => getAssets()}
+                />
+            </SafeAreaProvider>
+        );
+    }
+
+    if (!loading && data.length === 0 && debouncedSearch) {
+        return (
+            <SafeAreaProvider style={styles.container}>
                 <EmptyState
                     title={t('mobile.search_no_results')}
                     message={t('mobile.search_no_results_message')}
@@ -254,10 +266,18 @@ export default function AssetsScreen() {
                     }}
                     retryLabel={t('mobile.clear_search')}
                 />
-            );
-        }
-        if (activeFilterCount > 0) {
-            return (
+                <AssetFilterBottomSheet
+                    ref={filterSheetRef}
+                    filters={filters}
+                    onApply={(newFilters) => setFilters(newFilters)}
+                />
+            </SafeAreaProvider>
+        );
+    }
+
+    if (!loading && data.length === 0 && activeFilterCount > 0) {
+        return (
+            <SafeAreaProvider style={styles.container}>
                 <EmptyState
                     icon="funnel-outline"
                     title={t('mobile.filter_no_results')}
@@ -265,10 +285,14 @@ export default function AssetsScreen() {
                     onRetry={() => setFilters(EMPTY_FILTERS)}
                     retryLabel={t('mobile.clear_filters')}
                 />
-            );
-        }
-        return <EmptyState onRetry={() => getAssets({ offset: 0, search: '', filters })} />;
-    }, [loading, debouncedSearch, activeFilterCount, t, debouncedSetSearch, filters, getAssets]);
+                <AssetFilterBottomSheet
+                    ref={filterSheetRef}
+                    filters={filters}
+                    onApply={(newFilters) => setFilters(newFilters)}
+                />
+            </SafeAreaProvider>
+        );
+    }
 
     return (
         <SafeAreaProvider style={styles.container}>
@@ -283,7 +307,6 @@ export default function AssetsScreen() {
                 style={styles.flatlist}
                 data={data}
                 ListHeaderComponent={FilterChipRow}
-                ListEmptyComponent={emptyComponent}
                 renderItem={({ item }) => <Item
                     id={item.id}
                     asset_tag={item.asset_tag}
