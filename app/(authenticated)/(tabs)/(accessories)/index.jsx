@@ -99,7 +99,12 @@ export default function AccessoriesScreen() {
     if (!loading && (!data.accessories || data.accessories.length === 0)) {
         return (
             <SafeAreaProvider style={styles.container}>
-                <EmptyState onRetry={getAccessories} />
+                <EmptyState
+                    icon="file-tray-outline"
+                    title={t('mobile.no_results')}
+                    message={t('mobile.no_results_message')}
+                    onRetry={getAccessories}
+                />
             </SafeAreaProvider>
         );
     }

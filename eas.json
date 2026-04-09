@@ -14,9 +14,6 @@
     "preview": {
       "distribution": "internal"
     },
-    "production": {
-      "autoIncrement": true
-    },
     "development-simulator": {
       "developmentClient": true,
       "distribution": "internal",
@@ -25,11 +22,17 @@
       },
       "environment": "development"
     },
+    "production": {
+      "channel": "production",
+      "autoIncrement": true
+    },
     "beta": {
+      "channel": "beta",
       "distribution": "store",
       "autoIncrement": true
     },
     "internal-testing": {
+      "channel": "internal-testing",
       "distribution": "store",
       "autoIncrement": true
     }

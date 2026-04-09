@@ -103,7 +103,12 @@ export default function ConsumablesScreen() {
     if (!loading && (!data.consumables || data.consumables.length === 0)) {
         return (
             <SafeAreaProvider style={styles.container}>
-                <EmptyState onRetry={getConsumables} />
+                <EmptyState
+                    icon="file-tray-outline"
+                    title={t('mobile.no_results')}
+                    message={t('mobile.no_results_message')}
+                    onRetry={getConsumables}
+                />
             </SafeAreaProvider>
         );
     }

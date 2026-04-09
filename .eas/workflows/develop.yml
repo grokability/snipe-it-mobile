@@ -6,9 +6,31 @@ on:
       - develop
 
 jobs:
+  fingerprint:
+    name: Calculate Fingerprints
+    type: fingerprint
+
+  get_build_ios:
+    name: Find Existing iOS Build
+    type: get-build
+    needs: [fingerprint]
+    params:
+      platform: ios
+      fingerprint_hash: ${{ needs.fingerprint.outputs.ios_fingerprint_hash }}
+
+  get_build_android:
+    name: Find Existing Android Build
+    type: get-build
+    needs: [fingerprint]
+    params:
+      platform: android
+      fingerprint_hash: ${{ needs.fingerprint.outputs.android_fingerprint_hash }}
+
   build_ios:
     name: Build iOS (Internal Testing)
     type: build
+    needs: [get_build_ios]
+    if: ${{ !needs.get_build_ios.outputs.build_id }}
     params:
       platform: ios
       profile: internal-testing
@@ -16,12 +38,14 @@ jobs:
   build_android:
     name: Build Android (Internal Testing)
     type: build
+    needs: [get_build_android]
+    if: ${{ !needs.get_build_android.outputs.build_id }}
     params:
       platform: android
       profile: internal-testing
 
   submit_ios:
-    name: Submit to TestFlight (Internal)
+    name: Submit iOS (Internal Testing)
     type: submit
     needs: [build_ios]
     params:
@@ -29,9 +53,21 @@ jobs:
       profile: internal-testing
 
   submit_android:
-    name: Submit to Play Store (Internal)
+    name: Submit Android (Internal Testing)
     type: submit
     needs: [build_android]
     params:
       build_id: ${{ needs.build_android.outputs.build_id }}
       profile: internal-testing
+
+  publish_ota:
+    name: Publish OTA Update (internal-testing)
+    needs: [get_build_ios, get_build_android]
+    steps:
+      - uses: eas/checkout
+      - uses: eas/use_npm_token
+      - uses: eas/install_node_modules
+      - name: Publish update
+        run: |
+          MSG=$(git log -1 --format=%s)
+          EXPO_PUBLIC_UPDATE_MESSAGE="$MSG" npx eas-cli@latest update --branch ${{ github.ref_name }} --message "$MSG" --environment production --non-interactive
