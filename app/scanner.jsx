@@ -162,6 +162,14 @@ export default function Home() {
                 onCameraReady={() => {}}
             />
 
+            {/* Close button */}
+            <TouchableOpacity
+                style={[styles.closeButton, { top: insets.top + 8 }]}
+                onPress={() => router.back()}
+            >
+                <Text style={styles.closeButtonText}>✕</Text>
+            </TouchableOpacity>
+
             {/* Audit mode banner */}
             {isAuditMode && (
                 <View style={[styles.auditBanner, { top: insets.top }]}>
@@ -227,6 +235,22 @@ const styles = StyleSheet.create({
         borderRadius: 20,
     },
     rescanButtonText: {
+        color: 'white',
+        fontSize: 16,
+        fontWeight: 'bold',
+    },
+    closeButton: {
+        position: 'absolute',
+        left: 16,
+        backgroundColor: 'rgba(0, 0, 0, 0.6)',
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 20,
+    },
+    closeButtonText: {
         color: 'white',
         fontSize: 16,
         fontWeight: 'bold',
