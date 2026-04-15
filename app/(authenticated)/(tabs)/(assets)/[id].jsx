@@ -177,6 +177,9 @@ export default function AssetScreen() {
                                     params: {
                                         assetName: asset.name ?? '',
                                         assetTag: asset.asset_tag ?? '',
+                                        statusId: asset.status_label?.id ?? '',
+                                        statusName: asset.status_label?.name ?? '',
+                                        statusMeta: asset.status_label?.status_meta ?? '',
                                     },
                                 })}
                             >

@@ -25,7 +25,7 @@ export default function CheckoutScreen() {
     const insets = useSafeAreaInsets();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const {t} = useTranslation();
-    const {id, assetName: initialAssetName, assetTag} = useLocalSearchParams();
+    const {id, assetName: initialAssetName, assetTag, statusId, statusName, statusMeta} = useLocalSearchParams();
     const {user} = useContext(AuthContext);
 
     const userBottomSheetRef = useRef(null);
@@ -34,7 +34,11 @@ export default function CheckoutScreen() {
     const assetBottomSheetRef = useRef(null);
 
     const [selectedUser, setSelectedUser] = useState(null);
-    const [selectedStatus, setSelectedStatus] = useState(null);
+    const [selectedStatus, setSelectedStatus] = useState(
+        statusMeta === 'deployable' && statusId
+            ? { value: parseInt(statusId), name: statusName }
+            : null
+    );
     const [selectedLocation, setSelectedLocation] = useState(null);
     const [selectedAsset, setSelectedAsset] = useState(null);
     const [selectedCheckoutTo, setSelectedCheckoutTo] = useState('user');
