@@ -71,3 +71,91 @@ jobs:
         run: |
           MSG=$(git log -1 --format=%s)
           EXPO_PUBLIC_UPDATE_MESSAGE="$MSG" npx eas-cli@latest update --branch ${{ github.ref_name }} --message "$MSG" --environment production --non-interactive
+
+  changelog:
+    name: 📋 Generate Changelog
+    outputs:
+      log: ${{ steps.generate.outputs.log }}
+    steps:
+      - uses: eas/checkout
+      - id: generate
+        name: Generate git log
+        run: |
+          LOG=$(git log --format="• %s" $(git merge-base HEAD origin/main)..HEAD --no-merges | head -20)
+          set-output log "$LOG"
+
+  notify_native_success:
+    name: ✅ Notify — Native Build Distributed
+    type: slack
+    needs: [changelog]
+    after: [submit_ios, submit_android, publish_ota]
+    if: ${{ after.submit_ios.status == 'success' && after.submit_android.status == 'success' }}
+    params:
+      webhook_url: ${{ env.SLACK_WEBHOOK_URL }}
+      payload:
+        blocks:
+          - type: header
+            text:
+              type: plain_text
+              text: "✅ Snipe IT Mobile — Internal Testing"
+          - type: section
+            fields:
+              - type: mrkdwn
+                text: "🔨 *Type:* Native Build"
+              - type: mrkdwn
+                text: "🌿 *Branch:* develop"
+          - type: section
+            text:
+              type: mrkdwn
+              text: "📋 *Changes*\n${{ needs.changelog.outputs.log }}"
+
+  notify_ota_success:
+    name: ✅ Notify — OTA Update Published
+    type: slack
+    needs: [changelog]
+    after: [submit_ios, submit_android, publish_ota]
+    if: ${{ after.publish_ota.status == 'success' && after.submit_ios.status != 'success' }}
+    params:
+      webhook_url: ${{ env.SLACK_WEBHOOK_URL }}
+      payload:
+        blocks:
+          - type: header
+            text:
+              type: plain_text
+              text: "✅ Snipe IT Mobile — Internal Testing"
+          - type: section
+            fields:
+              - type: mrkdwn
+                text: "⚡ *Type:* OTA / JS Update"
+              - type: mrkdwn
+                text: "🌿 *Branch:* develop"
+          - type: section
+            text:
+              type: mrkdwn
+              text: "📋 *Changes*\n${{ needs.changelog.outputs.log }}"
+
+  notify_failure:
+    name: ❌ Notify — Failure
+    type: slack
+    after: [build_ios, build_android, submit_ios, submit_android, publish_ota]
+    if: ${{ failure() }}
+    params:
+      webhook_url: ${{ env.SLACK_WEBHOOK_URL }}
+      payload:
+        blocks:
+          - type: header
+            text:
+              type: plain_text
+              text: "❌ Snipe IT Mobile — Internal Testing Failed"
+          - type: section
+            fields:
+              - type: mrkdwn
+                text: "🌿 *Branch:* develop"
+          - type: section
+            text:
+              type: mrkdwn
+              text: "📊 *Job Status*\n🍎 iOS build: ${{ after.build_ios.status }} | submit: ${{ after.submit_ios.status }}\n🤖 Android build: ${{ after.build_android.status }} | submit: ${{ after.submit_android.status }}\n⚡ OTA: ${{ after.publish_ota.status }}"
+          - type: section
+            text:
+              type: mrkdwn
+              text: "🔗 Check the EAS dashboard for details."
