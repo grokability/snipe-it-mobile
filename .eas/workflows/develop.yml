@@ -71,3 +71,74 @@ jobs:
         run: |
           MSG=$(git log -1 --format=%s)
           EXPO_PUBLIC_UPDATE_MESSAGE="$MSG" npx eas-cli@latest update --branch ${{ github.ref_name }} --message "$MSG" --environment production --non-interactive
+
+  notify_native_success:
+    name: ✅ Notify — Native Build Distributed
+    runs_on: linux-medium
+    after: [submit_ios, submit_android, publish_ota]
+    if: ${{ after.submit_ios.status == 'success' && after.submit_android.status == 'success' }}
+    steps:
+      - uses: eas/checkout
+      - name: Send Slack notification
+        run: |
+          CHANGELOG=$(git log --format="• %s" --no-merges -20)
+          [ -z "$CHANGELOG" ] && CHANGELOG="_No new commits_"
+          curl -s -X POST "$SLACK_WEBHOOK_URL" \
+            -H 'Content-type: application/json' \
+            -d "$(jq -n \
+              --arg changelog "$CHANGELOG" \
+              '{blocks: [
+                {type: "header", text: {type: "plain_text", text: "✅ Snipe IT Mobile — Internal Testing"}},
+                {type: "section", fields: [
+                  {type: "mrkdwn", text: "🔨 *Type:* Native Build"},
+                  {type: "mrkdwn", text: "🌿 *Branch:* develop"}
+                ]},
+                {type: "section", text: {type: "mrkdwn", text: ("📋 *Changes*\n" + $changelog)}}
+              ]}')"
+
+  notify_ota_success:
+    name: ✅ Notify — OTA Update Published
+    runs_on: linux-medium
+    after: [submit_ios, submit_android, publish_ota]
+    if: ${{ after.publish_ota.status == 'success' && after.submit_ios.status != 'success' }}
+    steps:
+      - uses: eas/checkout
+      - name: Send Slack notification
+        run: |
+          CHANGELOG=$(git log --format="• %s" --no-merges -20)
+          [ -z "$CHANGELOG" ] && CHANGELOG="_No new commits_"
+          curl -s -X POST "$SLACK_WEBHOOK_URL" \
+            -H 'Content-type: application/json' \
+            -d "$(jq -n \
+              --arg changelog "$CHANGELOG" \
+              '{blocks: [
+                {type: "header", text: {type: "plain_text", text: "✅ Snipe IT Mobile — Internal Testing"}},
+                {type: "section", fields: [
+                  {type: "mrkdwn", text: "⚡ *Type:* OTA / JS Update"},
+                  {type: "mrkdwn", text: "🌿 *Branch:* develop"}
+                ]},
+                {type: "section", text: {type: "mrkdwn", text: ("📋 *Changes*\n" + $changelog)}}
+              ]}')"
+
+  notify_failure:
+    name: ❌ Notify — Failure
+    runs_on: linux-medium
+    after: [build_ios, build_android, submit_ios, submit_android, publish_ota]
+    if: ${{ failure() }}
+    steps:
+      - name: Send Slack notification
+        run: |
+          curl -s -X POST "$SLACK_WEBHOOK_URL" \
+            -H 'Content-type: application/json' \
+            -d "$(jq -n \
+              --arg ios_build "${{ after.build_ios.status }}" \
+              --arg ios_submit "${{ after.submit_ios.status }}" \
+              --arg android_build "${{ after.build_android.status }}" \
+              --arg android_submit "${{ after.submit_android.status }}" \
+              --arg ota "${{ after.publish_ota.status }}" \
+              '{blocks: [
+                {type: "header", text: {type: "plain_text", text: "❌ Snipe IT Mobile — Internal Testing Failed"}},
+                {type: "section", fields: [{type: "mrkdwn", text: "🌿 *Branch:* develop"}]},
+                {type: "section", text: {type: "mrkdwn", text: ("📊 *Job Status*\n🍎 iOS build: " + $ios_build + " | submit: " + $ios_submit + "\n🤖 Android build: " + $android_build + " | submit: " + $android_submit + "\n⚡ OTA: " + $ota)}},
+                {type: "section", text: {type: "mrkdwn", text: "🔗 Check the EAS dashboard for details."}}
+              ]}')"
