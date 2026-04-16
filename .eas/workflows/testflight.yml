@@ -116,90 +116,75 @@ jobs:
           MSG=$(git log -1 --format=%s)
           EXPO_PUBLIC_UPDATE_MESSAGE="$MSG" npx eas-cli@latest update --branch ${{ github.ref_name }} --message "$MSG" --environment production --non-interactive
 
-  changelog:
-    name: 📋 Generate Changelog
-    outputs:
-      log: ${{ steps.generate.outputs.log }}
-    steps:
-      - uses: eas/checkout
-      - id: generate
-        name: Generate git log
-        run: |
-          LOG=$(git log --format="• %s" $(git merge-base HEAD origin/develop)..HEAD --no-merges | head -20)
-          set-output log "$LOG"
-
   notify_native_success:
     name: ✅ Notify — Native Build Distributed
-    type: slack
-    needs: [changelog]
+    runs_on: linux-medium
     after: [submit_ios_fresh, submit_android_fresh, distribute_ios_reuse, distribute_android_reuse, publish_ota]
     if: ${{ (after.submit_ios_fresh.status == 'success' || after.distribute_ios_reuse.status == 'success') && (after.submit_android_fresh.status == 'success' || after.distribute_android_reuse.status == 'success') }}
-    params:
-      webhook_url: ${{ env.SLACK_WEBHOOK_URL }}
-      payload:
-        blocks:
-          - type: header
-            text:
-              type: plain_text
-              text: "✅ Snipe IT Mobile — TestFlight / Beta"
-          - type: section
-            fields:
-              - type: mrkdwn
-                text: "🔨 *Type:* Native Build"
-              - type: mrkdwn
-                text: "🌿 *Branch:* testflight"
-          - type: section
-            text:
-              type: mrkdwn
-              text: "📋 *Changes*\n${{ needs.changelog.outputs.log }}"
+    steps:
+      - uses: eas/checkout
+      - name: Send Slack notification
+        run: |
+          git fetch origin develop --depth=100
+          CHANGELOG=$(git log --format="• %s" $(git merge-base HEAD origin/develop)..HEAD --no-merges | head -20)
+          curl -s -X POST "$SLACK_WEBHOOK_URL" \
+            -H 'Content-type: application/json' \
+            -d "$(jq -n \
+              --arg changelog "$CHANGELOG" \
+              '{blocks: [
+                {type: "header", text: {type: "plain_text", text: "✅ Snipe IT Mobile — TestFlight / Beta"}},
+                {type: "section", fields: [
+                  {type: "mrkdwn", text: "🔨 *Type:* Native Build"},
+                  {type: "mrkdwn", text: "🌿 *Branch:* testflight"}
+                ]},
+                {type: "section", text: {type: "mrkdwn", text: ("📋 *Changes*\n" + $changelog)}}
+              ]}')"
 
   notify_ota_success:
     name: ✅ Notify — OTA Update Published
-    type: slack
-    needs: [changelog]
+    runs_on: linux-medium
     after: [submit_ios_fresh, submit_android_fresh, distribute_ios_reuse, distribute_android_reuse, publish_ota]
     if: ${{ after.publish_ota.status == 'success' && after.submit_ios_fresh.status != 'success' && after.distribute_ios_reuse.status != 'success' }}
-    params:
-      webhook_url: ${{ env.SLACK_WEBHOOK_URL }}
-      payload:
-        blocks:
-          - type: header
-            text:
-              type: plain_text
-              text: "✅ Snipe IT Mobile — TestFlight / Beta"
-          - type: section
-            fields:
-              - type: mrkdwn
-                text: "⚡ *Type:* OTA / JS Update"
-              - type: mrkdwn
-                text: "🌿 *Branch:* testflight"
-          - type: section
-            text:
-              type: mrkdwn
-              text: "📋 *Changes*\n${{ needs.changelog.outputs.log }}"
+    steps:
+      - uses: eas/checkout
+      - name: Send Slack notification
+        run: |
+          git fetch origin develop --depth=100
+          CHANGELOG=$(git log --format="• %s" $(git merge-base HEAD origin/develop)..HEAD --no-merges | head -20)
+          curl -s -X POST "$SLACK_WEBHOOK_URL" \
+            -H 'Content-type: application/json' \
+            -d "$(jq -n \
+              --arg changelog "$CHANGELOG" \
+              '{blocks: [
+                {type: "header", text: {type: "plain_text", text: "✅ Snipe IT Mobile — TestFlight / Beta"}},
+                {type: "section", fields: [
+                  {type: "mrkdwn", text: "⚡ *Type:* OTA / JS Update"},
+                  {type: "mrkdwn", text: "🌿 *Branch:* testflight"}
+                ]},
+                {type: "section", text: {type: "mrkdwn", text: ("📋 *Changes*\n" + $changelog)}}
+              ]}')"
 
   notify_failure:
     name: ❌ Notify — Failure
-    type: slack
+    runs_on: linux-medium
     after: [build_ios, build_android, submit_ios_fresh, submit_android_fresh, distribute_ios_reuse, distribute_android_reuse, publish_ota]
     if: ${{ failure() }}
-    params:
-      webhook_url: ${{ env.SLACK_WEBHOOK_URL }}
-      payload:
-        blocks:
-          - type: header
-            text:
-              type: plain_text
-              text: "❌ Snipe IT Mobile — TestFlight Failed"
-          - type: section
-            fields:
-              - type: mrkdwn
-                text: "🌿 *Branch:* testflight"
-          - type: section
-            text:
-              type: mrkdwn
-              text: "📊 *Job Status*\n🍎 iOS build: ${{ after.build_ios.status }} | submit: ${{ after.submit_ios_fresh.status }} | reuse: ${{ after.distribute_ios_reuse.status }}\n🤖 Android build: ${{ after.build_android.status }} | submit: ${{ after.submit_android_fresh.status }} | reuse: ${{ after.distribute_android_reuse.status }}\n⚡ OTA: ${{ after.publish_ota.status }}"
-          - type: section
-            text:
-              type: mrkdwn
-              text: "🔗 Check the EAS dashboard for details."
+    steps:
+      - name: Send Slack notification
+        run: |
+          curl -s -X POST "$SLACK_WEBHOOK_URL" \
+            -H 'Content-type: application/json' \
+            -d "$(jq -n \
+              --arg ios_build "${{ after.build_ios.status }}" \
+              --arg ios_submit "${{ after.submit_ios_fresh.status }}" \
+              --arg ios_reuse "${{ after.distribute_ios_reuse.status }}" \
+              --arg android_build "${{ after.build_android.status }}" \
+              --arg android_submit "${{ after.submit_android_fresh.status }}" \
+              --arg android_reuse "${{ after.distribute_android_reuse.status }}" \
+              --arg ota "${{ after.publish_ota.status }}" \
+              '{blocks: [
+                {type: "header", text: {type: "plain_text", text: "❌ Snipe IT Mobile — TestFlight Failed"}},
+                {type: "section", fields: [{type: "mrkdwn", text: "🌿 *Branch:* testflight"}]},
+                {type: "section", text: {type: "mrkdwn", text: ("📊 *Job Status*\n🍎 iOS build: " + $ios_build + " | submit: " + $ios_submit + " | reuse: " + $ios_reuse + "\n🤖 Android build: " + $android_build + " | submit: " + $android_submit + " | reuse: " + $android_reuse + "\n⚡ OTA: " + $ota)}},
+                {type: "section", text: {type: "mrkdwn", text: "🔗 Check the EAS dashboard for details."}}
+              ]}')"
