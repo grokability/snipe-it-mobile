@@ -81,6 +81,7 @@ jobs:
       - id: generate
         name: Generate git log
         run: |
+          git fetch origin main
           LOG=$(git log --format="• %s" $(git merge-base HEAD origin/main)..HEAD --no-merges | head -20)
           set-output log "$LOG"
 
