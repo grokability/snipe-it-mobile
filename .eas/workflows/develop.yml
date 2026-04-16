@@ -81,8 +81,8 @@ jobs:
       - uses: eas/checkout
       - name: Send Slack notification
         run: |
-          git fetch origin main --depth=100
-          CHANGELOG=$(git log --format="• %s" $(git merge-base HEAD origin/main)..HEAD --no-merges | head -20)
+          CHANGELOG=$(git log --format="• %s" --no-merges -20)
+          [ -z "$CHANGELOG" ] && CHANGELOG="_No new commits_"
           curl -s -X POST "$SLACK_WEBHOOK_URL" \
             -H 'Content-type: application/json' \
             -d "$(jq -n \
@@ -105,8 +105,8 @@ jobs:
       - uses: eas/checkout
       - name: Send Slack notification
         run: |
-          git fetch origin main --depth=100
-          CHANGELOG=$(git log --format="• %s" $(git merge-base HEAD origin/main)..HEAD --no-merges | head -20)
+          CHANGELOG=$(git log --format="• %s" --no-merges -20)
+          [ -z "$CHANGELOG" ] && CHANGELOG="_No new commits_"
           curl -s -X POST "$SLACK_WEBHOOK_URL" \
             -H 'Content-type: application/json' \
             -d "$(jq -n \
