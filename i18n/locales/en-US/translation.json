@@ -95,6 +95,8 @@
     "selected_asset": "Selected Asset: {{name}}",
     "status_and_target_required": "Status and User|Location|Asset are Required",
     "checkout_failed": "Checkout failed",
+    "undeployable_checkout_message": "This asset has a status label that is undeployable and cannot be checked out at this time.",
+    "optional_default_deployable": "Optional — defaults to Ready to Deploy",
     "checkin_title": "Checkin Asset {{id}}",
     "no_components": "No components found",
     "licenses_title": "Licenses Index",
