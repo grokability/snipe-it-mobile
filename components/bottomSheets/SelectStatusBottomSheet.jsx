@@ -40,7 +40,7 @@ const SelectStatusBottomSheet = forwardRef((props, ref) => {
     }
 
     const selectStatus = (status) => {
-        props.setSelectedStatus(status)
+        props.setSelectedStatus({ ...status, value: status.id })
         ref.current.close()
     }
 

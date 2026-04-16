@@ -111,6 +111,7 @@ export default function AssetScreen() {
     }
 
     const asset = data.asset;
+    const cannotCheckout = ['undeployable', 'archived'].includes(asset.status_label?.status_type);
     const statusColor = asset.status_label?.status_meta === 'deployed'
         ? colors.success
         : asset.status_label?.status_meta === 'pending'
@@ -163,6 +164,8 @@ export default function AssetScreen() {
                                         assetName: asset.name ?? '',
                                         assetTag: asset.asset_tag ?? '',
                                         assignedToName: asset.assigned_to?.name ?? '',
+                                        statusId: asset.status_label?.id ?? '',
+                                        statusName: asset.status_label?.name ?? '',
                                     },
                                 })}
                                 >
@@ -170,21 +173,34 @@ export default function AssetScreen() {
                                 </Pressable>
                             </>
                         ) : (
-                            <Pressable
-                                style={({pressed}) => [styles.button, styles.checkoutButton, pressed && styles.buttonPressed]}
-                                onPress={() => router.push({
-                                    pathname: `/(tabs)/(assets)/checkout/${id}`,
-                                    params: {
-                                        assetName: asset.name ?? '',
-                                        assetTag: asset.asset_tag ?? '',
-                                        statusId: asset.status_label?.id ?? '',
-                                        statusName: asset.status_label?.name ?? '',
-                                        statusMeta: asset.status_label?.status_meta ?? '',
-                                    },
-                                })}
-                            >
-                                <Text style={styles.buttonText}>{t('mobile.check_out_button')}</Text>
-                            </Pressable>
+                            <>
+                                <Pressable
+                                    disabled={cannotCheckout}
+                                    style={({pressed}) => [
+                                        styles.button,
+                                        styles.checkoutButton,
+                                        pressed && !cannotCheckout && styles.buttonPressed,
+                                        cannotCheckout && styles.buttonDisabled,
+                                    ]}
+                                    onPress={cannotCheckout ? undefined : () => router.push({
+                                        pathname: `/(tabs)/(assets)/checkout/${id}`,
+                                        params: {
+                                            assetName: asset.name ?? '',
+                                            assetTag: asset.asset_tag ?? '',
+                                            statusId: asset.status_label?.id ?? '',
+                                            statusName: asset.status_label?.name ?? '',
+                                            statusType: asset.status_label?.status_type ?? '',
+                                        },
+                                    })}
+                                >
+                                    <Text style={styles.buttonText}>{t('mobile.check_out_button')}</Text>
+                                </Pressable>
+                                {cannotCheckout && (
+                                    <Text style={styles.undeployableMessage}>
+                                        {t('mobile.undeployable_checkout_message')}
+                                    </Text>
+                                )}
+                            </>
                         )}
                         <Pressable
                             style={({pressed}) => [styles.buttonSmall, styles.auditButton, pressed && styles.buttonPressed]}
@@ -438,6 +454,15 @@ const createStyles = (colors) => StyleSheet.create({
     },
     checkoutButton: {
         backgroundColor: colors.success,
+    },
+    buttonDisabled: {
+        backgroundColor: colors.border,
+        opacity: 0.7,
+    },
+    undeployableMessage: {
+        fontSize: Typography.caption,
+        color: colors.textSecondary,
+        textAlign: 'center',
     },
     auditButton: {
         backgroundColor: colors.primary,

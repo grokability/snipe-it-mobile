@@ -15,7 +15,7 @@ import {decode} from 'html-entities';
 import {useColors} from '@/hooks/useThemeColors';
 import {Spacing, Typography, FontWeight, BorderRadius} from '@/constants/sizes';
 import {useTranslation} from 'react-i18next';
-import {Section} from '@/components/ui/Section';
+import {Section, SectionHeader} from '@/components/ui/Section';
 import {FormRow} from '@/components/forms/FormRow';
 import {FormTextInput} from '@/components/forms/FormTextInput';
 import {SelectorButton} from '@/components/forms/SelectorButton';
@@ -25,7 +25,7 @@ export default function CheckoutScreen() {
     const insets = useSafeAreaInsets();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const {t} = useTranslation();
-    const {id, assetName: initialAssetName, assetTag, statusId, statusName, statusMeta} = useLocalSearchParams();
+    const {id, assetName: initialAssetName, assetTag, statusId, statusName, statusType} = useLocalSearchParams();
     const {user} = useContext(AuthContext);
 
     const userBottomSheetRef = useRef(null);
@@ -35,7 +35,7 @@ export default function CheckoutScreen() {
 
     const [selectedUser, setSelectedUser] = useState(null);
     const [selectedStatus, setSelectedStatus] = useState(
-        statusMeta === 'deployable' && statusId
+        statusType === 'deployable' && statusId
             ? { value: parseInt(statusId), name: statusName }
             : null
     );
@@ -131,14 +131,17 @@ export default function CheckoutScreen() {
             >
             <ScrollView
                 style={styles.container}
-                contentContainerStyle={styles.contentContainer}
+                contentContainerStyle={[styles.contentContainer, {paddingTop: insets.top + 44}]}
                 keyboardShouldPersistTaps="handled"
             >
                 {/* Asset info */}
                 {(initialAssetName || assetTag) && (
+                    <View>
+                    <SectionHeader title={t('general.asset_tag')} />
                     <View style={styles.infoCard}>
                         {initialAssetName ? <Text style={styles.infoName}>{decode(initialAssetName)}</Text> : null}
                         {assetTag ? <Text style={styles.infoTag}>{assetTag}</Text> : null}
+                    </View>
                     </View>
                 )}
 
