@@ -1,4 +1,4 @@
-import {View, Text, StyleSheet, ActivityIndicator, Button, ScrollView, TouchableOpacity} from 'react-native';
+import {View, Text, StyleSheet, ActivityIndicator, Button, Linking, ScrollView, TouchableOpacity} from 'react-native';
 import {useCameraPermissions} from 'expo-camera';
 import {router} from "expo-router";
 import React, {useContext, useMemo} from "react";
@@ -63,10 +63,12 @@ export default function HomeScreen() {
                 <AuditDashboardCard />
 
                 <View style={styles.scannerSection}>
-                    {!permission.granted ? (
+                    {permission.granted ? (
+                        <Button title={t('mobile.open_scanner')} onPress={() => router.push('/scanner')}/>
+                    ) : permission.canAskAgain ? (
                         <Button title={t('mobile.request_camera_permissions')} onPress={requestPermission}/>
                     ) : (
-                        <Button title={t('mobile.open_scanner')} onPress={() => router.push('/scanner')}/>
+                        <Button title={t('mobile.open_settings')} onPress={() => Linking.openSettings()}/>
                     )}
                 </View>
 
