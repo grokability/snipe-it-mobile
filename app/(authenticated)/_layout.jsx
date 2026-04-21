@@ -1,13 +1,19 @@
 import { StyleSheet } from "react-native";
-import {Stack} from "expo-router";
+import {Redirect, Stack} from "expo-router";
 import {useColors} from "@/hooks/useThemeColors";
-import {useMemo} from "react";
+import {useMemo, useContext} from "react";
 import {useTranslation} from "react-i18next";
+import {AuthContext} from "@/context/AuthProvider";
 
 export default function AuthenticatedLayout() {
     const colors = useColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const { t } = useTranslation();
+    const { isAuthenticated, isLoading } = useContext(AuthContext);
+
+    if (!isLoading && !isAuthenticated) {
+        return <Redirect href="/login" />;
+    }
 
     return (
         <Stack

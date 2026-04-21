@@ -5,6 +5,10 @@ import {DynamicColorIOS, Platform} from 'react-native';
 import {NativeTabs} from "expo-router/unstable-native-tabs";
 import {useTranslation} from "react-i18next";
 
+export const unstable_settings = {
+    initialRouteName: "(home)",
+};
+
 export default function TabLayout() {
     const { user } = useContext(AuthContext);
     const { t } = useTranslation();
