@@ -34,7 +34,7 @@ export default function TabLayout() {
                 })}
                 labelVisibilityMode="labeled"
             >
-                <NativeTabs.Trigger name="home">
+                <NativeTabs.Trigger name="(home)">
                     <NativeTabs.Trigger.Label>{t('general.dashboard')}</NativeTabs.Trigger.Label>
                     <NativeTabs.Trigger.Icon src={<NativeTabs.Trigger.VectorIcon family={FontAwesome} name="home" />} />
                 </NativeTabs.Trigger>
