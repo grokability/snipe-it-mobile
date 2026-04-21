@@ -1,7 +1,8 @@
-import { CameraView } from "expo-camera";
+import { CameraView, useCameraPermissions } from "expo-camera";
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import {
     AppState,
+    Linking,
     Platform,
     StatusBar,
     StyleSheet,
@@ -19,6 +20,7 @@ export default function Home() {
     const { mode } = useLocalSearchParams();
     const { t } = useTranslation();
     const isAuditMode = mode === 'audit';
+    const [permission] = useCameraPermissions();
 
     const [barcodes, setBarcodes] = useState([]);
     const [scanningPaused, setScanningPaused] = useState(false);
@@ -141,6 +143,26 @@ export default function Home() {
         setScanningPaused(false);
     };
 
+    if (!permission) {
+        return <View style={styles.container} />;
+    }
+
+    if (!permission.granted) {
+        return (
+            <View style={[styles.container, styles.permissionContainer]}>
+                <Stack.Screen options={{ headerShown: false }} />
+                <Text style={styles.permissionTitle}>{t('mobile.camera_permission_denied')}</Text>
+                <Text style={styles.permissionDetail}>{t('mobile.camera_permission_denied_detail')}</Text>
+                <TouchableOpacity style={styles.settingsButton} onPress={() => Linking.openSettings()}>
+                    <Text style={styles.settingsButtonText}>{t('mobile.open_settings')}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.closeButton} onPress={() => router.back()}>
+                    <Text style={styles.closeButtonText}>✕</Text>
+                </TouchableOpacity>
+            </View>
+        );
+    }
+
     return (
         <View style={styles.container}>
             <Stack.Screen
@@ -210,6 +232,36 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: 'black',
+    },
+    permissionContainer: {
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingHorizontal: 32,
+        gap: 16,
+    },
+    permissionTitle: {
+        color: 'white',
+        fontSize: 20,
+        fontWeight: 'bold',
+        textAlign: 'center',
+    },
+    permissionDetail: {
+        color: 'rgba(255,255,255,0.7)',
+        fontSize: 15,
+        textAlign: 'center',
+        lineHeight: 22,
+    },
+    settingsButton: {
+        marginTop: 8,
+        backgroundColor: 'white',
+        paddingHorizontal: 28,
+        paddingVertical: 12,
+        borderRadius: 24,
+    },
+    settingsButtonText: {
+        color: 'black',
+        fontSize: 16,
+        fontWeight: '600',
     },
     camera: {
         flex: 1,
