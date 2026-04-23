@@ -1,10 +1,8 @@
-import React, {useContext, useState, useMemo} from 'react';
-import { StyleSheet, View, Text } from 'react-native';
+import React, {useContext, useMemo} from 'react';
+import { StyleSheet, View, Text, KeyboardAvoidingView, Platform } from 'react-native';
 import LottieView from 'lottie-react-native';
 import { AuthContext } from '@/context/AuthProvider';
 import LoginForm from '@/components/auth/LoginForm';
-import BearerTokenLogin from '@/components/auth/BearerTokenLogin';
-import {Section} from '@/components/ui/Section';
 import {useColors} from "@/hooks/useThemeColors";
 import {Spacing, Typography, FontWeight, BorderRadius} from "@/constants/sizes";
 import {useTranslation} from "react-i18next";
@@ -13,16 +11,13 @@ export default function LoginScreen() {
     const colors = useColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const { t } = useTranslation();
-
-    const { oAuthLogin, bearerLogin } = useContext(AuthContext);
-    const [domain, setDomain] = useState('https://example.example.com');
-
-    const handleDomainChange = (newDomain) => {
-        setDomain(newDomain);
-    };
+    const { bearerLogin } = useContext(AuthContext);
 
     return (
-        <View style={styles.container}>
+        <KeyboardAvoidingView
+            style={styles.container}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
             <View style={styles.content}>
                 <LottieView
                     source={require('@/assets/spinning_star_eye.json')}
@@ -32,16 +27,10 @@ export default function LoginScreen() {
                 />
                 <Text style={styles.title}>{t('mobile.login_title')}</Text>
                 <View style={styles.formCard}>
-                    <LoginForm onLogin={oAuthLogin} onDomainChange={handleDomainChange} />
-                </View>
-
-                <View style={styles.advancedSection}>
-                    <Section title={t('mobile.advanced_options')} collapsible defaultCollapsed compact>
-                        <BearerTokenLogin onLogin={bearerLogin} onDomainChange={handleDomainChange} />
-                    </Section>
+                    <LoginForm onBearerLogin={bearerLogin} />
                 </View>
             </View>
-        </View>
+        </KeyboardAvoidingView>
     );
 }
 
@@ -75,9 +64,5 @@ const createStyles = (colors) => StyleSheet.create({
         padding: Spacing.lg,
         borderRadius: BorderRadius.md,
         gap: Spacing.lg,
-    },
-    advancedSection: {
-        width: '100%',
-        marginTop: Spacing.lg,
     },
 });
