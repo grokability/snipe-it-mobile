@@ -120,7 +120,7 @@ jobs:
     name: ✅ Notify — Native Build Distributed
     runs_on: linux-medium
     after: [submit_ios_fresh, submit_android_fresh, distribute_ios_reuse, distribute_android_reuse, publish_ota]
-    if: ${{ (after.submit_ios_fresh.status == 'success' || after.distribute_ios_reuse.status == 'success') && (after.submit_android_fresh.status == 'success' || after.distribute_android_reuse.status == 'success') }}
+    if: ${{ after.submit_ios_fresh.status == 'success' && after.submit_android_fresh.status == 'success' }}
     steps:
       - uses: eas/checkout
       - name: Send Slack notification
@@ -144,7 +144,7 @@ jobs:
     name: ✅ Notify — OTA Update Published
     runs_on: linux-medium
     after: [submit_ios_fresh, submit_android_fresh, distribute_ios_reuse, distribute_android_reuse, publish_ota]
-    if: ${{ after.publish_ota.status == 'success' && after.submit_ios_fresh.status != 'success' && after.distribute_ios_reuse.status != 'success' }}
+    if: ${{ after.publish_ota.status == 'success' && after.submit_ios_fresh.status != 'success' }}
     steps:
       - uses: eas/checkout
       - name: Send Slack notification
