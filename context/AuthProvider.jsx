@@ -103,7 +103,7 @@ export const AuthProvider = ({children}) => {
                             setIsLoading(false);
                         });
                 },
-                oAuthLogin: (domain, code, codeVerifier) => {
+                oAuthLogin: (domain, code, codeVerifier, clientId) => {
                     console.log('oAuthLogin');
                    setIsLoading(true);
                    if (!code) {
@@ -120,7 +120,7 @@ export const AuthProvider = ({children}) => {
                    // set up url encoding
                     const params = new URLSearchParams();
                     params.append('grant_type', 'authorization_code');
-                    params.append('client_id', '9999');
+                    params.append('client_id', clientId);
                     params.append('code', code);
                     params.append('code_verifier', codeVerifier);
                     params.append('redirect_uri', redirectUri);

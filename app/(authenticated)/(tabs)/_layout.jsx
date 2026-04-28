@@ -5,6 +5,10 @@ import {DynamicColorIOS, Platform} from 'react-native';
 import {NativeTabs} from "expo-router/unstable-native-tabs";
 import {useTranslation} from "react-i18next";
 
+export const unstable_settings = {
+    initialRouteName: "(home)",
+};
+
 export default function TabLayout() {
     const { user } = useContext(AuthContext);
     const { t } = useTranslation();
@@ -34,7 +38,7 @@ export default function TabLayout() {
                 })}
                 labelVisibilityMode="labeled"
             >
-                <NativeTabs.Trigger name="home">
+                <NativeTabs.Trigger name="(home)">
                     <NativeTabs.Trigger.Label>{t('general.dashboard')}</NativeTabs.Trigger.Label>
                     <NativeTabs.Trigger.Icon src={<NativeTabs.Trigger.VectorIcon family={FontAwesome} name="home" />} />
                 </NativeTabs.Trigger>

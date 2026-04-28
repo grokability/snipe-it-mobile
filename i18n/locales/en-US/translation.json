@@ -81,6 +81,9 @@
     "welcome": "Welcome to Snipe IT Mobile!",
     "request_camera_permissions": "Request Camera Permissions for Scanner",
     "open_scanner": "Open Scanner",
+    "camera_permission_denied": "Camera Access Required",
+    "camera_permission_denied_detail": "Please enable camera access in your device Settings to use the scanner.",
+    "open_settings": "Open Settings",
     "serial_number_display": "SN: {{serial}}",
     "serial_number_empty": "SN: N/A",
     "asset_title": "Asset #{{id}}",
@@ -214,6 +217,12 @@
     "update_checking": "Checking...",
     "update_downloading": "Downloading...",
     "no_results": "Nothing here yet",
-    "no_results_message": "No items have been added to your inventory."
+    "no_results_message": "No items have been added to your inventory.",
+    "continue": "Continue",
+    "checking_instance": "Checking instance...",
+    "oauth_not_supported": "This instance may not support OAuth. It may be out of date or the mobile client may not be configured. Contact your administrator or use an API token below.",
+    "try_oauth_anyway": "Try OAuth anyway",
+    "enter_client_id": "Client ID",
+    "connection_error_message": "Could not reach your Snipe-IT instance. Check the domain and try again."
   }
 }

@@ -1,13 +1,13 @@
-import {useContext, useEffect} from 'react';
+import { useContext } from 'react';
 import * as WebBrowser from 'expo-web-browser';
 import { makeRedirectUri, useAuthRequest } from 'expo-auth-session';
 import { Button } from 'react-native';
-import {AuthContext, useAuth} from "@/context/AuthProvider";
-import {useTranslation} from "react-i18next";
+import { AuthContext } from "@/context/AuthProvider";
+import { useTranslation } from "react-i18next";
 
 WebBrowser.maybeCompleteAuthSession();
 
-const BrowserLoginButton = ({ domain }) => {
+const BrowserLoginButton = ({ domain, clientId }) => {
     const { oAuthLogin } = useContext(AuthContext);
     const { t } = useTranslation();
     const discovery = {
@@ -18,15 +18,15 @@ const BrowserLoginButton = ({ domain }) => {
 
     const redirectUri = makeRedirectUri({
         native: 'com.grokability.snipeitmobile://home'
-    })
+    });
 
     const [request, response, promptAsync] = useAuthRequest(
         {
-            prompt: 'login',
+            prompt: 'login consent',
             usePKCE: true,
             responseType: 'code',
-            clientId: '9999',
-            redirectUri: redirectUri,
+            clientId,
+            redirectUri,
             extraParams: {
                 client: 'snipe-it-mobile',
             }
@@ -36,13 +36,9 @@ const BrowserLoginButton = ({ domain }) => {
 
     const handleLogin = async () => {
         const result = await promptAsync()
-
-        console.log(result);
-
         if (result?.type === 'success') {
             const { code } = result.params;
-            console.log("success result", result)
-            oAuthLogin(domain, code, request.codeVerifier);
+            oAuthLogin(domain, code, request.codeVerifier, clientId);
         }
     }
 

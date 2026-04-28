@@ -1,69 +1,56 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { StyleSheet, TextInput, Button, Alert } from 'react-native';
-import * as SecureStore from 'expo-secure-store';
-import {useColors} from "@/hooks/useThemeColors";
-import {Spacing, BorderRadius} from "@/constants/sizes";
+import { useColors } from "@/hooks/useThemeColors";
+import { Spacing, BorderRadius } from "@/constants/sizes";
+import { useTranslation } from "react-i18next";
 
-const BearerTokenLogin = ({ onLogin, onDomainChange }) => {
+const BearerTokenLogin = ({ onLogin, onDomainChange, domain: domainProp }) => {
     const colors = useColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
-    const [domain, setDomain] = useState('https://example.example.com');
+    const { t } = useTranslation();
+    const [ownDomain, setOwnDomain] = useState('https://example.example.com');
     const [token, setToken] = useState('');
 
-    // this doesn't have a dep, but i'm not sure how else to make it work...
-    // and i don't know why it's happening here, because it hasn't happened on the other versions of this...
-    // useEffect(() => {
-    //     const loadDomain = async () => {
-    //         const savedDomain = await SecureStore.getItemAsync('domain');
-    //         if (savedDomain) {
-    //             setDomain(savedDomain);
-    //             if (onDomainChange) onDomainChange(savedDomain);
-    //         }
-    //     };
-    //     loadDomain();
-    // }, []);
-
-    // same here, not sure what's going on....
-    // useEffect(() => {
-    //     const savedBearerToken = SecureStore.getItemAsync('bearer_token');
-    //     if (savedBearerToken) {
-    //         setToken(savedBearerToken);
-    //     }
-    // }, [token])
+    const effectiveDomain = domainProp ?? ownDomain;
 
     const handleDomainChange = (text) => {
-        setDomain(text);
+        setOwnDomain(text);
         if (onDomainChange) onDomainChange(text);
     };
 
     const handleLogin = async () => {
         try {
-            await onLogin(domain, token);
-        } catch (error) {
-            Alert.alert("Login Failed", "Please check your username/password");
+            await onLogin(effectiveDomain, token);
+        } catch {
+            Alert.alert(t('mobile.token_login_failed'), t('mobile.token_login_failed_message'));
         }
     };
 
     return (
         <>
+            {domainProp == null && (
+                <TextInput
+                    placeholder={t('mobile.domain')}
+                    onChangeText={handleDomainChange}
+                    value={ownDomain}
+                    style={styles.input}
+                    placeholderTextColor={colors.textMuted}
+                    textContentType="URL"
+                    autoCapitalize="none"
+                />
+            )}
             <TextInput
-                placeholder="Domain"
-                onChangeText={handleDomainChange}
-                value={domain}
-                style={styles.input}
-                placeholderTextColor={colors.textMuted}
-                textContentType="URL"
-                autoCapitalize="none"
-            />
-            <TextInput
-                placeholder="Token"
+                placeholder={t('mobile.api_token')}
                 onChangeText={setToken}
                 value={token}
                 style={styles.input}
                 placeholderTextColor={colors.textMuted}
                 autoCapitalize="none"
+                returnKeyType="done"
+                blurOnSubmit
+                secureTextEntry
             />
-            <Button title="Login" onPress={handleLogin} />
+            <Button title={t('mobile.token_login')} onPress={handleLogin} />
         </>
     );
 };
