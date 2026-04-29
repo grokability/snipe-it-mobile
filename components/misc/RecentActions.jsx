@@ -17,7 +17,7 @@ const ActionRow = ({actionLog, colors, styles, isLast}) => {
 
     return (
         <Pressable
-            onPress={() => router.push(`/(more)/activity-report/${actionLog.id}`)}
+            onPress={() => router.push(`/(more)/reports/activity-report/${actionLog.id}`)}
             style={[styles.row, !isLast && styles.rowDivider]}
         >
             <View style={[styles.badge, {backgroundColor: badgeColor + '22', borderColor: badgeColor + '55'}]}>
@@ -66,7 +66,7 @@ const RecentActions = () => {
         <View>
             <View style={styles.header}>
                 <Text style={styles.title}>{t('general.recent_activity')}</Text>
-                <Pressable onPress={() => router.push('/(more)/activity-report')}>
+                <Pressable onPress={() => router.push('/(more)/reports/activity-report')}>
                     <Text style={styles.showMore}>{t('mobile.show_more')}</Text>
                 </Pressable>
             </View>
