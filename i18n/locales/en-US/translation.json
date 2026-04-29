@@ -8,6 +8,9 @@
     "logout": "Logout",
     "search": "Search...",
     "notes": "Notes",
+    "recent_activity": "Recent Activity",
+    "activity_report": "Activity Report",
+    "reports": "Reports",
     "checkout": "Checkout",
     "checkin": "Checkin",
     "qty": "Qty: {{count}}",
@@ -67,7 +70,14 @@
     "audit": "Audit",
     "audit_due": "Audit Due",
     "audit_overdue": "Audit Overdue",
-    "image": "Image"
+    "image": "Image",
+    "item": "Item",
+    "target": "Target",
+    "type": "Type",
+    "created_by": "Created By",
+    "quantity": "Quantity",
+    "action_source": "Action Source",
+    "action_date": "Action Date"
   },
   "mobile": {
     "na": "N/A",
@@ -104,7 +114,6 @@
     "no_components": "No components found",
     "licenses_title": "Licenses Index",
     "domain_message": "Your domain is set as {{domain}}",
-    "recent_actions": "Recent Actions",
     "screen_asset_details": "Asset Details",
     "screen_checkout": "Checkout Screen",
     "screen_checkin": "Checkin Screen",

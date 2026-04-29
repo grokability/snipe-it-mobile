@@ -40,6 +40,30 @@ export default function MoreLayout() {
                 }}
             />
             <Stack.Screen
+                name="reports/activity-report/index"
+                options={{
+                    headerTitle: t('general.activity_report'),
+                    headerBackTitle: '',
+                }}
+            />
+            <Stack.Screen
+                name="reports/activity-report/[id]"
+                options={{
+                    headerTitle: '',
+                    headerBackTitle: '',
+                }}
+            />
+            <Stack.Screen
+                name="reports/index"
+                options={{
+                    headerTitle: t('general.reports'),
+                    headerBackTitle: '',
+                    headerTransparent: false,
+                    headerShadowVisible: false,
+                    headerStyle: { backgroundColor: colors.background },
+                }}
+            />
+            <Stack.Screen
                 name="settings"
                 options={{
                     title: t('general.settings'),
