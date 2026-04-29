@@ -1,19 +1,16 @@
 import {View, Text, Pressable, StyleSheet} from 'react-native';
-import {useMemo} from "react";
+import {useMemo} from 'react';
 import {useRouter} from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import {useColors} from "@/hooks/useThemeColors";
-import {Spacing, Typography, FontWeight, BorderRadius} from "@/constants/sizes";
-import {useTranslation} from "react-i18next";
+import {useColors} from '@/hooks/useThemeColors';
+import {Spacing, Typography, FontWeight, BorderRadius} from '@/constants/sizes';
+import {useTranslation} from 'react-i18next';
 
-const MENU_ITEMS = [
-    { key: 'components', icon: 'hdd-o',       labelKey: 'general.components', route: 'components' },
-    { key: 'licenses',   icon: 'file-text-o', labelKey: 'general.licenses',   route: 'licenses' },
-    { key: 'reports',    icon: 'bar-chart',   labelKey: 'general.reports',     route: 'reports' },
-    { key: 'settings',   icon: 'cog',         labelKey: 'general.settings',   route: 'settings' },
+const REPORT_ITEMS = [
+    { key: 'activity-report', icon: 'list-alt', labelKey: 'general.activity_report', route: 'reports/activity-report' },
 ];
 
-export default function MoreScreen() {
+export default function ReportsScreen() {
     const colors = useColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const { t } = useTranslation();
@@ -21,7 +18,7 @@ export default function MoreScreen() {
 
     return (
         <View style={styles.container}>
-            {MENU_ITEMS.map((item) => (
+            {REPORT_ITEMS.map((item) => (
                 <Pressable
                     key={item.key}
                     style={styles.row}

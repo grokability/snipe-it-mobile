@@ -40,6 +40,16 @@ export default function MoreLayout() {
                 }}
             />
             <Stack.Screen
+                name="reports/index"
+                options={{
+                    title: t('general.reports'),
+                    headerBackTitle: '',
+                    headerTransparent: false,
+                    headerShadowVisible: false,
+                    headerStyle: { backgroundColor: colors.background },
+                }}
+            />
+            <Stack.Screen
                 name="settings"
                 options={{
                     title: t('general.settings'),

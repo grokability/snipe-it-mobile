@@ -10,6 +10,7 @@
     "notes": "Notes",
     "recent_activity": "Recent Activity",
     "activity_report": "Activity Report",
+    "reports": "Reports",
     "checkout": "Checkout",
     "checkin": "Checkin",
     "qty": "Qty: {{count}}",
