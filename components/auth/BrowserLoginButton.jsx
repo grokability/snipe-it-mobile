@@ -22,7 +22,7 @@ const BrowserLoginButton = ({ domain }) => {
 
     const [request, response, promptAsync] = useAuthRequest(
         {
-            prompt: 'login',
+            prompt: 'consent',
             usePKCE: true,
             responseType: 'code',
             clientId: '9999',
