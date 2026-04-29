@@ -1,100 +1,164 @@
 import React, {useCallback, useMemo, useState} from 'react';
-import {Button, Pressable, StyleSheet, Text, View} from "react-native";
+import {ActivityIndicator, Pressable, StyleSheet, Text, View} from "react-native";
 import {makeRequest} from "@/helpers/axiosConfig";
-import {useFocusEffect} from "expo-router";
+import {router, useFocusEffect} from "expo-router";
 import {useColors} from "@/hooks/useThemeColors";
-import {Typography, FontWeight, Spacing} from "@/constants/sizes";
+import {Typography, FontWeight, Spacing, BorderRadius} from "@/constants/sizes";
 import {useTranslation} from "react-i18next";
+import {formatActionDate, getActionBadgeColor} from "@/helpers/utils";
+
+const ActionRow = ({actionLog, colors, styles, isLast}) => {
+    const badgeColor = getActionBadgeColor(colors, actionLog.action_type);
+    const assetName = actionLog.item?.name ?? actionLog.action_type;
+    const subtitleParts = [];
+    if (actionLog.item?.type) subtitleParts.push(actionLog.item.type);
+    if (actionLog.created_by?.name) subtitleParts.push(actionLog.created_by.name);
+    const subtitle = subtitleParts.join(' · ');
+
+    return (
+        <Pressable
+            onPress={() => router.push(`/(more)/activity-report/${actionLog.id}`)}
+            style={[styles.row, !isLast && styles.rowDivider]}
+        >
+            <View style={[styles.badge, {backgroundColor: badgeColor + '22', borderColor: badgeColor + '55'}]}>
+                <Text style={[styles.badgeText, {color: badgeColor}]} numberOfLines={1}>
+                    {actionLog.action_type}
+                </Text>
+            </View>
+            <View style={styles.rowContent}>
+                <Text style={styles.rowPrimary} numberOfLines={1}>{assetName}</Text>
+                {subtitle ? (
+                    <Text style={styles.rowMeta} numberOfLines={1}>{subtitle}</Text>
+                ) : null}
+            </View>
+            <Text style={styles.rowDate} numberOfLines={1}>{formatActionDate(actionLog.action_date)}</Text>
+        </Pressable>
+    );
+};
 
 const RecentActions = () => {
     const colors = useColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
-    const { t } = useTranslation();
-    const [data, setData] = useState({})
+    const {t} = useTranslation();
+    const [actionLogs, setActionLogs] = useState([]);
     const [loading, setLoading] = useState(true);
-    const getRecentActions = useCallback(() => {
+
+    const fetchActionLogs = useCallback(() => {
         setLoading(true);
-        return makeRequest({
-            url: '/reports/activity?' +
-                'limit=30&' +
-                'offset=0&' +
-                'sort=created_at&' +
-                'order=dsc',
-            method: 'get'
+        makeRequest({
+            url: '/reports/activity?limit=5&offset=0&sort=created_at&order=desc',
+            method: 'get',
         })
-            .then(res => {
-                setData({
-                    actions: res.rows || [],
-                });
-            })
-            .catch(error => {
-                console.error('Error fetching recent actions:', error);
-            })
-            .finally(() => {
-                setLoading(false);
-            });
+            .then(res => setActionLogs(res.rows ?? []))
+            .catch(error => console.error('Error fetching recent actionLogs:', error))
+            .finally(() => setLoading(false));
     }, []);
 
     useFocusEffect(
         useCallback(() => {
-            getRecentActions();
-        }, [getRecentActions])
+            fetchActionLogs();
+        }, [fetchActionLogs])
     );
 
-    const Item = ({id, action_type, created_by }) => (
-        <Pressable
-            onPress={() => console.log('Pressed:', id)}
-            style={styles.item}
-        >
-            <Text
-                adjustsFontSizeToFit={true}
-                style={styles.itemText}
-            >
-                {id} - {action_type} - {created_by}
-            </Text>
-        </Pressable>
-    )
+    if (!loading && actionLogs.length === 0) return null;
 
     return (
-        <View style={styles.container}>
-            <Text style={styles.title}>{t('mobile.recent_actions')}</Text>
-            <View style={styles.list}>
-                {data.actions?.slice(0, 5).map((item) => (
-                    <Item
-                        key={item.id}
-                        id={item.id}
-                        action_type={item.action_type}
-                        created_by={item.created_by?.name}
+        <View>
+            <View style={styles.header}>
+                <Text style={styles.title}>{t('general.recent_activity')}</Text>
+                <Pressable onPress={() => router.push('/(more)/activity-report')}>
+                    <Text style={styles.showMore}>{t('mobile.show_more')}</Text>
+                </Pressable>
+            </View>
+            <View style={styles.card}>
+                {loading ? (
+                    <ActivityIndicator
+                        color={colors.primary}
+                        style={styles.spinner}
+                    />
+                ) : actionLogs.map((actionLog, index) => (
+                    <ActionRow
+                        key={actionLog.id}
+                        actionLog={actionLog}
+                        colors={colors}
+                        styles={styles}
+                        isLast={index === actionLogs.length - 1}
                     />
                 ))}
             </View>
-            <Button title={t('mobile.show_more')} onPress={() => console.log('show action log index')} />
         </View>
-
-    )
-}
+    );
+};
 
 const createStyles = (colors) => StyleSheet.create({
-    container: {
-        backgroundColor: colors.background,
+    header: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: Spacing.sm,
     },
     title: {
         fontSize: Typography.body,
         fontWeight: FontWeight.semibold,
         color: colors.text,
-        marginBottom: Spacing.sm,
     },
-    list: {
-        backgroundColor: colors.background,
-        flexGrow: 0,
+    showMore: {
+        fontSize: Typography.caption,
+        color: colors.primary,
+        fontWeight: FontWeight.medium,
     },
-    item: {
-        paddingVertical: Spacing.xs,
-        backgroundColor: colors.background,
+    card: {
+        backgroundColor: colors.backgroundSecondary,
+        borderRadius: BorderRadius.md,
+        borderWidth: 1,
+        borderColor: colors.border,
+        overflow: 'hidden',
     },
-    itemText: {
+    row: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: Spacing.md,
+        paddingVertical: Spacing.sm,
+        gap: Spacing.sm,
+    },
+    rowDivider: {
+        borderBottomWidth: StyleSheet.hairlineWidth,
+        borderBottomColor: colors.border,
+    },
+    badge: {
+        borderRadius: BorderRadius.sm,
+        borderWidth: 1,
+        paddingHorizontal: Spacing.xs,
+        paddingVertical: 2,
+        width: 96,
+    },
+    badgeText: {
+        fontSize: Typography.caption,
+        fontWeight: FontWeight.medium,
+        textAlign: 'center',
+    },
+    rowContent: {
+        flex: 1,
+        minWidth: 0,
+    },
+    rowPrimary: {
         fontSize: Typography.body,
+        fontWeight: FontWeight.medium,
         color: colors.text,
+    },
+    rowMeta: {
+        fontSize: Typography.caption,
+        color: colors.textSecondary,
+        marginTop: 1,
+    },
+    rowDate: {
+        fontSize: Typography.caption,
+        color: colors.textSecondary,
+        width: 88,
+        textAlign: 'right',
+    },
+    spinner: {
+        paddingVertical: Spacing.xl,
     },
 });
 
