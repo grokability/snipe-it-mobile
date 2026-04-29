@@ -47,6 +47,13 @@ export default function MoreLayout() {
                 }}
             />
             <Stack.Screen
+                name="reports/activity-report/[id]"
+                options={{
+                    headerTitle: '',
+                    headerBackTitle: '',
+                }}
+            />
+            <Stack.Screen
                 name="reports/index"
                 options={{
                     headerTitle: t('general.reports'),

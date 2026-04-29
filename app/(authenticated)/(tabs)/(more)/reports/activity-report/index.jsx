@@ -1,6 +1,7 @@
 import {View, Text, StyleSheet, RefreshControl, Platform, Pressable} from 'react-native';
 import {useState, useCallback, useMemo} from 'react';
 import {router, useFocusEffect} from 'expo-router';
+import {decode} from 'html-entities';
 import {makeRequest} from '@/helpers/axiosConfig';
 import {useColors} from '@/hooks/useThemeColors';
 import {Spacing, BorderRadius, Typography, FontWeight} from '@/constants/sizes';
@@ -14,16 +15,19 @@ import {formatActionDate, getActionBadgeColor} from '@/helpers/utils';
 
 const ActionRow = ({actionLog, colors, styles}) => {
     const badgeColor = getActionBadgeColor(colors, actionLog.action_type);
-    const itemName = actionLog.item?.name ?? actionLog.action_type;
+    const itemName = decode(actionLog.item?.name ?? actionLog.action_type);
     const subtitleParts = [];
-    if (actionLog.item?.type) subtitleParts.push(actionLog.item.type);
-    if (actionLog.created_by?.name) subtitleParts.push(actionLog.created_by.name);
+    if (actionLog.item?.type) subtitleParts.push(decode(actionLog.item.type));
+    if (actionLog.created_by?.name) subtitleParts.push(decode(actionLog.created_by.name));
     const subtitle = subtitleParts.join(' · ');
 
     return (
         <Pressable
             style={({pressed}) => [styles.itemContainer, pressed && styles.itemPressed]}
-            onPress={() => router.push(`/(more)/reports/activity-report/${actionLog.id}`)}
+            onPress={() => router.push({
+                pathname: `/(more)/reports/activity-report/${actionLog.id}`,
+                params: {data: JSON.stringify(actionLog)},
+            })}
         >
             <View style={[styles.badge, {backgroundColor: badgeColor + '22', borderColor: badgeColor + '55'}]}>
                 <Text style={[styles.badgeText, {color: badgeColor}]} numberOfLines={1}>

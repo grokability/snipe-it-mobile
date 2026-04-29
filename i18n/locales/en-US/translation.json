@@ -70,7 +70,14 @@
     "audit": "Audit",
     "audit_due": "Audit Due",
     "audit_overdue": "Audit Overdue",
-    "image": "Image"
+    "image": "Image",
+    "item": "Item",
+    "target": "Target",
+    "type": "Type",
+    "created_by": "Created By",
+    "quantity": "Quantity",
+    "action_source": "Action Source",
+    "action_date": "Action Date"
   },
   "mobile": {
     "na": "N/A",

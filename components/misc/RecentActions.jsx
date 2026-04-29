@@ -1,5 +1,6 @@
 import React, {useCallback, useMemo, useState} from 'react';
 import {ActivityIndicator, Pressable, StyleSheet, Text, View} from "react-native";
+import {decode} from 'html-entities';
 import {makeRequest} from "@/helpers/axiosConfig";
 import {router, useFocusEffect} from "expo-router";
 import {useColors} from "@/hooks/useThemeColors";
@@ -9,15 +10,18 @@ import {formatActionDate, getActionBadgeColor} from "@/helpers/utils";
 
 const ActionRow = ({actionLog, colors, styles, isLast}) => {
     const badgeColor = getActionBadgeColor(colors, actionLog.action_type);
-    const assetName = actionLog.item?.name ?? actionLog.action_type;
+    const assetName = decode(actionLog.item?.name ?? actionLog.action_type);
     const subtitleParts = [];
-    if (actionLog.item?.type) subtitleParts.push(actionLog.item.type);
-    if (actionLog.created_by?.name) subtitleParts.push(actionLog.created_by.name);
+    if (actionLog.item?.type) subtitleParts.push(decode(actionLog.item.type));
+    if (actionLog.created_by?.name) subtitleParts.push(decode(actionLog.created_by.name));
     const subtitle = subtitleParts.join(' · ');
 
     return (
         <Pressable
-            onPress={() => router.push(`/(more)/reports/activity-report/${actionLog.id}`)}
+            onPress={() => router.push({
+            pathname: `/(more)/reports/activity-report/${actionLog.id}`,
+            params: {data: JSON.stringify(actionLog)},
+        })}
             style={[styles.row, !isLast && styles.rowDivider]}
         >
             <View style={[styles.badge, {backgroundColor: badgeColor + '22', borderColor: badgeColor + '55'}]}>
