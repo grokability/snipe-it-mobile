@@ -3,6 +3,7 @@ import {useState, useCallback, useMemo} from 'react';
 import {router, useFocusEffect} from 'expo-router';
 import {decode} from 'html-entities';
 import {makeRequest} from '@/helpers/axiosConfig';
+import {PERMISSIONS} from '@/permissions/PermissionKeys';
 import {useColors} from '@/hooks/useThemeColors';
 import {Spacing, BorderRadius, Typography, FontWeight} from '@/constants/sizes';
 import {useTranslation} from 'react-i18next';
@@ -63,6 +64,7 @@ export default function ActivityReportScreen() {
         return makeRequest({
             url: `/reports/activity?limit=25&offset=${fetchOffset}&sort=created_at&order=desc`,
             method: 'get',
+            permissionKey: PERMISSIONS.REPORTS_VIEW,
         })
             .then(res => {
                 if (res?.rows) {

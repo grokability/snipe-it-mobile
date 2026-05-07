@@ -7,6 +7,7 @@ import {
 import {Text, Button, Pressable, View, StyleSheet, Image} from "react-native";
 import React, {forwardRef, useEffect, useMemo, useState} from "react";
 import {makeRequest} from "@/helpers/axiosConfig";
+import {PERMISSIONS} from "@/permissions/PermissionKeys";
 import {useColors} from "@/hooks/useThemeColors";
 import {Spacing, BorderRadius, Typography, FontWeight} from "@/constants/sizes";
 import {useTranslation} from "react-i18next";
@@ -35,9 +36,11 @@ const SelectUserBottomSheet = forwardRef((props, ref) => {
         makeRequest({
             url: `/users?sort=display_name&order=asc&search=${searchText}`,
             method: 'GET',
+            permissionKey: PERMISSIONS.USERS_VIEW,
+            silent: true,
         })
             .then((res) => {
-                setUsers(res.rows)
+                setUsers(res?.rows ?? [])
             })
             .catch((err) => {
                 console.error(err);

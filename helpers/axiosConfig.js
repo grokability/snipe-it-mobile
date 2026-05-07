@@ -41,13 +41,11 @@ authInstance.interceptors.response.use(
     }
 );
 
-const MUTATING_METHODS = ['post', 'put', 'patch', 'delete'];
-
 // apiInstance: 401 redirect + permission recording
 apiInstance.interceptors.response.use(
     (response) => {
-        const { permissionKey, method } = response.config;
-        if (permissionKey && MUTATING_METHODS.includes(method?.toLowerCase())) {
+        const { permissionKey } = response.config;
+        if (permissionKey && response.data?.status !== 'error') {
             PermissionManager.recordAllow(permissionKey);
         }
         return response;
@@ -58,11 +56,13 @@ apiInstance.interceptors.response.use(
         } else if (error.response?.status === 403) {
             if (error.config?.permissionKey) {
                 PermissionManager.recordDeny(error.config.permissionKey);
-                Alert.alert(
-                    i18n.t('mobile.permission_denied'),
-                    i18n.t('mobile.permission_denied_message'),
-                    [{ text: i18n.t('general.ok') }]
-                );
+                if (!error.config.silent) {
+                    Alert.alert(
+                        i18n.t('mobile.permission_denied'),
+                        i18n.t('mobile.permission_denied_message'),
+                        [{ text: i18n.t('general.ok') }]
+                    );
+                }
             } else if (__DEV__) {
                 console.warn('[permissions] 403 received but no permissionKey was set on this request.');
             }
@@ -79,6 +79,7 @@ export const makeRequest = async ({
                                       isAuth = false,
                                       headers = {},
                                       permissionKey,
+                                      silent = false,
                                   }) => {
     const instance = isAuth ? authInstance : apiInstance;
 
@@ -106,11 +107,15 @@ export const makeRequest = async ({
         data,
         headers,
         permissionKey,
+        silent,
     };
 
     return instance(config)
         .then(response => response.data)
         .catch(error => {
-            throw error; // Re-throw for proper handling
+            if (error?.response?.status === 403 && config.permissionKey) {
+                return null;
+            }
+            throw error;
         });
 };

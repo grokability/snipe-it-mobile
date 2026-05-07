@@ -7,6 +7,7 @@ import {
 import {Text, Button, Pressable, View, StyleSheet} from "react-native";
 import React, {forwardRef, useEffect, useMemo, useState} from "react";
 import {makeRequest} from "@/helpers/axiosConfig";
+import {PERMISSIONS} from "@/permissions/PermissionKeys";
 import {useColors} from "@/hooks/useThemeColors";
 import {Spacing, BorderRadius, Typography, FontWeight} from "@/constants/sizes";
 import {useTranslation} from "react-i18next";
@@ -35,9 +36,11 @@ const SelectAssetBottomSheet = forwardRef((props, ref) => {
         makeRequest({
             url: `/hardware?sort=first_name&order=asc&search=${searchText}`,
             method: 'GET',
+            permissionKey: PERMISSIONS.ASSETS_VIEW,
+            silent: true,
         })
             .then((res) => {
-                setAssets(res.rows)
+                setAssets(res?.rows ?? [])
             })
             .catch((err) => {
                 console.error(err);

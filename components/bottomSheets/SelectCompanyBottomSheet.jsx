@@ -2,6 +2,7 @@ import {Text, View, StyleSheet, Button, Pressable} from "react-native";
 import {BottomSheetFlatList, BottomSheetModal, BottomSheetTextInput, useBottomSheet} from "@gorhom/bottom-sheet";
 import React, {useMemo, useState, forwardRef, useEffect} from "react";
 import {makeRequest} from "@/helpers/axiosConfig";
+import {PERMISSIONS} from "@/permissions/PermissionKeys";
 import {useColors} from "@/hooks/useThemeColors";
 import {Spacing, BorderRadius, Typography, FontWeight} from "@/constants/sizes";
 import {useTranslation} from "react-i18next";
@@ -30,9 +31,11 @@ const SelectCompanyBottomSheet = forwardRef((props, ref) => {
         makeRequest({
             url: `/companies?search=${searchText}`,
             method: 'GET',
+            permissionKey: PERMISSIONS.COMPANIES_VIEW,
+            silent: true,
         })
             .then((res) => {
-                setCompanies(res.rows);
+                setCompanies(res?.rows ?? []);
             })
             .catch((err) => {
                 console.error(err);

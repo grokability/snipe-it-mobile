@@ -3,6 +3,8 @@ import {ActivityIndicator, Image, Pressable, RefreshControl, ScrollView, StyleSh
 import {router, useFocusEffect, useLocalSearchParams, useNavigation} from "expo-router";
 import {Ionicons} from '@expo/vector-icons';
 import {makeRequest} from "@/helpers/axiosConfig";
+import {PERMISSIONS} from "@/permissions/PermissionKeys";
+import {usePermission} from "@/permissions/PermissionContext";
 import {decode} from "html-entities";
 import {SafeAreaProvider, useSafeAreaInsets} from "react-native-safe-area-context";
 import {useColors} from "@/hooks/useThemeColors";
@@ -24,6 +26,7 @@ export default function ConsumableScreen() {
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
+    const { denied: checkoutDenied } = usePermission(PERMISSIONS.CONSUMABLES_CHECKOUT);
     const { id } = useLocalSearchParams();
     const navigation = useNavigation();
 
@@ -47,7 +50,7 @@ export default function ConsumableScreen() {
 
     const getConsumable = useCallback(() => {
         setLoading(true);
-        return makeRequest({ url: `/consumables/${id}`, method: 'get' })
+        return makeRequest({ url: `/consumables/${id}`, method: 'get', permissionKey: PERMISSIONS.CONSUMABLES_VIEW })
             .then(res => {
                 setData(res);
             })
@@ -115,7 +118,7 @@ export default function ConsumableScreen() {
                 </View>
 
                 {/* Checkout Action */}
-                {data.user_can_checkout && (
+                {data.user_can_checkout && !checkoutDenied && (
                     <Pressable
                         style={({pressed}) => [styles.checkoutButton, pressed && styles.buttonPressed]}
                         onPress={() => router.push(`/(tabs)/(consumables)/checkout/${id}`)}
