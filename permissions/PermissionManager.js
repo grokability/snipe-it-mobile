@@ -28,7 +28,7 @@ function notify() {
 
 
 // debounces SecureStore writes when we're setting a lot at once (like at login)
-const schedulePersist = debounce(() => {
+const secureStoreUpdater = debounce(() => {
     if (!activeDomain) return;
     SecureStore.setItemAsync(storageKey(activeDomain), JSON.stringify({
         schemaVersion: SCHEMA_VERSION,
@@ -98,7 +98,7 @@ export const PermissionManager = {
             }
         }
 
-        schedulePersist();
+        secureStoreUpdater();
         notify();
     },
 
@@ -107,7 +107,7 @@ export const PermissionManager = {
         if (permissionStates[key] === 'denied') return;
         permissionStates[key] = 'denied';
         source[key] = 'discovery403';
-        schedulePersist();
+        secureStoreUpdater();
         notify();
     },
 
@@ -117,7 +117,7 @@ export const PermissionManager = {
         if (permissionStates[key]) return; // already 'allowed' or 'denied' — do not change
         permissionStates[key] = 'allowed';
         source[key] = 'discoverySuccess';
-        schedulePersist();
+        secureStoreUpdater();
         notify();
     },
 
@@ -154,7 +154,7 @@ export const PermissionManager = {
             endpointV2Available = false;
             permissionStates = {};
             source = {};
-            schedulePersist.cancel();
+            secureStoreUpdater.cancel();
             notify();
         }
         SecureStore.deleteItemAsync(storageKey(domain));
