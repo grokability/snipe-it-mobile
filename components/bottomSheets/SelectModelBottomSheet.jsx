@@ -1,4 +1,4 @@
-import {Text, View, StyleSheet, Button, Pressable} from "react-native";
+import {Text, View, StyleSheet, Button, Pressable, Image} from "react-native";
 import {BottomSheetFlatList, BottomSheetModal, BottomSheetTextInput, useBottomSheet} from "@gorhom/bottom-sheet";
 import React, {useMemo, useState, forwardRef, useEffect} from "react";
 import {makeRequest} from "@/helpers/axiosConfig";
@@ -29,21 +29,21 @@ const SelectModelBottomSheet = forwardRef((props, ref) => {
 
     const fetchModels = () => {
         makeRequest({
-            url: `/models?search=${searchText}`,
+            url: `/models/selectlist?search=${searchText}`,
             method: 'GET',
-            permissionKey: PERMISSIONS.MODELS_VIEW,
+            permissionKey: PERMISSIONS.VIEW_SELECTLISTS,
             silent: true,
         })
             .then((res) => {
-                setModels(res?.rows ?? []);
+                setModels(res?.results ?? []);
             })
             .catch((err) => {
                 console.error(err);
             });
     };
 
-    const selectModel = (model) => {
-        props.setSelectedModel(model);
+    const selectModel = (item) => {
+        props.setSelectedModel({ ...item, name: item.text });
         ref.current.close();
     };
 
@@ -55,11 +55,11 @@ const SelectModelBottomSheet = forwardRef((props, ref) => {
                 pressed && styles.itemPressed
             ]}
         >
+            {item.image && (
+                <Image source={{ uri: item.image }} style={styles.itemImage} />
+            )}
             <View style={styles.infoContainer}>
-                <Text style={styles.name}>{decode(item.name)}</Text>
-                {item.model_number && (
-                    <Text style={styles.subtitle}>{item.model_number}</Text>
-                )}
+                <Text style={styles.name}>{decode(item.text)}</Text>
             </View>
         </Pressable>
     );
@@ -130,6 +130,12 @@ const createStyles = (colors) => StyleSheet.create({
     },
     itemPressed: {
         backgroundColor: colors.backgroundTertiary,
+    },
+    itemImage: {
+        width: 32,
+        height: 32,
+        borderRadius: BorderRadius.sm,
+        marginRight: Spacing.md,
     },
     infoContainer: {
         flex: 1,

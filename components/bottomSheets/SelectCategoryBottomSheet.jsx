@@ -1,4 +1,4 @@
-import {Text, View, StyleSheet, Button, Pressable} from "react-native";
+import {Text, View, StyleSheet, Button, Pressable, Image} from "react-native";
 import {BottomSheetFlatList, BottomSheetModal, BottomSheetTextInput, useBottomSheet} from "@gorhom/bottom-sheet";
 import React, {useMemo, useState, forwardRef, useEffect} from "react";
 import {makeRequest} from "@/helpers/axiosConfig";
@@ -29,21 +29,21 @@ const SelectCategoryBottomSheet = forwardRef((props, ref) => {
 
     const fetchCategories = () => {
         makeRequest({
-            url: `/categories?search=${searchText}`,
+            url: `/categories/${props.categoryType}/selectlist?search=${searchText}`,
             method: 'GET',
-            permissionKey: PERMISSIONS.CATEGORIES_VIEW,
+            permissionKey: PERMISSIONS.VIEW_SELECTLISTS,
             silent: true,
         })
             .then((res) => {
-                setCategories(res?.rows ?? []);
+                setCategories(res?.results ?? []);
             })
             .catch((err) => {
                 console.error(err);
             });
     };
 
-    const selectCategory = (category) => {
-        props.setSelectedCategory(category);
+    const selectCategory = (item) => {
+        props.setSelectedCategory({ ...item, name: item.text });
         ref.current.close();
     };
 
@@ -55,7 +55,10 @@ const SelectCategoryBottomSheet = forwardRef((props, ref) => {
                 pressed && styles.itemPressed
             ]}
         >
-            <Text style={styles.name}>{decode(item.name)}</Text>
+            {item.image && (
+                <Image source={{ uri: item.image }} style={styles.itemImage} />
+            )}
+            <Text style={styles.name}>{decode(item.text)}</Text>
         </Pressable>
     );
 
@@ -126,10 +129,17 @@ const createStyles = (colors) => StyleSheet.create({
     itemPressed: {
         backgroundColor: colors.backgroundTertiary,
     },
+    itemImage: {
+        width: 32,
+        height: 32,
+        borderRadius: BorderRadius.sm,
+        marginRight: Spacing.md,
+    },
     name: {
         fontSize: Typography.bodyLarge,
         fontWeight: FontWeight.medium,
         color: colors.text,
+        flex: 1,
     },
     listContent: {
         paddingBottom: Spacing.xl,

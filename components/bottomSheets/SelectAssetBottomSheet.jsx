@@ -4,7 +4,7 @@ import {
     BottomSheetTextInput,
     useBottomSheet
 } from "@gorhom/bottom-sheet";
-import {Text, Button, Pressable, View, StyleSheet} from "react-native";
+import {Text, Button, Pressable, View, StyleSheet, Image} from "react-native";
 import React, {forwardRef, useEffect, useMemo, useState} from "react";
 import {makeRequest} from "@/helpers/axiosConfig";
 import {PERMISSIONS} from "@/permissions/PermissionKeys";
@@ -34,21 +34,21 @@ const SelectAssetBottomSheet = forwardRef((props, ref) => {
 
     const fetchAssets = () => {
         makeRequest({
-            url: `/hardware?sort=first_name&order=asc&search=${searchText}`,
+            url: `/hardware/selectlist?search=${searchText}`,
             method: 'GET',
-            permissionKey: PERMISSIONS.ASSETS_VIEW,
+            permissionKey: PERMISSIONS.VIEW_SELECTLISTS,
             silent: true,
         })
             .then((res) => {
-                setAssets(res?.rows ?? [])
+                setAssets(res?.results ?? [])
             })
             .catch((err) => {
                 console.error(err);
             });
     }
 
-    const selectAsset = (asset) => {
-        props.setSelectedAsset(asset)
+    const selectAsset = (item) => {
+        props.setSelectedAsset({ ...item, name: item.text })
         ref.current.close()
     }
 
@@ -60,8 +60,11 @@ const SelectAssetBottomSheet = forwardRef((props, ref) => {
                 pressed && styles.itemPressed
             ]}
         >
+            {item.image && (
+                <Image source={{ uri: item.image }} style={styles.itemImage} />
+            )}
             <View style={styles.assetInfoContainer}>
-                <Text style={styles.assetName}>{decode(item.asset_tag)}</Text>
+                <Text style={styles.assetName}>{decode(item.text)}</Text>
             </View>
         </Pressable>
     )
@@ -132,6 +135,12 @@ const createStyles = (colors) => StyleSheet.create({
     },
     itemPressed: {
         backgroundColor: colors.backgroundTertiary,
+    },
+    itemImage: {
+        width: 32,
+        height: 32,
+        borderRadius: BorderRadius.sm,
+        marginRight: Spacing.md,
     },
     assetInfoContainer: {
         flex: 1,

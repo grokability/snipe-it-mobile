@@ -1,4 +1,4 @@
-import {Text, View, StyleSheet, Button, Pressable} from "react-native";
+import {Text, View, StyleSheet, Button, Pressable, Image} from "react-native";
 import {BottomSheetFlatList, BottomSheetModal, BottomSheetTextInput, useBottomSheet} from "@gorhom/bottom-sheet";
 import React, {useMemo, useState, forwardRef, useEffect} from "react";
 import {makeRequest} from "@/helpers/axiosConfig";
@@ -29,21 +29,21 @@ const SelectStatusBottomSheet = forwardRef((props, ref) => {
 
     const fetchStatuses = () => {
         makeRequest({
-            url: `statuslabels?search=${searchText}`,
+            url: `/statuslabels/selectlist?search=${searchText}`,
             method: 'GET',
-            permissionKey: PERMISSIONS.STATUSLABELS_VIEW,
+            permissionKey: PERMISSIONS.VIEW_SELECTLISTS,
             silent: true,
         })
             .then((res) => {
-                setStatuses(res?.rows ?? [])
+                setStatuses(res?.results ?? [])
             })
             .catch((err) => {
                 console.error(err);
             });
     }
 
-    const selectStatus = (status) => {
-        props.setSelectedStatus({ ...status, value: status.id })
+    const selectStatus = (item) => {
+        props.setSelectedStatus({ ...item, name: item.text, value: item.id })
         ref.current.close()
     }
 
@@ -55,7 +55,10 @@ const SelectStatusBottomSheet = forwardRef((props, ref) => {
                 pressed && styles.itemPressed
             ]}
         >
-            <Text style={styles.name}>{decode(item.name)}</Text>
+            {item.image && (
+                <Image source={{ uri: item.image }} style={styles.itemImage} />
+            )}
+            <Text style={styles.name}>{decode(item.text)}</Text>
         </Pressable>
     )
 
@@ -128,10 +131,17 @@ const createStyles = (colors) => StyleSheet.create({
     itemPressed: {
         backgroundColor: colors.border,
     },
+    itemImage: {
+        width: 32,
+        height: 32,
+        borderRadius: BorderRadius.sm,
+        marginRight: Spacing.md,
+    },
     name: {
         fontSize: Typography.bodyLarge,
         fontWeight: FontWeight.medium,
         color: colors.text,
+        flex: 1,
     },
     listContent: {
         paddingBottom: Spacing.xl,

@@ -34,21 +34,21 @@ const SelectUserBottomSheet = forwardRef((props, ref) => {
 
     const fetchUsers = () => {
         makeRequest({
-            url: `/users?sort=display_name&order=asc&search=${searchText}`,
+            url: `/users/selectlist?search=${searchText}`,
             method: 'GET',
-            permissionKey: PERMISSIONS.USERS_VIEW,
+            permissionKey: PERMISSIONS.VIEW_SELECTLISTS,
             silent: true,
         })
             .then((res) => {
-                setUsers(res?.rows ?? [])
+                setUsers(res?.results ?? [])
             })
             .catch((err) => {
                 console.error(err);
             });
     }
 
-    const selectUser = (user) => {
-        props.setSelectedUser(user)
+    const selectUser = (item) => {
+        props.setSelectedUser({ ...item, name: item.text, avatar: item.image })
         ref.current.close()
     }
 
@@ -61,19 +61,18 @@ const SelectUserBottomSheet = forwardRef((props, ref) => {
             ]}
         >
             <View style={styles.imageContainer}>
-                {item.avatar ? (
-                    <Image source={{ uri: item.avatar }} style={styles.userImage} />
+                {item.image ? (
+                    <Image source={{ uri: item.image }} style={styles.userImage} />
                 ) : (
                     <View style={styles.placeholderImage}>
                         <Text style={styles.placeholderText}>
-                            {item.name ? decode(item.name).charAt(0).toUpperCase() : "U"}
+                            {item.text ? decode(item.text).charAt(0).toUpperCase() : "U"}
                         </Text>
                     </View>
                 )}
             </View>
             <View style={styles.userInfoContainer}>
-                <Text style={styles.userName}>{decode(item.name)}</Text>
-                <Text style={styles.userEmail}>{item.email || t('mobile.no_email')}</Text>
+                <Text style={styles.userName}>{decode(item.text)}</Text>
             </View>
         </Pressable>
     )
@@ -173,11 +172,6 @@ const createStyles = (colors) => StyleSheet.create({
         fontSize: Typography.bodyLarge,
         fontWeight: FontWeight.medium,
         color: colors.text,
-    },
-    userEmail: {
-        fontSize: Typography.body,
-        color: colors.textMuted,
-        marginTop: 2,
     },
     listContent: {
         paddingBottom: Spacing.xl,

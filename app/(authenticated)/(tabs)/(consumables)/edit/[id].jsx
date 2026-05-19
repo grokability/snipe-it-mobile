@@ -348,6 +348,7 @@ export default function EditConsumableScreen() {
                 title={t('general.select_category')}
                 ref={categoryRef}
                 setSelectedCategory={setSelectedCategory}
+                categoryType="consumable"
             />
             <SelectManufacturerBottomSheet
                 title={t('general.select_manufacturer')}
