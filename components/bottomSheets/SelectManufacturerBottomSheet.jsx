@@ -1,12 +1,13 @@
 import {Text, View, StyleSheet, Button, Pressable, Image, ActivityIndicator} from "react-native";
 import {BottomSheetFlatList, BottomSheetModal, BottomSheetTextInput, useBottomSheet} from "@gorhom/bottom-sheet";
-import React, {useMemo, useState, forwardRef, useEffect, useRef} from "react";
+import React, {useMemo, useState, forwardRef, useRef} from "react";
 import {makeRequest} from "@/helpers/axiosConfig";
 import {PERMISSIONS} from "@/permissions/PermissionKeys";
 import {useColors} from "@/hooks/useThemeColors";
 import {Spacing, BorderRadius, Typography, FontWeight} from "@/constants/sizes";
 import {useTranslation} from "react-i18next";
 import {decode} from "html-entities";
+import debounce from 'lodash/debounce';
 
 const CloseBtn = () => {
     const { close } = useBottomSheet();
@@ -23,17 +24,14 @@ const SelectManufacturerBottomSheet = forwardRef((props, ref) => {
     const [searchText, setSearchText] = useState('');
     const [manufacturers, setManufacturers] = useState([]);
     const [hasMore, setHasMore] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
     const pageRef = useRef(1);
 
-    useEffect(() => {
-        pageRef.current = 1;
-        fetchManufacturers(1);
-    }, [searchText]);
-
-    const fetchManufacturers = (pageNum) => {
+    const fetchManufacturers = (pageNum, searchQuery = searchText) => {
+        if (pageNum === 1) setIsLoading(true);
         makeRequest({
-            url: `/manufacturers/selectlist?search=${searchText}&page=${pageNum}`,
+            url: `/manufacturers/selectlist?search=${searchQuery}&page=${pageNum}`,
             method: 'GET',
             permissionKey: PERMISSIONS.VIEW_SELECTLISTS,
             silent: true,
@@ -47,6 +45,7 @@ const SelectManufacturerBottomSheet = forwardRef((props, ref) => {
                 console.error(err);
             })
             .finally(() => {
+                setIsLoading(false);
                 setIsLoadingMore(false);
             });
     };
@@ -56,6 +55,23 @@ const SelectManufacturerBottomSheet = forwardRef((props, ref) => {
         setIsLoadingMore(true);
         pageRef.current += 1;
         fetchManufacturers(pageRef.current);
+    };
+
+    const handleSheetAnimate = (fromIndex, toIndex) => {
+        if (fromIndex < 0 && toIndex >= 0) {
+            pageRef.current = 1;
+            fetchManufacturers(1, searchText);
+        }
+    };
+
+    const debouncedFetch = useRef(debounce((query) => {
+        pageRef.current = 1;
+        fetchManufacturers(1, query);
+    }, 300)).current;
+
+    const handleSearchChange = (text) => {
+        setSearchText(text);
+        debouncedFetch(text);
     };
 
     const selectManufacturer = (item) => {
@@ -85,7 +101,8 @@ const SelectManufacturerBottomSheet = forwardRef((props, ref) => {
             snapPoints={snapPoints}
             backgroundStyle={{ backgroundColor: colors.background }}
             handleIndicatorStyle={{ backgroundColor: colors.textMuted }}
-            onDismiss={() => setSearchText('')}
+            onAnimate={(fromIndex, toIndex) => handleSheetAnimate(fromIndex, toIndex)}
+            onDismiss={() => { setSearchText(''); setManufacturers([]); }}
         >
             <BottomSheetFlatList
                 data={manufacturers}
@@ -93,6 +110,9 @@ const SelectManufacturerBottomSheet = forwardRef((props, ref) => {
                 keyExtractor={item => item.id}
                 onEndReached={loadMore}
                 onEndReachedThreshold={0.1}
+                ListEmptyComponent={
+                    isLoading ? <ActivityIndicator style={styles.loadingInitial} /> : null
+                }
                 ListHeaderComponent={
                     <View style={styles.header}>
                         <Text style={styles.title}>{props.title}</Text>
@@ -101,7 +121,7 @@ const SelectManufacturerBottomSheet = forwardRef((props, ref) => {
                                 style={styles.searchInput}
                                 placeholder={t('general.search')}
                                 placeholderTextColor={colors.textMuted}
-                                onChangeText={(text) => setSearchText(text)}
+                                onChangeText={handleSearchChange}
                             />
                         </View>
                     </View>
@@ -163,6 +183,9 @@ const createStyles = (colors) => StyleSheet.create({
         fontWeight: FontWeight.medium,
         color: colors.text,
         flex: 1,
+    },
+    loadingInitial: {
+        paddingVertical: Spacing.xl,
     },
     loadingMore: {
         paddingVertical: Spacing.md,
