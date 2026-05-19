@@ -4,8 +4,8 @@ import {
     BottomSheetTextInput,
     useBottomSheet
 } from "@gorhom/bottom-sheet";
-import {Text, Button, Pressable, View, StyleSheet, Image} from "react-native";
-import React, {forwardRef, useEffect, useMemo, useState} from "react";
+import {Text, Button, Pressable, View, StyleSheet, Image, ActivityIndicator} from "react-native";
+import React, {forwardRef, useEffect, useMemo, useState, useRef} from "react";
 import {makeRequest} from "@/helpers/axiosConfig";
 import {PERMISSIONS} from "@/permissions/PermissionKeys";
 import {useColors} from "@/hooks/useThemeColors";
@@ -26,25 +26,41 @@ const SelectLocationBottomSheet = forwardRef((props, ref) => {
 
     const [locations, setLocations] = useState([])
     const [searchText, setSearchText] = useState('')
+    const [hasMore, setHasMore] = useState(false)
+    const [isLoadingMore, setIsLoadingMore] = useState(false)
+    const pageRef = useRef(1)
     const snapPoints = useMemo(() => ['25%', '50%', '70%'], []);
 
     useEffect(() => {
-        fetchLocations();
+        pageRef.current = 1;
+        fetchLocations(1);
     }, [searchText])
 
-    const fetchLocations = () => {
+    const fetchLocations = (pageNum) => {
         makeRequest({
-            url: `/locations/selectlist?search=${searchText}`,
+            url: `/locations/selectlist?search=${searchText}&page=${pageNum}`,
             method: 'GET',
             permissionKey: PERMISSIONS.VIEW_SELECTLISTS,
             silent: true,
         })
             .then((res) => {
-                setLocations(res?.results ?? [])
+                const newItems = res?.results ?? [];
+                setLocations(prev => pageNum === 1 ? newItems : [...prev, ...newItems]);
+                setHasMore(res?.pagination?.more ?? false);
             })
             .catch((err) => {
                 console.error(err);
+            })
+            .finally(() => {
+                setIsLoadingMore(false);
             });
+    }
+
+    const loadMore = () => {
+        if (!hasMore || isLoadingMore) return;
+        setIsLoadingMore(true);
+        pageRef.current += 1;
+        fetchLocations(pageRef.current);
     }
 
     const selectLocation = (item) => {
@@ -82,6 +98,8 @@ const SelectLocationBottomSheet = forwardRef((props, ref) => {
                 data={locations}
                 renderItem={({item}) => <Item item={item} />}
                 keyExtractor={item => item.id}
+                onEndReached={loadMore}
+                onEndReachedThreshold={0.1}
                 ListHeaderComponent={
                     <View style={styles.header}>
                         <Text style={styles.title}>{props.title}</Text>
@@ -95,7 +113,12 @@ const SelectLocationBottomSheet = forwardRef((props, ref) => {
                         </View>
                     </View>
                 }
-                ListFooterComponent={<CloseBtn />}
+                ListFooterComponent={
+                    <>
+                        {isLoadingMore && <ActivityIndicator style={styles.loadingMore} />}
+                        <CloseBtn />
+                    </>
+                }
                 contentContainerStyle={styles.listContent}
             />
         </BottomSheetModal>
@@ -149,6 +172,9 @@ const createStyles = (colors) => StyleSheet.create({
         fontSize: Typography.bodyLarge,
         fontWeight: FontWeight.medium,
         color: colors.text,
+    },
+    loadingMore: {
+        paddingVertical: Spacing.md,
     },
     listContent: {
         paddingBottom: Spacing.xl,

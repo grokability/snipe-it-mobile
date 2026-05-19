@@ -1,6 +1,6 @@
-import {Text, View, StyleSheet, Button, Pressable, Image} from "react-native";
+import {Text, View, StyleSheet, Button, Pressable, Image, ActivityIndicator} from "react-native";
 import {BottomSheetFlatList, BottomSheetModal, BottomSheetTextInput, useBottomSheet} from "@gorhom/bottom-sheet";
-import React, {useMemo, useState, forwardRef, useEffect} from "react";
+import React, {useMemo, useState, forwardRef, useEffect, useRef} from "react";
 import {makeRequest} from "@/helpers/axiosConfig";
 import {PERMISSIONS} from "@/permissions/PermissionKeys";
 import {useColors} from "@/hooks/useThemeColors";
@@ -22,24 +22,40 @@ const SelectModelBottomSheet = forwardRef((props, ref) => {
     const snapPoints = useMemo(() => ['25%', '50%', '70%'], []);
     const [searchText, setSearchText] = useState('');
     const [models, setModels] = useState([]);
+    const [hasMore, setHasMore] = useState(false);
+    const [isLoadingMore, setIsLoadingMore] = useState(false);
+    const pageRef = useRef(1);
 
     useEffect(() => {
-        fetchModels();
+        pageRef.current = 1;
+        fetchModels(1);
     }, [searchText]);
 
-    const fetchModels = () => {
+    const fetchModels = (pageNum) => {
         makeRequest({
-            url: `/models/selectlist?search=${searchText}`,
+            url: `/models/selectlist?search=${searchText}&page=${pageNum}`,
             method: 'GET',
             permissionKey: PERMISSIONS.VIEW_SELECTLISTS,
             silent: true,
         })
             .then((res) => {
-                setModels(res?.results ?? []);
+                const newItems = res?.results ?? [];
+                setModels(prev => pageNum === 1 ? newItems : [...prev, ...newItems]);
+                setHasMore(res?.pagination?.more ?? false);
             })
             .catch((err) => {
                 console.error(err);
+            })
+            .finally(() => {
+                setIsLoadingMore(false);
             });
+    };
+
+    const loadMore = () => {
+        if (!hasMore || isLoadingMore) return;
+        setIsLoadingMore(true);
+        pageRef.current += 1;
+        fetchModels(pageRef.current);
     };
 
     const selectModel = (item) => {
@@ -77,6 +93,8 @@ const SelectModelBottomSheet = forwardRef((props, ref) => {
                 data={models}
                 renderItem={({item}) => <Item item={item} />}
                 keyExtractor={item => item.id}
+                onEndReached={loadMore}
+                onEndReachedThreshold={0.1}
                 ListHeaderComponent={
                     <View style={styles.header}>
                         <Text style={styles.title}>{props.title}</Text>
@@ -90,7 +108,12 @@ const SelectModelBottomSheet = forwardRef((props, ref) => {
                         </View>
                     </View>
                 }
-                ListFooterComponent={<CloseBtn />}
+                ListFooterComponent={
+                    <>
+                        {isLoadingMore && <ActivityIndicator style={styles.loadingMore} />}
+                        <CloseBtn />
+                    </>
+                }
                 contentContainerStyle={styles.listContent}
             />
         </BottomSheetModal>
@@ -149,6 +172,9 @@ const createStyles = (colors) => StyleSheet.create({
         fontSize: Typography.body,
         color: colors.textSecondary,
         marginTop: Spacing.xs,
+    },
+    loadingMore: {
+        paddingVertical: Spacing.md,
     },
     listContent: {
         paddingBottom: Spacing.xl,

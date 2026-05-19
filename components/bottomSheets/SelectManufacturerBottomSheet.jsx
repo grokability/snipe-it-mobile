@@ -1,6 +1,6 @@
-import {Text, View, StyleSheet, Button, Pressable, Image} from "react-native";
+import {Text, View, StyleSheet, Button, Pressable, Image, ActivityIndicator} from "react-native";
 import {BottomSheetFlatList, BottomSheetModal, BottomSheetTextInput, useBottomSheet} from "@gorhom/bottom-sheet";
-import React, {useMemo, useState, forwardRef, useEffect} from "react";
+import React, {useMemo, useState, forwardRef, useEffect, useRef} from "react";
 import {makeRequest} from "@/helpers/axiosConfig";
 import {PERMISSIONS} from "@/permissions/PermissionKeys";
 import {useColors} from "@/hooks/useThemeColors";
@@ -22,24 +22,40 @@ const SelectManufacturerBottomSheet = forwardRef((props, ref) => {
     const snapPoints = useMemo(() => ['25%', '50%', '70%'], []);
     const [searchText, setSearchText] = useState('');
     const [manufacturers, setManufacturers] = useState([]);
+    const [hasMore, setHasMore] = useState(false);
+    const [isLoadingMore, setIsLoadingMore] = useState(false);
+    const pageRef = useRef(1);
 
     useEffect(() => {
-        fetchManufacturers();
+        pageRef.current = 1;
+        fetchManufacturers(1);
     }, [searchText]);
 
-    const fetchManufacturers = () => {
+    const fetchManufacturers = (pageNum) => {
         makeRequest({
-            url: `/manufacturers/selectlist?search=${searchText}`,
+            url: `/manufacturers/selectlist?search=${searchText}&page=${pageNum}`,
             method: 'GET',
             permissionKey: PERMISSIONS.VIEW_SELECTLISTS,
             silent: true,
         })
             .then((res) => {
-                setManufacturers(res?.results ?? []);
+                const newItems = res?.results ?? [];
+                setManufacturers(prev => pageNum === 1 ? newItems : [...prev, ...newItems]);
+                setHasMore(res?.pagination?.more ?? false);
             })
             .catch((err) => {
                 console.error(err);
+            })
+            .finally(() => {
+                setIsLoadingMore(false);
             });
+    };
+
+    const loadMore = () => {
+        if (!hasMore || isLoadingMore) return;
+        setIsLoadingMore(true);
+        pageRef.current += 1;
+        fetchManufacturers(pageRef.current);
     };
 
     const selectManufacturer = (item) => {
@@ -75,6 +91,8 @@ const SelectManufacturerBottomSheet = forwardRef((props, ref) => {
                 data={manufacturers}
                 renderItem={({item}) => <Item item={item} />}
                 keyExtractor={item => item.id}
+                onEndReached={loadMore}
+                onEndReachedThreshold={0.1}
                 ListHeaderComponent={
                     <View style={styles.header}>
                         <Text style={styles.title}>{props.title}</Text>
@@ -88,7 +106,12 @@ const SelectManufacturerBottomSheet = forwardRef((props, ref) => {
                         </View>
                     </View>
                 }
-                ListFooterComponent={<CloseBtn />}
+                ListFooterComponent={
+                    <>
+                        {isLoadingMore && <ActivityIndicator style={styles.loadingMore} />}
+                        <CloseBtn />
+                    </>
+                }
                 contentContainerStyle={styles.listContent}
             />
         </BottomSheetModal>
@@ -140,6 +163,9 @@ const createStyles = (colors) => StyleSheet.create({
         fontWeight: FontWeight.medium,
         color: colors.text,
         flex: 1,
+    },
+    loadingMore: {
+        paddingVertical: Spacing.md,
     },
     listContent: {
         paddingBottom: Spacing.xl,
