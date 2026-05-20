@@ -31,6 +31,7 @@ export default function AssetScreen() {
     const { denied: checkoutDenied } = usePermission(PERMISSIONS.ASSETS_CHECKOUT);
     const { denied: checkinDenied } = usePermission(PERMISSIONS.ASSETS_CHECKIN);
     const { denied: auditDenied } = usePermission(PERMISSIONS.ASSETS_AUDIT);
+    const { denied: customFieldsDenied } = usePermission(PERMISSIONS.CUSTOMFIELDS_VIEW);
 
     const [data, setData] = useState({});
     const [loading, setLoading] = useState(true);
@@ -65,11 +66,14 @@ export default function AssetScreen() {
 
     const getAsset = useCallback(() => {
         setLoading(true);
-        return Promise.all([
+        return Promise.allSettled([
             makeRequest({ url: `/hardware/${id}`, method: 'get', permissionKey: PERMISSIONS.ASSETS_VIEW }),
             makeRequest({ url: '/fields', method: 'get', permissionKey: PERMISSIONS.CUSTOMFIELDS_VIEW }),
         ])
-            .then(([assetRes, fieldsRes]) => {
+            .then(([assetResult, fieldsResult]) => {
+                if (assetResult.status === 'rejected') throw assetResult.reason;
+                const assetRes = assetResult.value;
+                const fieldsRes = fieldsResult.status === 'fulfilled' ? fieldsResult.value : null;
                 // Merge field_values and field_encrypted from field definitions into asset custom_fields
                 if (assetRes.custom_fields && fieldsRes?.rows) {
                     const fieldDefs = {};
@@ -280,7 +284,7 @@ export default function AssetScreen() {
                 </Section>
 
                 {/* Custom Fields */}
-                {customFields.length > 0 && (
+                {!customFieldsDenied && customFields.length > 0 && (
                     <Section title={t('mobile.section_custom_fields')}>
                         {customFields.map(([key, field]) => {
                             const label = key;

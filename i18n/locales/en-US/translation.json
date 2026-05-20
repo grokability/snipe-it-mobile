@@ -235,6 +235,10 @@
     "enter_client_id": "Client ID",
     "connection_error_message": "Could not reach your Snipe-IT instance. Check the domain and try again.",
     "permission_denied": "Permission Denied",
-    "permission_denied_message": "You do not have permission to perform this action."
+    "permission_denied_message": "You do not have permission to perform this action.",
+    "permission_denied_action": "You do not have access to {{action}}.",
+    "refresh_permissions": "Refresh Permissions",
+    "refresh_permissions_success": "Permissions refreshed successfully.",
+    "refresh_permissions_error": "Could not refresh permissions. Check your connection and try again."
   }
 }
