@@ -13,7 +13,7 @@ import {decode} from 'html-entities';
 import {router, useLocalSearchParams} from 'expo-router';
 import {makeRequest} from '@/helpers/axiosConfig';
 import {PERMISSIONS} from '@/permissions/PermissionKeys';
-import {usePermission} from '@/permissions/PermissionContext';
+import {PermissionGate} from '@/permissions/PermissionGate';
 import {SafeAreaProvider, useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useColors} from '@/hooks/useThemeColors';
 import {Spacing, BorderRadius, Typography, FontWeight} from '@/constants/sizes';
@@ -35,7 +35,6 @@ export default function CheckinScreen() {
     const [selectedStatus, setSelectedStatus] = useState(
         statusId ? { id: parseInt(statusId), name: statusName, value: parseInt(statusId) } : null
     );
-    const { denied: checkinDenied } = usePermission(PERMISSIONS.ASSETS_CHECKIN);
     const [note, setNote] = useState('');
     const [submitting, setSubmitting] = useState(false);
 
@@ -124,7 +123,7 @@ export default function CheckinScreen() {
                     />
                 </Section>
 
-                {!checkinDenied && (
+                <PermissionGate permission={PERMISSIONS.ASSETS_CHECKIN}>
                     <Pressable
                         onPress={handleSubmit}
                         disabled={submitting}
@@ -140,7 +139,7 @@ export default function CheckinScreen() {
                             <Text style={styles.submitButtonText}>{t('general.checkin')}</Text>
                         )}
                     </Pressable>
-                )}
+                </PermissionGate>
             </ScrollView>
             </KeyboardAvoidingView>
 

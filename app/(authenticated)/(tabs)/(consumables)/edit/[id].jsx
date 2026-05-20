@@ -13,7 +13,7 @@ import {
 import {router, useFocusEffect, useLocalSearchParams} from 'expo-router';
 import {makeRequest} from '@/helpers/axiosConfig';
 import {PERMISSIONS} from '@/permissions/PermissionKeys';
-import {usePermission} from '@/permissions/PermissionContext';
+import {PermissionGate} from '@/permissions/PermissionGate';
 import {SafeAreaProvider, useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useColors} from '@/hooks/useThemeColors';
 import {Spacing, BorderRadius, Typography, FontWeight} from '@/constants/sizes';
@@ -45,7 +45,6 @@ export default function EditConsumableScreen() {
     const styles = useMemo(() => createStyles(colors), [colors]);
     const {t} = useTranslation();
 
-    const { denied: editDenied } = usePermission(PERMISSIONS.CONSUMABLES_EDIT);
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
     const {id} = useLocalSearchParams();
@@ -324,7 +323,7 @@ export default function EditConsumableScreen() {
                 </Section>
 
                 {/* Submit */}
-                {!editDenied && (
+                <PermissionGate permission={PERMISSIONS.CONSUMABLES_EDIT}>
                     <Pressable
                         onPress={handleSubmit}
                         disabled={submitting}
@@ -340,7 +339,7 @@ export default function EditConsumableScreen() {
                             <Text style={styles.submitButtonText}>{t('mobile.save_changes')}</Text>
                         )}
                     </Pressable>
-                )}
+                </PermissionGate>
             </ScrollView>
             </KeyboardAvoidingView>
 

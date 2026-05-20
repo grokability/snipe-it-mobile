@@ -12,7 +12,7 @@ import {
 import {router, useFocusEffect, useLocalSearchParams} from 'expo-router';
 import {makeRequest} from '@/helpers/axiosConfig';
 import {PERMISSIONS} from '@/permissions/PermissionKeys';
-import {usePermission} from '@/permissions/PermissionContext';
+import {PermissionGate} from '@/permissions/PermissionGate';
 import {AuthContext} from '@/context/AuthProvider';
 import {SafeAreaProvider, useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useColors} from '@/hooks/useThemeColors';
@@ -38,7 +38,6 @@ export default function AccessoryCheckoutScreen() {
 
     const [accessory, setAccessory] = useState(null);
     const [loading, setLoading] = useState(true);
-    const { denied: checkoutDenied } = usePermission(PERMISSIONS.ACCESSORIES_CHECKOUT);
     const [submitting, setSubmitting] = useState(false);
 
     const [checkoutTo, setCheckoutTo] = useState('user');
@@ -231,7 +230,7 @@ export default function AccessoryCheckoutScreen() {
                 </Section>
 
                 {/* Submit */}
-                {!checkoutDenied && (
+                <PermissionGate permission={PERMISSIONS.ACCESSORIES_CHECKOUT}>
                     <Pressable
                         onPress={handleSubmit}
                         disabled={submitting}
@@ -247,7 +246,7 @@ export default function AccessoryCheckoutScreen() {
                             <Text style={styles.submitButtonText}>{t('general.checkout')}</Text>
                         )}
                     </Pressable>
-                )}
+                </PermissionGate>
             </ScrollView>
             </KeyboardAvoidingView>
 

@@ -12,7 +12,7 @@ import {
 import {router, useFocusEffect, useLocalSearchParams} from 'expo-router';
 import {makeRequest} from '@/helpers/axiosConfig';
 import {PERMISSIONS} from '@/permissions/PermissionKeys';
-import {usePermission} from '@/permissions/PermissionContext';
+import {PermissionGate} from '@/permissions/PermissionGate';
 import {SafeAreaProvider, useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useColors} from '@/hooks/useThemeColors';
 import {Spacing, BorderRadius, Typography, FontWeight} from '@/constants/sizes';
@@ -32,7 +32,6 @@ export default function ConsumableCheckoutScreen() {
     const {id} = useLocalSearchParams();
 
     const [consumable, setConsumable] = useState(null);
-    const { denied: checkoutDenied } = usePermission(PERMISSIONS.CONSUMABLES_CHECKOUT);
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
 
@@ -190,7 +189,7 @@ export default function ConsumableCheckoutScreen() {
                 </Section>
 
                 {/* Submit */}
-                {!checkoutDenied && (
+                <PermissionGate permission={PERMISSIONS.CONSUMABLES_CHECKOUT}>
                     <Pressable
                         onPress={handleSubmit}
                         disabled={submitting}
@@ -206,7 +205,7 @@ export default function ConsumableCheckoutScreen() {
                             <Text style={styles.submitButtonText}>{t('general.checkout')}</Text>
                         )}
                     </Pressable>
-                )}
+                </PermissionGate>
             </ScrollView>
             </KeyboardAvoidingView>
 

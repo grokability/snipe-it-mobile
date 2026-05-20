@@ -9,7 +9,7 @@ import { useUpdates, reloadAsync, checkForUpdateAsync, fetchUpdateAsync } from '
 import RecentActions from "@/components/misc/RecentActions";
 import AuditDashboardCard from "@/components/audit/AuditDashboardCard";
 import {useTranslation} from "react-i18next";
-import {usePermission} from "@/permissions/PermissionContext";
+import {PermissionGate} from "@/permissions/PermissionGate";
 import {PERMISSIONS} from "@/permissions/PermissionKeys";
 import {useColors} from "@/hooks/useThemeColors";
 import {Typography, FontWeight, Spacing} from "@/constants/sizes";
@@ -18,8 +18,6 @@ export default function HomeScreen() {
     const colors = useColors();
     const insets = useSafeAreaInsets();
     const styles = useMemo(() => createStyles(colors), [colors]);
-    const { allowed: isSuperuser } = usePermission(PERMISSIONS.SUPERUSER);
-    const { allowed: canAudit } = usePermission(PERMISSIONS.ASSETS_AUDIT);
     const [permission, requestPermission] = useCameraPermissions();
     const { t } = useTranslation();
     const { currentlyRunning, isUpdatePending, isChecking, isDownloading, downloadedUpdate } = useUpdates();
@@ -58,13 +56,13 @@ export default function HomeScreen() {
                 contentContainerStyle={[styles.scrollContent, {paddingTop: insets.top + Spacing.lg, paddingBottom: insets.bottom + 100}]}
                 showsVerticalScrollIndicator={false}
             >
-                {isSuperuser && (
+                <PermissionGate permission={PERMISSIONS.SUPERUSER}>
                     <RecentActions />
-                )}
+                </PermissionGate>
 
-                {canAudit && (
+                <PermissionGate permission={PERMISSIONS.ASSETS_AUDIT}>
                     <AuditDashboardCard />
-                )}
+                </PermissionGate>
 
                 <View style={styles.scannerSection}>
                     {permission.granted ? (
