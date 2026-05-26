@@ -118,4 +118,6 @@ export const PERMISSIONS = {
     SELF_EDIT_LOCATION: 'self.edit_location',
     SELF_CHECKOUT_ASSETS: 'self.checkout_assets',
     SELF_VIEW_PURCHASE_COST: 'self.view_purchase_cost',
+
+    VIEW_SELECTLISTS: 'view.selectlists',
 };

@@ -372,6 +372,7 @@ export default function EditAccessoryScreen() {
                 title={t('general.select_category')}
                 ref={categoryRef}
                 setSelectedCategory={setSelectedCategory}
+                categoryType="accessory"
             />
             <SelectManufacturerBottomSheet
                 title={t('general.select_manufacturer')}
