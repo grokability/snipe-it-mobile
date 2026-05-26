@@ -11,6 +11,8 @@ import {
 } from 'react-native';
 import {router} from "expo-router";
 import {makeRequest} from "@/helpers/axiosConfig";
+import {PERMISSIONS} from "@/permissions/PermissionKeys";
+import {usePermission} from "@/permissions/PermissionContext";
 import {AuthContext} from "@/context/AuthProvider";
 import {SafeAreaProvider, useSafeAreaInsets} from "react-native-safe-area-context";
 import {useColors} from "@/hooks/useThemeColors";
@@ -39,6 +41,7 @@ export default function CreateAssetScreen() {
     const styles = useMemo(() => createStyles(colors), [colors]);
     const { t } = useTranslation();
 
+    const { denied: createDenied } = usePermission(PERMISSIONS.ASSETS_CREATE);
     const [loadingFields, setLoadingFields] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const { user } = useContext(AuthContext);
@@ -95,7 +98,7 @@ export default function CreateAssetScreen() {
 
         setLoadingFields(true);
         console.log(`Fetching custom fields for fieldset ID: ${fieldsetId}`);
-        makeRequest({ url: `/fieldsets/${fieldsetId}/fields`, method: 'POST' })
+        makeRequest({ url: `/fieldsets/${fieldsetId}/fields`, method: 'POST', permissionKey: PERMISSIONS.CUSTOMFIELDS_VIEW })
             .then((response) => {
                 const rows = response?.rows;
                 if (rows) {
@@ -191,8 +194,10 @@ export default function CreateAssetScreen() {
             url: '/hardware',
             method: 'POST',
             data: fields,
+            permissionKey: PERMISSIONS.ASSETS_CREATE,
         })
             .then(response => {
+                if (response === null) return;
                 if (response.status === 'error') {
                     Burnt.alert({
                         title: t('general.error'),
@@ -524,21 +529,23 @@ export default function CreateAssetScreen() {
                 )}
 
                 {/* Submit */}
-                <Pressable
-                    onPress={handleSubmit}
-                    disabled={submitting}
-                    style={({pressed}) => [
-                        styles.submitButton,
-                        pressed && styles.submitButtonPressed,
-                        submitting && styles.submitButtonDisabled,
-                    ]}
-                >
-                    {submitting ? (
-                        <ActivityIndicator color="#fff" />
-                    ) : (
-                        <Text style={styles.submitButtonText}>{t('mobile.create_asset')}</Text>
-                    )}
-                </Pressable>
+                {!createDenied && (
+                    <Pressable
+                        onPress={handleSubmit}
+                        disabled={submitting}
+                        style={({pressed}) => [
+                            styles.submitButton,
+                            pressed && styles.submitButtonPressed,
+                            submitting && styles.submitButtonDisabled,
+                        ]}
+                    >
+                        {submitting ? (
+                            <ActivityIndicator color="#fff" />
+                        ) : (
+                            <Text style={styles.submitButtonText}>{t('mobile.create_asset')}</Text>
+                        )}
+                    </Pressable>
+                )}
             </ScrollView>
             </KeyboardAvoidingView>
 

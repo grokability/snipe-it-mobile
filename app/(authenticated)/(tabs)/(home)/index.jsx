@@ -1,15 +1,16 @@
 import {View, Text, StyleSheet, ActivityIndicator, Button, Linking, ScrollView, TouchableOpacity} from 'react-native';
 import {useCameraPermissions} from 'expo-camera';
 import {router} from "expo-router";
-import React, {useContext, useMemo} from "react";
+import React, {useMemo} from "react";
 import {useSafeAreaInsets} from "react-native-safe-area-context";
 import LottieView from "lottie-react-native";
 import ExpoApplication from "expo-application/src/ExpoApplication";
 import { useUpdates, reloadAsync, checkForUpdateAsync, fetchUpdateAsync } from 'expo-updates';
 import RecentActions from "@/components/misc/RecentActions";
 import AuditDashboardCard from "@/components/audit/AuditDashboardCard";
-import {AuthContext} from "@/context/AuthProvider";
 import {useTranslation} from "react-i18next";
+import {usePermission} from "@/permissions/PermissionContext";
+import {PERMISSIONS} from "@/permissions/PermissionKeys";
 import {useColors} from "@/hooks/useThemeColors";
 import {Typography, FontWeight, Spacing} from "@/constants/sizes";
 
@@ -17,7 +18,8 @@ export default function HomeScreen() {
     const colors = useColors();
     const insets = useSafeAreaInsets();
     const styles = useMemo(() => createStyles(colors), [colors]);
-    const { user } = useContext(AuthContext);
+    const { allowed: isSuperuser } = usePermission(PERMISSIONS.SUPERUSER);
+    const { allowed: canAudit } = usePermission(PERMISSIONS.ASSETS_AUDIT);
     const [permission, requestPermission] = useCameraPermissions();
     const { t } = useTranslation();
     const { currentlyRunning, isUpdatePending, isChecking, isDownloading, downloadedUpdate } = useUpdates();
@@ -56,11 +58,13 @@ export default function HomeScreen() {
                 contentContainerStyle={[styles.scrollContent, {paddingTop: insets.top + Spacing.lg, paddingBottom: insets.bottom + 100}]}
                 showsVerticalScrollIndicator={false}
             >
-                {user?.permissions?.superuser === 1 && (
+                {isSuperuser && (
                     <RecentActions />
                 )}
 
-                <AuditDashboardCard />
+                {canAudit && (
+                    <AuditDashboardCard />
+                )}
 
                 <View style={styles.scannerSection}>
                     {permission.granted ? (

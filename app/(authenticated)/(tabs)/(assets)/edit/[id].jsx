@@ -12,6 +12,8 @@ import {
 } from 'react-native';
 import {router, useFocusEffect, useLocalSearchParams} from "expo-router";
 import {makeRequest} from "@/helpers/axiosConfig";
+import {PERMISSIONS} from "@/permissions/PermissionKeys";
+import {usePermission} from "@/permissions/PermissionContext";
 import {AuthContext} from "@/context/AuthProvider";
 import {SafeAreaProvider, useSafeAreaInsets} from "react-native-safe-area-context";
 import {useColors} from "@/hooks/useThemeColors";
@@ -49,6 +51,7 @@ export default function EditAssetScreen() {
     const styles = useMemo(() => createStyles(colors), [colors]);
     const { t } = useTranslation();
 
+    const { denied: editDenied } = usePermission(PERMISSIONS.ASSETS_EDIT);
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
     const [asset, setAsset] = useState(null);
@@ -95,8 +98,8 @@ export default function EditAssetScreen() {
     const getAsset = useCallback(() => {
         setLoading(true);
         return Promise.all([
-            makeRequest({ url: `/hardware/${id}`, method: 'get' }),
-            makeRequest({ url: '/fields', method: 'get' }),
+            makeRequest({ url: `/hardware/${id}`, method: 'get', permissionKey: PERMISSIONS.ASSETS_VIEW }),
+            makeRequest({ url: '/fields', method: 'get', permissionKey: PERMISSIONS.CUSTOMFIELDS_VIEW }),
         ])
             .then(([asset, fields]) => {
                 setAsset(asset);
@@ -234,8 +237,10 @@ export default function EditAssetScreen() {
             url: `/hardware/${id}`,
             method: 'PUT',
             data,
+            permissionKey: PERMISSIONS.ASSETS_EDIT,
         })
             .then(response => {
+                if (response === null) return;
                 if (response.status === 'error') {
                     Burnt.alert({
                         title: t('general.error'),
@@ -569,21 +574,23 @@ export default function EditAssetScreen() {
                     </Section>
 
                     {/* Submit */}
-                    <Pressable
-                        onPress={handleSubmit}
-                        disabled={submitting}
-                        style={({pressed}) => [
-                            styles.submitButton,
-                            pressed && styles.submitButtonPressed,
-                            submitting && styles.submitButtonDisabled,
-                        ]}
-                    >
-                        {submitting ? (
-                            <ActivityIndicator color="#fff" />
-                        ) : (
-                            <Text style={styles.submitButtonText}>{t('mobile.save_changes')}</Text>
-                        )}
-                    </Pressable>
+                    {!editDenied && (
+                        <Pressable
+                            onPress={handleSubmit}
+                            disabled={submitting}
+                            style={({pressed}) => [
+                                styles.submitButton,
+                                pressed && styles.submitButtonPressed,
+                                submitting && styles.submitButtonDisabled,
+                            ]}
+                        >
+                            {submitting ? (
+                                <ActivityIndicator color="#fff" />
+                            ) : (
+                                <Text style={styles.submitButtonText}>{t('mobile.save_changes')}</Text>
+                            )}
+                        </Pressable>
+                    )}
             </ScrollView>
             </KeyboardAvoidingView>
 

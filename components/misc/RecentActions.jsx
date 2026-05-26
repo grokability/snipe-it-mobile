@@ -6,6 +6,8 @@ import {router, useFocusEffect} from "expo-router";
 import {useColors} from "@/hooks/useThemeColors";
 import {Typography, FontWeight, Spacing, BorderRadius} from "@/constants/sizes";
 import {useTranslation} from "react-i18next";
+import {usePermission} from "@/permissions/PermissionContext";
+import {PERMISSIONS} from "@/permissions/PermissionKeys";
 import {formatActionDate, getActionBadgeColor} from "@/helpers/utils";
 
 const ActionRow = ({actionLog, colors, styles, isLast}) => {
@@ -46,12 +48,15 @@ const RecentActions = () => {
     const {t} = useTranslation();
     const [actionLogs, setActionLogs] = useState([]);
     const [loading, setLoading] = useState(true);
+    const { denied: reportsViewDenied } = usePermission(PERMISSIONS.REPORTS_VIEW);
 
     const fetchActionLogs = useCallback(() => {
         setLoading(true);
         makeRequest({
             url: '/reports/activity?limit=5&offset=0&sort=created_at&order=desc',
             method: 'get',
+            permissionKey: PERMISSIONS.REPORTS_VIEW,
+            silent: true,
         })
             .then(res => setActionLogs(res.rows ?? []))
             .catch(error => console.error('Error fetching recent actionLogs:', error))
@@ -60,11 +65,12 @@ const RecentActions = () => {
 
     useFocusEffect(
         useCallback(() => {
+            if (reportsViewDenied) return;
             fetchActionLogs();
-        }, [fetchActionLogs])
+        }, [fetchActionLogs, reportsViewDenied])
     );
 
-    if (!loading && actionLogs.length === 0) return null;
+    if (reportsViewDenied || (!loading && actionLogs.length === 0)) return null;
 
     return (
         <View>

@@ -2,6 +2,7 @@ import {View, Text, StyleSheet, RefreshControl, Pressable, Platform} from 'react
 import {useContext, useState, useCallback, useMemo} from "react";
 import {AuthContext} from "@/context/AuthProvider";
 import {makeRequest} from "@/helpers/axiosConfig";
+import {PERMISSIONS} from "@/permissions/PermissionKeys";
 import {SafeAreaProvider, useSafeAreaInsets} from "react-native-safe-area-context";
 import {router, useFocusEffect} from "expo-router";
 import {useColors} from "@/hooks/useThemeColors";
@@ -27,7 +28,8 @@ export default function AccessoriesScreen() {
         setLoading(true);
         return makeRequest({
             method: 'get',
-            url: '/accessories'
+            url: '/accessories',
+            permissionKey: PERMISSIONS.ACCESSORIES_VIEW,
         })
             .then(res => {
                 if (res?.rows) {

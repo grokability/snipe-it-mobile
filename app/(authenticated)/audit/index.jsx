@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import {router, useFocusEffect} from 'expo-router';
 import {makeRequest} from '@/helpers/axiosConfig';
+import {PERMISSIONS} from '@/permissions/PermissionKeys';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useColors} from '@/hooks/useThemeColors';
 import {Spacing, BorderRadius, Typography, FontWeight} from '@/constants/sizes';
@@ -38,9 +39,10 @@ export default function AuditListScreen() {
         return makeRequest({
             url: `/hardware/audits/${tab}?limit=25&offset=${currentOffset}&sort=next_audit_date&order=asc`,
             method: 'GET',
+            permissionKey: PERMISSIONS.ASSETS_AUDIT,
         })
             .then((res) => {
-                const rows = res.rows || [];
+                const rows = res?.rows || [];
                 if (reset) {
                     setData(rows);
                     setOffset(rows.length);
@@ -65,9 +67,10 @@ export default function AuditListScreen() {
             makeRequest({
                 url: `/hardware/audits/${tab}?limit=25&offset=0&sort=next_audit_date&order=asc`,
                 method: 'GET',
+                permissionKey: PERMISSIONS.ASSETS_AUDIT,
             })
                 .then((res) => {
-                    const rows = res.rows || [];
+                    const rows = res?.rows || [];
                     setData(rows);
                     setOffset(rows.length);
                     setHasMore(rows.length === 25);
@@ -83,9 +86,10 @@ export default function AuditListScreen() {
         makeRequest({
             url: `/hardware/audits/${tab}?limit=25&offset=0&sort=next_audit_date&order=asc`,
             method: 'GET',
+            permissionKey: PERMISSIONS.ASSETS_AUDIT,
         })
             .then((res) => {
-                const rows = res.rows || [];
+                const rows = res?.rows || [];
                 setData(rows);
                 setOffset(rows.length);
                 setHasMore(rows.length === 25);

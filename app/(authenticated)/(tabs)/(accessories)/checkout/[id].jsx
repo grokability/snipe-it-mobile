@@ -11,6 +11,8 @@ import {
 } from 'react-native';
 import {router, useFocusEffect, useLocalSearchParams} from 'expo-router';
 import {makeRequest} from '@/helpers/axiosConfig';
+import {PERMISSIONS} from '@/permissions/PermissionKeys';
+import {usePermission} from '@/permissions/PermissionContext';
 import {AuthContext} from '@/context/AuthProvider';
 import {SafeAreaProvider, useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useColors} from '@/hooks/useThemeColors';
@@ -36,6 +38,7 @@ export default function AccessoryCheckoutScreen() {
 
     const [accessory, setAccessory] = useState(null);
     const [loading, setLoading] = useState(true);
+    const { denied: checkoutDenied } = usePermission(PERMISSIONS.ACCESSORIES_CHECKOUT);
     const [submitting, setSubmitting] = useState(false);
 
     const [checkoutTo, setCheckoutTo] = useState('user');
@@ -51,7 +54,7 @@ export default function AccessoryCheckoutScreen() {
 
     const fetchAccessory = useCallback(() => {
         setLoading(true);
-        return makeRequest({url: `/accessories/${id}`, method: 'get'})
+        return makeRequest({url: `/accessories/${id}`, method: 'get', permissionKey: PERMISSIONS.ACCESSORIES_VIEW})
             .then(setAccessory)
             .catch(console.error)
             .finally(() => setLoading(false));
@@ -102,7 +105,7 @@ export default function AccessoryCheckoutScreen() {
             note: note || null,
         };
 
-        makeRequest({url: `/accessories/${id}/checkout`, method: 'POST', data})
+        makeRequest({url: `/accessories/${id}/checkout`, method: 'POST', data, permissionKey: PERMISSIONS.ACCESSORIES_CHECKOUT})
             .then((res) => {
                 if (res.status === 'error') {
                     Burnt.alert({
@@ -228,21 +231,23 @@ export default function AccessoryCheckoutScreen() {
                 </Section>
 
                 {/* Submit */}
-                <Pressable
-                    onPress={handleSubmit}
-                    disabled={submitting}
-                    style={({pressed}) => [
-                        styles.submitButton,
-                        pressed && styles.submitButtonPressed,
-                        submitting && styles.submitButtonDisabled,
-                    ]}
-                >
-                    {submitting ? (
-                        <ActivityIndicator color="#fff" />
-                    ) : (
-                        <Text style={styles.submitButtonText}>{t('general.checkout')}</Text>
-                    )}
-                </Pressable>
+                {!checkoutDenied && (
+                    <Pressable
+                        onPress={handleSubmit}
+                        disabled={submitting}
+                        style={({pressed}) => [
+                            styles.submitButton,
+                            pressed && styles.submitButtonPressed,
+                            submitting && styles.submitButtonDisabled,
+                        ]}
+                    >
+                        {submitting ? (
+                            <ActivityIndicator color="#fff" />
+                        ) : (
+                            <Text style={styles.submitButtonText}>{t('general.checkout')}</Text>
+                        )}
+                    </Pressable>
+                )}
             </ScrollView>
             </KeyboardAvoidingView>
 
