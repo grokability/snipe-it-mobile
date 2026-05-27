@@ -11,5 +11,6 @@ import { usePermission } from './PermissionContext';
  */
 export const PermissionGate = ({ permission, children, fallback = null }) => {
     const { denied } = usePermission(permission);
+    if (!permission) return children;
     return denied ? fallback : children;
 };

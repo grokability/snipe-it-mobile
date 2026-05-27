@@ -3,6 +3,7 @@ import {useContext, useState, useCallback, useMemo} from "react";
 import {AuthContext} from "@/context/AuthProvider";
 import {makeRequest} from "@/helpers/axiosConfig";
 import {PERMISSIONS} from "@/permissions/PermissionKeys";
+import {useRedirectIfDenied} from "@/permissions/PermissionContext";
 import {SafeAreaProvider, useSafeAreaInsets} from "react-native-safe-area-context";
 import {router, useFocusEffect} from "expo-router";
 import {useColors} from "@/hooks/useThemeColors";
@@ -21,6 +22,7 @@ export default function ConsumablesScreen() {
     const { t } = useTranslation();
 
     const { user } = useContext(AuthContext);
+    useRedirectIfDenied(PERMISSIONS.CONSUMABLES_VIEW);
     const [data, setData] = useState({});
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);

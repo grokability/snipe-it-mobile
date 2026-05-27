@@ -3,6 +3,7 @@ import {useContext, useState, useEffect, useCallback, useMemo} from "react";
 import {AuthContext} from "@/context/AuthProvider";
 import {makeRequest} from "@/helpers/axiosConfig";
 import {PERMISSIONS} from "@/permissions/PermissionKeys";
+import {useRedirectIfDenied} from "@/permissions/PermissionContext";
 import {useColors} from "@/hooks/useThemeColors";
 import {Spacing, BorderRadius, Typography, FontWeight} from "@/constants/sizes";
 import {decode} from "html-entities";
@@ -14,6 +15,7 @@ export default function LicensesScreen() {
     const { t } = useTranslation();
 
     const { user } = useContext(AuthContext);
+    useRedirectIfDenied(PERMISSIONS.LICENSES_VIEW);
     const [data, setData] = useState({});
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
