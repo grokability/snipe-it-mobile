@@ -121,3 +121,125 @@ export const PERMISSIONS = {
 
     VIEW_SELECTLISTS: 'view.selectlists',
 };
+
+export const PERMISSION_LABELS = {
+    [PERMISSIONS.IMPORT]:                             'import data',
+    [PERMISSIONS.REPORTS_VIEW]:                       'view reports',
+
+    [PERMISSIONS.ASSETS_VIEW]:                        'view assets',
+    [PERMISSIONS.ASSETS_CREATE]:                      'create assets',
+    [PERMISSIONS.ASSETS_EDIT]:                        'edit assets',
+    [PERMISSIONS.ASSETS_DELETE]:                      'delete assets',
+    [PERMISSIONS.ASSETS_CHECKOUT]:                    'check out assets',
+    [PERMISSIONS.ASSETS_CHECKIN]:                     'check in assets',
+    [PERMISSIONS.ASSETS_AUDIT]:                       'audit assets',
+    [PERMISSIONS.ASSETS_VIEW_REQUESTABLE]:            'view requestable assets',
+    [PERMISSIONS.ASSETS_VIEW_ENCRYPTED_CUSTOM_FIELDS]:'view encrypted custom fields',
+    [PERMISSIONS.ASSETS_FILES]:                       'manage asset files',
+
+    [PERMISSIONS.ACCESSORIES_VIEW]:                   'view accessories',
+    [PERMISSIONS.ACCESSORIES_CREATE]:                 'create accessories',
+    [PERMISSIONS.ACCESSORIES_EDIT]:                   'edit accessories',
+    [PERMISSIONS.ACCESSORIES_DELETE]:                 'delete accessories',
+    [PERMISSIONS.ACCESSORIES_CHECKOUT]:               'check out accessories',
+    [PERMISSIONS.ACCESSORIES_CHECKIN]:                'check in accessories',
+    [PERMISSIONS.ACCESSORIES_FILES]:                  'manage accessory files',
+
+    [PERMISSIONS.CONSUMABLES_VIEW]:                   'view consumables',
+    [PERMISSIONS.CONSUMABLES_CREATE]:                 'create consumables',
+    [PERMISSIONS.CONSUMABLES_EDIT]:                   'edit consumables',
+    [PERMISSIONS.CONSUMABLES_DELETE]:                 'delete consumables',
+    [PERMISSIONS.CONSUMABLES_CHECKOUT]:               'check out consumables',
+    [PERMISSIONS.CONSUMABLES_FILES]:                  'manage consumable files',
+
+    [PERMISSIONS.LICENSES_VIEW]:                      'view licenses',
+    [PERMISSIONS.LICENSES_CREATE]:                    'create licenses',
+    [PERMISSIONS.LICENSES_EDIT]:                      'edit licenses',
+    [PERMISSIONS.LICENSES_DELETE]:                    'delete licenses',
+    [PERMISSIONS.LICENSES_CHECKOUT]:                  'check out licenses',
+    [PERMISSIONS.LICENSES_CHECKIN]:                   'check in licenses',
+    [PERMISSIONS.LICENSES_KEYS]:                      'view license keys',
+    [PERMISSIONS.LICENSES_FILES]:                     'manage license files',
+
+    [PERMISSIONS.COMPONENTS_VIEW]:                    'view components',
+    [PERMISSIONS.COMPONENTS_CREATE]:                  'create components',
+    [PERMISSIONS.COMPONENTS_EDIT]:                    'edit components',
+    [PERMISSIONS.COMPONENTS_DELETE]:                  'delete components',
+    [PERMISSIONS.COMPONENTS_CHECKOUT]:                'check out components',
+    [PERMISSIONS.COMPONENTS_CHECKIN]:                 'check in components',
+    [PERMISSIONS.COMPONENTS_FILES]:                   'manage component files',
+
+    [PERMISSIONS.KITS_VIEW]:                          'view kits',
+    [PERMISSIONS.KITS_CREATE]:                        'create kits',
+    [PERMISSIONS.KITS_EDIT]:                          'edit kits',
+    [PERMISSIONS.KITS_DELETE]:                        'delete kits',
+
+    [PERMISSIONS.USERS_VIEW]:                         'view users',
+    [PERMISSIONS.USERS_CREATE]:                       'create users',
+    [PERMISSIONS.USERS_EDIT]:                         'edit users',
+    [PERMISSIONS.USERS_DELETE]:                       'delete users',
+    [PERMISSIONS.USERS_FILES]:                        'manage user files',
+
+    [PERMISSIONS.MODELS_VIEW]:                        'view asset models',
+    [PERMISSIONS.MODELS_CREATE]:                      'create asset models',
+    [PERMISSIONS.MODELS_EDIT]:                        'edit asset models',
+    [PERMISSIONS.MODELS_DELETE]:                      'delete asset models',
+    [PERMISSIONS.MODELS_FILES]:                       'manage asset model files',
+
+    [PERMISSIONS.CATEGORIES_VIEW]:                    'view categories',
+    [PERMISSIONS.CATEGORIES_CREATE]:                  'create categories',
+    [PERMISSIONS.CATEGORIES_EDIT]:                    'edit categories',
+    [PERMISSIONS.CATEGORIES_DELETE]:                  'delete categories',
+
+    [PERMISSIONS.DEPARTMENTS_VIEW]:                   'view departments',
+    [PERMISSIONS.DEPARTMENTS_CREATE]:                 'create departments',
+    [PERMISSIONS.DEPARTMENTS_EDIT]:                   'edit departments',
+    [PERMISSIONS.DEPARTMENTS_DELETE]:                 'delete departments',
+    [PERMISSIONS.DEPARTMENTS_FILES]:                  'manage department files',
+
+    [PERMISSIONS.STATUSLABELS_VIEW]:                  'view status labels',
+    [PERMISSIONS.STATUSLABELS_CREATE]:                'create status labels',
+    [PERMISSIONS.STATUSLABELS_EDIT]:                  'edit status labels',
+    [PERMISSIONS.STATUSLABELS_DELETE]:                'delete status labels',
+
+    [PERMISSIONS.CUSTOMFIELDS_VIEW]:                  'view custom fields',
+    [PERMISSIONS.CUSTOMFIELDS_CREATE]:                'create custom fields',
+    [PERMISSIONS.CUSTOMFIELDS_EDIT]:                  'edit custom fields',
+    [PERMISSIONS.CUSTOMFIELDS_DELETE]:                'delete custom fields',
+
+    [PERMISSIONS.SUPPLIERS_VIEW]:                     'view suppliers',
+    [PERMISSIONS.SUPPLIERS_CREATE]:                   'create suppliers',
+    [PERMISSIONS.SUPPLIERS_EDIT]:                     'edit suppliers',
+    [PERMISSIONS.SUPPLIERS_DELETE]:                   'delete suppliers',
+    [PERMISSIONS.SUPPLIERS_FILES]:                    'manage supplier files',
+
+    [PERMISSIONS.MANUFACTURERS_VIEW]:                 'view manufacturers',
+    [PERMISSIONS.MANUFACTURERS_CREATE]:               'create manufacturers',
+    [PERMISSIONS.MANUFACTURERS_EDIT]:                 'edit manufacturers',
+    [PERMISSIONS.MANUFACTURERS_DELETE]:               'delete manufacturers',
+
+    [PERMISSIONS.DEPRECIATIONS_VIEW]:                 'view depreciation schedules',
+    [PERMISSIONS.DEPRECIATIONS_CREATE]:               'create depreciation schedules',
+    [PERMISSIONS.DEPRECIATIONS_EDIT]:                 'edit depreciation schedules',
+    [PERMISSIONS.DEPRECIATIONS_DELETE]:               'delete depreciation schedules',
+
+    [PERMISSIONS.LOCATIONS_VIEW]:                     'view locations',
+    [PERMISSIONS.LOCATIONS_CREATE]:                   'create locations',
+    [PERMISSIONS.LOCATIONS_EDIT]:                     'edit locations',
+    [PERMISSIONS.LOCATIONS_DELETE]:                   'delete locations',
+    [PERMISSIONS.LOCATIONS_FILES]:                    'manage location files',
+
+    [PERMISSIONS.COMPANIES_VIEW]:                     'view companies',
+    [PERMISSIONS.COMPANIES_CREATE]:                   'create companies',
+    [PERMISSIONS.COMPANIES_EDIT]:                     'edit companies',
+    [PERMISSIONS.COMPANIES_DELETE]:                   'delete companies',
+    [PERMISSIONS.COMPANIES_FILES]:                    'manage company files',
+
+    [PERMISSIONS.SELF_TWO_FACTOR]:                    'manage two-factor authentication',
+    [PERMISSIONS.SELF_API]:                           'manage API tokens',
+    [PERMISSIONS.SELF_EDIT_LOCATION]:                 'edit your location',
+    [PERMISSIONS.SELF_CHECKOUT_ASSETS]:               'request assets',
+    [PERMISSIONS.SELF_VIEW_PURCHASE_COST]:            'view purchase costs',
+
+    [PERMISSIONS.VIEW_SELECTLISTS]:                   'view select lists',
+};

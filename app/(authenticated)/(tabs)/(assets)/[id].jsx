@@ -13,6 +13,7 @@ import Checkbox from "@/components/forms/Checkbox";
 import {Section, SectionHeader} from "@/components/ui/Section";
 import {DetailRow, EncryptedDetailRow} from "@/components/ui/DetailRow";
 import {usePermission} from "@/permissions/PermissionContext";
+import {PermissionGate} from "@/permissions/PermissionGate";
 
 
 export const unstable_settings = {
@@ -28,9 +29,6 @@ export default function AssetScreen() {
 
     const { denied: createDenied } = usePermission(PERMISSIONS.ASSETS_CREATE);
     const { denied: editDenied } = usePermission(PERMISSIONS.ASSETS_EDIT);
-    const { denied: checkoutDenied } = usePermission(PERMISSIONS.ASSETS_CHECKOUT);
-    const { denied: checkinDenied } = usePermission(PERMISSIONS.ASSETS_CHECKIN);
-    const { denied: auditDenied } = usePermission(PERMISSIONS.ASSETS_AUDIT);
 
     const [data, setData] = useState({});
     const [loading, setLoading] = useState(true);
@@ -65,11 +63,14 @@ export default function AssetScreen() {
 
     const getAsset = useCallback(() => {
         setLoading(true);
-        return Promise.all([
+        return Promise.allSettled([
             makeRequest({ url: `/hardware/${id}`, method: 'get', permissionKey: PERMISSIONS.ASSETS_VIEW }),
             makeRequest({ url: '/fields', method: 'get', permissionKey: PERMISSIONS.CUSTOMFIELDS_VIEW }),
         ])
-            .then(([assetRes, fieldsRes]) => {
+            .then(([assetResult, fieldsResult]) => {
+                if (assetResult.status === 'rejected') throw assetResult.reason;
+                const assetRes = assetResult.value;
+                const fieldsRes = fieldsResult.status === 'fulfilled' ? fieldsResult.value : null;
                 // Merge field_values and field_encrypted from field definitions into asset custom_fields
                 if (assetRes.custom_fields && fieldsRes?.rows) {
                     const fieldDefs = {};
@@ -167,7 +168,7 @@ export default function AssetScreen() {
                                 <Text style={styles.assignedText}>
                                     {t('general.assigned_to')}<Text selectable style={styles.userName}>{asset.assigned_to.name}</Text>
                                 </Text>
-                                {!checkinDenied && (
+                                <PermissionGate permission={PERMISSIONS.ASSETS_CHECKIN}>
                                     <Pressable
                                         style={({pressed}) => [styles.button, styles.checkinButton, pressed && styles.buttonPressed]}
                                         onPress={() => router.push({
@@ -183,11 +184,11 @@ export default function AssetScreen() {
                                     >
                                         <Text style={styles.buttonText}>{t('mobile.check_in_button')}</Text>
                                     </Pressable>
-                                )}
+                                </PermissionGate>
                             </>
                         ) : (
                             <>
-                                {!checkoutDenied && (
+                                <PermissionGate permission={PERMISSIONS.ASSETS_CHECKOUT}>
                                     <>
                                         <Pressable
                                             disabled={cannotCheckout}
@@ -216,10 +217,10 @@ export default function AssetScreen() {
                                             </Text>
                                         )}
                                     </>
-                                )}
+                                </PermissionGate>
                             </>
                         )}
-                        {!auditDenied && (
+                        <PermissionGate permission={PERMISSIONS.ASSETS_AUDIT}>
                             <Pressable
                                 style={({pressed}) => [styles.buttonSmall, styles.auditButton, pressed && styles.buttonPressed]}
                                 onPress={() => router.push({
@@ -229,7 +230,7 @@ export default function AssetScreen() {
                             >
                                 <Text style={styles.buttonSmallText}>{t('general.audit')}</Text>
                             </Pressable>
-                        )}
+                        </PermissionGate>
                     </View>
                 </View>
 
@@ -280,6 +281,7 @@ export default function AssetScreen() {
                 </Section>
 
                 {/* Custom Fields */}
+                <PermissionGate permission={PERMISSIONS.CUSTOMFIELDS_VIEW}>
                 {customFields.length > 0 && (
                     <Section title={t('mobile.section_custom_fields')}>
                         {customFields.map(([key, field]) => {
@@ -373,6 +375,7 @@ export default function AssetScreen() {
                         })}
                     </Section>
                 )}
+                </PermissionGate>
 
                 {/* Notes */}
                 {asset.notes && (

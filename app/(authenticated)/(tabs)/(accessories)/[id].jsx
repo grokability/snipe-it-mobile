@@ -11,6 +11,7 @@ import {useTranslation} from "react-i18next";
 import {Section} from "@/components/ui/Section";
 import {DetailRow} from "@/components/ui/DetailRow";
 import {usePermission} from "@/permissions/PermissionContext";
+import {PermissionGate} from "@/permissions/PermissionGate";
 import {PERMISSIONS} from "@/permissions/PermissionKeys";
 
 
@@ -26,8 +27,6 @@ export default function AccessoryScreen() {
     const { t } = useTranslation();
 
     const { denied: editDenied } = usePermission(PERMISSIONS.ACCESSORIES_EDIT);
-    const { denied: checkoutDenied } = usePermission(PERMISSIONS.ACCESSORIES_CHECKOUT);
-    const { denied: checkinDenied } = usePermission(PERMISSIONS.ACCESSORIES_CHECKIN);
 
     const [data, setData] = useState({});
     const [loading, setLoading] = useState(true);
@@ -132,14 +131,16 @@ export default function AccessoryScreen() {
                 </View>
 
                 {/* Checkout Action */}
-                {item.user_can_checkout && !checkoutDenied && (
-                    <Pressable
-                        style={({pressed}) => [styles.checkoutButton, pressed && styles.buttonPressed]}
-                        onPress={() => router.push(`/(tabs)/(accessories)/checkout/${id}`)}
-                    >
-                        <Text style={styles.checkoutButtonText}>{t('mobile.check_out_button')}</Text>
-                    </Pressable>
-                )}
+                <PermissionGate permission={PERMISSIONS.ACCESSORIES_CHECKOUT}>
+                    {item.user_can_checkout && (
+                        <Pressable
+                            style={({pressed}) => [styles.checkoutButton, pressed && styles.buttonPressed]}
+                            onPress={() => router.push(`/(tabs)/(accessories)/checkout/${id}`)}
+                        >
+                            <Text style={styles.checkoutButtonText}>{t('mobile.check_out_button')}</Text>
+                        </Pressable>
+                    )}
+                </PermissionGate>
 
                 {/* Checked Out Records */}
                 <Section title={t('mobile.section_checked_out')}>
@@ -154,7 +155,7 @@ export default function AccessoryScreen() {
                                         <Text style={styles.checkoutDate}>{record.created_at.formatted}</Text>
                                     )}
                                 </View>
-                                {!checkinDenied && (
+                                <PermissionGate permission={PERMISSIONS.ACCESSORIES_CHECKIN}>
                                     <Pressable
                                         style={({pressed}) => [styles.checkinButton, pressed && styles.buttonPressed]}
                                         onPress={() => router.push({
@@ -168,7 +169,7 @@ export default function AccessoryScreen() {
                                     >
                                         <Text style={styles.checkinButtonText}>{t('mobile.check_in_button')}</Text>
                                     </Pressable>
-                                )}
+                                </PermissionGate>
                             </View>
                         ))
                     )}

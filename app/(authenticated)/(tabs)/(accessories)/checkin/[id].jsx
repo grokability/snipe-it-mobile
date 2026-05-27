@@ -12,7 +12,7 @@ import {
 import {router, useLocalSearchParams} from 'expo-router';
 import {makeRequest} from '@/helpers/axiosConfig';
 import {PERMISSIONS} from '@/permissions/PermissionKeys';
-import {usePermission} from '@/permissions/PermissionContext';
+import {PermissionGate} from '@/permissions/PermissionGate';
 import {SafeAreaProvider, useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useColors} from '@/hooks/useThemeColors';
 import {Spacing, BorderRadius, Typography, FontWeight} from '@/constants/sizes';
@@ -29,7 +29,6 @@ export default function AccessoryCheckinScreen() {
     const {t} = useTranslation();
 
     const {id, checkoutRecordId, assignedToName, assignedDate} = useLocalSearchParams();
-    const { denied: checkinDenied } = usePermission(PERMISSIONS.ACCESSORIES_CHECKIN);
     const [note, setNote] = useState('');
     const [submitting, setSubmitting] = useState(false);
 
@@ -109,7 +108,7 @@ export default function AccessoryCheckinScreen() {
                 </Section>
 
                 {/* Submit */}
-                {!checkinDenied && (
+                <PermissionGate permission={PERMISSIONS.ACCESSORIES_CHECKIN}>
                     <Pressable
                         onPress={handleSubmit}
                         disabled={submitting}
@@ -125,7 +124,7 @@ export default function AccessoryCheckinScreen() {
                             <Text style={styles.submitButtonText}>{t('general.checkin')}</Text>
                         )}
                     </Pressable>
-                )}
+                </PermissionGate>
             </ScrollView>
             </KeyboardAvoidingView>
         </SafeAreaProvider>

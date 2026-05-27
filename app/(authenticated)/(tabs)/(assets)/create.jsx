@@ -12,7 +12,7 @@ import {
 import {router} from "expo-router";
 import {makeRequest} from "@/helpers/axiosConfig";
 import {PERMISSIONS} from "@/permissions/PermissionKeys";
-import {usePermission} from "@/permissions/PermissionContext";
+import {PermissionGate} from '@/permissions/PermissionGate';
 import {AuthContext} from "@/context/AuthProvider";
 import {SafeAreaProvider, useSafeAreaInsets} from "react-native-safe-area-context";
 import {useColors} from "@/hooks/useThemeColors";
@@ -41,7 +41,6 @@ export default function CreateAssetScreen() {
     const styles = useMemo(() => createStyles(colors), [colors]);
     const { t } = useTranslation();
 
-    const { denied: createDenied } = usePermission(PERMISSIONS.ASSETS_CREATE);
     const [loadingFields, setLoadingFields] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const { user } = useContext(AuthContext);
@@ -529,7 +528,7 @@ export default function CreateAssetScreen() {
                 )}
 
                 {/* Submit */}
-                {!createDenied && (
+                <PermissionGate permission={PERMISSIONS.ASSETS_CREATE}>
                     <Pressable
                         onPress={handleSubmit}
                         disabled={submitting}
@@ -545,7 +544,7 @@ export default function CreateAssetScreen() {
                             <Text style={styles.submitButtonText}>{t('mobile.create_asset')}</Text>
                         )}
                     </Pressable>
-                )}
+                </PermissionGate>
             </ScrollView>
             </KeyboardAvoidingView>
 

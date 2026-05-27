@@ -13,7 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import EmptyState from "@/components/ui/EmptyState";
 import FilterChip from "@/components/ui/FilterChip";
 import AssetFilterBottomSheet from "@/components/bottomSheets/AssetFilterBottomSheet";
-import {usePermission} from "@/permissions/PermissionContext";
+import {usePermission, useRedirectIfDenied} from "@/permissions/PermissionContext";
 import {PERMISSIONS} from "@/permissions/PermissionKeys";
 
 const EMPTY_FILTERS = {
@@ -39,6 +39,7 @@ export default function AssetsScreen() {
     const [offset, setOffset] = useState(0);
     const [hasMore, setHasMore] = useState(true);
 
+    useRedirectIfDenied(PERMISSIONS.ASSETS_VIEW);
     const { denied: createDenied } = usePermission(PERMISSIONS.ASSETS_CREATE);
 
     const [debouncedSearch, setDebouncedSearch] = useState('');

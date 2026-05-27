@@ -87,15 +87,13 @@ export const PermissionManager = {
                     source[key] = 'usersMe';
                 } else {
                     // value === 0 (inherited/ambiguous)
-                    // if we previously recorded a 403 for this key but the
-                    // server now says inherited, give the user the benefit of the doubt.
                     if (source[key] === 'discovery403') {
                         delete permissionStates[key];
                         delete source[key];
                     }
-                    // Otherwise leave the existing state — a discoverySuccess 'allowed' remains.
                 }
             }
+
         }
 
         secureStoreUpdater();
@@ -103,12 +101,13 @@ export const PermissionManager = {
     },
 
     recordDeny(key) {
-        if (!activeDomain || superuser) return;
-        if (permissionStates[key] === 'denied') return;
+        if (!activeDomain || superuser) return false;
+        if (permissionStates[key] === 'denied') return false;
         permissionStates[key] = 'denied';
         source[key] = 'discovery403';
         secureStoreUpdater();
         notify();
+        return true;
     },
 
     // Only promotes unknown → allowed. Does not override any existing denied state.
@@ -161,6 +160,7 @@ export const PermissionManager = {
     },
 
     async refreshPermissions(domain, token) {
+        let success = false;
         try {
             const response = await fetch(`${domain}/api/v1/users/me`, {
                 headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
@@ -169,12 +169,14 @@ export const PermissionManager = {
                 const data = await response.json();
                 if (data.permissions) {
                     PermissionManager.initializeFromUsersMe(data.permissions, data.id, domain);
+                    success = true;
                 }
             }
         } catch {
             // Network error — leave existing state unchanged
         }
         await PermissionManager.probeViewPermissions(domain, token);
+        return success;
     },
 
     // Fires list-endpoint GETs at login to seed view permissions before the user navigates anywhere.

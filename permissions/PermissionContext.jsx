@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useRouter } from 'expo-router';
 import { PermissionManager } from './PermissionManager';
 
 const PermissionContext = createContext(0);
@@ -24,4 +25,18 @@ export const usePermission = (key) => {
         allowed: PermissionManager.isAllowed(key),
         denied:  PermissionManager.isKnownDenied(key),
     };
+};
+
+export const useRedirectIfDenied = (key) => {
+    const { denied } = usePermission(key);
+    const router = useRouter();
+
+    useEffect(() => {
+        if (!denied) return;
+        if (router.canGoBack()) {
+            router.back();
+        } else {
+            router.replace('/(authenticated)/(tabs)/(home)/');
+        }
+    }, [denied, router]);
 };

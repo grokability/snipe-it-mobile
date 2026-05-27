@@ -3,6 +3,7 @@ import { Alert } from 'react-native';
 import {router} from "expo-router";
 import * as SecureStore from 'expo-secure-store';
 import { PermissionManager } from '@/permissions/PermissionManager';
+import { PERMISSION_LABELS } from '@/permissions/PermissionKeys';
 import i18n from '@/i18n';
 
 // Create instances without baseURL initially
@@ -55,11 +56,15 @@ apiInstance.interceptors.response.use(
             router.replace('/login');
         } else if (error.response?.status === 403) {
             if (error.config?.permissionKey) {
-                PermissionManager.recordDeny(error.config.permissionKey);
-                if (!error.config.silent) {
+                const isNewDenial = PermissionManager.recordDeny(error.config.permissionKey);
+                if (isNewDenial && !error.config.silent) {
+                    const action = PERMISSION_LABELS[error.config.permissionKey];
+                    const message = action
+                        ? i18n.t('mobile.permission_denied_action', { action })
+                        : i18n.t('mobile.permission_denied_message');
                     Alert.alert(
                         i18n.t('mobile.permission_denied'),
-                        i18n.t('mobile.permission_denied_message'),
+                        message,
                         [{ text: i18n.t('general.ok') }]
                     );
                 }

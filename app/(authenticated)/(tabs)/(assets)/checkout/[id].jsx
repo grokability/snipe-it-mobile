@@ -4,7 +4,7 @@ import {router, useLocalSearchParams} from 'expo-router';
 import {SafeAreaProvider, useSafeAreaInsets} from 'react-native-safe-area-context';
 import {makeRequest} from '@/helpers/axiosConfig';
 import {PERMISSIONS} from '@/permissions/PermissionKeys';
-import {usePermission} from '@/permissions/PermissionContext';
+import {PermissionGate} from '@/permissions/PermissionGate';
 import {AuthContext} from '@/context/AuthProvider';
 import SelectUserBottomSheet from '@/components/bottomSheets/SelectUserBottomSheet';
 import SelectStatusBottomSheet from '@/components/bottomSheets/SelectStatusBottomSheet';
@@ -48,7 +48,6 @@ export default function CheckoutScreen() {
     const [notes, setNotes] = useState('');
     const [checkoutDate, setCheckoutDate] = useState(null);
     const [expectedCheckinDate, setExpectedCheckinDate] = useState(null);
-    const { denied: checkoutDenied } = usePermission(PERMISSIONS.ASSETS_CHECKOUT);
     const [submitting, setSubmitting] = useState(false);
 
     const handleSubmit = () => {
@@ -229,7 +228,7 @@ export default function CheckoutScreen() {
                 </Section>
 
                 {/* Submit */}
-                {!checkoutDenied && (
+                <PermissionGate permission={PERMISSIONS.ASSETS_CHECKOUT}>
                     <Pressable
                         onPress={handleSubmit}
                         disabled={submitting}
@@ -245,7 +244,7 @@ export default function CheckoutScreen() {
                             <Text style={styles.submitButtonText}>{t('general.checkout')}</Text>
                         )}
                     </Pressable>
-                )}
+                </PermissionGate>
             </ScrollView>
             </KeyboardAvoidingView>
 
