@@ -4,13 +4,15 @@ import {
     BottomSheetTextInput,
     useBottomSheet
 } from "@gorhom/bottom-sheet";
-import {Text, Button, Pressable, View, StyleSheet, Image} from "react-native";
-import React, {forwardRef, useEffect, useMemo, useState} from "react";
+import {Text, Button, Pressable, View, StyleSheet, Image, ActivityIndicator} from "react-native";
+import React, {forwardRef, useMemo, useState, useRef} from "react";
 import {makeRequest} from "@/helpers/axiosConfig";
+import {PERMISSIONS} from "@/permissions/PermissionKeys";
 import {useColors} from "@/hooks/useThemeColors";
 import {Spacing, BorderRadius, Typography, FontWeight} from "@/constants/sizes";
 import {useTranslation} from "react-i18next";
 import {decode} from "html-entities";
+import debounce from 'lodash/debounce';
 
 const CloseBtn = () => {
     const { close } = useBottomSheet();
@@ -25,27 +27,60 @@ const SelectUserBottomSheet = forwardRef((props, ref) => {
 
     const [users, setUsers] = useState([])
     const [searchText, setSearchText] = useState('')
+    const [hasMore, setHasMore] = useState(false)
+    const [isLoading, setIsLoading] = useState(false)
+    const [isLoadingMore, setIsLoadingMore] = useState(false)
+    const pageRef = useRef(1)
     const snapPoints = useMemo(() => ['25%', '50%', '70%'], []);
 
-    useEffect(() => {
-        fetchUsers();
-    }, [searchText])
-
-    const fetchUsers = () => {
+    const fetchUsers = (pageNum, searchQuery = searchText) => {
+        if (pageNum === 1) setIsLoading(true);
         makeRequest({
-            url: `/users?sort=display_name&order=asc&search=${searchText}`,
+            url: `/users/selectlist?search=${searchQuery}&page=${pageNum}`,
             method: 'GET',
+            permissionKey: PERMISSIONS.VIEW_SELECTLISTS,
+            silent: true,
         })
             .then((res) => {
-                setUsers(res.rows)
+                const newItems = res?.results ?? [];
+                setUsers(prev => pageNum === 1 ? newItems : [...prev, ...newItems]);
+                setHasMore(res?.pagination?.more ?? false);
             })
             .catch((err) => {
                 console.error(err);
+            })
+            .finally(() => {
+                setIsLoading(false);
+                setIsLoadingMore(false);
             });
     }
 
-    const selectUser = (user) => {
-        props.setSelectedUser(user)
+    const loadMore = () => {
+        if (!hasMore || isLoadingMore) return;
+        setIsLoadingMore(true);
+        pageRef.current += 1;
+        fetchUsers(pageRef.current);
+    }
+
+    const handleSheetAnimate = (fromIndex, toIndex) => {
+        if (fromIndex < 0 && toIndex >= 0) {
+            pageRef.current = 1;
+            fetchUsers(1, searchText);
+        }
+    }
+
+    const debouncedFetch = useRef(debounce((query) => {
+        pageRef.current = 1;
+        fetchUsers(1, query);
+    }, 300)).current;
+
+    const handleSearchChange = (text) => {
+        setSearchText(text);
+        debouncedFetch(text);
+    }
+
+    const selectUser = (item) => {
+        props.setSelectedUser({ ...item, name: item.text, avatar: item.image })
         ref.current.close()
     }
 
@@ -58,19 +93,18 @@ const SelectUserBottomSheet = forwardRef((props, ref) => {
             ]}
         >
             <View style={styles.imageContainer}>
-                {item.avatar ? (
-                    <Image source={{ uri: item.avatar }} style={styles.userImage} />
+                {item.image ? (
+                    <Image source={{ uri: item.image }} style={styles.userImage} />
                 ) : (
                     <View style={styles.placeholderImage}>
                         <Text style={styles.placeholderText}>
-                            {item.name ? decode(item.name).charAt(0).toUpperCase() : "U"}
+                            {item.text ? decode(item.text).charAt(0).toUpperCase() : "U"}
                         </Text>
                     </View>
                 )}
             </View>
             <View style={styles.userInfoContainer}>
-                <Text style={styles.userName}>{decode(item.name)}</Text>
-                <Text style={styles.userEmail}>{item.email || t('mobile.no_email')}</Text>
+                <Text style={styles.userName}>{decode(item.text)}</Text>
             </View>
         </Pressable>
     )
@@ -82,12 +116,18 @@ const SelectUserBottomSheet = forwardRef((props, ref) => {
             snapPoints={snapPoints}
             backgroundStyle={{ backgroundColor: colors.background }}
             handleIndicatorStyle={{ backgroundColor: colors.textMuted }}
-            onDismiss={() => setSearchText('')}
+            onAnimate={(fromIndex, toIndex) => handleSheetAnimate(fromIndex, toIndex)}
+            onDismiss={() => { setSearchText(''); setUsers([]); }}
         >
             <BottomSheetFlatList
                 data={users}
                 renderItem={({item}) => <Item item={item} />}
                 keyExtractor={item => item.id}
+                onEndReached={loadMore}
+                onEndReachedThreshold={0.1}
+                ListEmptyComponent={
+                    isLoading ? <ActivityIndicator style={styles.loadingInitial} /> : null
+                }
                 ListHeaderComponent={
                     <View style={styles.header}>
                         <Text style={styles.title}>{props.title}</Text>
@@ -96,12 +136,17 @@ const SelectUserBottomSheet = forwardRef((props, ref) => {
                                 style={styles.searchInput}
                                 placeholder={t('general.search')}
                                 placeholderTextColor={colors.textMuted}
-                                onChangeText={(text) => {setSearchText(text)}}
+                                onChangeText={handleSearchChange}
                             />
                         </View>
                     </View>
                 }
-                ListFooterComponent={<CloseBtn />}
+                ListFooterComponent={
+                    <>
+                        {isLoadingMore && <ActivityIndicator style={styles.loadingMore} />}
+                        <CloseBtn />
+                    </>
+                }
                 contentContainerStyle={styles.listContent}
             />
         </BottomSheetModal>
@@ -171,10 +216,11 @@ const createStyles = (colors) => StyleSheet.create({
         fontWeight: FontWeight.medium,
         color: colors.text,
     },
-    userEmail: {
-        fontSize: Typography.body,
-        color: colors.textMuted,
-        marginTop: 2,
+    loadingInitial: {
+        paddingVertical: Spacing.xl,
+    },
+    loadingMore: {
+        paddingVertical: Spacing.md,
     },
     listContent: {
         paddingBottom: Spacing.xl,

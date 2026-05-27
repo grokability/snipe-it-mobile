@@ -5,6 +5,8 @@ import FontAwesome from '@expo/vector-icons/FontAwesome';
 import {useColors} from '@/hooks/useThemeColors';
 import {Spacing, Typography, FontWeight, BorderRadius} from '@/constants/sizes';
 import {useTranslation} from 'react-i18next';
+import {useRedirectIfDenied} from '@/permissions/PermissionContext';
+import {PERMISSIONS} from '@/permissions/PermissionKeys';
 
 const REPORT_ITEMS = [
     { key: 'activity-report', icon: 'list-alt', labelKey: 'general.activity_report', route: 'reports/activity-report' },
@@ -15,6 +17,7 @@ export default function ReportsScreen() {
     const styles = useMemo(() => createStyles(colors), [colors]);
     const { t } = useTranslation();
     const router = useRouter();
+    useRedirectIfDenied(PERMISSIONS.REPORTS_VIEW);
 
     return (
         <View style={styles.container}>

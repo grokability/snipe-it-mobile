@@ -2,6 +2,8 @@ import {View, Text, StyleSheet, FlatList, Image, RefreshControl} from 'react-nat
 import {useContext, useState, useEffect, useCallback, useMemo} from "react";
 import {AuthContext} from "@/context/AuthProvider";
 import {makeRequest} from "@/helpers/axiosConfig";
+import {PERMISSIONS} from "@/permissions/PermissionKeys";
+import {useRedirectIfDenied} from "@/permissions/PermissionContext";
 import {useColors} from "@/hooks/useThemeColors";
 import {Spacing, BorderRadius, Typography, FontWeight} from "@/constants/sizes";
 import {decode} from "html-entities";
@@ -13,6 +15,7 @@ export default function LicensesScreen() {
     const { t } = useTranslation();
 
     const { user } = useContext(AuthContext);
+    useRedirectIfDenied(PERMISSIONS.LICENSES_VIEW);
     const [data, setData] = useState({});
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -21,11 +24,12 @@ export default function LicensesScreen() {
         return makeRequest({
             method: 'get',
             url: '/licenses',
+            permissionKey: PERMISSIONS.LICENSES_VIEW,
             headers: { 'Authorization': `Bearer ${user.token}` }
         }).then(res => {
             setData({
-                licenses: res.rows,
-                count: res.total
+                licenses: res?.rows,
+                count: res?.total
             });
         }).catch(err => {
             console.log(err);

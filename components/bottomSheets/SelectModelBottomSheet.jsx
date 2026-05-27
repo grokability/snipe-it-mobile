@@ -1,11 +1,13 @@
-import {Text, View, StyleSheet, Button, Pressable} from "react-native";
+import {Text, View, StyleSheet, Button, Pressable, Image, ActivityIndicator} from "react-native";
 import {BottomSheetFlatList, BottomSheetModal, BottomSheetTextInput, useBottomSheet} from "@gorhom/bottom-sheet";
-import React, {useMemo, useState, forwardRef, useEffect} from "react";
+import React, {useMemo, useState, forwardRef, useRef} from "react";
 import {makeRequest} from "@/helpers/axiosConfig";
+import {PERMISSIONS} from "@/permissions/PermissionKeys";
 import {useColors} from "@/hooks/useThemeColors";
 import {Spacing, BorderRadius, Typography, FontWeight} from "@/constants/sizes";
 import {useTranslation} from "react-i18next";
 import {decode} from "html-entities";
+import debounce from 'lodash/debounce';
 
 const CloseBtn = () => {
     const { close } = useBottomSheet();
@@ -21,26 +23,59 @@ const SelectModelBottomSheet = forwardRef((props, ref) => {
     const snapPoints = useMemo(() => ['25%', '50%', '70%'], []);
     const [searchText, setSearchText] = useState('');
     const [models, setModels] = useState([]);
+    const [hasMore, setHasMore] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+    const [isLoadingMore, setIsLoadingMore] = useState(false);
+    const pageRef = useRef(1);
 
-    useEffect(() => {
-        fetchModels();
-    }, [searchText]);
-
-    const fetchModels = () => {
+    const fetchModels = (pageNum, searchQuery = searchText) => {
+        if (pageNum === 1) setIsLoading(true);
         makeRequest({
-            url: `/models?search=${searchText}`,
+            url: `/models/selectlist?search=${searchQuery}&page=${pageNum}`,
             method: 'GET',
+            permissionKey: PERMISSIONS.VIEW_SELECTLISTS,
+            silent: true,
         })
             .then((res) => {
-                setModels(res.rows);
+                const newItems = res?.results ?? [];
+                setModels(prev => pageNum === 1 ? newItems : [...prev, ...newItems]);
+                setHasMore(res?.pagination?.more ?? false);
             })
             .catch((err) => {
                 console.error(err);
+            })
+            .finally(() => {
+                setIsLoading(false);
+                setIsLoadingMore(false);
             });
     };
 
-    const selectModel = (model) => {
-        props.setSelectedModel(model);
+    const loadMore = () => {
+        if (!hasMore || isLoadingMore) return;
+        setIsLoadingMore(true);
+        pageRef.current += 1;
+        fetchModels(pageRef.current);
+    };
+
+    const handleSheetAnimate = (fromIndex, toIndex) => {
+        if (fromIndex < 0 && toIndex >= 0) {
+            pageRef.current = 1;
+            fetchModels(1, searchText);
+        }
+    };
+
+    const debouncedFetch = useRef(debounce((query) => {
+        pageRef.current = 1;
+        fetchModels(1, query);
+    }, 300)).current;
+
+    const handleSearchChange = (text) => {
+        setSearchText(text);
+        debouncedFetch(text);
+    };
+
+    const selectModel = (item) => {
+        props.setSelectedModel({ ...item, name: item.text });
         ref.current.close();
     };
 
@@ -52,11 +87,11 @@ const SelectModelBottomSheet = forwardRef((props, ref) => {
                 pressed && styles.itemPressed
             ]}
         >
+            {item.image && (
+                <Image source={{ uri: item.image }} style={styles.itemImage} />
+            )}
             <View style={styles.infoContainer}>
-                <Text style={styles.name}>{decode(item.name)}</Text>
-                {item.model_number && (
-                    <Text style={styles.subtitle}>{item.model_number}</Text>
-                )}
+                <Text style={styles.name}>{decode(item.text)}</Text>
             </View>
         </Pressable>
     );
@@ -68,12 +103,18 @@ const SelectModelBottomSheet = forwardRef((props, ref) => {
             snapPoints={snapPoints}
             backgroundStyle={{ backgroundColor: colors.background }}
             handleIndicatorStyle={{ backgroundColor: colors.textMuted }}
-            onDismiss={() => setSearchText('')}
+            onAnimate={(fromIndex, toIndex) => handleSheetAnimate(fromIndex, toIndex)}
+            onDismiss={() => { setSearchText(''); setModels([]); }}
         >
             <BottomSheetFlatList
                 data={models}
                 renderItem={({item}) => <Item item={item} />}
                 keyExtractor={item => item.id}
+                onEndReached={loadMore}
+                onEndReachedThreshold={0.1}
+                ListEmptyComponent={
+                    isLoading ? <ActivityIndicator style={styles.loadingInitial} /> : null
+                }
                 ListHeaderComponent={
                     <View style={styles.header}>
                         <Text style={styles.title}>{props.title}</Text>
@@ -82,12 +123,17 @@ const SelectModelBottomSheet = forwardRef((props, ref) => {
                                 style={styles.searchInput}
                                 placeholder={t('general.search')}
                                 placeholderTextColor={colors.textMuted}
-                                onChangeText={(text) => {setSearchText(text)}}
+                                onChangeText={handleSearchChange}
                             />
                         </View>
                     </View>
                 }
-                ListFooterComponent={<CloseBtn />}
+                ListFooterComponent={
+                    <>
+                        {isLoadingMore && <ActivityIndicator style={styles.loadingMore} />}
+                        <CloseBtn />
+                    </>
+                }
                 contentContainerStyle={styles.listContent}
             />
         </BottomSheetModal>
@@ -128,6 +174,12 @@ const createStyles = (colors) => StyleSheet.create({
     itemPressed: {
         backgroundColor: colors.backgroundTertiary,
     },
+    itemImage: {
+        width: 32,
+        height: 32,
+        borderRadius: BorderRadius.sm,
+        marginRight: Spacing.md,
+    },
     infoContainer: {
         flex: 1,
     },
@@ -140,6 +192,12 @@ const createStyles = (colors) => StyleSheet.create({
         fontSize: Typography.body,
         color: colors.textSecondary,
         marginTop: Spacing.xs,
+    },
+    loadingInitial: {
+        paddingVertical: Spacing.xl,
+    },
+    loadingMore: {
+        paddingVertical: Spacing.md,
     },
     listContent: {
         paddingBottom: Spacing.xl,

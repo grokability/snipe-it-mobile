@@ -11,6 +11,8 @@ import {
 } from 'react-native';
 import {router, useLocalSearchParams} from 'expo-router';
 import {makeRequest} from '@/helpers/axiosConfig';
+import {PERMISSIONS} from '@/permissions/PermissionKeys';
+import {PermissionGate} from '@/permissions/PermissionGate';
 import {SafeAreaProvider, useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useColors} from '@/hooks/useThemeColors';
 import {Spacing, BorderRadius, Typography, FontWeight} from '@/constants/sizes';
@@ -36,6 +38,7 @@ export default function AccessoryCheckinScreen() {
             url: `/accessories/${checkoutRecordId}/checkin`,
             method: 'POST',
             data: {note: note || null},
+            permissionKey: PERMISSIONS.ACCESSORIES_CHECKIN,
         })
             .then((res) => {
                 if (res.status === 'error') {
@@ -105,21 +108,23 @@ export default function AccessoryCheckinScreen() {
                 </Section>
 
                 {/* Submit */}
-                <Pressable
-                    onPress={handleSubmit}
-                    disabled={submitting}
-                    style={({pressed}) => [
-                        styles.submitButton,
-                        pressed && styles.submitButtonPressed,
-                        submitting && styles.submitButtonDisabled,
-                    ]}
-                >
-                    {submitting ? (
-                        <ActivityIndicator color="#fff" />
-                    ) : (
-                        <Text style={styles.submitButtonText}>{t('general.checkin')}</Text>
-                    )}
-                </Pressable>
+                <PermissionGate permission={PERMISSIONS.ACCESSORIES_CHECKIN}>
+                    <Pressable
+                        onPress={handleSubmit}
+                        disabled={submitting}
+                        style={({pressed}) => [
+                            styles.submitButton,
+                            pressed && styles.submitButtonPressed,
+                            submitting && styles.submitButtonDisabled,
+                        ]}
+                    >
+                        {submitting ? (
+                            <ActivityIndicator color="#fff" />
+                        ) : (
+                            <Text style={styles.submitButtonText}>{t('general.checkin')}</Text>
+                        )}
+                    </Pressable>
+                </PermissionGate>
             </ScrollView>
             </KeyboardAvoidingView>
         </SafeAreaProvider>

@@ -3,6 +3,8 @@ import {ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView
 import {router, useLocalSearchParams} from 'expo-router';
 import {SafeAreaProvider, useSafeAreaInsets} from 'react-native-safe-area-context';
 import {makeRequest} from '@/helpers/axiosConfig';
+import {PERMISSIONS} from '@/permissions/PermissionKeys';
+import {PermissionGate} from '@/permissions/PermissionGate';
 import {AuthContext} from '@/context/AuthProvider';
 import SelectUserBottomSheet from '@/components/bottomSheets/SelectUserBottomSheet';
 import SelectStatusBottomSheet from '@/components/bottomSheets/SelectStatusBottomSheet';
@@ -77,6 +79,7 @@ export default function CheckoutScreen() {
         makeRequest({
             url: `/hardware/${id}/checkout`,
             method: 'POST',
+            permissionKey: PERMISSIONS.ASSETS_CHECKOUT,
             data: {
                 name: assetName || undefined,
                 checkout_to_type: selectedCheckoutTo,
@@ -225,21 +228,23 @@ export default function CheckoutScreen() {
                 </Section>
 
                 {/* Submit */}
-                <Pressable
-                    onPress={handleSubmit}
-                    disabled={submitting}
-                    style={({pressed}) => [
-                        styles.submitButton,
-                        pressed && styles.submitButtonPressed,
-                        submitting && styles.submitButtonDisabled,
-                    ]}
-                >
-                    {submitting ? (
-                        <ActivityIndicator color="#fff" />
-                    ) : (
-                        <Text style={styles.submitButtonText}>{t('general.checkout')}</Text>
-                    )}
-                </Pressable>
+                <PermissionGate permission={PERMISSIONS.ASSETS_CHECKOUT}>
+                    <Pressable
+                        onPress={handleSubmit}
+                        disabled={submitting}
+                        style={({pressed}) => [
+                            styles.submitButton,
+                            pressed && styles.submitButtonPressed,
+                            submitting && styles.submitButtonDisabled,
+                        ]}
+                    >
+                        {submitting ? (
+                            <ActivityIndicator color="#fff" />
+                        ) : (
+                            <Text style={styles.submitButtonText}>{t('general.checkout')}</Text>
+                        )}
+                    </Pressable>
+                </PermissionGate>
             </ScrollView>
             </KeyboardAvoidingView>
 

@@ -13,6 +13,8 @@ import { Ionicons } from '@expo/vector-icons';
 import EmptyState from "@/components/ui/EmptyState";
 import FilterChip from "@/components/ui/FilterChip";
 import AssetFilterBottomSheet from "@/components/bottomSheets/AssetFilterBottomSheet";
+import {usePermission, useRedirectIfDenied} from "@/permissions/PermissionContext";
+import {PERMISSIONS} from "@/permissions/PermissionKeys";
 
 const EMPTY_FILTERS = {
     status: null,
@@ -36,6 +38,9 @@ export default function AssetsScreen() {
     const [refreshing, setRefreshing] = useState(false);
     const [offset, setOffset] = useState(0);
     const [hasMore, setHasMore] = useState(true);
+
+    useRedirectIfDenied(PERMISSIONS.ASSETS_VIEW);
+    const { denied: createDenied } = usePermission(PERMISSIONS.ASSETS_CREATE);
 
     const [debouncedSearch, setDebouncedSearch] = useState('');
     const debouncedSearchRef = useRef('');
@@ -71,9 +76,11 @@ export default function AssetsScreen() {
                                 )}
                             </View>
                         </Pressable>
-                        <Pressable onPress={() => router.push('/(tabs)/(assets)/create')} hitSlop={4}>
-                            <Ionicons name="add" size={26} color={colors.text} />
-                        </Pressable>
+                        {!createDenied && (
+                            <Pressable onPress={() => router.push('/(tabs)/(assets)/create')} hitSlop={4}>
+                                <Ionicons name="add" size={26} color={colors.text} />
+                            </Pressable>
+                        )}
                     </View>
                 </View>
             ),
@@ -91,7 +98,7 @@ export default function AssetsScreen() {
                 },
             },
         });
-    }, [navigation, colors.text, colors.primary, t, debouncedSetSearch, activeFilterCount, styles]);
+    }, [navigation, colors.text, colors.primary, t, debouncedSetSearch, activeFilterCount, styles, createDenied]);
 
     // cancel any pending debounce on unmount so we don't update state after user navigates away
     useEffect(() => () => debouncedSetSearch.cancel(), [debouncedSetSearch]);
@@ -121,7 +128,7 @@ export default function AssetsScreen() {
     const getAssets = useCallback(({ offset: fetchOffset = 0, search: fetchSearch = '', filters: fetchFilters = EMPTY_FILTERS } = {}) => {
         setLoading(true);
         const query = buildQuery({ offset: fetchOffset, search: fetchSearch, filters: fetchFilters });
-        return makeRequest({ url: `/hardware?${query}`, method: 'get' })
+        return makeRequest({ url: `/hardware?${query}`, method: 'get', permissionKey: PERMISSIONS.ASSETS_VIEW })
             .then((res) => {
                 if (res?.rows) {
                     if (fetchOffset === 0) {

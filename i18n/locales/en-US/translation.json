@@ -77,7 +77,8 @@
     "created_by": "Created By",
     "quantity": "Quantity",
     "action_source": "Action Source",
-    "action_date": "Action Date"
+    "action_date": "Action Date",
+    "ok": "OK"
   },
   "mobile": {
     "na": "N/A",
@@ -232,6 +233,12 @@
     "oauth_not_supported": "This instance may not support OAuth. It may be out of date or the mobile client may not be configured. Contact your administrator or use an API token below.",
     "try_oauth_anyway": "Try OAuth anyway",
     "enter_client_id": "Client ID",
-    "connection_error_message": "Could not reach your Snipe-IT instance. Check the domain and try again."
+    "connection_error_message": "Could not reach your Snipe-IT instance. Check the domain and try again.",
+    "permission_denied": "Permission Denied",
+    "permission_denied_message": "You do not have permission to perform this action.",
+    "permission_denied_action": "You do not have access to {{action}}.",
+    "refresh_permissions": "Refresh Permissions",
+    "refresh_permissions_success": "Permissions refreshed successfully.",
+    "refresh_permissions_error": "Could not refresh permissions. Check your connection and try again."
   }
 }

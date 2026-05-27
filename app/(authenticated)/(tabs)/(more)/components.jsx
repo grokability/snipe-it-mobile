@@ -2,6 +2,8 @@ import {View, Text, StyleSheet, Image, RefreshControl, Platform} from 'react-nat
 import {useContext, useState, useEffect, useCallback, useMemo} from "react";
 import {AuthContext} from "@/context/AuthProvider";
 import {makeRequest} from "@/helpers/axiosConfig";
+import {PERMISSIONS} from "@/permissions/PermissionKeys";
+import {useRedirectIfDenied} from "@/permissions/PermissionContext";
 import {SafeAreaProvider, useSafeAreaInsets} from "react-native-safe-area-context";
 import {useColors} from "@/hooks/useThemeColors";
 import {Spacing, BorderRadius, Typography, FontWeight} from "@/constants/sizes";
@@ -16,6 +18,7 @@ export default function ComponentsScreen() {
     const { t } = useTranslation();
 
     const { user } = useContext(AuthContext);
+    useRedirectIfDenied(PERMISSIONS.COMPONENTS_VIEW);
     const [data, setData] = useState({});
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -24,12 +27,13 @@ export default function ComponentsScreen() {
         setLoading(true);
         return makeRequest({
             method: 'get',
-            url: '/components'
+            url: '/components',
+            permissionKey: PERMISSIONS.COMPONENTS_VIEW,
         })
             .then(res => {
                 setData({
-                    components: res.rows,
-                    count: res.total
+                    components: res?.rows,
+                    count: res?.total
                 });
             })
             .catch(err => {

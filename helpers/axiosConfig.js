@@ -1,6 +1,10 @@
 import axios from 'axios';
+import { Alert } from 'react-native';
 import {router} from "expo-router";
 import * as SecureStore from 'expo-secure-store';
+import { PermissionManager } from '@/permissions/PermissionManager';
+import { PERMISSION_LABELS } from '@/permissions/PermissionKeys';
+import i18n from '@/i18n';
 
 // Create instances without baseURL initially
 const apiInstance = axios.create({
@@ -27,19 +31,50 @@ apiInstance.interceptors.request.use(
     (error) => Promise.reject(error)
 );
 
-// Add response interceptor for global error handling
-[apiInstance, authInstance].forEach(instance => {
-    instance.interceptors.response.use(
-        (response) => response,
-        (error) => {
-            console.log(error);
-            if (error.response?.status === 401) {
-                router.replace('/login');
-            }
-            return Promise.reject(error);
+// authInstance: redirect on 401 only
+authInstance.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        if (error.response?.status === 401) {
+            router.replace('/login');
         }
-    );
-});
+        return Promise.reject(error);
+    }
+);
+
+// apiInstance: 401 redirect + permission recording
+apiInstance.interceptors.response.use(
+    (response) => {
+        const { permissionKey } = response.config;
+        if (permissionKey && response.data?.status !== 'error') {
+            PermissionManager.recordAllow(permissionKey);
+        }
+        return response;
+    },
+    (error) => {
+        if (error.response?.status === 401) {
+            router.replace('/login');
+        } else if (error.response?.status === 403) {
+            if (error.config?.permissionKey) {
+                const isNewDenial = PermissionManager.recordDeny(error.config.permissionKey);
+                if (isNewDenial && !error.config.silent) {
+                    const action = PERMISSION_LABELS[error.config.permissionKey];
+                    const message = action
+                        ? i18n.t('mobile.permission_denied_action', { action })
+                        : i18n.t('mobile.permission_denied_message');
+                    Alert.alert(
+                        i18n.t('mobile.permission_denied'),
+                        message,
+                        [{ text: i18n.t('general.ok') }]
+                    );
+                }
+            } else if (__DEV__) {
+                console.warn('[permissions] 403 received but no permissionKey was set on this request.');
+            }
+        }
+        return Promise.reject(error);
+    }
+);
 
 export const makeRequest = async ({
                                       domain,
@@ -47,9 +82,15 @@ export const makeRequest = async ({
                                       method,
                                       data,
                                       isAuth = false,
-                                      headers = {}
+                                      headers = {},
+                                      permissionKey,
+                                      silent = false,
                                   }) => {
     const instance = isAuth ? authInstance : apiInstance;
+
+    if (__DEV__ && !isAuth && !permissionKey) {
+        console.warn(`[permissions] makeRequest called without permissionKey: ${method?.toUpperCase()} ${url}`);
+    }
 
     // Determine baseURL for this request
     let baseURL;
@@ -70,11 +111,16 @@ export const makeRequest = async ({
         method,
         data,
         headers,
+        permissionKey,
+        silent,
     };
 
     return instance(config)
         .then(response => response.data)
         .catch(error => {
-            throw error; // Re-throw for proper handling
+            if (error?.response?.status === 403 && config.permissionKey) {
+                return null;
+            }
+            throw error;
         });
 };

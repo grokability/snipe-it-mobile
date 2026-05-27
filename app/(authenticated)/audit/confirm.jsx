@@ -13,6 +13,8 @@ import {
 import {decode} from 'html-entities';
 import {router, useLocalSearchParams} from 'expo-router';
 import {makeRequest} from '@/helpers/axiosConfig';
+import {PERMISSIONS} from '@/permissions/PermissionKeys';
+import {PermissionGate} from '@/permissions/PermissionGate';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useColors} from '@/hooks/useThemeColors';
 import {Spacing, BorderRadius, Typography, FontWeight} from '@/constants/sizes';
@@ -68,7 +70,7 @@ export default function AuditConfirmScreen() {
             ? `/hardware/${encodeURIComponent(asset_id)}`
             : `/hardware/bytag/${encodeURIComponent(asset_tag)}`;
 
-        makeRequest({url, method: 'GET'})
+        makeRequest({url, method: 'GET', permissionKey: PERMISSIONS.ASSETS_AUDIT})
             .then((res) => {
                 if (res.status === 'error') {
                     setError(res.messages || t('mobile.audit_failed'));
@@ -90,6 +92,7 @@ export default function AuditConfirmScreen() {
         makeRequest({
             url: '/hardware/audit',
             method: 'POST',
+            permissionKey: PERMISSIONS.ASSETS_AUDIT,
             data: {
                 asset_tag: asset?.asset_tag || asset_tag,
                 location_id: selectedLocation?.id || null,
@@ -232,21 +235,23 @@ export default function AuditConfirmScreen() {
                 </Section>
 
                 {/* Submit */}
-                <Pressable
-                    onPress={handleSubmit}
-                    disabled={submitting}
-                    style={({pressed}) => [
-                        styles.submitButton,
-                        pressed && styles.submitButtonPressed,
-                        submitting && styles.submitButtonDisabled,
-                    ]}
-                >
-                    {submitting ? (
-                        <ActivityIndicator color="#fff" />
-                    ) : (
-                        <Text style={styles.submitButtonText}>{t('mobile.audit_submit')}</Text>
-                    )}
-                </Pressable>
+                <PermissionGate permission={PERMISSIONS.ASSETS_AUDIT}>
+                    <Pressable
+                        onPress={handleSubmit}
+                        disabled={submitting}
+                        style={({pressed}) => [
+                            styles.submitButton,
+                            pressed && styles.submitButtonPressed,
+                            submitting && styles.submitButtonDisabled,
+                        ]}
+                    >
+                        {submitting ? (
+                            <ActivityIndicator color="#fff" />
+                        ) : (
+                            <Text style={styles.submitButtonText}>{t('mobile.audit_submit')}</Text>
+                        )}
+                    </Pressable>
+                </PermissionGate>
             </ScrollView>
             </KeyboardAvoidingView>
 

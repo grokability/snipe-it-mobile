@@ -12,6 +12,8 @@ import {
 } from 'react-native';
 import {router, useFocusEffect, useLocalSearchParams} from "expo-router";
 import {makeRequest} from "@/helpers/axiosConfig";
+import {PERMISSIONS} from "@/permissions/PermissionKeys";
+import {PermissionGate} from '@/permissions/PermissionGate';
 import {AuthContext} from "@/context/AuthProvider";
 import {SafeAreaProvider, useSafeAreaInsets} from "react-native-safe-area-context";
 import {useColors} from "@/hooks/useThemeColors";
@@ -79,7 +81,7 @@ export default function EditAccessoryScreen() {
 
     const getAccessory = useCallback(() => {
         setLoading(true);
-        return makeRequest({ url: `/accessories/${id}`, method: 'get' })
+        return makeRequest({ url: `/accessories/${id}`, method: 'get', permissionKey: PERMISSIONS.ACCESSORIES_VIEW })
             .then((accessory) => {
                 populateFields(accessory);
             })
@@ -187,8 +189,10 @@ export default function EditAccessoryScreen() {
             url: `/accessories/${id}`,
             method: 'PUT',
             data,
+            permissionKey: PERMISSIONS.ACCESSORIES_EDIT,
         })
             .then((response) => {
+                if (response === null) return;
                 if (response.status === 'error') {
                     Burnt.alert({
                         title: t('general.error'),
@@ -342,21 +346,23 @@ export default function EditAccessoryScreen() {
                 </Section>
 
                 {/* Submit */}
-                <Pressable
-                    onPress={handleSubmit}
-                    disabled={submitting}
-                    style={({pressed}) => [
-                        styles.submitButton,
-                        pressed && styles.submitButtonPressed,
-                        submitting && styles.submitButtonDisabled,
-                    ]}
-                >
-                    {submitting ? (
-                        <ActivityIndicator color="#fff" />
-                    ) : (
-                        <Text style={styles.submitButtonText}>{t('mobile.save_changes')}</Text>
-                    )}
-                </Pressable>
+                <PermissionGate permission={PERMISSIONS.ACCESSORIES_EDIT}>
+                    <Pressable
+                        onPress={handleSubmit}
+                        disabled={submitting}
+                        style={({pressed}) => [
+                            styles.submitButton,
+                            pressed && styles.submitButtonPressed,
+                            submitting && styles.submitButtonDisabled,
+                        ]}
+                    >
+                        {submitting ? (
+                            <ActivityIndicator color="#fff" />
+                        ) : (
+                            <Text style={styles.submitButtonText}>{t('mobile.save_changes')}</Text>
+                        )}
+                    </Pressable>
+                </PermissionGate>
             </ScrollView>
             </KeyboardAvoidingView>
 
@@ -365,6 +371,7 @@ export default function EditAccessoryScreen() {
                 title={t('general.select_category')}
                 ref={categoryRef}
                 setSelectedCategory={setSelectedCategory}
+                categoryType="accessory"
             />
             <SelectManufacturerBottomSheet
                 title={t('general.select_manufacturer')}
