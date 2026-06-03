@@ -79,8 +79,8 @@ body:
         - Self Hosted (Docker, Kubernetes, etc.)
         - Cloud (AWS, Azure, GCP, etc.)
         - Hosted by Snipe-IT
-      validations:
-        required: true
+    validations:
+      required: true
   - type: textarea
     attributes:
       label: Additional Relevant Configuration
