@@ -26,7 +26,7 @@ the [AI Usage Policy](AI_POLICY.md). **This is very important.**
 We use a vouch system for first-time contributors:
 
 1. Open a
-   [discussion in the "Vouch Request"](https://github.com/this project-org/this project/discussions/new?category=vouch-request)
+   [discussion in the "Vouch Request"](https://github.com/grokability/snipe-it-mobile/discussions/new?category=vouch-request)
    category describing what you want to change and why. Follow the template.
 2. Keep it concise
 3. Write in your own voice, don't have an AI write this
