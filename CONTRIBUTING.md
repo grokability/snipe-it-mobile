@@ -39,13 +39,6 @@ on a system of trust, and AI has unfortunately made it so we can no
 longer trust-by-default because it makes it too trivial to generate
 plausible-looking but actually low-quality contributions.
 
-## Contributors Prior to the Vouch System
-
-If you contributed to this project prior to the introduction
-of the vouch system and wish to continue contributing, you were not
-automatically added to the [list of vouched users](.github/VOUCHED.td). You will need to follow the same
-process as a first-time contributor to be vouched.
-
 ## Denouncement System
 
 If you repeatedly break the rules of this document or repeatedly
@@ -117,12 +110,7 @@ in the ["Feature Requests, Ideas"] category.
 ### I have a question which is neither a bug report nor a feature request
 
 Open an [Q&A discussion], or join our [Discord Server] and ask away in the
-`#help` forum channel.
-
-Do not use the `#terminals` or `#development` channels to ask for help —
-those are for general discussion about terminals and this project development
-respectively. If you do ask a question there, you will be redirected to
-`#help` instead.
+`#official-mobile-app` forum channel.
 
 > [!NOTE]
 > If your question is about a missing feature, please open a discussion under
