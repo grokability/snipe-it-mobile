@@ -3,6 +3,8 @@ import {ActivityIndicator, Image, Pressable, RefreshControl, ScrollView, StyleSh
 import {router, useFocusEffect, useLocalSearchParams, useNavigation} from "expo-router";
 import {Ionicons} from '@expo/vector-icons';
 import {makeRequest} from "@/helpers/axiosConfig";
+import {PERMISSIONS} from "@/permissions/PermissionKeys";
+import {PermissionGate} from "@/permissions/PermissionGate";
 import {decode} from "html-entities";
 import {SafeAreaProvider, useSafeAreaInsets} from "react-native-safe-area-context";
 import {useColors} from "@/hooks/useThemeColors";
@@ -47,7 +49,7 @@ export default function ConsumableScreen() {
 
     const getConsumable = useCallback(() => {
         setLoading(true);
-        return makeRequest({ url: `/consumables/${id}`, method: 'get' })
+        return makeRequest({ url: `/consumables/${id}`, method: 'get', permissionKey: PERMISSIONS.CONSUMABLES_VIEW })
             .then(res => {
                 setData(res);
             })
@@ -115,14 +117,16 @@ export default function ConsumableScreen() {
                 </View>
 
                 {/* Checkout Action */}
-                {data.user_can_checkout && (
-                    <Pressable
-                        style={({pressed}) => [styles.checkoutButton, pressed && styles.buttonPressed]}
-                        onPress={() => router.push(`/(tabs)/(consumables)/checkout/${id}`)}
-                    >
-                        <Text style={styles.checkoutButtonText}>{t('mobile.check_out_button')}</Text>
-                    </Pressable>
-                )}
+                <PermissionGate permission={PERMISSIONS.CONSUMABLES_CHECKOUT}>
+                    {data.user_can_checkout && (
+                        <Pressable
+                            style={({pressed}) => [styles.checkoutButton, pressed && styles.buttonPressed]}
+                            onPress={() => router.push(`/(tabs)/(consumables)/checkout/${id}`)}
+                        >
+                            <Text style={styles.checkoutButtonText}>{t('mobile.check_out_button')}</Text>
+                        </Pressable>
+                    )}
+                </PermissionGate>
 
                 {/* Details */}
                 <Section title={t('mobile.section_details')}>

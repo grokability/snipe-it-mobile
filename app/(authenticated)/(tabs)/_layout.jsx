@@ -1,13 +1,19 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import {useContext} from "react";
-import {AuthContext} from "@/context/AuthProvider";
 import {DynamicColorIOS, Platform} from 'react-native';
 import {NativeTabs} from "expo-router/unstable-native-tabs";
 import {useTranslation} from "react-i18next";
+import {usePermission} from "@/permissions/PermissionContext";
+import {PERMISSIONS} from "@/permissions/PermissionKeys";
+
+export const unstable_settings = {
+    initialRouteName: "(home)",
+};
 
 export default function TabLayout() {
-    const { user } = useContext(AuthContext);
     const { t } = useTranslation();
+    const { denied: assetsViewDenied } = usePermission(PERMISSIONS.ASSETS_VIEW);
+    const { denied: accessoriesViewDenied } = usePermission(PERMISSIONS.ACCESSORIES_VIEW);
+    const { denied: consumablesViewDenied } = usePermission(PERMISSIONS.CONSUMABLES_VIEW);
     return (
             <NativeTabs
                 labelStyle={{
@@ -34,22 +40,22 @@ export default function TabLayout() {
                 })}
                 labelVisibilityMode="labeled"
             >
-                <NativeTabs.Trigger name="home">
+                <NativeTabs.Trigger name="(home)">
                     <NativeTabs.Trigger.Label>{t('general.dashboard')}</NativeTabs.Trigger.Label>
                     <NativeTabs.Trigger.Icon src={<NativeTabs.Trigger.VectorIcon family={FontAwesome} name="home" />} />
                 </NativeTabs.Trigger>
 
-                <NativeTabs.Trigger name="(assets)">
+                <NativeTabs.Trigger name="(assets)" hidden={assetsViewDenied}>
                     <NativeTabs.Trigger.Label>{t('general.assets')}</NativeTabs.Trigger.Label>
                     <NativeTabs.Trigger.Icon src={<NativeTabs.Trigger.VectorIcon family={FontAwesome} name="barcode" />} />
                 </NativeTabs.Trigger>
 
-                <NativeTabs.Trigger name="(accessories)">
+                <NativeTabs.Trigger name="(accessories)" hidden={accessoriesViewDenied}>
                     <NativeTabs.Trigger.Label>{t('general.accessories')}</NativeTabs.Trigger.Label>
                     <NativeTabs.Trigger.Icon src={<NativeTabs.Trigger.VectorIcon family={FontAwesome} name="keyboard-o" />} />
                 </NativeTabs.Trigger>
 
-                <NativeTabs.Trigger name="(consumables)">
+                <NativeTabs.Trigger name="(consumables)" hidden={consumablesViewDenied}>
                     <NativeTabs.Trigger.Label>{t('general.consumables')}</NativeTabs.Trigger.Label>
                     <NativeTabs.Trigger.Icon src={<NativeTabs.Trigger.VectorIcon family={FontAwesome} name="tint" />} />
                 </NativeTabs.Trigger>

@@ -6,9 +6,31 @@ on:
       - develop
 
 jobs:
+  fingerprint:
+    name: Calculate Fingerprints
+    type: fingerprint
+
+  get_build_ios:
+    name: Find Existing iOS Build
+    type: get-build
+    needs: [fingerprint]
+    params:
+      platform: ios
+      fingerprint_hash: ${{ needs.fingerprint.outputs.ios_fingerprint_hash }}
+
+  get_build_android:
+    name: Find Existing Android Build
+    type: get-build
+    needs: [fingerprint]
+    params:
+      platform: android
+      fingerprint_hash: ${{ needs.fingerprint.outputs.android_fingerprint_hash }}
+
   build_ios:
     name: Build iOS (Internal Testing)
     type: build
+    needs: [get_build_ios]
+    if: ${{ !needs.get_build_ios.outputs.build_id }}
     params:
       platform: ios
       profile: internal-testing
@@ -16,12 +38,14 @@ jobs:
   build_android:
     name: Build Android (Internal Testing)
     type: build
+    needs: [get_build_android]
+    if: ${{ !needs.get_build_android.outputs.build_id }}
     params:
       platform: android
       profile: internal-testing
 
   submit_ios:
-    name: Submit to TestFlight (Internal)
+    name: Submit iOS (Internal Testing)
     type: submit
     needs: [build_ios]
     params:
@@ -29,9 +53,92 @@ jobs:
       profile: internal-testing
 
   submit_android:
-    name: Submit to Play Store (Internal)
+    name: Submit Android (Internal Testing)
     type: submit
     needs: [build_android]
     params:
       build_id: ${{ needs.build_android.outputs.build_id }}
       profile: internal-testing
+
+  publish_ota:
+    name: Publish OTA Update (internal-testing)
+    needs: [get_build_ios, get_build_android]
+    steps:
+      - uses: eas/checkout
+      - uses: eas/use_npm_token
+      - uses: eas/install_node_modules
+      - name: Publish update
+        run: |
+          MSG=$(git log -1 --format=%s)
+          EXPO_PUBLIC_UPDATE_MESSAGE="$MSG" npx eas-cli@latest update --branch ${{ github.ref_name }} --message "$MSG" --environment production --non-interactive
+
+  notify_native_success:
+    name: ✅ Notify — Native Build Distributed
+    runs_on: linux-medium
+    after: [submit_ios, submit_android, publish_ota]
+    if: ${{ after.submit_ios.status == 'success' && after.submit_android.status == 'success' }}
+    steps:
+      - uses: eas/checkout
+      - name: Send Slack notification
+        run: |
+          CHANGELOG=$(git log --format="• %s" --no-merges -20)
+          [ -z "$CHANGELOG" ] && CHANGELOG="_No new commits_"
+          curl -s -X POST "$SLACK_WEBHOOK_URL" \
+            -H 'Content-type: application/json' \
+            -d "$(jq -n \
+              --arg changelog "$CHANGELOG" \
+              '{blocks: [
+                {type: "header", text: {type: "plain_text", text: "✅ Snipe IT Mobile — Internal Testing"}},
+                {type: "section", fields: [
+                  {type: "mrkdwn", text: "🔨 *Type:* Native Build"},
+                  {type: "mrkdwn", text: "🌿 *Branch:* develop"}
+                ]},
+                {type: "section", text: {type: "mrkdwn", text: ("📋 *Changes*\n" + $changelog)}}
+              ]}')"
+
+  notify_ota_success:
+    name: ✅ Notify — OTA Update Published
+    runs_on: linux-medium
+    after: [submit_ios, submit_android, publish_ota]
+    if: ${{ after.publish_ota.status == 'success' && after.submit_ios.status != 'success' }}
+    steps:
+      - uses: eas/checkout
+      - name: Send Slack notification
+        run: |
+          CHANGELOG=$(git log --format="• %s" --no-merges -20)
+          [ -z "$CHANGELOG" ] && CHANGELOG="_No new commits_"
+          curl -s -X POST "$SLACK_WEBHOOK_URL" \
+            -H 'Content-type: application/json' \
+            -d "$(jq -n \
+              --arg changelog "$CHANGELOG" \
+              '{blocks: [
+                {type: "header", text: {type: "plain_text", text: "✅ Snipe IT Mobile — Internal Testing"}},
+                {type: "section", fields: [
+                  {type: "mrkdwn", text: "⚡ *Type:* OTA / JS Update"},
+                  {type: "mrkdwn", text: "🌿 *Branch:* develop"}
+                ]},
+                {type: "section", text: {type: "mrkdwn", text: ("📋 *Changes*\n" + $changelog)}}
+              ]}')"
+
+  notify_failure:
+    name: ❌ Notify — Failure
+    runs_on: linux-medium
+    after: [build_ios, build_android, submit_ios, submit_android, publish_ota]
+    if: ${{ failure() }}
+    steps:
+      - name: Send Slack notification
+        run: |
+          curl -s -X POST "$SLACK_WEBHOOK_URL" \
+            -H 'Content-type: application/json' \
+            -d "$(jq -n \
+              --arg ios_build "${{ after.build_ios.status }}" \
+              --arg ios_submit "${{ after.submit_ios.status }}" \
+              --arg android_build "${{ after.build_android.status }}" \
+              --arg android_submit "${{ after.submit_android.status }}" \
+              --arg ota "${{ after.publish_ota.status }}" \
+              '{blocks: [
+                {type: "header", text: {type: "plain_text", text: "❌ Snipe IT Mobile — Internal Testing Failed"}},
+                {type: "section", fields: [{type: "mrkdwn", text: "🌿 *Branch:* develop"}]},
+                {type: "section", text: {type: "mrkdwn", text: ("📊 *Job Status*\n🍎 iOS build: " + $ios_build + " | submit: " + $ios_submit + "\n🤖 Android build: " + $android_build + " | submit: " + $android_submit + "\n⚡ OTA: " + $ota)}},
+                {type: "section", text: {type: "mrkdwn", text: "🔗 Check the EAS dashboard for details."}}
+              ]}')"

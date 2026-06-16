@@ -1,0 +1,12 @@
+Hi @{author}!
+
+This pull request has been automatically closed because you haven't been vouched as a contributor yet.
+
+## How to get vouched
+
+1. Open a [Vouch Request discussion](https://github.com/grokability/snipe-it-mobile/discussions/new?category=vouch-request) describing what you want to change and why. Follow the template.
+2. Keep it concise and write it in your own voice — don't have AI write it for you.
+3. A maintainer will comment `!vouch` if approved.
+4. Once approved, feel free to reopen or resubmit this pull request.
+
+Please read the [Contributing Guide](https://github.com/grokability/snipe-it-mobile/blob/main/CONTRIBUTING.md) and [AI Usage Policy](https://github.com/grokability/snipe-it-mobile/blob/main/AI_POLICY.md) before submitting a vouch request.

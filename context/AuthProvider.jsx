@@ -1,6 +1,7 @@
 import React, {createContext, useState, useEffect, useContext} from "react";
 import {makeRequest} from "../helpers/axiosConfig";
 import * as SecureStore from 'expo-secure-store';
+import { PermissionManager } from '../permissions/PermissionManager';
 import { deviceName } from "expo-device";
 import {useRouter} from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -16,16 +17,20 @@ export const AuthProvider = ({children}) => {
 
     useEffect(() => {
         const loadUser = async () => {
-            const storedUser = await SecureStore.getItemAsync("user"); // Check if token exists
+            const storedUser = await SecureStore.getItemAsync("user");
+            const storedDomain = await SecureStore.getItemAsync("domain");
             if (storedUser) {
                 const parsedUser = JSON.parse(storedUser);
                 setUser(parsedUser);
                 setIsAuthenticated(true);
+                if (storedDomain) {
+                    await PermissionManager.hydrate(storedDomain);
+                }
             } else {
                 setUser(null);
                 setIsAuthenticated(false);
             }
-            setIsLoading(false); // Stop showing the loading state after checking
+            setIsLoading(false);
         };
 
         loadUser();
@@ -39,8 +44,7 @@ export const AuthProvider = ({children}) => {
                 isLoading,
                 setUser,
                 logout: () => {
-                    // commenting out most of this to do a regular bearer token logout of the mobile app
-                    // this means the token is NOT invalidated when logging out for now.
+                    // Token is not invalidated on logout — see commented block below for full OAuth logout
                     console.log('logout');
                     // return makeRequest({
                     //     url: '/mobile/logout',
@@ -52,6 +56,10 @@ export const AuthProvider = ({children}) => {
                     //     headers: { 'Authorization': `Bearer ${user.token}` }
                     // }).then(response => {
                     //     console.log('logout response');
+                        const currentDomain = PermissionManager.getCurrentDomain();
+                        if (currentDomain) {
+                            PermissionManager.reset(currentDomain);
+                        }
                         SecureStore.deleteItemAsync('user');
                         setUser(null);
                         setIsAuthenticated(false);
@@ -92,6 +100,8 @@ export const AuthProvider = ({children}) => {
                             setUser(userResponse);
                             SecureStore.setItemAsync('user', JSON.stringify(userResponse));
                             AsyncStorage.setItem('locale', response.locale || 'en-US');
+                            PermissionManager.initializeFromUsersMe(response.permissions, response.id, domain);
+                            PermissionManager.probeViewPermissions(domain, token);
                         })
                         .catch(error => {
                             setUser(null);
@@ -103,7 +113,7 @@ export const AuthProvider = ({children}) => {
                             setIsLoading(false);
                         });
                 },
-                oAuthLogin: (domain, code, codeVerifier) => {
+                oAuthLogin: (domain, code, codeVerifier, clientId) => {
                     console.log('oAuthLogin');
                    setIsLoading(true);
                    if (!code) {
@@ -120,7 +130,7 @@ export const AuthProvider = ({children}) => {
                    // set up url encoding
                     const params = new URLSearchParams();
                     params.append('grant_type', 'authorization_code');
-                    params.append('client_id', '9999');
+                    params.append('client_id', clientId);
                     params.append('code', code);
                     params.append('code_verifier', codeVerifier);
                     params.append('redirect_uri', redirectUri);
@@ -167,6 +177,8 @@ export const AuthProvider = ({children}) => {
                         setUser(userResponse);
                         setIsAuthenticated(true);
                         console.log('user:', userResponse);
+                        PermissionManager.initializeFromUsersMe(userData.permissions, userData.id, domain);
+                        PermissionManager.probeViewPermissions(domain, accessToken);
                     })
                    .catch(error => {
                        if (error.response && error.response.data) {

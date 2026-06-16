@@ -12,6 +12,8 @@ import {
 } from 'react-native';
 import {router, useFocusEffect, useLocalSearchParams} from 'expo-router';
 import {makeRequest} from '@/helpers/axiosConfig';
+import {PERMISSIONS} from '@/permissions/PermissionKeys';
+import {PermissionGate} from '@/permissions/PermissionGate';
 import {SafeAreaProvider, useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useColors} from '@/hooks/useThemeColors';
 import {Spacing, BorderRadius, Typography, FontWeight} from '@/constants/sizes';
@@ -79,7 +81,7 @@ export default function EditConsumableScreen() {
 
     const getConsumable = useCallback(() => {
         setLoading(true);
-        return makeRequest({url: `/consumables/${id}`, method: 'get'})
+        return makeRequest({url: `/consumables/${id}`, method: 'get', permissionKey: PERMISSIONS.CONSUMABLES_VIEW})
             .then(populateFields)
             .catch(console.error)
             .finally(() => setLoading(false));
@@ -141,6 +143,7 @@ export default function EditConsumableScreen() {
         makeRequest({
             url: `/consumables/${id}`,
             method: 'PUT',
+            permissionKey: PERMISSIONS.CONSUMABLES_EDIT,
             data: {
                 name,
                 qty: parseInt(qty, 10),
@@ -320,21 +323,23 @@ export default function EditConsumableScreen() {
                 </Section>
 
                 {/* Submit */}
-                <Pressable
-                    onPress={handleSubmit}
-                    disabled={submitting}
-                    style={({pressed}) => [
-                        styles.submitButton,
-                        pressed && styles.submitButtonPressed,
-                        submitting && styles.submitButtonDisabled,
-                    ]}
-                >
-                    {submitting ? (
-                        <ActivityIndicator color="#fff" />
-                    ) : (
-                        <Text style={styles.submitButtonText}>{t('mobile.save_changes')}</Text>
-                    )}
-                </Pressable>
+                <PermissionGate permission={PERMISSIONS.CONSUMABLES_EDIT}>
+                    <Pressable
+                        onPress={handleSubmit}
+                        disabled={submitting}
+                        style={({pressed}) => [
+                            styles.submitButton,
+                            pressed && styles.submitButtonPressed,
+                            submitting && styles.submitButtonDisabled,
+                        ]}
+                    >
+                        {submitting ? (
+                            <ActivityIndicator color="#fff" />
+                        ) : (
+                            <Text style={styles.submitButtonText}>{t('mobile.save_changes')}</Text>
+                        )}
+                    </Pressable>
+                </PermissionGate>
             </ScrollView>
             </KeyboardAvoidingView>
 
@@ -342,6 +347,7 @@ export default function EditConsumableScreen() {
                 title={t('general.select_category')}
                 ref={categoryRef}
                 setSelectedCategory={setSelectedCategory}
+                categoryType="consumable"
             />
             <SelectManufacturerBottomSheet
                 title={t('general.select_manufacturer')}

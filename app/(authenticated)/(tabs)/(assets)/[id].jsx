@@ -1,10 +1,10 @@
-import React, {useCallback, useContext, useState, useMemo, useLayoutEffect} from 'react';
+import React, {useCallback, useState, useMemo, useLayoutEffect} from 'react';
 import {ActivityIndicator, Image, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View} from 'react-native';
 import {router, useFocusEffect, useLocalSearchParams, useNavigation} from "expo-router";
 import {Ionicons} from '@expo/vector-icons';
 import {makeRequest} from "@/helpers/axiosConfig";
+import {PERMISSIONS} from "@/permissions/PermissionKeys";
 import {decode} from "html-entities";
-import {AuthContext} from "@/context/AuthProvider";
 import {SafeAreaProvider, useSafeAreaInsets} from "react-native-safe-area-context";
 import {useColors} from "@/hooks/useThemeColors";
 import {Spacing, BorderRadius, Typography, FontWeight} from "@/constants/sizes";
@@ -12,6 +12,8 @@ import {useTranslation} from "react-i18next";
 import Checkbox from "@/components/forms/Checkbox";
 import {Section, SectionHeader} from "@/components/ui/Section";
 import {DetailRow, EncryptedDetailRow} from "@/components/ui/DetailRow";
+import {usePermission} from "@/permissions/PermissionContext";
+import {PermissionGate} from "@/permissions/PermissionGate";
 
 
 export const unstable_settings = {
@@ -24,6 +26,9 @@ export default function AssetScreen() {
     const insets = useSafeAreaInsets();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const { t } = useTranslation();
+
+    const { denied: createDenied } = usePermission(PERMISSIONS.ASSETS_CREATE);
+    const { denied: editDenied } = usePermission(PERMISSIONS.ASSETS_EDIT);
 
     const [data, setData] = useState({});
     const [loading, setLoading] = useState(true);
@@ -39,26 +44,33 @@ export default function AssetScreen() {
                     type: 'custom',
                     element: (
                         <View style={styles.headerButtonGroup}>
-                            <Pressable onPress={() => router.push('/(tabs)/(assets)/create')} hitSlop={4}>
-                                <Ionicons name="add" size={26} color={colors.text} />
-                            </Pressable>
-                            <Pressable onPress={() => router.push(`/(tabs)/(assets)/edit/${id}`)} hitSlop={4}>
-                                <Ionicons name="pencil" size={22} color={colors.text} />
-                            </Pressable>
+                            {!createDenied && (
+                                <Pressable onPress={() => router.push('/(tabs)/(assets)/create')} hitSlop={4}>
+                                    <Ionicons name="add" size={26} color={colors.text} />
+                                </Pressable>
+                            )}
+                            {!editDenied && (
+                                <Pressable onPress={() => router.push(`/(tabs)/(assets)/edit/${id}`)} hitSlop={4}>
+                                    <Ionicons name="pencil" size={22} color={colors.text} />
+                                </Pressable>
+                            )}
                         </View>
                     ),
                 },
             ],
         });
-    }, [navigation, id, colors.text]);
+    }, [navigation, id, colors.text, createDenied, editDenied]);
 
     const getAsset = useCallback(() => {
         setLoading(true);
-        return Promise.all([
-            makeRequest({ url: `/hardware/${id}`, method: 'get' }),
-            makeRequest({ url: '/fields', method: 'get' }),
+        return Promise.allSettled([
+            makeRequest({ url: `/hardware/${id}`, method: 'get', permissionKey: PERMISSIONS.ASSETS_VIEW }),
+            makeRequest({ url: '/fields', method: 'get', permissionKey: PERMISSIONS.CUSTOMFIELDS_VIEW }),
         ])
-            .then(([assetRes, fieldsRes]) => {
+            .then(([assetResult, fieldsResult]) => {
+                if (assetResult.status === 'rejected') throw assetResult.reason;
+                const assetRes = assetResult.value;
+                const fieldsRes = fieldsResult.status === 'fulfilled' ? fieldsResult.value : null;
                 // Merge field_values and field_encrypted from field definitions into asset custom_fields
                 if (assetRes.custom_fields && fieldsRes?.rows) {
                     const fieldDefs = {};
@@ -111,6 +123,7 @@ export default function AssetScreen() {
     }
 
     const asset = data.asset;
+    const cannotCheckout = ['undeployable', 'archived'].includes(asset.status_label?.status_type);
     const statusColor = asset.status_label?.status_meta === 'deployed'
         ? colors.success
         : asset.status_label?.status_meta === 'pending'
@@ -155,43 +168,69 @@ export default function AssetScreen() {
                                 <Text style={styles.assignedText}>
                                     {t('general.assigned_to')}<Text selectable style={styles.userName}>{asset.assigned_to.name}</Text>
                                 </Text>
-                                <Pressable
-                                    style={({pressed}) => [styles.button, styles.checkinButton, pressed && styles.buttonPressed]}
-                                    onPress={() => router.push({
-                                    pathname: `/(tabs)/(assets)/checkin/${id}`,
-                                    params: {
-                                        assetName: asset.name ?? '',
-                                        assetTag: asset.asset_tag ?? '',
-                                        assignedToName: asset.assigned_to?.name ?? '',
-                                    },
-                                })}
-                                >
-                                    <Text style={styles.buttonText}>{t('mobile.check_in_button')}</Text>
-                                </Pressable>
+                                <PermissionGate permission={PERMISSIONS.ASSETS_CHECKIN}>
+                                    <Pressable
+                                        style={({pressed}) => [styles.button, styles.checkinButton, pressed && styles.buttonPressed]}
+                                        onPress={() => router.push({
+                                        pathname: `/(tabs)/(assets)/checkin/${id}`,
+                                        params: {
+                                            assetName: asset.name ?? '',
+                                            assetTag: asset.asset_tag ?? '',
+                                            assignedToName: asset.assigned_to?.name ?? '',
+                                            statusId: asset.status_label?.id ?? '',
+                                            statusName: asset.status_label?.name ?? '',
+                                        },
+                                    })}
+                                    >
+                                        <Text style={styles.buttonText}>{t('mobile.check_in_button')}</Text>
+                                    </Pressable>
+                                </PermissionGate>
                             </>
                         ) : (
+                            <>
+                                <PermissionGate permission={PERMISSIONS.ASSETS_CHECKOUT}>
+                                    <>
+                                        <Pressable
+                                            disabled={cannotCheckout}
+                                            style={({pressed}) => [
+                                                styles.button,
+                                                styles.checkoutButton,
+                                                pressed && !cannotCheckout && styles.buttonPressed,
+                                                cannotCheckout && styles.buttonDisabled,
+                                            ]}
+                                            onPress={cannotCheckout ? undefined : () => router.push({
+                                                pathname: `/(tabs)/(assets)/checkout/${id}`,
+                                                params: {
+                                                    assetName: asset.name ?? '',
+                                                    assetTag: asset.asset_tag ?? '',
+                                                    statusId: asset.status_label?.id ?? '',
+                                                    statusName: asset.status_label?.name ?? '',
+                                                    statusType: asset.status_label?.status_type ?? '',
+                                                },
+                                            })}
+                                        >
+                                            <Text style={styles.buttonText}>{t('mobile.check_out_button')}</Text>
+                                        </Pressable>
+                                        {cannotCheckout && (
+                                            <Text style={styles.undeployableMessage}>
+                                                {t('mobile.undeployable_checkout_message')}
+                                            </Text>
+                                        )}
+                                    </>
+                                </PermissionGate>
+                            </>
+                        )}
+                        <PermissionGate permission={PERMISSIONS.ASSETS_AUDIT}>
                             <Pressable
-                                style={({pressed}) => [styles.button, styles.checkoutButton, pressed && styles.buttonPressed]}
+                                style={({pressed}) => [styles.buttonSmall, styles.auditButton, pressed && styles.buttonPressed]}
                                 onPress={() => router.push({
-                                    pathname: `/(tabs)/(assets)/checkout/${id}`,
-                                    params: {
-                                        assetName: asset.name ?? '',
-                                        assetTag: asset.asset_tag ?? '',
-                                    },
+                                    pathname: '/(authenticated)/audit/confirm',
+                                    params: { asset_id: id },
                                 })}
                             >
-                                <Text style={styles.buttonText}>{t('mobile.check_out_button')}</Text>
+                                <Text style={styles.buttonSmallText}>{t('general.audit')}</Text>
                             </Pressable>
-                        )}
-                        <Pressable
-                            style={({pressed}) => [styles.buttonSmall, styles.auditButton, pressed && styles.buttonPressed]}
-                            onPress={() => router.push({
-                                pathname: '/(authenticated)/audit/confirm',
-                                params: { asset_id: id },
-                            })}
-                        >
-                            <Text style={styles.buttonSmallText}>{t('general.audit')}</Text>
-                        </Pressable>
+                        </PermissionGate>
                     </View>
                 </View>
 
@@ -242,6 +281,7 @@ export default function AssetScreen() {
                 </Section>
 
                 {/* Custom Fields */}
+                <PermissionGate permission={PERMISSIONS.CUSTOMFIELDS_VIEW}>
                 {customFields.length > 0 && (
                     <Section title={t('mobile.section_custom_fields')}>
                         {customFields.map(([key, field]) => {
@@ -335,6 +375,7 @@ export default function AssetScreen() {
                         })}
                     </Section>
                 )}
+                </PermissionGate>
 
                 {/* Notes */}
                 {asset.notes && (
@@ -435,6 +476,15 @@ const createStyles = (colors) => StyleSheet.create({
     },
     checkoutButton: {
         backgroundColor: colors.success,
+    },
+    buttonDisabled: {
+        backgroundColor: colors.border,
+        opacity: 0.7,
+    },
+    undeployableMessage: {
+        fontSize: Typography.caption,
+        color: colors.textSecondary,
+        textAlign: 'center',
     },
     auditButton: {
         backgroundColor: colors.primary,

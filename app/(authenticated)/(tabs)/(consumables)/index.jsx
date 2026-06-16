@@ -2,6 +2,8 @@ import {View, Text, StyleSheet, RefreshControl, Pressable, Platform} from 'react
 import {useContext, useState, useCallback, useMemo} from "react";
 import {AuthContext} from "@/context/AuthProvider";
 import {makeRequest} from "@/helpers/axiosConfig";
+import {PERMISSIONS} from "@/permissions/PermissionKeys";
+import {useRedirectIfDenied} from "@/permissions/PermissionContext";
 import {SafeAreaProvider, useSafeAreaInsets} from "react-native-safe-area-context";
 import {router, useFocusEffect} from "expo-router";
 import {useColors} from "@/hooks/useThemeColors";
@@ -20,6 +22,7 @@ export default function ConsumablesScreen() {
     const { t } = useTranslation();
 
     const { user } = useContext(AuthContext);
+    useRedirectIfDenied(PERMISSIONS.CONSUMABLES_VIEW);
     const [data, setData] = useState({});
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -28,7 +31,8 @@ export default function ConsumablesScreen() {
         setLoading(true);
         return makeRequest({
             method: 'get',
-            url: '/consumables'
+            url: '/consumables',
+            permissionKey: PERMISSIONS.CONSUMABLES_VIEW,
         })
             .then(res => {
                 if (res?.rows) {
@@ -103,7 +107,12 @@ export default function ConsumablesScreen() {
     if (!loading && (!data.consumables || data.consumables.length === 0)) {
         return (
             <SafeAreaProvider style={styles.container}>
-                <EmptyState onRetry={getConsumables} />
+                <EmptyState
+                    icon="file-tray-outline"
+                    title={t('mobile.no_results')}
+                    message={t('mobile.no_results_message')}
+                    onRetry={getConsumables}
+                />
             </SafeAreaProvider>
         );
     }

@@ -5,10 +5,13 @@ import FontAwesome from '@expo/vector-icons/FontAwesome';
 import {useColors} from "@/hooks/useThemeColors";
 import {Spacing, Typography, FontWeight, BorderRadius} from "@/constants/sizes";
 import {useTranslation} from "react-i18next";
+import {PermissionGate} from "@/permissions/PermissionGate";
+import {PERMISSIONS} from "@/permissions/PermissionKeys";
 
 const MENU_ITEMS = [
-    { key: 'components', icon: 'hdd-o',       labelKey: 'general.components', route: 'components' },
-    { key: 'licenses',   icon: 'file-text-o', labelKey: 'general.licenses',   route: 'licenses' },
+    { key: 'components', icon: 'hdd-o',       labelKey: 'general.components', route: 'components', permission: PERMISSIONS.COMPONENTS_VIEW },
+    { key: 'licenses',   icon: 'file-text-o', labelKey: 'general.licenses',   route: 'licenses',   permission: PERMISSIONS.LICENSES_VIEW },
+    { key: 'reports',    icon: 'bar-chart',   labelKey: 'general.reports',     route: 'reports',    permission: PERMISSIONS.REPORTS_VIEW },
     { key: 'settings',   icon: 'cog',         labelKey: 'general.settings',   route: 'settings' },
 ];
 
@@ -21,15 +24,16 @@ export default function MoreScreen() {
     return (
         <View style={styles.container}>
             {MENU_ITEMS.map((item) => (
-                <Pressable
-                    key={item.key}
-                    style={styles.row}
-                    onPress={() => router.push(item.route)}
-                >
-                    <FontAwesome name={item.icon} size={20} color={colors.text} style={styles.icon} />
-                    <Text style={styles.label}>{t(item.labelKey)}</Text>
-                    <FontAwesome name="chevron-right" size={14} color={colors.textSecondary} />
-                </Pressable>
+                <PermissionGate key={item.key} permission={item.permission}>
+                    <Pressable
+                        style={styles.row}
+                        onPress={() => router.push(item.route)}
+                    >
+                        <FontAwesome name={item.icon} size={20} color={colors.text} style={styles.icon} />
+                        <Text style={styles.label}>{t(item.labelKey)}</Text>
+                        <FontAwesome name="chevron-right" size={14} color={colors.textSecondary} />
+                    </Pressable>
+                </PermissionGate>
             ))}
         </View>
     );

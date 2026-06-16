@@ -3,6 +3,8 @@ import {ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView
 import {router, useLocalSearchParams} from 'expo-router';
 import {SafeAreaProvider, useSafeAreaInsets} from 'react-native-safe-area-context';
 import {makeRequest} from '@/helpers/axiosConfig';
+import {PERMISSIONS} from '@/permissions/PermissionKeys';
+import {PermissionGate} from '@/permissions/PermissionGate';
 import {AuthContext} from '@/context/AuthProvider';
 import SelectUserBottomSheet from '@/components/bottomSheets/SelectUserBottomSheet';
 import SelectStatusBottomSheet from '@/components/bottomSheets/SelectStatusBottomSheet';
@@ -15,7 +17,7 @@ import {decode} from 'html-entities';
 import {useColors} from '@/hooks/useThemeColors';
 import {Spacing, Typography, FontWeight, BorderRadius} from '@/constants/sizes';
 import {useTranslation} from 'react-i18next';
-import {Section} from '@/components/ui/Section';
+import {Section, SectionHeader} from '@/components/ui/Section';
 import {FormRow} from '@/components/forms/FormRow';
 import {FormTextInput} from '@/components/forms/FormTextInput';
 import {SelectorButton} from '@/components/forms/SelectorButton';
@@ -25,7 +27,7 @@ export default function CheckoutScreen() {
     const insets = useSafeAreaInsets();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const {t} = useTranslation();
-    const {id, assetName: initialAssetName, assetTag} = useLocalSearchParams();
+    const {id, assetName: initialAssetName, assetTag, statusId, statusName, statusType} = useLocalSearchParams();
     const {user} = useContext(AuthContext);
 
     const userBottomSheetRef = useRef(null);
@@ -34,7 +36,11 @@ export default function CheckoutScreen() {
     const assetBottomSheetRef = useRef(null);
 
     const [selectedUser, setSelectedUser] = useState(null);
-    const [selectedStatus, setSelectedStatus] = useState(null);
+    const [selectedStatus, setSelectedStatus] = useState(
+        statusType === 'deployable' && statusId
+            ? { value: parseInt(statusId), name: statusName }
+            : null
+    );
     const [selectedLocation, setSelectedLocation] = useState(null);
     const [selectedAsset, setSelectedAsset] = useState(null);
     const [selectedCheckoutTo, setSelectedCheckoutTo] = useState('user');
@@ -73,6 +79,7 @@ export default function CheckoutScreen() {
         makeRequest({
             url: `/hardware/${id}/checkout`,
             method: 'POST',
+            permissionKey: PERMISSIONS.ASSETS_CHECKOUT,
             data: {
                 name: assetName || undefined,
                 checkout_to_type: selectedCheckoutTo,
@@ -127,14 +134,17 @@ export default function CheckoutScreen() {
             >
             <ScrollView
                 style={styles.container}
-                contentContainerStyle={styles.contentContainer}
+                contentContainerStyle={[styles.contentContainer, {paddingTop: insets.top + 44}]}
                 keyboardShouldPersistTaps="handled"
             >
                 {/* Asset info */}
                 {(initialAssetName || assetTag) && (
+                    <View>
+                    <SectionHeader title={t('general.asset_tag')} />
                     <View style={styles.infoCard}>
                         {initialAssetName ? <Text style={styles.infoName}>{decode(initialAssetName)}</Text> : null}
                         {assetTag ? <Text style={styles.infoTag}>{assetTag}</Text> : null}
+                    </View>
                     </View>
                 )}
 
@@ -218,21 +228,23 @@ export default function CheckoutScreen() {
                 </Section>
 
                 {/* Submit */}
-                <Pressable
-                    onPress={handleSubmit}
-                    disabled={submitting}
-                    style={({pressed}) => [
-                        styles.submitButton,
-                        pressed && styles.submitButtonPressed,
-                        submitting && styles.submitButtonDisabled,
-                    ]}
-                >
-                    {submitting ? (
-                        <ActivityIndicator color="#fff" />
-                    ) : (
-                        <Text style={styles.submitButtonText}>{t('general.checkout')}</Text>
-                    )}
-                </Pressable>
+                <PermissionGate permission={PERMISSIONS.ASSETS_CHECKOUT}>
+                    <Pressable
+                        onPress={handleSubmit}
+                        disabled={submitting}
+                        style={({pressed}) => [
+                            styles.submitButton,
+                            pressed && styles.submitButtonPressed,
+                            submitting && styles.submitButtonDisabled,
+                        ]}
+                    >
+                        {submitting ? (
+                            <ActivityIndicator color="#fff" />
+                        ) : (
+                            <Text style={styles.submitButtonText}>{t('general.checkout')}</Text>
+                        )}
+                    </Pressable>
+                </PermissionGate>
             </ScrollView>
             </KeyboardAvoidingView>
 

@@ -1,4 +1,4 @@
-import React, {useMemo, useState} from 'react';
+import React, {useMemo, useRef, useState} from 'react';
 import {
     ActivityIndicator,
     KeyboardAvoidingView,
@@ -12,6 +12,8 @@ import {
 import {decode} from 'html-entities';
 import {router, useLocalSearchParams} from 'expo-router';
 import {makeRequest} from '@/helpers/axiosConfig';
+import {PERMISSIONS} from '@/permissions/PermissionKeys';
+import {PermissionGate} from '@/permissions/PermissionGate';
 import {SafeAreaProvider, useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useColors} from '@/hooks/useThemeColors';
 import {Spacing, BorderRadius, Typography, FontWeight} from '@/constants/sizes';
@@ -19,14 +21,20 @@ import {useTranslation} from 'react-i18next';
 import * as Burnt from 'burnt';
 import {Section} from '@/components/ui/Section';
 import {FormTextInput} from '@/components/forms/FormTextInput';
+import SelectStatusBottomSheet from '@/components/bottomSheets/SelectStatusBottomSheet';
+import {SelectorButton} from '@/components/forms/SelectorButton';
 
 export default function CheckinScreen() {
     const colors = useColors();
     const insets = useSafeAreaInsets();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const {t} = useTranslation();
-    const {id, assetName, assetTag, assignedToName} = useLocalSearchParams();
+    const {id, assetName, assetTag, assignedToName, statusId, statusName} = useLocalSearchParams();
 
+    const statusBottomSheetRef = useRef(null);
+    const [selectedStatus, setSelectedStatus] = useState(
+        statusId ? { id: parseInt(statusId), name: statusName, value: parseInt(statusId) } : null
+    );
     const [note, setNote] = useState('');
     const [submitting, setSubmitting] = useState(false);
 
@@ -35,8 +43,9 @@ export default function CheckinScreen() {
         makeRequest({
             url: `/hardware/${id}/checkin`,
             method: 'POST',
+            permissionKey: PERMISSIONS.ASSETS_CHECKIN,
             data: {
-                status_id: 1,
+                status_id: selectedStatus?.id ?? (parseInt(statusId) || 1),
                 note: note || null,
             },
         })
@@ -81,7 +90,7 @@ export default function CheckinScreen() {
             >
             <ScrollView
                 style={styles.container}
-                contentContainerStyle={styles.contentContainer}
+                contentContainerStyle={[styles.contentContainer, {paddingTop: insets.top + 44}]}
                 keyboardShouldPersistTaps="handled"
             >
                 {/* Asset info */}
@@ -96,6 +105,15 @@ export default function CheckinScreen() {
                     ) : null}
                 </View>
 
+                <Section title={t('general.select_statuslabel')}>
+                    <SelectorButton
+                        label={t('general.select_statuslabel')}
+                        value={selectedStatus ? decode(selectedStatus.name) : undefined}
+                        placeholder={t('mobile.optional_default_deployable')}
+                        onPress={() => statusBottomSheetRef.current?.present()}
+                    />
+                </Section>
+
                 <Section title={t('general.notes')}>
                     <FormTextInput
                         value={note}
@@ -105,23 +123,31 @@ export default function CheckinScreen() {
                     />
                 </Section>
 
-                <Pressable
-                    onPress={handleSubmit}
-                    disabled={submitting}
-                    style={({pressed}) => [
-                        styles.submitButton,
-                        pressed && styles.submitButtonPressed,
-                        submitting && styles.submitButtonDisabled,
-                    ]}
-                >
-                    {submitting ? (
-                        <ActivityIndicator color="#fff" />
-                    ) : (
-                        <Text style={styles.submitButtonText}>{t('general.checkin')}</Text>
-                    )}
-                </Pressable>
+                <PermissionGate permission={PERMISSIONS.ASSETS_CHECKIN}>
+                    <Pressable
+                        onPress={handleSubmit}
+                        disabled={submitting}
+                        style={({pressed}) => [
+                            styles.submitButton,
+                            pressed && styles.submitButtonPressed,
+                            submitting && styles.submitButtonDisabled,
+                        ]}
+                    >
+                        {submitting ? (
+                            <ActivityIndicator color="#fff" />
+                        ) : (
+                            <Text style={styles.submitButtonText}>{t('general.checkin')}</Text>
+                        )}
+                    </Pressable>
+                </PermissionGate>
             </ScrollView>
             </KeyboardAvoidingView>
+
+            <SelectStatusBottomSheet
+                title={t('general.select_statuslabel')}
+                ref={statusBottomSheetRef}
+                setSelectedStatus={setSelectedStatus}
+            />
         </SafeAreaProvider>
     );
 }

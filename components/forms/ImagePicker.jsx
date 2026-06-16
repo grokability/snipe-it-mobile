@@ -1,5 +1,5 @@
 import React, {useMemo} from 'react';
-import {Pressable, StyleSheet, Text, View} from 'react-native';
+import {Linking, Pressable, StyleSheet, Text, View} from 'react-native';
 import {Image} from 'expo-image';
 import * as ExpoImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
@@ -34,8 +34,11 @@ export default function ImagePicker({image, onImageSelected, onImageRemoved}) {
     };
 
     const takePhoto = async () => {
-        const {status} = await ExpoImagePicker.requestCameraPermissionsAsync();
-        if (status !== 'granted') return;
+        const {granted, canAskAgain} = await ExpoImagePicker.requestCameraPermissionsAsync();
+        if (!granted) {
+            if (!canAskAgain) Linking.openSettings();
+            return;
+        }
 
         const result = await ExpoImagePicker.launchCameraAsync({
             allowsEditing: true,

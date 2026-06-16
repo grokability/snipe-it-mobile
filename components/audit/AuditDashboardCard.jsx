@@ -2,6 +2,7 @@ import React, {useCallback, useMemo, useState} from 'react';
 import {Pressable, StyleSheet, Text, View} from 'react-native';
 import {router, useFocusEffect} from 'expo-router';
 import {makeRequest} from '@/helpers/axiosConfig';
+import {PERMISSIONS} from '@/permissions/PermissionKeys';
 import {useColors} from '@/hooks/useThemeColors';
 import {Spacing, BorderRadius, Typography, FontWeight} from '@/constants/sizes';
 import {useTranslation} from 'react-i18next';
@@ -14,17 +15,26 @@ export default function AuditDashboardCard() {
 
     const [dueCount, setDueCount] = useState(0);
     const [overdueCount, setOverdueCount] = useState(0);
+    const [visible, setVisible] = useState(true);
 
     useFocusEffect(
         useCallback(() => {
-            makeRequest({url: '/hardware/audits/due', method: 'GET'})
-                .then((res) => setDueCount(res.total || 0))
+            makeRequest({url: '/hardware/audits/due', method: 'GET', permissionKey: PERMISSIONS.ASSETS_AUDIT, silent: true})
+                .then((res) => {
+                    if (res === null) { setVisible(false); return; }
+                    setDueCount(res.total || 0);
+                })
                 .catch(() => {});
-            makeRequest({url: '/hardware/audits/overdue', method: 'GET'})
-                .then((res) => setOverdueCount(res.total || 0))
+            makeRequest({url: '/hardware/audits/overdue', method: 'GET', permissionKey: PERMISSIONS.ASSETS_AUDIT, silent: true})
+                .then((res) => {
+                    if (res === null) { setVisible(false); return; }
+                    setOverdueCount(res.total || 0);
+                })
                 .catch(() => {});
         }, [])
     );
+
+    if (!visible) return null;
 
     return (
         <Section title={t('general.audit')}>

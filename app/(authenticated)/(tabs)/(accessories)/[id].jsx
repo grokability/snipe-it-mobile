@@ -1,16 +1,18 @@
-import React, {useCallback, useContext, useState, useMemo, useLayoutEffect} from 'react';
+import React, {useCallback, useState, useMemo, useLayoutEffect} from 'react';
 import {ActivityIndicator, Image, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View} from 'react-native';
 import {router, useFocusEffect, useLocalSearchParams, useNavigation} from "expo-router";
 import {Ionicons} from '@expo/vector-icons';
 import {makeRequest} from "@/helpers/axiosConfig";
 import {decode} from "html-entities";
-import {AuthContext} from "@/context/AuthProvider";
 import {SafeAreaProvider, useSafeAreaInsets} from "react-native-safe-area-context";
 import {useColors} from "@/hooks/useThemeColors";
 import {Spacing, BorderRadius, Typography, FontWeight} from "@/constants/sizes";
 import {useTranslation} from "react-i18next";
 import {Section} from "@/components/ui/Section";
 import {DetailRow} from "@/components/ui/DetailRow";
+import {usePermission} from "@/permissions/PermissionContext";
+import {PermissionGate} from "@/permissions/PermissionGate";
+import {PERMISSIONS} from "@/permissions/PermissionKeys";
 
 
 export const unstable_settings = {
@@ -23,6 +25,8 @@ export default function AccessoryScreen() {
     const insets = useSafeAreaInsets();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const { t } = useTranslation();
+
+    const { denied: editDenied } = usePermission(PERMISSIONS.ACCESSORIES_EDIT);
 
     const [data, setData] = useState({});
     const [loading, setLoading] = useState(true);
@@ -38,21 +42,23 @@ export default function AccessoryScreen() {
                     type: 'custom',
                     element: (
                         <View style={styles.headerButtonGroup}>
-                            <Pressable onPress={() => router.push(`/(tabs)/(accessories)/edit/${id}`)} hitSlop={4}>
-                                <Ionicons name="pencil" size={22} color={colors.text} />
-                            </Pressable>
+                            {!editDenied && (
+                                <Pressable onPress={() => router.push(`/(tabs)/(accessories)/edit/${id}`)} hitSlop={4}>
+                                    <Ionicons name="pencil" size={22} color={colors.text} />
+                                </Pressable>
+                            )}
                         </View>
                     ),
                 },
             ],
         });
-    }, [navigation, id, colors.text]);
+    }, [navigation, id, colors.text, editDenied]);
 
     const getAccessory = useCallback(() => {
         setLoading(true);
         return Promise.all([
-            makeRequest({ url: `/accessories/${id}`, method: 'get' }),
-            makeRequest({ url: `/accessories/${id}/checkedout`, method: 'get' }),
+            makeRequest({ url: `/accessories/${id}`, method: 'get', permissionKey: PERMISSIONS.ACCESSORIES_VIEW }),
+            makeRequest({ url: `/accessories/${id}/checkedout`, method: 'get', permissionKey: PERMISSIONS.ACCESSORIES_VIEW }),
         ])
             .then(([accessoryRes, checkedOutRes]) => {
                 setData({
@@ -125,14 +131,16 @@ export default function AccessoryScreen() {
                 </View>
 
                 {/* Checkout Action */}
-                {item.user_can_checkout && (
-                    <Pressable
-                        style={({pressed}) => [styles.checkoutButton, pressed && styles.buttonPressed]}
-                        onPress={() => router.push(`/(tabs)/(accessories)/checkout/${id}`)}
-                    >
-                        <Text style={styles.checkoutButtonText}>{t('mobile.check_out_button')}</Text>
-                    </Pressable>
-                )}
+                <PermissionGate permission={PERMISSIONS.ACCESSORIES_CHECKOUT}>
+                    {item.user_can_checkout && (
+                        <Pressable
+                            style={({pressed}) => [styles.checkoutButton, pressed && styles.buttonPressed]}
+                            onPress={() => router.push(`/(tabs)/(accessories)/checkout/${id}`)}
+                        >
+                            <Text style={styles.checkoutButtonText}>{t('mobile.check_out_button')}</Text>
+                        </Pressable>
+                    )}
+                </PermissionGate>
 
                 {/* Checked Out Records */}
                 <Section title={t('mobile.section_checked_out')}>
@@ -147,19 +155,21 @@ export default function AccessoryScreen() {
                                         <Text style={styles.checkoutDate}>{record.created_at.formatted}</Text>
                                     )}
                                 </View>
-                                <Pressable
-                                    style={({pressed}) => [styles.checkinButton, pressed && styles.buttonPressed]}
-                                    onPress={() => router.push({
-                                        pathname: `/(tabs)/(accessories)/checkin/${id}`,
-                                        params: {
-                                            checkoutRecordId: record.id,
-                                            assignedToName: record.assigned_to?.name ?? '',
-                                            assignedDate: record.created_at?.formatted ?? '',
-                                        },
-                                    })}
-                                >
-                                    <Text style={styles.checkinButtonText}>{t('mobile.check_in_button')}</Text>
-                                </Pressable>
+                                <PermissionGate permission={PERMISSIONS.ACCESSORIES_CHECKIN}>
+                                    <Pressable
+                                        style={({pressed}) => [styles.checkinButton, pressed && styles.buttonPressed]}
+                                        onPress={() => router.push({
+                                            pathname: `/(tabs)/(accessories)/checkin/${id}`,
+                                            params: {
+                                                checkoutRecordId: record.id,
+                                                assignedToName: record.assigned_to?.name ?? '',
+                                                assignedDate: record.created_at?.formatted ?? '',
+                                            },
+                                        })}
+                                    >
+                                        <Text style={styles.checkinButtonText}>{t('mobile.check_in_button')}</Text>
+                                    </Pressable>
+                                </PermissionGate>
                             </View>
                         ))
                     )}

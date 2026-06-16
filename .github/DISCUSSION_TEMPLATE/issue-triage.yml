@@ -1,0 +1,117 @@
+labels: ["needs-confirmation"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        > [!IMPORTANT]
+        > Please read through the [Contribution Guidelines](https://github.com/grokability/snipe-it-mobile/blob/main/CONTRIBUTING.md), and check for both existing [Discussions](https://github.com/grokability/snipe-it-mobile/discussions?discussions_q=) and [Issues](https://github.com/grokability/snipe-it-mobile/issues?q=sort%3Areactions-desc) prior to opening a new Discussion.
+  - type: markdown
+    attributes:
+      value: "# Issue Details"
+  - type: textarea
+    attributes:
+      label: Issue Description
+      description: |
+        Provide a detailed description of the issue. Include relevant information, such as:
+        - The feature or screen you encounter the issue with.
+        - Screenshots, screen recordings, or other supporting media (as needed).
+        - If this is a regression of an existing issue that was closed or resolved, please include the previous item reference (Discussion, Issue, PR, commit) in your description.
+
+        > [!TIP]
+        > **Not sure what information to include?**
+        > - **Crashes:** include a screenshot of any error message shown, and describe what you were doing right before it happened.
+        > - **Network/connectivity issues:** include any error message shown in the app, whether the issue is consistent or intermittent, and your Snipe-IT server version (Admin → Settings → About).
+        > - **UI or display issues:** include a screenshot.
+        > - **Authentication issues:** include your login method (OAuth / Bearer token) and any error messages shown.
+      placeholder: |
+        When I tap "Check Out" on an asset and submit the form, the app shows a spinner indefinitely and never confirms the checkout.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Expected Behavior
+      description: |
+        Describe how you expect Snipe-IT Mobile to behave in this situation. Include any relevant documentation links.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Actual Behavior
+      description: |
+        Describe how Snipe-IT Mobile actually behaves in this situation.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Reproduction Steps
+      description: |
+        Provide a detailed set of step-by-step instructions for reproducing this issue.
+      placeholder: |
+        1. Open Snipe-IT Mobile.
+        2. Navigate to the Asset tab.
+        3. Select an asset.
+        4. Click the "pencil" icon to edit it.
+        5. Put a value in the "Serial" field.
+        6. Click the "Save" button.
+        7. Observe that the "Serial" field is now empty.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Snipe-IT Mobile Version
+      description: Found in the Settings menu, under the "More" tab.
+      placeholder: |
+        Snipe-IT Mobile 1.1.3
+
+        Version
+          - version: 1.1.3
+          - channel: prod, testflight, beta (android), internal
+      render: text
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: OS/Platform/Hardware Version Information
+      description: |
+        Please tell us what operating system (name and version), device (name and model), and platform (Android, iOS, etc.) you are using.
+      placeholder: |
+          - platform: Android, iOS, ipadOS
+          - device: iPhone 14 Pro Max, Pixel 7 Pro, iPad Pro (12.9-inch, 5th generation)
+          - OS: iOS 17.3.1, Android 14
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Hosting Environment
+      description: What is your hosting environment?
+      placeholder: |
+        - Self Hosted (Docker, Kubernetes, etc.)
+        - Cloud (AWS, Azure, GCP, etc.)
+        - Hosted by Snipe-IT
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Additional Relevant Configuration
+      description: |
+        Any other information you think may be relevant, such as your Snipe-IT server version, reverse proxy config, SSL setup, etc.
+      placeholder: |
+        Snipe-IT v7.1.2, running behind an nginx reverse proxy with SSL termination.
+    validations:
+      required: false
+  - type: markdown
+    attributes:
+      value: |
+        # User Acknowledgements
+        > [!TIP]
+        > Use these links to review the existing Snipe-IT Mobile [Discussions](https://github.com/grokability/snipe-it-mobile/discussions?discussions_q=) and [Issues](https://github.com/grokability/snipe-it-mobile/issues?q=sort%3Areactions-desc).
+  - type: checkboxes
+    attributes:
+      label: "I acknowledge that:"
+      options:
+        - label: I have reviewed the FAQ and confirm that my issue is NOT among them.
+          required: true
+        - label: I have searched the Snipe-IT Mobile repository (both open and closed Discussions and Issues) and confirm this is not a duplicate of an existing issue or discussion.
+          required: true
+        - label: I have checked the "Preview" tab on all text fields to ensure that everything looks right, and have wrapped all configuration and code in code blocks with a group of three backticks (` ``` `) on separate lines.
+          required: true

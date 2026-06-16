@@ -11,6 +11,8 @@ import {
 } from 'react-native';
 import {router, useFocusEffect, useLocalSearchParams} from 'expo-router';
 import {makeRequest} from '@/helpers/axiosConfig';
+import {PERMISSIONS} from '@/permissions/PermissionKeys';
+import {PermissionGate} from '@/permissions/PermissionGate';
 import {SafeAreaProvider, useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useColors} from '@/hooks/useThemeColors';
 import {Spacing, BorderRadius, Typography, FontWeight} from '@/constants/sizes';
@@ -41,7 +43,7 @@ export default function ConsumableCheckoutScreen() {
 
     const fetchConsumable = useCallback(() => {
         setLoading(true);
-        return makeRequest({url: `/consumables/${id}`, method: 'get'})
+        return makeRequest({url: `/consumables/${id}`, method: 'get', permissionKey: PERMISSIONS.CONSUMABLES_VIEW})
             .then(setConsumable)
             .catch(console.error)
             .finally(() => setLoading(false));
@@ -79,6 +81,7 @@ export default function ConsumableCheckoutScreen() {
         makeRequest({
             url: `/consumables/${id}/checkout`,
             method: 'POST',
+            permissionKey: PERMISSIONS.CONSUMABLES_CHECKOUT,
             data: {
                 assigned_to: selectedUser.id,
                 checkout_qty: parsedQty,
@@ -86,6 +89,7 @@ export default function ConsumableCheckoutScreen() {
             },
         })
             .then((res) => {
+                if (res === null) return;
                 if (res.status === 'error') {
                     const errMsg = typeof res.messages === 'string'
                         ? res.messages
@@ -185,21 +189,23 @@ export default function ConsumableCheckoutScreen() {
                 </Section>
 
                 {/* Submit */}
-                <Pressable
-                    onPress={handleSubmit}
-                    disabled={submitting}
-                    style={({pressed}) => [
-                        styles.submitButton,
-                        pressed && styles.submitButtonPressed,
-                        submitting && styles.submitButtonDisabled,
-                    ]}
-                >
-                    {submitting ? (
-                        <ActivityIndicator color="#fff" />
-                    ) : (
-                        <Text style={styles.submitButtonText}>{t('general.checkout')}</Text>
-                    )}
-                </Pressable>
+                <PermissionGate permission={PERMISSIONS.CONSUMABLES_CHECKOUT}>
+                    <Pressable
+                        onPress={handleSubmit}
+                        disabled={submitting}
+                        style={({pressed}) => [
+                            styles.submitButton,
+                            pressed && styles.submitButtonPressed,
+                            submitting && styles.submitButtonDisabled,
+                        ]}
+                    >
+                        {submitting ? (
+                            <ActivityIndicator color="#fff" />
+                        ) : (
+                            <Text style={styles.submitButtonText}>{t('general.checkout')}</Text>
+                        )}
+                    </Pressable>
+                </PermissionGate>
             </ScrollView>
             </KeyboardAvoidingView>
 
