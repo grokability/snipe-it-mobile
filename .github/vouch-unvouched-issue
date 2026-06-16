@@ -1,0 +1,9 @@
+Hi @{author}!
+
+Issues are reserved for pre-approved, actionable items confirmed by a maintainer. All new topics — including bug reports — start as discussions.
+
+Please open a discussion in the [Issue Triage](https://github.com/grokability/snipe-it-mobile/discussions/new?category=issue-triage) category to report your bug. If a maintainer confirms it's reproducible and actionable, it will be promoted to an issue.
+
+If you're a first-time contributor who wants to submit a pull request, you'll also need to be [vouched](https://github.com/grokability/snipe-it-mobile/discussions/new?category=vouch-request) first.
+
+See the [Contributing Guide](https://github.com/grokability/snipe-it-mobile/blob/main/CONTRIBUTING.md) for the full process.

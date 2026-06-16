@@ -2,6 +2,25 @@
 
 A React Native mobile app for [Snipe-IT](https://snipeitapp.com), built with Expo.
 
+## Plans
+The goal for this mobile app is to be a fully-featured version of the web app. We are fairly early days though 
+and are actively working on adding features, so please be patient. If you'd like to give some input on what features
+would be most useful and should be higher priorities, please open up a feature request _discussion_ - not an Issue. 
+
+## Reporting Issues
+If you think you've found a bug or an issue with the app, please open an [Issue Triage Discussion](https://github.com/grokability/snipe-it-mobile/discussions/categories/issue-triage).
+
+## Contributing
+Contributions are welcome! BUT, we'll be using a system called [Vouch](https://github.com/mitchellh/vouch) by Mitchell Hashimoto to manage contributions. 
+
+This means that contributors should default to opening Discussions instead of Issues or PRs, and then a team member will open the issue if need be. 
+
+[Contribution Guidelines](CONTRIBUTING.md) 
+
+Also make sure you check out our [AI Policy](AI_POLICY.md) if you're thinking about contributing.
+
+If you'd like to be vouched, please open a Vouch Request in Discussions.
+
 ## Prerequisites
 
 - [Node.js](https://nodejs.org) (LTS)
@@ -40,10 +59,12 @@ The `--device` flag will sometimes detect a connected physical device, but it's 
 Once the dev server is running you can leave it up — a new native build is only needed when a native module is added.
 
 ## Enabling OAuth on Your Snipe-IT Instance
+As of Snipe IT v8.5, OAuth will automatically work with the mobile application - otherwise you can log in using an API key.
 
-Run this artisan command on your Snipe-IT instance to register the mobile client:
+If you'd like to use OAuth with an older version of Snipe IT, you can create an OAuth client manually and input the Client ID into the app. 
 
-```bash
+Run the following command to generate a new client:
+```
 php artisan tinker --execute="Laravel\Passport\Client::forceCreate(['id' => 9999, 'name' => 'Snipe-IT Mobile App', 'secret' => '', 'provider' => 'users', 'redirect' => 'com.grokability.snipeitmobile://home', 'personal_access_client' => 0, 'password_client' => 0, 'revoked' => 0]);"
 ```
 

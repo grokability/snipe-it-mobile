@@ -1,0 +1,28 @@
+on:
+  issues:
+    types: [opened, reopened]
+
+name: "Vouch - Check Issue"
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/create-github-app-token@d72941d797fd3113feb6b93fd0dec494b13a2547 # v3.2.0
+        id: app-token
+        with:
+          app-id: ${{ secrets.VOUCH_APP_ID }}
+          private-key: ${{ secrets.VOUCH_APP_PRIVATE_KEY }}
+
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v6.0.3
+        with:
+          sparse-checkout: .github/vouch-unvouched-issue
+
+      - uses: mitchellh/vouch/action/check-issue@52aec3d64655edf2fdb58f298e02da754a056daf # unreleased main (auto-lock)
+        with:
+          issue-number: ${{ github.event.issue.number }}
+          auto-close: true
+          auto-lock: true
+          template-file: .github/vouch-unvouched-issue
+        env:
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
