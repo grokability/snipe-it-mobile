@@ -70,6 +70,13 @@ export default function MoreLayout() {
                     headerBackTitle: '',
                 }}
             />
+            <Stack.Screen
+                name="help"
+                options={{
+                    title: t('mobile.help'),
+                    headerBackTitle: '',
+                }}
+            />
         </Stack>
     );
 }
