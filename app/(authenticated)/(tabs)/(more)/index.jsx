@@ -13,6 +13,7 @@ const MENU_ITEMS = [
     { key: 'licenses',   icon: 'file-text-o', labelKey: 'general.licenses',   route: 'licenses',   permission: PERMISSIONS.LICENSES_VIEW },
     { key: 'reports',    icon: 'bar-chart',   labelKey: 'general.reports',     route: 'reports',    permission: PERMISSIONS.REPORTS_VIEW },
     { key: 'settings',   icon: 'cog',         labelKey: 'general.settings',   route: 'settings' },
+    { key: 'help',       icon: 'question-circle', labelKey: 'mobile.help',     route: 'help' },
 ];
 
 export default function MoreScreen() {

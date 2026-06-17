@@ -239,6 +239,15 @@
     "permission_denied_action": "You do not have access to {{action}}.",
     "refresh_permissions": "Refresh Permissions",
     "refresh_permissions_success": "Permissions refreshed successfully.",
-    "refresh_permissions_error": "Could not refresh permissions. Check your connection and try again."
+    "refresh_permissions_error": "Could not refresh permissions. Check your connection and try again.",
+    "help": "Help & Support",
+    "help_triage_intro": "Bug reports and feature requests start as GitHub Discussions. Once a maintainer confirms a bug is reproducible and actionable, it is promoted to an Issue.",
+    "help_section_reporting": "Reporting & Feedback",
+    "help_report_bug": "Report a Bug",
+    "help_request_feature": "Request a Feature",
+    "help_ask_question": "Ask a Question",
+    "help_join_discord": "Join Discord",
+    "help_view_discussions": "View All Discussions",
+    "help_view_issues": "View Open Issues"
   }
 }
