@@ -14,7 +14,7 @@ jobs:
           app-id: ${{ secrets.VOUCH_ID }}
           private-key: ${{ secrets.VOUCH_PRIVATE_KEY }}
 
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v6.0.3
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           sparse-checkout: .github/vouch-unvouched-issue
 
