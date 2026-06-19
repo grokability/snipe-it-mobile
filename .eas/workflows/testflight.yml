@@ -113,7 +113,9 @@ jobs:
       - uses: eas/install_node_modules
       - name: Publish update
         run: |
-          MSG=$(git log -1 --format=%s)
+          VERSION=$(node -p "require('./app.json').expo.version")
+          SHA=$(git rev-parse --short HEAD)
+          MSG="v$VERSION ($SHA)"
           EXPO_PUBLIC_UPDATE_MESSAGE="$MSG" npx eas-cli@latest update --branch ${{ github.ref_name }} --message "$MSG" --environment production --non-interactive
 
   notify_native_success:

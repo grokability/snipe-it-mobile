@@ -83,7 +83,7 @@ If you'd like to use OAuth with an older version of Snipe IT, you can create an 
 
 Run the following command to generate a new client:
 ```
-php artisan tinker --execute="Laravel\Passport\Client::forceCreate(['id' => 9999, 'name' => 'Snipe-IT Mobile App', 'secret' => '', 'provider' => 'users', 'redirect' => 'com.grokability.snipeitmobile://home', 'personal_access_client' => 0, 'password_client' => 0, 'revoked' => 0]);"
+php artisan tinker --execute="echo Laravel\Passport\Client::create(['name' => 'Snipe-IT Mobile App', 'secret' => '', 'provider' => 'users', 'redirect' => 'com.grokability.snipeitmobile://home', 'personal_access_client' => 0, 'password_client' => 0, 'revoked' => 0])->id;"
 ```
 
 ## Code Signing (iOS)
