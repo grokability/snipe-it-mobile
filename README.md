@@ -77,7 +77,7 @@ The `--device` flag will sometimes detect a connected physical device, but it's 
 Once the dev server is running you can leave it up — a new native build is only needed when a native module is added.
 
 ## Enabling OAuth on Your Snipe-IT Instance
-As of Snipe IT v8.5, OAuth will automatically work with the mobile application - otherwise you can log in using an API key.
+As of Snipe IT v8.5, OAuth will automatically work with the mobile application - otherwise you can log in [using an API key](https://snipe-it.readme.io/reference/generating-api-tokens).
 
 If you'd like to use OAuth with an older version of Snipe IT, you can create an OAuth client manually and input the Client ID into the app. 
 
