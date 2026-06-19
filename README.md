@@ -7,6 +7,24 @@ The goal for this mobile app is to be a fully-featured version of the web app. W
 and are actively working on adding features, so please be patient. If you'd like to give some input on what features
 would be most useful and should be higher priorities, please open up a feature request _discussion_ - not an Issue. 
 
+## Roadmap
+[Snipe-IT Mobile Roadmap](https://github.com/orgs/grokability/projects/30/views/1)
+
+The roadmap will be updated as we go and priorities evolve.  
+
+## Current Features
+- Login via OAuth or Bearer token 
+- QR/barcode scanner from the home tab, resolves directly to an asset
+- Assets: browse, search, filter, view, create, edit, check out, check in
+- Accessories: browse, view, check out, check in
+- Consumables: browse, view, edit, check out
+- Components: browse and view 
+- Licenses: browse and view 
+- Audit workflow: session-based scan-and-confirm flow with a home screen dashboard card
+- Activity report with details on items
+- Recent actions feed card on the home screen (superusers only)
+- OTA update checking and install from the home screen
+
 ## Reporting Issues
 If you think you've found a bug or an issue with the app, please open an [Issue Triage Discussion](https://github.com/grokability/snipe-it-mobile/discussions/categories/issue-triage).
 
