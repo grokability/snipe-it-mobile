@@ -36,6 +36,7 @@ export default function MoreLayout() {
                 name="licenses"
                 options={{
                     title: t('general.licenses'),
+                    headerTitle: t('general.licenses'),
                     headerBackTitle: '',
                 }}
             />
