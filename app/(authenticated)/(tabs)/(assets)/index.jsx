@@ -227,7 +227,10 @@ export default function AssetsScreen() {
             ]}
         >
             <View style={styles.imageContainer}>
-                <Image style={styles.image} src={image} />
+                {image
+                    ? <Image style={styles.image} src={image} />
+                    : <Ionicons name="desktop-outline" size={40} color={colors.textSecondary} />
+                }
             </View>
             <View style={styles.contentContainer}>
                 <Text style={styles.assetTag}>#{asset_tag}</Text>

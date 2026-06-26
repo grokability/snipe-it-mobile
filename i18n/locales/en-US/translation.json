@@ -78,7 +78,8 @@
     "quantity": "Quantity",
     "action_source": "Action Source",
     "action_date": "Action Date",
-    "ok": "OK"
+    "ok": "OK",
+    "available": "Available"
   },
   "mobile": {
     "na": "N/A",
