@@ -79,7 +79,8 @@
     "action_source": "Action Source",
     "action_date": "Action Date",
     "ok": "OK",
-    "available": "Available"
+    "available": "Available",
+    "not_available": "Not Available"
   },
   "mobile": {
     "na": "N/A",

@@ -29,6 +29,7 @@ export default function MoreLayout() {
                 name="components"
                 options={{
                     title: t('general.components'),
+                    headerTitle: t('general.components'),
                     headerBackTitle: '',
                 }}
             />
