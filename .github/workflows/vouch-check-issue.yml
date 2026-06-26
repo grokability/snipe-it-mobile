@@ -18,7 +18,7 @@ jobs:
         with:
           sparse-checkout: .github/vouch-unvouched-issue
 
-      - uses: mitchellh/vouch/action/check-issue@52aec3d64655edf2fdb58f298e02da754a056daf # unreleased main (auto-lock)
+      - uses: mitchellh/vouch/action/check-issue@baeb3bf7c7e6c12d6e33bab3870b7e936580a934 # unreleased main (auto-lock)
         with:
           issue-number: ${{ github.event.issue.number }}
           auto-close: true
