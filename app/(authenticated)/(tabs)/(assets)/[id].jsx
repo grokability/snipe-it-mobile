@@ -38,26 +38,20 @@ export default function AssetScreen() {
 
     useLayoutEffect(() => {
         navigation.setOptions({
-            unstable_headerRightItems: () => [
-                { type: 'spacing', spacing: 8 },
-                {
-                    type: 'custom',
-                    element: (
-                        <View style={styles.headerButtonGroup}>
-                            {!createDenied && (
-                                <Pressable onPress={() => router.push('/(tabs)/(assets)/create')} hitSlop={4}>
-                                    <Ionicons name="add" size={26} color={colors.text} />
-                                </Pressable>
-                            )}
-                            {!editDenied && (
-                                <Pressable onPress={() => router.push(`/(tabs)/(assets)/edit/${id}`)} hitSlop={4}>
-                                    <Ionicons name="pencil" size={22} color={colors.text} />
-                                </Pressable>
-                            )}
-                        </View>
-                    ),
-                },
-            ],
+            headerRight: () => (
+                <View style={styles.headerButtonGroup}>
+                    {!createDenied && (
+                        <Pressable onPress={() => router.push('/(tabs)/(assets)/create')} hitSlop={4}>
+                            <Ionicons name="add" size={26} color={colors.text} />
+                        </Pressable>
+                    )}
+                    {!editDenied && (
+                        <Pressable onPress={() => router.push(`/(tabs)/(assets)/edit/${id}`)} hitSlop={4}>
+                            <Ionicons name="pencil" size={22} color={colors.text} />
+                        </Pressable>
+                    )}
+                </View>
+            ),
         });
     }, [navigation, id, colors.text, createDenied, editDenied]);
 
