@@ -167,6 +167,8 @@ const SelectListBottomSheet = forwardRef((props, ref) => {
             snapPoints={snapPoints}
             backgroundStyle={{ backgroundColor: colors.background }}
             handleIndicatorStyle={{ backgroundColor: colors.textMuted }}
+            keyboardBlurBehavior="restore"
+            android_keyboardInputMode="adjustResize"
             onAnimate={(fromIndex, toIndex) => handleSheetAnimate(fromIndex, toIndex)}
             onDismiss={() => { setSearchText(''); setItems([]); }}
         >
