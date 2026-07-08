@@ -253,16 +253,19 @@ export default function AccessoryCheckoutScreen() {
             <SelectUserBottomSheet
                 title={t('general.select_user')}
                 ref={userRef}
+                selectedUser={selectedUser}
                 setSelectedUser={setSelectedUser}
             />
             <SelectLocationBottomSheet
                 title={t('general.select_location')}
                 ref={locationRef}
+                selectedLocation={selectedLocation}
                 setSelectedLocation={setSelectedLocation}
             />
             <SelectAssetBottomSheet
                 title={t('general.select_asset')}
                 ref={assetRef}
+                selectedAsset={selectedAsset}
                 setSelectedAsset={setSelectedAsset}
             />
         </SafeAreaProvider>

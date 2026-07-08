@@ -212,6 +212,7 @@ export default function ConsumableCheckoutScreen() {
             <SelectUserBottomSheet
                 title={t('general.select_user')}
                 ref={userRef}
+                selectedUser={selectedUser}
                 setSelectedUser={setSelectedUser}
             />
         </SafeAreaProvider>
