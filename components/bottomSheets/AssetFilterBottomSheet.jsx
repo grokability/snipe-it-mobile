@@ -144,6 +144,7 @@ const AssetFilterBottomSheet = forwardRef(({ filters, onApply }, ref) => {
             <SelectCategoryBottomSheet
                 ref={categoryRef}
                 title={t('general.category')}
+                categoryType="asset"
                 setSelectedCategory={(cat) => updateFilter('category', { id: cat.id, name: cat.name })}
             />
             <SelectManufacturerBottomSheet
