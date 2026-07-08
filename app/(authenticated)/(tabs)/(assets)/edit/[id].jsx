@@ -597,26 +597,31 @@ export default function EditAssetScreen() {
             <SelectStatusBottomSheet
                 title={t('general.select_statuslabel')}
                 ref={statusRef}
+                selectedStatus={selectedStatus}
                 setSelectedStatus={setSelectedStatus}
             />
             <SelectModelBottomSheet
                 title={t('mobile.select_model')}
                 ref={modelRef}
+                selectedModel={selectedModel}
                 setSelectedModel={setSelectedModel}
             />
             <SelectCompanyBottomSheet
                 title={t('mobile.select_company')}
                 ref={companyRef}
+                selectedCompany={selectedCompany}
                 setSelectedCompany={setSelectedCompany}
             />
             <SelectSupplierBottomSheet
                 title={t('mobile.select_supplier')}
                 ref={supplierRef}
+                selectedSupplier={selectedSupplier}
                 setSelectedSupplier={setSelectedSupplier}
             />
             <SelectLocationBottomSheet
                 title={t('general.rtd_location')}
                 ref={rtdLocationRef}
+                selectedLocation={selectedRtdLocation}
                 setSelectedLocation={setSelectedRtdLocation}
             />
         </SafeAreaProvider>
