@@ -97,6 +97,40 @@ const SelectListBottomSheet = forwardRef((props, ref) => {
         ref.current?.close();
     };
 
+    const pinnedItem = (searchText || selectedValue?.id == null)
+        ? null
+        : { id: selectedValue.id, text: selectedValue.name, image: selectedValue.image };
+
+    const displayItems = useMemo(() => {
+        if (!pinnedItem) return items;
+        return items.filter(item => item.id !== pinnedItem.id);
+    }, [items, pinnedItem?.id]);
+
+    const ItemContent = ({ item }) => (
+        <>
+            {avatarStyle === 'circle' ? (
+                <View style={styles.avatarContainer}>
+                    {item.image ? (
+                        <Image source={{ uri: item.image }} style={styles.avatarImage} />
+                    ) : (
+                        <View style={styles.avatarPlaceholder}>
+                            <Text style={styles.avatarPlaceholderText}>
+                                {item.text ? decode(item.text).charAt(0).toUpperCase() : '?'}
+                            </Text>
+                        </View>
+                    )}
+                </View>
+            ) : (
+                item.image && (
+                    <Image source={{ uri: item.image }} style={styles.itemImage} />
+                )
+            )}
+            <View style={styles.infoContainer}>
+                <Text style={styles.name}>{decode(item.text)}</Text>
+            </View>
+        </>
+    );
+
     const Item = ({ item }) => {
         const isSelected = selectedValue?.id != null && selectedValue.id === item.id;
         return (
@@ -108,29 +142,23 @@ const SelectListBottomSheet = forwardRef((props, ref) => {
                     pressed && styles.itemPressed,
                 ]}
             >
-                {avatarStyle === 'circle' ? (
-                    <View style={styles.avatarContainer}>
-                        {item.image ? (
-                            <Image source={{ uri: item.image }} style={styles.avatarImage} />
-                        ) : (
-                            <View style={styles.avatarPlaceholder}>
-                                <Text style={styles.avatarPlaceholderText}>
-                                    {item.text ? decode(item.text).charAt(0).toUpperCase() : '?'}
-                                </Text>
-                            </View>
-                        )}
-                    </View>
-                ) : (
-                    item.image && (
-                        <Image source={{ uri: item.image }} style={styles.itemImage} />
-                    )
-                )}
-                <View style={styles.infoContainer}>
-                    <Text style={styles.name}>{decode(item.text)}</Text>
-                </View>
+                <ItemContent item={item} />
             </Pressable>
         );
     };
+
+    const PinnedItem = ({ item }) => (
+        <Pressable
+            onPress={() => selectItem(item)}
+            style={({ pressed }) => [
+                styles.itemContainer,
+                styles.itemSelected,
+                pressed && styles.itemPressed,
+            ]}
+        >
+            <ItemContent item={item} />
+        </Pressable>
+    );
 
     return (
         <BottomSheetModal
@@ -143,7 +171,7 @@ const SelectListBottomSheet = forwardRef((props, ref) => {
             onDismiss={() => { setSearchText(''); setItems([]); }}
         >
             <BottomSheetFlatList
-                data={items}
+                data={displayItems}
                 renderItem={({ item }) => <Item item={item} />}
                 keyExtractor={item => item.id}
                 onEndReached={loadMore}
@@ -152,17 +180,20 @@ const SelectListBottomSheet = forwardRef((props, ref) => {
                     isLoading ? <ActivityIndicator style={styles.loadingInitial} /> : null
                 }
                 ListHeaderComponent={
-                    <View style={styles.header}>
-                        <Text style={styles.title}>{title}</Text>
-                        <View style={styles.searchContainer}>
-                            <BottomSheetTextInput
-                                style={styles.searchInput}
-                                placeholder={t('general.search')}
-                                placeholderTextColor={colors.textMuted}
-                                onChangeText={handleSearchChange}
-                            />
+                    <>
+                        <View style={styles.header}>
+                            <Text style={styles.title}>{title}</Text>
+                            <View style={styles.searchContainer}>
+                                <BottomSheetTextInput
+                                    style={styles.searchInput}
+                                    placeholder={t('general.search')}
+                                    placeholderTextColor={colors.textMuted}
+                                    onChangeText={handleSearchChange}
+                                />
+                            </View>
                         </View>
-                    </View>
+                        {pinnedItem && <PinnedItem item={pinnedItem} />}
+                    </>
                 }
                 ListFooterComponent={
                     <>

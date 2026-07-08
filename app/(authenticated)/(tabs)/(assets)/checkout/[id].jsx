@@ -251,21 +251,25 @@ export default function CheckoutScreen() {
             <SelectStatusBottomSheet
                 title={t('general.select_statuslabel')}
                 ref={statusBottomSheetRef}
+                selectedStatus={selectedStatus}
                 setSelectedStatus={setSelectedStatus}
             />
             <SelectUserBottomSheet
                 title={t('general.select_user')}
                 ref={userBottomSheetRef}
+                selectedUser={selectedUser}
                 setSelectedUser={setSelectedUser}
             />
             <SelectLocationBottomSheet
                 title={t('general.select_location')}
                 ref={locationBottomSheetRef}
+                selectedLocation={selectedLocation}
                 setSelectedLocation={setSelectedLocation}
             />
             <SelectAssetBottomSheet
                 title={t('general.select_asset')}
                 ref={assetBottomSheetRef}
+                selectedAsset={selectedAsset}
                 setSelectedAsset={setSelectedAsset}
             />
         </SafeAreaProvider>

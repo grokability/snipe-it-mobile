@@ -146,6 +146,7 @@ export default function CheckinScreen() {
             <SelectStatusBottomSheet
                 title={t('general.select_statuslabel')}
                 ref={statusBottomSheetRef}
+                selectedStatus={selectedStatus}
                 setSelectedStatus={setSelectedStatus}
             />
         </SafeAreaProvider>
