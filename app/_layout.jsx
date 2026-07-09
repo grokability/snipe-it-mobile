@@ -5,7 +5,6 @@ import { PermissionProvider } from "@/permissions/PermissionContext";
 import { ActivityIndicator, View } from "react-native";
 import React, {useEffect} from "react";
 import {GestureHandlerRootView} from "react-native-gesture-handler";
-import {BottomSheetModalProvider} from "@gorhom/bottom-sheet";
 import {SafeAreaProvider} from "react-native-safe-area-context";
 import i18n from "@/i18n"; //this says unused but it's just providing for the entire app
 
@@ -49,21 +48,19 @@ export default function RootLayout() {
         }
 
         return (
-            <BottomSheetModalProvider>
-                <Stack screenOptions={{ headerShown: false }}>
-                    {isAuthenticated ? (
-                        <Stack.Screen name="(authenticated)" />
-                    ) : (
-                        <Stack.Screen
-                            name="login"
-                            options={{
-                                headerShown: true,
-                                headerTitle: "Login"
-                            }}
-                        />
-                    )}
-                </Stack>
-            </BottomSheetModalProvider>
+            <Stack screenOptions={{ headerShown: false }}>
+                {isAuthenticated ? (
+                    <Stack.Screen name="(authenticated)" />
+                ) : (
+                    <Stack.Screen
+                        name="login"
+                        options={{
+                            headerShown: true,
+                            headerTitle: "Login"
+                        }}
+                    />
+                )}
+            </Stack>
         );
     }
 }
