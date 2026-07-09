@@ -1,35 +1,57 @@
-import React, { forwardRef, useImperativeHandle, useMemo, useRef, useState, useEffect } from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
-import { BottomSheetModal } from '@gorhom/bottom-sheet';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import React, { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
+import { View, Text, Pressable, Button, Platform, StyleSheet } from 'react-native';
+import { BottomSheetModal } from '@expo/ui/community/bottom-sheet';
 import { Ionicons } from '@expo/vector-icons';
 import { useColors } from '@/hooks/useThemeColors';
 import { useTranslation } from 'react-i18next';
 import { Spacing, BorderRadius, Typography, FontWeight } from '@/constants/sizes';
-import SelectStatusBottomSheet from '@/components/bottomSheets/SelectStatusBottomSheet';
-import SelectCategoryBottomSheet from '@/components/bottomSheets/SelectCategoryBottomSheet';
-import SelectManufacturerBottomSheet from '@/components/bottomSheets/SelectManufacturerBottomSheet';
-import SelectSupplierBottomSheet from '@/components/bottomSheets/SelectSupplierBottomSheet';
-import SelectLocationBottomSheet from '@/components/bottomSheets/SelectLocationBottomSheet';
-import SelectCompanyBottomSheet from '@/components/bottomSheets/SelectCompanyBottomSheet';
-import SelectModelBottomSheet from '@/components/bottomSheets/SelectModelBottomSheet';
+import { useAssetFilterBottomSheet } from '@/components/bottomSheets/useAssetFilterBottomSheet';
+import { useSelectListBottomSheet } from '@/components/bottomSheets/useSelectListBottomSheet';
+import SelectListContent from '@/components/bottomSheets/SelectListContent';
 
-const EMPTY_FILTERS = {
-    status: null,
-    category: null,
-    manufacturer: null,
-    supplier: null,
-    location: null,
-    company: null,
-    model: null,
+const SNAP_POINTS = ['60%', '90%'];
+
+// A second native modal can't be stacked on top of this one (iOS/Android only allow one
+// presented sheet at a time), so drill-down pickers render as swapped-in content inside this
+// same sheet instead of presenting their own SelectListBottomSheet.
+const FILTER_FIELDS = [
+    { key: 'status', endpoint: '/statuslabels/selectlist' },
+    { key: 'category', endpoint: '/categories/asset/selectlist' },
+    { key: 'manufacturer', endpoint: '/manufacturers/selectlist' },
+    { key: 'supplier', endpoint: '/suppliers/selectlist' },
+    { key: 'location', endpoint: '/locations/selectlist' },
+    { key: 'company', endpoint: '/companies/selectlist' },
+    { key: 'model', endpoint: '/models/selectlist' },
+];
+
+const FieldPicker = ({ field, label, selectedValue, onSelect, onBack }) => {
+    const { t } = useTranslation();
+    const selectListProps = useSelectListBottomSheet({
+        endpoint: field.endpoint,
+        selectedValue,
+        onSelect,
+        onSelected: onBack,
+    });
+    const { fetchInitial } = selectListProps;
+
+    useEffect(() => {
+        fetchInitial();
+    }, []);
+
+    return (
+        <SelectListContent
+            {...selectListProps}
+            title={label}
+            selectedValue={selectedValue}
+            headerAction={<Button title={t('general.back')} onPress={onBack} />}
+        />
+    );
 };
 
 const AssetFilterBottomSheet = forwardRef(({ filters, onApply }, ref) => {
     const colors = useColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const { t } = useTranslation();
-
-    const snapPoints = useMemo(() => ['60%', '90%'], []);
 
     const bottomSheetRef = useRef(null);
     useImperativeHandle(ref, () => ({
@@ -38,67 +60,43 @@ const AssetFilterBottomSheet = forwardRef(({ filters, onApply }, ref) => {
         dismiss: () => bottomSheetRef.current?.dismiss(),
     }));
 
-    const [tempFilters, setTempFilters] = useState(EMPTY_FILTERS);
-    // Keep a ref in sync so onDismiss always reads the latest value without stale closure issues
-    const pendingFiltersRef = useRef(EMPTY_FILTERS);
+    const { tempFilters, updateFilter, handleClearAll, handleApply } = useAssetFilterBottomSheet({
+        filters,
+        onApply,
+        bottomSheetRef,
+    });
 
-    const updateFilter = (key, value) => {
-        setTempFilters((prev) => {
-            const next = { ...prev, [key]: value };
-            pendingFiltersRef.current = next;
-            return next;
-        });
-    };
+    const [activeField, setActiveField] = useState(null);
+    const returnToMenu = () => setActiveField(null);
 
-    // Sync temp state from props when filters change (e.g. sheet re-opens with existing filters)
-    useEffect(() => {
-        const next = filters ?? EMPTY_FILTERS;
-        setTempFilters(next);
-        pendingFiltersRef.current = next;
-    }, [filters]);
+    const filterRows = FILTER_FIELDS.map((field) => ({
+        ...field,
+        label: t(field.key === 'status' ? 'general.status_label' : `general.${field.key}`),
+    }));
 
-    const statusRef = useRef(null);
-    const categoryRef = useRef(null);
-    const manufacturerRef = useRef(null);
-    const supplierRef = useRef(null);
-    const locationRef = useRef(null);
-    const companyRef = useRef(null);
-    const modelRef = useRef(null);
+    const activeFieldConfig = filterRows.find((row) => row.key === activeField);
 
-    const filterRows = [
-        { key: 'status', label: t('general.status_label'), sheetRef: statusRef },
-        { key: 'category', label: t('general.category'), sheetRef: categoryRef },
-        { key: 'manufacturer', label: t('general.manufacturer'), sheetRef: manufacturerRef },
-        { key: 'supplier', label: t('general.supplier'), sheetRef: supplierRef },
-        { key: 'location', label: t('general.location'), sheetRef: locationRef },
-        { key: 'company', label: t('general.company'), sheetRef: companyRef },
-        { key: 'model', label: t('general.model'), sheetRef: modelRef },
-    ];
-
-    const handleClearAll = () => {
-        const empty = { ...EMPTY_FILTERS };
-        setTempFilters(empty);
-        pendingFiltersRef.current = empty;
-        onApply(empty);
-        bottomSheetRef.current?.close();
-    };
-
-    const handleApply = () => {
-        onApply(pendingFiltersRef.current);
-        bottomSheetRef.current?.close();
-    };
+    const backgroundStyle = Platform.OS === 'ios' ? undefined : { backgroundColor: colors.background };
 
     return (
-        <>
-            <BottomSheetModal
-                ref={bottomSheetRef}
-                index={0}
-                snapPoints={snapPoints}
-                enableDynamicSizing={false}
-                backgroundStyle={{ backgroundColor: colors.background }}
-                handleIndicatorStyle={{ backgroundColor: colors.textMuted }}
-            >
-                <GestureHandlerRootView style={styles.container}>
+        <BottomSheetModal
+            ref={bottomSheetRef}
+            index={0}
+            snapPoints={SNAP_POINTS}
+            enablePanDownToClose
+            backgroundStyle={backgroundStyle}
+            onDismiss={returnToMenu}
+        >
+            {activeFieldConfig ? (
+                <FieldPicker
+                    field={activeFieldConfig}
+                    label={activeFieldConfig.label}
+                    selectedValue={tempFilters[activeFieldConfig.key]}
+                    onSelect={(item) => updateFilter(activeFieldConfig.key, { id: item.id, name: item.name })}
+                    onBack={returnToMenu}
+                />
+            ) : (
+                <View style={styles.container}>
                     <View style={styles.header}>
                         <Text style={styles.title}>{t('mobile.filter_assets')}</Text>
                         <Pressable onPress={handleClearAll} hitSlop={8}>
@@ -106,11 +104,11 @@ const AssetFilterBottomSheet = forwardRef(({ filters, onApply }, ref) => {
                         </Pressable>
                     </View>
 
-                    {filterRows.map(({ key, label, sheetRef }) => (
+                    {filterRows.map(({ key, label }) => (
                         <Pressable
                             key={key}
                             style={({ pressed }) => [styles.filterRow, pressed && styles.filterRowPressed]}
-                            onPress={() => sheetRef.current?.present()}
+                            onPress={() => setActiveField(key)}
                         >
                             <Text style={styles.filterLabel}>{label}</Text>
                             <View style={styles.filterValueContainer}>
@@ -133,53 +131,17 @@ const AssetFilterBottomSheet = forwardRef(({ filters, onApply }, ref) => {
                     >
                         <Text style={styles.applyButtonText}>{t('mobile.apply_filters')}</Text>
                     </Pressable>
-                </GestureHandlerRootView>
-            </BottomSheetModal>
-
-            <SelectStatusBottomSheet
-                ref={statusRef}
-                title={t('general.status_label')}
-                setSelectedStatus={(status) => updateFilter('status', { id: status.id, name: status.name })}
-            />
-            <SelectCategoryBottomSheet
-                ref={categoryRef}
-                title={t('general.category')}
-                categoryType="asset"
-                setSelectedCategory={(cat) => updateFilter('category', { id: cat.id, name: cat.name })}
-            />
-            <SelectManufacturerBottomSheet
-                ref={manufacturerRef}
-                title={t('general.manufacturer')}
-                setSelectedManufacturer={(mfr) => updateFilter('manufacturer', { id: mfr.id, name: mfr.name })}
-            />
-            <SelectSupplierBottomSheet
-                ref={supplierRef}
-                title={t('general.supplier')}
-                setSelectedSupplier={(sup) => updateFilter('supplier', { id: sup.id, name: sup.name })}
-            />
-            <SelectLocationBottomSheet
-                ref={locationRef}
-                title={t('general.location')}
-                setSelectedLocation={(loc) => updateFilter('location', { id: loc.id, name: loc.name })}
-            />
-            <SelectCompanyBottomSheet
-                ref={companyRef}
-                title={t('general.company')}
-                setSelectedCompany={(comp) => updateFilter('company', { id: comp.id, name: comp.name })}
-            />
-            <SelectModelBottomSheet
-                ref={modelRef}
-                title={t('general.model')}
-                setSelectedModel={(model) => updateFilter('model', { id: model.id, name: model.name })}
-            />
-        </>
+                </View>
+            )}
+        </BottomSheetModal>
     );
 });
 
 const createStyles = (colors) => StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: colors.background,
+        // Left transparent on iOS so the sheet's Liquid Glass material shows through.
+        backgroundColor: Platform.OS === 'ios' ? 'transparent' : colors.background,
         paddingHorizontal: Spacing.lg,
     },
     header: {
