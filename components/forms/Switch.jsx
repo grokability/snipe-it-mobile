@@ -4,7 +4,7 @@ import React from "react";
 export default function Switch({value, onValueChange}) {
     return (
         <Host matchContents>
-            <JetPackSwitch value={value} onValueChange={onValueChange} />
+            <JetPackSwitch value={value} onCheckedChange={onValueChange} />
         </Host>
     );
 }
