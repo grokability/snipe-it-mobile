@@ -1,6 +1,7 @@
 import { CameraView, useCameraPermissions } from "expo-camera";
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import {
+    Alert,
     AppState,
     Linking,
     Platform,
@@ -12,9 +13,11 @@ import {
 } from "react-native";
 import { useCallback, useEffect, useRef, useState } from "react";
 import * as Haptics from 'expo-haptics';
+import * as SecureStore from 'expo-secure-store';
 import BarcodeOverlay from "@/components/camera/BarcodeOverlay";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
+import { extractIdFromScannedData, isScannedUrlForCurrentInstance } from "@/helpers/scannerUtils";
 
 export default function Home() {
     const { mode } = useLocalSearchParams();
@@ -103,37 +106,32 @@ export default function Home() {
         });
     }, [scanningPaused]);
 
-    const handleBarcodeSelect = (data) => {
+    const handleBarcodeSelect = async (data) => {
         if (data) {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
 
+            const { id, url } = extractIdFromScannedData(data);
+            const storedDomain = await SecureStore.getItemAsync('domain');
+
+            if (!isScannedUrlForCurrentInstance(url, storedDomain)) {
+                clearBarcodes();
+                Alert.alert(
+                    t('mobile.scan_domain_mismatch_title'),
+                    t('mobile.scan_domain_mismatch_message'),
+                    [{ text: t('general.ok') }]
+                );
+                return;
+            }
+
             if (isAuditMode) {
-                // In audit mode, extract the asset ID from the scanned value
-                let id = data;
-                try {
-                    const parsedUrl = new URL(data);
-                    const segments = parsedUrl.pathname.split("/");
-                    id = segments[segments.length - 1];
-                } catch {
-                    // Not a URL — use raw value as ID
-                }
                 clearBarcodes();
                 router.replace(`/(authenticated)/audit/confirm?asset_id=${encodeURIComponent(id)}&from_scanner=true`);
                 return;
             }
 
-            try {
-                const parsedUrl = new URL(data);
-                const segments = parsedUrl.pathname.split("/");
-                const id = segments[segments.length - 1];
-
-                setTimeout(async () => {
-                    await router.replace(`(tabs)/(assets)/${id}`);
-                }, 300);
-            } catch (error) {
-                // Handle non-URL QR codes if needed
-                router.replace(`(tabs)/(assets)/${data}`);
-            }
+            setTimeout(async () => {
+                await router.replace(`(tabs)/(assets)/${id}`);
+            }, 300);
         }
         clearBarcodes();
     };
