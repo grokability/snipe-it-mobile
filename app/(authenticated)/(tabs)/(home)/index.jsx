@@ -1,9 +1,10 @@
-import {View, Text, StyleSheet, ActivityIndicator, Button, Linking, ScrollView, TouchableOpacity} from 'react-native';
+import {View, Text, StyleSheet, ActivityIndicator, Pressable, Linking, ScrollView, TouchableOpacity} from 'react-native';
 import {useCameraPermissions} from 'expo-camera';
 import {router} from "expo-router";
 import React, {useMemo} from "react";
 import {useSafeAreaInsets} from "react-native-safe-area-context";
 import LottieView from "lottie-react-native";
+import {Ionicons} from "@expo/vector-icons";
 import ExpoApplication from "expo-application/src/ExpoApplication";
 import { useUpdates, reloadAsync, checkForUpdateAsync, fetchUpdateAsync } from 'expo-updates';
 import RecentActions from "@/components/misc/RecentActions";
@@ -12,7 +13,7 @@ import {useTranslation} from "react-i18next";
 import {PermissionGate} from "@/permissions/PermissionGate";
 import {PERMISSIONS} from "@/permissions/PermissionKeys";
 import {useColors} from "@/hooks/useThemeColors";
-import {Typography, FontWeight, Spacing} from "@/constants/sizes";
+import {Typography, FontWeight, Spacing, BorderRadius} from "@/constants/sizes";
 
 export default function HomeScreen() {
     const colors = useColors();
@@ -66,11 +67,28 @@ export default function HomeScreen() {
 
                 <View style={styles.scannerSection}>
                     {permission.granted ? (
-                        <Button title={t('mobile.open_scanner')} onPress={() => router.push('/scanner')}/>
+                        <Pressable
+                            testID="open-scanner-button"
+                            onPress={() => router.push('/scanner')}
+                            style={({pressed}) => [styles.scanButton, pressed && styles.scanButtonPressed]}
+                        >
+                            <Ionicons name="scan" size={22} color="#fff" />
+                            <Text style={styles.scanButtonText}>{t('mobile.open_scanner')}</Text>
+                        </Pressable>
                     ) : permission.canAskAgain ? (
-                        <Button title={t('mobile.request_camera_permissions')} onPress={requestPermission}/>
+                        <Pressable
+                            onPress={requestPermission}
+                            style={({pressed}) => [styles.secondaryButton, pressed && styles.secondaryButtonPressed]}
+                        >
+                            <Text style={styles.secondaryButtonText}>{t('mobile.request_camera_permissions')}</Text>
+                        </Pressable>
                     ) : (
-                        <Button title={t('mobile.open_settings')} onPress={() => Linking.openSettings()}/>
+                        <Pressable
+                            onPress={() => Linking.openSettings()}
+                            style={({pressed}) => [styles.secondaryButton, pressed && styles.secondaryButtonPressed]}
+                        >
+                            <Text style={styles.secondaryButtonText}>{t('mobile.open_settings')}</Text>
+                        </Pressable>
                     )}
                 </View>
 
@@ -123,6 +141,45 @@ const createStyles = (colors) => StyleSheet.create({
     },
     scannerSection: {
         alignItems: 'center',
+    },
+    scanButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: Spacing.sm,
+        alignSelf: 'stretch',
+        backgroundColor: colors.primary,
+        paddingVertical: Spacing.lg,
+        borderRadius: BorderRadius.md,
+        shadowColor: colors.primary,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        elevation: 5,
+    },
+    scanButtonPressed: {
+        opacity: 0.85,
+    },
+    scanButtonText: {
+        color: '#fff',
+        fontSize: Typography.bodyLarge,
+        fontWeight: FontWeight.bold,
+    },
+    secondaryButton: {
+        alignSelf: 'stretch',
+        alignItems: 'center',
+        paddingVertical: Spacing.md,
+        borderRadius: BorderRadius.md,
+        borderWidth: 1,
+        borderColor: colors.primary,
+    },
+    secondaryButtonPressed: {
+        opacity: 0.7,
+    },
+    secondaryButtonText: {
+        color: colors.primary,
+        fontSize: Typography.body,
+        fontWeight: FontWeight.semibold,
     },
     footer: {
         alignItems: 'center',
