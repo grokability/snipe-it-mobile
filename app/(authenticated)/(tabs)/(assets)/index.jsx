@@ -3,6 +3,10 @@ import { useState, useCallback, useMemo, useLayoutEffect, useRef, useEffect } fr
 import debounce from 'lodash/debounce';
 import { makeRequest } from "@/helpers/axiosConfig";
 import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
+// `expo-router`'s own header marks this re-export "deprecated" (copy into codebase), but it's
+// the only `useHeaderHeight` guaranteed to read the same HeaderHeightContext that expo-router's
+// native-stack actually renders with — a standalone `@react-navigation/elements` install would not.
+import { useHeaderHeight } from "expo-router/build/react-navigation/elements";
 import { router, useFocusEffect, useNavigation } from "expo-router";
 import { useColors } from "@/hooks/useThemeColors";
 import { Spacing, BorderRadius, Typography, FontWeight } from "@/constants/sizes";
@@ -26,9 +30,28 @@ const EMPTY_FILTERS = {
     model: null,
 };
 
+const FilterChipRow = ({ filters, onRemoveFilter, styles }) => (
+    <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.chipRow}
+    >
+        {Object.entries(filters).map(([key, value]) =>
+            value != null ? (
+                <FilterChip
+                    key={key}
+                    label={value.name}
+                    onRemove={() => onRemoveFilter(key)}
+                />
+            ) : null
+        )}
+    </ScrollView>
+);
+
 export default function AssetsScreen() {
     const colors = useColors();
     const insets = useSafeAreaInsets();
+    const headerHeight = useHeaderHeight();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const { t } = useTranslation();
     const navigation = useNavigation();
@@ -86,6 +109,7 @@ export default function AssetsScreen() {
             ),
             headerSearchBarOptions: {
                 placeholder: t('general.search'),
+                placement: 'integratedButton',
                 hideWhenScrolling: false,
                 tintColor: colors.primary,
                 autoCapitalize: 'none',
@@ -197,27 +221,6 @@ export default function AssetsScreen() {
         setFilters((prev) => ({ ...prev, [key]: null }));
     }, []);
 
-    const FilterChipRow = useMemo(() => {
-        if (activeFilterCount === 0) return null;
-        return (
-            <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.chipRow}
-            >
-                {Object.entries(filters).map(([key, value]) =>
-                    value != null ? (
-                        <FilterChip
-                            key={key}
-                            label={value.name}
-                            onRemove={() => removeFilter(key)}
-                        />
-                    ) : null
-                )}
-            </ScrollView>
-        );
-    }, [filters, activeFilterCount, removeFilter, styles.chipRow]);
-
     const Item = ({ id, asset_tag, name, serial, image, checkedOut, status }) => (
         <Pressable
             onPress={() => router.push(`/${id}`)}
@@ -306,27 +309,32 @@ export default function AssetsScreen() {
 
     return (
         <SafeAreaProvider style={styles.container}>
+            {activeFilterCount > 0 && (
+                <View style={{ paddingTop: headerHeight }}>
+                    <FilterChipRow filters={filters} onRemoveFilter={removeFilter} styles={styles} />
+                </View>
+            )}
             <FlashList
                 onEndReached={loadMore}
                 onEndReachedThreshold={0.1}
                 contentInsetAdjustmentBehavior="automatic"
                 contentContainerStyle={{
-                    paddingTop: Platform.OS === 'android' ? insets.top + 56 : 0,
+                    paddingTop: Platform.OS === 'android' && activeFilterCount === 0 ? insets.top + 56 : 0,
                     paddingBottom: 80
                 }}
                 style={styles.flatlist}
                 data={data}
-                ListHeaderComponent={FilterChipRow}
-                renderItem={({ item }) => <Item
-                    id={item.id}
-                    asset_tag={item.asset_tag}
-                    name={item.model.name}
-                    serial={item.serial}
-                    image={item.image}
-                    checkedOut={item.assigned_to}
-                    status={item.status_label}
-                />
-                }
+                renderItem={({ item }) => (
+                    <Item
+                        id={item.id}
+                        asset_tag={item.asset_tag}
+                        name={item.model.name}
+                        serial={item.serial}
+                        image={item.image}
+                        checkedOut={item.assigned_to}
+                        status={item.status_label}
+                    />
+                )}
                 keyExtractor={item => item.id}
                 refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
             />

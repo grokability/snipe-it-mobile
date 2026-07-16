@@ -1,6 +1,7 @@
 import {Stack} from 'expo-router';
 import {useColors} from "@/hooks/useThemeColors";
 import {useTranslation} from "react-i18next";
+import {Typography, FontWeight} from "@/constants/sizes";
 
 export default function AssetsLayout() {
     const colors = useColors();
@@ -21,6 +22,11 @@ export default function AssetsLayout() {
                     name="index"
                     options={{
                         title: t('general.assets'),
+                        headerTitle: t('general.assets'),
+                        headerTitleStyle: {
+                            fontSize: Typography.subtitle,
+                            fontWeight: FontWeight.bold,
+                        },
                     }}
                 />
                 <Stack.Screen
