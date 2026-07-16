@@ -1,5 +1,6 @@
 {
   "general": {
+    "back": "Back",
     "cancel": "Cancel",
     "close": "Close",
     "error": "Error",
@@ -78,7 +79,9 @@
     "quantity": "Quantity",
     "action_source": "Action Source",
     "action_date": "Action Date",
-    "ok": "OK"
+    "ok": "OK",
+    "available": "Available",
+    "not_available": "Not Available"
   },
   "mobile": {
     "na": "N/A",
@@ -89,12 +92,15 @@
     "domain": "Domain",
     "login_failed": "Login Failed",
     "login_failed_message": "Please check your domain",
-    "welcome": "Welcome to Snipe IT Mobile!",
+    "welcome": "Welcome to Snipe-IT Mobile!",
     "request_camera_permissions": "Request Camera Permissions for Scanner",
     "open_scanner": "Open Scanner",
     "camera_permission_denied": "Camera Access Required",
     "camera_permission_denied_detail": "Please enable camera access in your device Settings to use the scanner.",
     "open_settings": "Open Settings",
+    "scan_domain_mismatch_title": "Different Instance",
+    "scan_domain_mismatch_message": "This QR code belongs to a different Snipe-IT instance than the one you're signed into.",
+    "scan_hint": "Point your camera at a barcode, then tap it to scan",
     "serial_number_display": "SN: {{serial}}",
     "serial_number_empty": "SN: N/A",
     "asset_title": "Asset #{{id}}",

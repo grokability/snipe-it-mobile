@@ -36,21 +36,15 @@ export default function AccessoryScreen() {
 
     useLayoutEffect(() => {
         navigation.setOptions({
-            unstable_headerRightItems: () => [
-                { type: 'spacing', spacing: 8 },
-                {
-                    type: 'custom',
-                    element: (
-                        <View style={styles.headerButtonGroup}>
-                            {!editDenied && (
-                                <Pressable onPress={() => router.push(`/(tabs)/(accessories)/edit/${id}`)} hitSlop={4}>
-                                    <Ionicons name="pencil" size={22} color={colors.text} />
-                                </Pressable>
-                            )}
-                        </View>
-                    ),
-                },
-            ],
+            headerRight: () => (
+                <View style={styles.headerButtonGroup}>
+                    {!editDenied && (
+                        <Pressable onPress={() => router.push(`/(tabs)/(accessories)/edit/${id}`)} hitSlop={4}>
+                            <Ionicons name="pencil" size={22} color={colors.text} />
+                        </Pressable>
+                    )}
+                </View>
+            ),
         });
     }, [navigation, id, colors.text, editDenied]);
 

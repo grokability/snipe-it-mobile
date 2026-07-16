@@ -346,27 +346,32 @@ export default function EditConsumableScreen() {
             <SelectCategoryBottomSheet
                 title={t('general.select_category')}
                 ref={categoryRef}
+                selectedCategory={selectedCategory}
                 setSelectedCategory={setSelectedCategory}
                 categoryType="consumable"
             />
             <SelectManufacturerBottomSheet
                 title={t('general.select_manufacturer')}
                 ref={manufacturerRef}
+                selectedManufacturer={selectedManufacturer}
                 setSelectedManufacturer={setSelectedManufacturer}
             />
             <SelectSupplierBottomSheet
                 title={t('mobile.select_supplier')}
                 ref={supplierRef}
+                selectedSupplier={selectedSupplier}
                 setSelectedSupplier={setSelectedSupplier}
             />
             <SelectCompanyBottomSheet
                 title={t('mobile.select_company')}
                 ref={companyRef}
+                selectedCompany={selectedCompany}
                 setSelectedCompany={setSelectedCompany}
             />
             <SelectLocationBottomSheet
                 title={t('general.select_location')}
                 ref={locationRef}
+                selectedLocation={selectedLocation}
                 setSelectedLocation={setSelectedLocation}
             />
         </SafeAreaProvider>

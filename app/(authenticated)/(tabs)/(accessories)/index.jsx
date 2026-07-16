@@ -12,6 +12,7 @@ import {FlashList} from "@shopify/flash-list";
 import {decode} from "html-entities";
 import {useTranslation} from "react-i18next";
 import {Image} from "react-native";
+import {Ionicons} from "@expo/vector-icons";
 import EmptyState from "@/components/ui/EmptyState";
 
 export default function AccessoriesScreen() {
@@ -74,7 +75,10 @@ export default function AccessoriesScreen() {
                 ]}
             >
                 <View style={styles.imageContainer}>
-                    <Image style={styles.image} src={image} />
+                    {image
+                        ? <Image style={styles.image} src={image} />
+                        : <Ionicons name="headset-outline" size={40} color={colors.textSecondary} />
+                    }
                 </View>
                 <View style={styles.contentContainer}>
                     <Text style={styles.itemName}>{decode(name)}</Text>

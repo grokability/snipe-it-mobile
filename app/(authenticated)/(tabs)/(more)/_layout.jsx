@@ -29,6 +29,7 @@ export default function MoreLayout() {
                 name="components"
                 options={{
                     title: t('general.components'),
+                    headerTitle: t('general.components'),
                     headerBackTitle: '',
                 }}
             />
@@ -36,6 +37,7 @@ export default function MoreLayout() {
                 name="licenses"
                 options={{
                     title: t('general.licenses'),
+                    headerTitle: t('general.licenses'),
                     headerBackTitle: '',
                 }}
             />

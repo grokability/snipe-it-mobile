@@ -1,6 +1,7 @@
 import { CameraView, useCameraPermissions } from "expo-camera";
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import {
+    Alert,
     AppState,
     Linking,
     Platform,
@@ -12,9 +13,27 @@ import {
 } from "react-native";
 import { useCallback, useEffect, useRef, useState } from "react";
 import * as Haptics from 'expo-haptics';
+import * as SecureStore from 'expo-secure-store';
 import BarcodeOverlay from "@/components/camera/BarcodeOverlay";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
+import { extractIdFromScannedData, isScannedUrlForCurrentInstance, fetchAssetTagForBarcode } from "@/helpers/scannerUtils";
+
+const BARCODE_STALE_MS = 800; // Drop the overlay if its barcode hasn't been re-detected within this window
+const BOUNDS_SMOOTHING_ALPHA = 0.35; // Lower = smoother/more lag, higher = snappier/more jitter
+
+// Detected bounds are noisy frame-to-frame (autofocus, hand tremor, detector variance);
+// blend toward the new position instead of snapping to it to keep the highlight box steady.
+const smoothBounds = (prevBounds, nextBounds) => ({
+    origin: {
+        x: prevBounds.origin.x + (nextBounds.origin.x - prevBounds.origin.x) * BOUNDS_SMOOTHING_ALPHA,
+        y: prevBounds.origin.y + (nextBounds.origin.y - prevBounds.origin.y) * BOUNDS_SMOOTHING_ALPHA,
+    },
+    size: {
+        width: prevBounds.size.width + (nextBounds.size.width - prevBounds.size.width) * BOUNDS_SMOOTHING_ALPHA,
+        height: prevBounds.size.height + (nextBounds.size.height - prevBounds.size.height) * BOUNDS_SMOOTHING_ALPHA,
+    },
+});
 
 export default function Home() {
     const { mode } = useLocalSearchParams();
@@ -24,12 +43,19 @@ export default function Home() {
 
     const [barcodes, setBarcodes] = useState([]);
     const [scanningPaused, setScanningPaused] = useState(false);
-    const [scanCount, setScanCount] = useState(0);
+    const [assetTags, setAssetTags] = useState({});
     const appState = useRef(AppState.currentState);
     const insets = useSafeAreaInsets();
     const cameraRef = useRef(null);
-    const scanTimerRef = useRef(null);
-    const maxBarcodesShown = 8; // Limit the number of barcodes shown at once
+    const isSelectingRef = useRef(false);
+    const domainRef = useRef(null);
+    const fetchingAssetTagsRef = useRef(new Set());
+
+    useEffect(() => {
+        SecureStore.getItemAsync('domain').then(domain => {
+            domainRef.current = domain;
+        });
+    }, []);
 
     useEffect(() => {
         const subscription = AppState.addEventListener("change", (nextAppState) => {
@@ -48,29 +74,15 @@ export default function Home() {
         };
     }, []);
 
-    // Implement scanning interval to refresh detection
+    // Drop highlight boxes for barcodes that are no longer visible in-frame
     useEffect(() => {
-        // Start a periodic scanning reset timer
-        if (!scanningPaused) {
-            scanTimerRef.current = setInterval(() => {
-                // Clear barcodes periodically to get fresh scans
-                setBarcodes([]);
-                setScanCount(prev => prev + 1);
-            }, 3000); // Reset every 3 seconds
-        } else {
-            // Clear the timer when scanning is paused
-            if (scanTimerRef.current) {
-                clearInterval(scanTimerRef.current);
-                scanTimerRef.current = null;
-            }
-        }
+        if (scanningPaused) return;
+        const pruneInterval = setInterval(() => {
+            const cutoff = Date.now() - BARCODE_STALE_MS;
+            setBarcodes(prevBarcodes => prevBarcodes.filter(barcode => barcode.lastSeenAt >= cutoff));
+        }, 300);
 
-        return () => {
-            if (scanTimerRef.current) {
-                clearInterval(scanTimerRef.current);
-                scanTimerRef.current = null;
-            }
-        };
+        return () => clearInterval(pruneInterval);
     }, [scanningPaused]);
 
     // Add a timer to clear barcodes and resume scanning when in paused state
@@ -87,60 +99,87 @@ export default function Home() {
         };
     }, [scanningPaused]);
 
+    // Looks up the asset_tag for a newly-detected barcode so BarcodeOverlay can label it.
+    // Caches by scanned data and dedupes in-flight lookups so rapid re-detection of the
+    // same barcode doesn't spam the API.
+    const fetchAssetTag = useCallback((data) => {
+        if (fetchingAssetTagsRef.current.has(data) || assetTags[data] !== undefined) return;
+
+        fetchingAssetTagsRef.current.add(data);
+        fetchAssetTagForBarcode(data, domainRef.current)
+            .then(assetTag => {
+                if (assetTag) {
+                    setAssetTags(prev => ({ ...prev, [data]: assetTag }));
+                }
+            })
+            .catch(() => {})
+            .finally(() => fetchingAssetTagsRef.current.delete(data));
+    }, [assetTags]);
+
     const handleBarcodeScan = useCallback((barcode) => {
-        if (scanningPaused || !barcode) return;
+        // pdf417/code39/codabar are decoded by the ZXing fallback provider, which only
+        // reports { type, data } — no bounds — so they can't be placed as a highlight box
+        // just a weird limitation of a very old barcode, nevertheless while continuous scanning
+        // it'll pick up and think it's a possibility sometimes, so we need to include !barcode.bounds here.
+        // (including this note on the off chance it ever actually comes up)
+        if (scanningPaused || !barcode || !barcode.bounds) return;
+        const lastSeenAt = Date.now();
         setBarcodes(prevBarcodes => {
-            const exists = prevBarcodes.some(existing => existing.data === barcode.data);
-            if (!exists) {
+            const existing = prevBarcodes.find(prevBarcode => prevBarcode.data === barcode.data);
+            if (!existing) {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                const newBarcodes = [...prevBarcodes, barcode];
-                if (newBarcodes.length >= maxBarcodesShown) {
-                    setScanningPaused(true);
-                }
-                return newBarcodes.slice(0, maxBarcodesShown);
+                fetchAssetTag(barcode.data);
             }
-            return prevBarcodes;
+            const bounds = existing ? smoothBounds(existing.bounds, barcode.bounds) : barcode.bounds;
+            const otherBarcodes = prevBarcodes.filter(prevBarcode => prevBarcode.data !== barcode.data);
+            return [...otherBarcodes, { ...barcode, bounds, lastSeenAt }];
         });
-    }, [scanningPaused]);
+    }, [scanningPaused, fetchAssetTag]);
 
-    const handleBarcodeSelect = (data) => {
-        if (data) {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-
-            if (isAuditMode) {
-                // In audit mode, extract the asset ID from the scanned value
-                let id = data;
-                try {
-                    const parsedUrl = new URL(data);
-                    const segments = parsedUrl.pathname.split("/");
-                    id = segments[segments.length - 1];
-                } catch {
-                    // Not a URL — use raw value as ID
-                }
-                clearBarcodes();
-                router.replace(`/(authenticated)/audit/confirm?asset_id=${encodeURIComponent(id)}&from_scanner=true`);
-                return;
-            }
-
-            try {
-                const parsedUrl = new URL(data);
-                const segments = parsedUrl.pathname.split("/");
-                const id = segments[segments.length - 1];
-
-                setTimeout(async () => {
-                    await router.replace(`(tabs)/(assets)/${id}`);
-                }, 300);
-            } catch (error) {
-                // Handle non-URL QR codes if needed
-                router.replace(`(tabs)/(assets)/${data}`);
-            }
+    const handleBarcodeSelect = async (data) => {
+        if (!data) {
+            clearBarcodes();
+            return;
         }
-        clearBarcodes();
+
+        // Guard against a second tap (on another still-visible box) firing while this
+        // selection is still awaiting the domain check / navigating
+        if (isSelectingRef.current) return;
+        isSelectingRef.current = true;
+
+        // Pause scanning immediately so the confirmed code isn't re-detected mid-navigation
+        setScanningPaused(true);
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+
+        const { id, url } = extractIdFromScannedData(data);
+        const storedDomain = await SecureStore.getItemAsync('domain');
+
+        if (!isScannedUrlForCurrentInstance(url, storedDomain)) {
+            clearBarcodes();
+            Alert.alert(
+                t('mobile.scan_domain_mismatch_title'),
+                t('mobile.scan_domain_mismatch_message'),
+                [{ text: t('general.ok') }]
+            );
+            return;
+        }
+
+        setBarcodes([]);
+
+        if (isAuditMode) {
+            router.replace(`/(authenticated)/audit/confirm?asset_id=${encodeURIComponent(id)}&from_scanner=true`);
+            return;
+        }
+
+        setTimeout(async () => {
+            await router.replace(`(tabs)/(assets)/${id}`);
+        }, 300);
     };
 
     const clearBarcodes = () => {
         setBarcodes([]);
         setScanningPaused(false);
+        isSelectingRef.current = false;
     };
 
     if (!permission) {
@@ -201,28 +240,14 @@ export default function Home() {
 
             {/* Barcode Mask Overlay */}
             <BarcodeOverlay
-                barcodes={barcodes}
+                barcodes={barcodes.map(barcode => ({ ...barcode, assetTag: assetTags[barcode.data] }))}
                 onBarcodeSelect={handleBarcodeSelect}
-                clearBarcodes={clearBarcodes}
             />
 
-            {!scanningPaused && barcodes.length < maxBarcodesShown && (
-                <View style={[styles.scanningIndicator, { bottom: insets.bottom + 20 }]}>
-                    <Text style={styles.scanningText}>
-                        Scanning... ({barcodes.length}/{maxBarcodesShown})
-                    </Text>
+            {!scanningPaused && barcodes.length === 0 && (
+                <View style={[styles.hintContainer, { bottom: insets.bottom + 20 }]}>
+                    <Text style={styles.hintText}>{t('mobile.scan_hint')}</Text>
                 </View>
-            )}
-
-            {scanningPaused && barcodes.length >= maxBarcodesShown && (
-                <TouchableOpacity 
-                    style={[styles.rescanButton, { bottom: insets.bottom + 20 }]}
-                    onPress={clearBarcodes}
-                >
-                    <Text style={styles.rescanButtonText}>
-                        Rescan ({barcodes.length} found)
-                    </Text>
-                </TouchableOpacity>
             )}
         </View>
     );
@@ -266,7 +291,7 @@ const styles = StyleSheet.create({
     camera: {
         flex: 1,
     },
-    scanningIndicator: {
+    hintContainer: {
         position: 'absolute',
         alignSelf: 'center',
         backgroundColor: 'rgba(0, 0, 0, 0.7)',
@@ -274,22 +299,9 @@ const styles = StyleSheet.create({
         paddingVertical: 10,
         borderRadius: 20,
     },
-    scanningText: {
+    hintText: {
         color: 'white',
         fontSize: 14,
-    },
-    rescanButton: {
-        position: 'absolute',
-        alignSelf: 'center',
-        backgroundColor: 'rgba(0, 150, 0, 0.8)',
-        paddingHorizontal: 20,
-        paddingVertical: 12,
-        borderRadius: 20,
-    },
-    rescanButtonText: {
-        color: 'white',
-        fontSize: 16,
-        fontWeight: 'bold',
     },
     closeButton: {
         position: 'absolute',

@@ -1,76 +1,128 @@
-import {View, Text, StyleSheet, FlatList, Image, RefreshControl} from 'react-native';
-import {useContext, useState, useEffect, useCallback, useMemo} from "react";
-import {AuthContext} from "@/context/AuthProvider";
+import {View, Text, StyleSheet, RefreshControl, Platform} from 'react-native';
+import {useCallback, useMemo, useState} from "react";
 import {makeRequest} from "@/helpers/axiosConfig";
 import {PERMISSIONS} from "@/permissions/PermissionKeys";
 import {useRedirectIfDenied} from "@/permissions/PermissionContext";
+import {SafeAreaProvider, useSafeAreaInsets} from "react-native-safe-area-context";
+import {useFocusEffect} from "expo-router";
 import {useColors} from "@/hooks/useThemeColors";
 import {Spacing, BorderRadius, Typography, FontWeight} from "@/constants/sizes";
+import {FlashList} from "@shopify/flash-list";
 import {decode} from "html-entities";
 import {useTranslation} from "react-i18next";
+import {Ionicons} from "@expo/vector-icons";
+import EmptyState from "@/components/ui/EmptyState";
 
 export default function LicensesScreen() {
     const colors = useColors();
+    const insets = useSafeAreaInsets();
     const styles = useMemo(() => createStyles(colors), [colors]);
-    const { t } = useTranslation();
+    const {t} = useTranslation();
 
-    const { user } = useContext(AuthContext);
     useRedirectIfDenied(PERMISSIONS.LICENSES_VIEW);
     const [data, setData] = useState({});
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
 
     const getLicenses = useCallback(() => {
+        setLoading(true);
         return makeRequest({
             method: 'get',
             url: '/licenses',
             permissionKey: PERMISSIONS.LICENSES_VIEW,
-            headers: { 'Authorization': `Bearer ${user.token}` }
-        }).then(res => {
-            setData({
-                licenses: res?.rows,
-                count: res?.total
+        })
+            .then(res => {
+                if (res?.rows) {
+                    setData({
+                        licenses: res.rows,
+                        count: res.total,
+                    });
+                }
+            })
+            .catch(err => {
+                console.log(err);
+            })
+            .finally(() => {
+                setLoading(false);
             });
-        }).catch(err => {
-            console.log(err);
-        }).finally(() => {
-            setLoading(false);
-        });
-    }, [user.token]);
+    }, []);
+
+    useFocusEffect(
+        useCallback(() => {
+            getLicenses();
+        }, [getLicenses])
+    );
 
     const onRefresh = useCallback(() => {
         setRefreshing(true);
         getLicenses().finally(() => setRefreshing(false));
     }, [getLicenses]);
 
-    useEffect(() => {
-        getLicenses();
-    }, []);
+    const Item = ({name, category, manufacturer, seats, free_seats_count}) => {
+        const available = free_seats_count > 0;
+        return (
+            <View style={styles.itemContainer}>
+                <View style={styles.imageContainer}>
+                    <Ionicons name="key-outline" size={40} color={colors.textSecondary} />
+                </View>
+                <View style={styles.contentContainer}>
+                    <Text style={styles.itemName}>{decode(name)}</Text>
+                    {category?.name ? (
+                        <Text style={styles.metaText}>{category.name}</Text>
+                    ) : null}
+                    {manufacturer?.name ? (
+                        <Text style={styles.metaText}>{manufacturer.name}</Text>
+                    ) : null}
+                    <View style={styles.footer}>
+                        <View style={[styles.qtyBadge, available ? styles.qtyBadgeAvailable : styles.qtyBadgeEmpty]}>
+                            <Text style={[styles.qtyBadgeText, available ? styles.qtyBadgeTextAvailable : styles.qtyBadgeTextEmpty]}>
+                                {free_seats_count}/{seats}
+                            </Text>
+                        </View>
+                        <View style={[styles.availDot, available ? styles.availDotGreen : styles.availDotRed]} />
+                        <Text style={[styles.availText, available ? styles.availTextGreen : styles.availTextRed]}>
+                            {available ? t('general.available') : t('general.not_available')}
+                        </Text>
+                    </View>
+                </View>
+            </View>
+        );
+    };
 
-    const Item = ({license_name, image, product_key, supplier_name, manufacturer_name}) => (
-        <View style={styles.itemContainer}>
-            <Image style={styles.image} src={image} />
-            <Text style={styles.name}>{decode(license_name)}</Text>
-            <Text style={styles.name}>{decode(manufacturer_name)} ({decode(supplier_name)})</Text>
-            <Text style={styles.productKey}>{decode(product_key)}</Text>
-        </View>
-    );
+    if (!loading && (!data.licenses || data.licenses.length === 0)) {
+        return (
+            <SafeAreaProvider style={styles.container}>
+                <EmptyState
+                    icon="file-tray-outline"
+                    title={t('mobile.no_results')}
+                    message={t('mobile.no_results_message')}
+                    onRetry={getLicenses}
+                />
+            </SafeAreaProvider>
+        );
+    }
 
     return (
-        <View style={styles.container}>
-            <FlatList
+        <SafeAreaProvider style={styles.container}>
+            <FlashList
+                contentContainerStyle={{
+                    paddingTop: Platform.OS === 'android' ? insets.top + 56 : 0,
+                    paddingBottom: 80,
+                }}
+                style={styles.flatlist}
                 data={data.licenses}
+                estimatedItemSize={120}
                 renderItem={({item}) => <Item
-                    license_name={item.license_name}
-                    product_key={item.product_key}
-                    manufacturer_name={item.manufacturer.name}
-                    supplier_name={item.supplier.name}
-                    image={item.image}
+                    name={item.name}
+                    category={item.category}
+                    manufacturer={item.manufacturer}
+                    seats={item.seats}
+                    free_seats_count={item.free_seats_count}
                 />}
                 keyExtractor={item => item.id}
                 refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
             />
-        </View>
+        </SafeAreaProvider>
     );
 }
 
@@ -79,25 +131,100 @@ const createStyles = (colors) => StyleSheet.create({
         flex: 1,
         backgroundColor: colors.background,
     },
+    flatlist: {
+        flex: 1,
+        padding: 5,
+        flexDirection: 'column',
+        gap: 5,
+        backgroundColor: colors.background,
+        shadowOffset: {
+            width: 1,
+            height: -1,
+        },
+        shadowOpacity: 0.10,
+        shadowRadius: 20,
+    },
     itemContainer: {
-        padding: Spacing.md,
+        width: '100%',
+        padding: Spacing.lg,
         marginVertical: Spacing.sm,
         backgroundColor: colors.backgroundTertiary,
-        borderRadius: BorderRadius.sm,
+        borderRadius: BorderRadius.md,
         flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: Spacing.md,
+        gap: Spacing.lg,
+        shadowColor: '#000',
+        shadowOffset: {width: 0, height: 2},
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+        elevation: 3,
     },
-    image: {
-        width: 100,
+    imageContainer: {
+        width: '25%',
         height: 100,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: colors.backgroundSecondary,
+        borderRadius: BorderRadius.sm,
     },
-    name: {
-        fontWeight: FontWeight.bold,
+    contentContainer: {
+        flex: 1,
+        gap: 4,
+    },
+    itemName: {
+        fontSize: Typography.bodyLarge,
+        fontWeight: FontWeight.semibold,
         color: colors.text,
     },
-    productKey: {
-        color: colors.primary,
+    metaText: {
         fontSize: Typography.body,
+        color: colors.textSecondary,
+    },
+    footer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: Spacing.sm,
+        marginTop: Spacing.xs,
+    },
+    qtyBadge: {
+        paddingHorizontal: Spacing.sm,
+        paddingVertical: 2,
+        borderRadius: BorderRadius.sm,
+    },
+    qtyBadgeAvailable: {
+        backgroundColor: colors.successBackground ?? colors.success + '22',
+    },
+    qtyBadgeEmpty: {
+        backgroundColor: colors.dangerBackground ?? colors.danger + '22',
+    },
+    qtyBadgeText: {
+        fontSize: Typography.caption,
+        fontWeight: FontWeight.semibold,
+    },
+    qtyBadgeTextAvailable: {
+        color: colors.success,
+    },
+    qtyBadgeTextEmpty: {
+        color: colors.danger,
+    },
+    availDot: {
+        width: 7,
+        height: 7,
+        borderRadius: 4,
+    },
+    availDotGreen: {
+        backgroundColor: colors.success,
+    },
+    availDotRed: {
+        backgroundColor: colors.danger,
+    },
+    availText: {
+        fontSize: Typography.caption,
+        fontWeight: FontWeight.medium,
+    },
+    availTextGreen: {
+        color: colors.success,
+    },
+    availTextRed: {
+        color: colors.danger,
     },
 });
