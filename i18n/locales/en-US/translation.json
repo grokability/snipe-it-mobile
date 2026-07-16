@@ -100,6 +100,7 @@
     "open_settings": "Open Settings",
     "scan_domain_mismatch_title": "Different Instance",
     "scan_domain_mismatch_message": "This QR code belongs to a different Snipe-IT instance than the one you're signed into.",
+    "scan_hint": "Point your camera at a barcode, then tap it to scan",
     "serial_number_display": "SN: {{serial}}",
     "serial_number_empty": "SN: N/A",
     "asset_title": "Asset #{{id}}",
