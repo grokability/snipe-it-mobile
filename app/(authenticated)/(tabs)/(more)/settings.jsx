@@ -20,9 +20,9 @@ export default function SettingsScreen() {
             const domain = SecureStore.getItem('domain');
             const success = await PermissionManager.refreshPermissions(domain, user.token);
             const message = success ? t('mobile.refresh_permissions_success') : t('mobile.refresh_permissions_error');
-            Alert.alert(t('mobile.refresh_permissions'), message, [{ text: t('general.ok') }]);
+            Alert.alert(t('mobile.refresh_permissions'), message, [{ text: t('mobile.ok') }]);
         } catch {
-            Alert.alert(t('mobile.refresh_permissions'), t('mobile.refresh_permissions_error'), [{ text: t('general.ok') }]);
+            Alert.alert(t('mobile.refresh_permissions'), t('mobile.refresh_permissions_error'), [{ text: t('mobile.ok') }]);
         } finally {
             setRefreshing(false);
         }
