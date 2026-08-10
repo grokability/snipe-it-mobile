@@ -79,11 +79,11 @@
     "quantity": "Quantity",
     "action_source": "Action Source",
     "action_date": "Action Date",
-    "ok": "OK",
     "available": "Available",
     "not_available": "Not Available"
   },
   "mobile": {
+    "ok": "OK",
     "na": "N/A",
     "version": "Version: {{version}} ({{build}})",
     "show_more": "Show More",
