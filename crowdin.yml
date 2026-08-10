@@ -1,5 +1,6 @@
 project_id_env: CROWDIN_PROJECT_ID
 api_token_env: CROWDIN_PERSONAL_TOKEN
+commit_message: "Fixed: New translations %original_file_name% from Crowdin"
 
 files:
   - source: /i18n/locales/en-US/translation.json
