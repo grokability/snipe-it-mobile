@@ -154,7 +154,7 @@
     "section_checked_out": "Herausgegeben",
     "min_qty_alert": "Min Qty Alert",
     "no_checkouts": "No active checkouts",
-    "edit_accessory_success": "Zubehör wurde erfolgreich aktualisiert",
+    "edit_accessory_success": "Das Zubehör wurde erfolgreich aktualisiert",
     "edit_accessory_failed": "Failed to update accessory",
     "accessory_name_required": "Accessory name is required",
     "accessory_qty_required": "Quantity is required",
