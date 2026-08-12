@@ -1,6 +1,7 @@
 import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
 import { getLocales } from "expo-localization";
+import { match } from "@formatjs/intl-localematcher";
 
 import translationEnUS from "./locales/en-US/translation.json";
 import translationAfZa from "./locales/af-ZA/translation.json";
@@ -156,20 +157,26 @@ const resources = {
     "zu-ZA": { translation: translationZuZa },
 };
 
+const FALLBACK_LANGUAGE = "en-US";
+
 function resolveDeviceLanguage(deviceLocales) {
     const supportedTags = Object.keys(resources);
+    const requestedTags = deviceLocales.map((locale) => locale.languageTag).filter(Boolean);
 
-    for (const locale of deviceLocales) {
-        if (supportedTags.includes(locale.languageTag)) {
-            return locale.languageTag;
-        }
-        const baseLanguageMatch = supportedTags.find((tag) => tag.split("-")[0] === locale.languageCode);
-        if (baseLanguageMatch) {
-            return baseLanguageMatch;
-        }
+    let bestMatch;
+    try {
+        bestMatch = match(requestedTags, supportedTags, FALLBACK_LANGUAGE);
+    } catch {
+        // match() throws RangeError on a structurally invalid tag. This runs at module
+        // load, so a throw here would take down app startup over a bad device locale.
+        return FALLBACK_LANGUAGE;
     }
 
-    return "en-US";
+    // match() returns a canonicalized tag, which can differ in case from our resource
+    // keys (Crowdin's informal-German "de-if" canonicalizes to "de-IF").
+    const resourceKey = supportedTags.find((tag) => tag.toLowerCase() === bestMatch.toLowerCase());
+
+    return resourceKey ?? FALLBACK_LANGUAGE;
 }
 
 const deviceLanguage = resolveDeviceLanguage(getLocales());
@@ -177,7 +184,7 @@ const deviceLanguage = resolveDeviceLanguage(getLocales());
 i18n.use(initReactI18next).init({
     resources,
     lng: deviceLanguage,
-    fallbackLng: "en-US",
+    fallbackLng: FALLBACK_LANGUAGE,
     interpolation: {
         escapeValue: false,
     },
