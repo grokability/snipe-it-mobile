@@ -15,11 +15,11 @@ web-build/
 expo-env.d.ts
 
 # Native
-# Anchored to the repo root so these only ignore the prebuild-generated projects.
-# Unanchored, they also matched modules/*/android and modules/*/ios and silently
-# excluded local Expo modules' native source.
 /android/
 /ios/
+modules/*/android/build/
+modules/*/android/.cxx/
+modules/*/ios/build/
 .output.txt
 *.orig.*
 *.jks
