@@ -1,10 +1,10 @@
 Pod::Spec.new do |s|
   s.name           = 'LocaleMatcher'
   s.version        = '1.0.0'
-  s.summary        = 'A sample project summary'
-  s.description    = 'A sample project description'
-  s.author         = ''
-  s.homepage       = 'https://docs.expo.dev/modules/'
+  s.summary        = 'Resolves the best-matching app locale via native OS locale matching'
+  s.description    = 'Exposes Bundle.preferredLocalizations(from:) so JavaScript can pick a translation file using the platform CLDR locale resolution.'
+  s.author         = 'Grokability'
+  s.homepage       = 'https://github.com/grokability/snipe-it-mobile'
   s.platforms      = {
     :ios => '16.4',
     :tvos => '16.4'
