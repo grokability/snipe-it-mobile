@@ -6,3 +6,5 @@ files:
   - source: /i18n/locales/en-US/translation.json
     translation: /i18n/locales/%locale%/translation.json
     type: i18next_json
+    excluded_target_languages:
+      - aa
