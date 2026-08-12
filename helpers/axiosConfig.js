@@ -65,7 +65,7 @@ apiInstance.interceptors.response.use(
                     Alert.alert(
                         i18n.t('mobile.permission_denied'),
                         message,
-                        [{ text: i18n.t('general.ok') }]
+                        [{ text: i18n.t('mobile.ok') }]
                     );
                 }
             } else if (__DEV__) {

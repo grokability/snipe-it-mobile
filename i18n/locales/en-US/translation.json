@@ -79,11 +79,11 @@
     "quantity": "Quantity",
     "action_source": "Action Source",
     "action_date": "Action Date",
-    "ok": "OK",
     "available": "Available",
     "not_available": "Not Available"
   },
   "mobile": {
+    "ok": "OK",
     "na": "N/A",
     "version": "Version: {{version}} ({{build}})",
     "show_more": "Show More",
@@ -185,7 +185,8 @@
     "audit_notes_placeholder": "Add audit notes...",
     "audit_location_update": "Update Location",
     "audit_mode": "AUDIT MODE",
-    "audit_session_count": "{{count}} audited this session",
+    "audit_session_count_one": "{{count}} audited this session",
+    "audit_session_count_other": "{{count}} audited this session",
     "audit_session_audited": "Audited",
     "audit_session_duration": "Duration",
     "audit_session_empty": "No assets audited yet",

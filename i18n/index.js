@@ -7,7 +7,6 @@ const locales = getLocales();
 const deviceLanguage = locales?.[0]?.languageTag ?? "en-US";
 
 i18n.use(initReactI18next).init({
-    compatibilityJSON: "v3",
     resources: {
         "en-US": { translation: translationEn },
     },

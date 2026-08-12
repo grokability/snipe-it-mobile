@@ -159,7 +159,7 @@ export default function Home() {
             Alert.alert(
                 t('mobile.scan_domain_mismatch_title'),
                 t('mobile.scan_domain_mismatch_message'),
-                [{ text: t('general.ok') }]
+                [{ text: t('mobile.ok') }]
             );
             return;
         }
