@@ -1,0 +1,9 @@
+{
+  "platforms": ["apple", "android", "web"],
+  "apple": {
+    "modules": ["LocaleMatcherModule"]
+  },
+  "android": {
+    "modules": ["expo.modules.localematcher.LocaleMatcherModule"]
+  }
+}
