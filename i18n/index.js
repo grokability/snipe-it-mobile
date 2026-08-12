@@ -1,6 +1,7 @@
 import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
 import { getLocales } from "expo-localization";
+import LocaleMatcher from "../modules/locale-matcher/src/LocaleMatcherModule";
 
 import translationEnUS from "./locales/en-US/translation.json";
 import translationAfZa from "./locales/af-ZA/translation.json";
@@ -156,9 +157,26 @@ const resources = {
     "zu-ZA": { translation: translationZuZa },
 };
 
+const FALLBACK_LANGUAGE = "en-US";
+
 function resolveDeviceLanguage(deviceLocales) {
     const supportedTags = Object.keys(resources);
 
+    // The native matcher uses the platform's own CLDR locale resolution, so it handles
+    // cases prefix matching gets wrong -- most importantly picking a Traditional
+    // Chinese file for a zh-Hant device instead of the first zh-* in the list.
+    const nativeMatch = LocaleMatcher.getBestMatchingLocale(supportedTags);
+    if (nativeMatch) {
+        // Android returns a canonicalized tag, whose casing can differ from our keys
+        // (Crowdin's informal-German "de-if" canonicalizes to "de-IF").
+        const resourceKey = supportedTags.find((tag) => tag.toLowerCase() === nativeMatch.toLowerCase());
+        if (resourceKey) {
+            return resourceKey;
+        }
+    }
+
+    // Reached on web, where there is no native matcher, and if the platform reports no
+    // match at all. Exact tag first, then any file sharing the base language.
     for (const locale of deviceLocales) {
         if (supportedTags.includes(locale.languageTag)) {
             return locale.languageTag;
@@ -169,7 +187,7 @@ function resolveDeviceLanguage(deviceLocales) {
         }
     }
 
-    return "en-US";
+    return FALLBACK_LANGUAGE;
 }
 
 const deviceLanguage = resolveDeviceLanguage(getLocales());
@@ -177,7 +195,7 @@ const deviceLanguage = resolveDeviceLanguage(getLocales());
 i18n.use(initReactI18next).init({
     resources,
     lng: deviceLanguage,
-    fallbackLng: "en-US",
+    fallbackLng: FALLBACK_LANGUAGE,
     interpolation: {
         escapeValue: false,
     },
