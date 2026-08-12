@@ -162,21 +162,16 @@ const FALLBACK_LANGUAGE = "en-US";
 function resolveDeviceLanguage(deviceLocales) {
     const supportedTags = Object.keys(resources);
 
-    // The native matcher uses the platform's own CLDR locale resolution, so it handles
-    // cases prefix matching gets wrong -- most importantly picking a Traditional
-    // Chinese file for a zh-Hant device instead of the first zh-* in the list.
     const nativeMatch = LocaleMatcher.getBestMatchingLocale(supportedTags);
     if (nativeMatch) {
-        // Android returns a canonicalized tag, whose casing can differ from our keys
-        // (Crowdin's informal-German "de-if" canonicalizes to "de-IF").
+        // Android canonicalizes casing, so "de-if" comes back as "de-IF".
         const resourceKey = supportedTags.find((tag) => tag.toLowerCase() === nativeMatch.toLowerCase());
         if (resourceKey) {
             return resourceKey;
         }
     }
 
-    // Reached on web, where there is no native matcher, and if the platform reports no
-    // match at all. Exact tag first, then any file sharing the base language.
+    // Only reached when the platform reports no match among our locales.
     for (const locale of deviceLocales) {
         if (supportedTags.includes(locale.languageTag)) {
             return locale.languageTag;
