@@ -22,6 +22,7 @@ jobs:
           upload_sources: false
           upload_translations: false
           download_translations: true
+          download_translations_args: '--exclude-language=aa'
           create_pull_request: true
           localization_branch_name: l10n_crowdin_translations
           pull_request_title: 'New Crowdin translations'
