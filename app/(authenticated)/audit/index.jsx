@@ -7,7 +7,7 @@ import {
     Text,
     View,
 } from 'react-native';
-import {router, useFocusEffect} from 'expo-router';
+import {router, useFocusEffect, useLocalSearchParams} from 'expo-router';
 import {makeRequest} from '@/helpers/axiosConfig';
 import {PERMISSIONS} from '@/permissions/PermissionKeys';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
@@ -25,8 +25,9 @@ export default function AuditListScreen() {
     const styles = useMemo(() => createStyles(colors), [colors]);
     const {t} = useTranslation();
     const {sessionCount, isActive} = useAuditSession();
+    const {tab: tabParam} = useLocalSearchParams();
 
-    const [tab, setTab] = useState('due'); // 'due' | 'overdue'
+    const [tab, setTab] = useState(tabParam === 'overdue' ? 'overdue' : 'due'); // 'due' | 'overdue'
     const [data, setData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);

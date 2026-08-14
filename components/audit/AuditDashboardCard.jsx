@@ -40,14 +40,14 @@ export default function AuditDashboardCard() {
         <Section title={t('general.audit')}>
             <View style={styles.badgeRow}>
                 <Pressable
-                    onPress={() => router.push('/(authenticated)/audit/')}
+                    onPress={() => router.push('/(authenticated)/audit/?tab=due')}
                     style={({pressed}) => [styles.badge, styles.badgeDue, pressed && styles.badgePressed]}
                 >
                     <Text style={styles.badgeCount}>{dueCount}</Text>
                     <Text style={styles.badgeLabel} numberOfLines={1}>{t('general.audit_due')}</Text>
                 </Pressable>
                 <Pressable
-                    onPress={() => router.push('/(authenticated)/audit/')}
+                    onPress={() => router.push('/(authenticated)/audit/?tab=overdue')}
                     style={({pressed}) => [styles.badge, styles.badgeOverdue, pressed && styles.badgePressed]}
                 >
                     <Text style={styles.badgeCount}>{overdueCount}</Text>
