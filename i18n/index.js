@@ -1,6 +1,7 @@
 import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
 import { getLocales } from "expo-localization";
+import LocaleMatcher from "../modules/locale-matcher/src/LocaleMatcherModule";
 
 import translationEnUS from "./locales/en-US/translation.json";
 import translationAfZa from "./locales/af-ZA/translation.json";
@@ -156,9 +157,21 @@ const resources = {
     "zu-ZA": { translation: translationZuZa },
 };
 
+const FALLBACK_LANGUAGE = "en-US";
+
 function resolveDeviceLanguage(deviceLocales) {
     const supportedTags = Object.keys(resources);
 
+    const nativeMatch = LocaleMatcher.getBestMatchingLocale(supportedTags);
+    if (nativeMatch) {
+        // Android canonicalizes casing, so "de-if" comes back as "de-IF".
+        const resourceKey = supportedTags.find((tag) => tag.toLowerCase() === nativeMatch.toLowerCase());
+        if (resourceKey) {
+            return resourceKey;
+        }
+    }
+
+    // Only reached when the platform reports no match among our locales.
     for (const locale of deviceLocales) {
         if (supportedTags.includes(locale.languageTag)) {
             return locale.languageTag;
@@ -169,7 +182,7 @@ function resolveDeviceLanguage(deviceLocales) {
         }
     }
 
-    return "en-US";
+    return FALLBACK_LANGUAGE;
 }
 
 const deviceLanguage = resolveDeviceLanguage(getLocales());
@@ -177,7 +190,7 @@ const deviceLanguage = resolveDeviceLanguage(getLocales());
 i18n.use(initReactI18next).init({
     resources,
     lng: deviceLanguage,
-    fallbackLng: "en-US",
+    fallbackLng: FALLBACK_LANGUAGE,
     interpolation: {
         escapeValue: false,
     },

@@ -15,8 +15,11 @@ web-build/
 expo-env.d.ts
 
 # Native
-android/
-ios/
+/android/
+/ios/
+modules/*/android/build/
+modules/*/android/.cxx/
+modules/*/ios/build/
 .output.txt
 *.orig.*
 *.jks
