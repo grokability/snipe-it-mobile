@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import {router, useFocusEffect, useLocalSearchParams} from "expo-router";
 import {makeRequest} from "@/helpers/axiosConfig";
+import {PermissionDeniedError} from "@/helpers/errors";
 import {PERMISSIONS} from "@/permissions/PermissionKeys";
 import {PermissionGate} from '@/permissions/PermissionGate';
 import {AuthContext} from "@/context/AuthProvider";
@@ -239,7 +240,6 @@ export default function EditAssetScreen() {
             permissionKey: PERMISSIONS.ASSETS_EDIT,
         })
             .then(response => {
-                if (response === null) return;
                 if (response.status === 'error') {
                     Burnt.alert({
                         title: t('general.error'),
@@ -258,6 +258,7 @@ export default function EditAssetScreen() {
                 router.replace(`/(tabs)/(assets)/${id}`);
             })
             .catch(error => {
+                if (error instanceof PermissionDeniedError) return;
                 console.error(error);
                 Burnt.alert({
                     title: t('general.error'),
