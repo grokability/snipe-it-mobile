@@ -2,27 +2,45 @@ import { Stack, router } from 'expo-router';
 import { useAuth, AuthProvider } from "@/context/AuthProvider";
 import { AuditSessionProvider } from "@/context/AuditSessionProvider";
 import { PermissionProvider } from "@/permissions/PermissionContext";
-import { ActivityIndicator, View } from "react-native";
+import { ActivityIndicator, AppState, View } from "react-native";
 import React, {useEffect} from "react";
 import {GestureHandlerRootView} from "react-native-gesture-handler";
 import {SafeAreaProvider} from "react-native-safe-area-context";
+import {QueryClientProvider, onlineManager, focusManager} from "@tanstack/react-query";
+import {useReactQueryDevTools} from "@dev-plugins/react-query";
+import * as Network from "expo-network";
+import {queryClient} from "@/helpers/queryClient";
 import i18n from "@/i18n"; //this says unused but it's just providing for the entire app
 
+onlineManager.setEventListener((setOnline) => {
+    const subscription = Network.addNetworkStateListener((state) => {
+        setOnline(!!state.isConnected);
+    });
+    Network.getNetworkStateAsync().then((state) => setOnline(!!state.isConnected));
+    return () => subscription.remove();
+});
+
+AppState.addEventListener('change', (status) => {
+    focusManager.setFocused(status === 'active');
+});
 
 export default function RootLayout() {
+    useReactQueryDevTools(queryClient);
 
     return (
-        <AuthProvider>
-            <PermissionProvider>
-                <AuditSessionProvider>
-                    <SafeAreaProvider>
-                        <GestureHandlerRootView style={{ flex: 1 }}>
-                                <AuthLayoutContent/>
-                        </GestureHandlerRootView>
-                    </SafeAreaProvider>
-                </AuditSessionProvider>
-            </PermissionProvider>
-        </AuthProvider>
+        <QueryClientProvider client={queryClient}>
+            <AuthProvider>
+                <PermissionProvider>
+                    <AuditSessionProvider>
+                        <SafeAreaProvider>
+                            <GestureHandlerRootView style={{ flex: 1 }}>
+                                    <AuthLayoutContent/>
+                            </GestureHandlerRootView>
+                        </SafeAreaProvider>
+                    </AuditSessionProvider>
+                </PermissionProvider>
+            </AuthProvider>
+        </QueryClientProvider>
     )
 
     function AuthLayoutContent() {
