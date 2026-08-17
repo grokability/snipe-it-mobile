@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import {router, useFocusEffect, useLocalSearchParams} from 'expo-router';
 import {makeRequest} from '@/helpers/axiosConfig';
+import {PermissionDeniedError} from '@/helpers/errors';
 import {PERMISSIONS} from '@/permissions/PermissionKeys';
 import {PermissionGate} from '@/permissions/PermissionGate';
 import {SafeAreaProvider, useSafeAreaInsets} from 'react-native-safe-area-context';
@@ -89,7 +90,6 @@ export default function ConsumableCheckoutScreen() {
             },
         })
             .then((res) => {
-                if (res === null) return;
                 if (res.status === 'error') {
                     const errMsg = typeof res.messages === 'string'
                         ? res.messages
@@ -113,6 +113,7 @@ export default function ConsumableCheckoutScreen() {
                 router.replace(`/(tabs)/(consumables)/${id}`);
             })
             .catch((err) => {
+                if (err instanceof PermissionDeniedError) return;
                 console.error(err);
                 Burnt.alert({
                     title: t('general.error'),

@@ -4,6 +4,7 @@ import {router} from "expo-router";
 import * as SecureStore from 'expo-secure-store';
 import { PermissionManager } from '@/permissions/PermissionManager';
 import { PERMISSION_LABELS } from '@/permissions/PermissionKeys';
+import { PermissionDeniedError } from '@/helpers/errors';
 import i18n from '@/i18n';
 
 // Create instances without baseURL initially
@@ -119,7 +120,7 @@ export const makeRequest = async ({
         .then(response => response.data)
         .catch(error => {
             if (error?.response?.status === 403 && config.permissionKey) {
-                return null;
+                throw new PermissionDeniedError(config.permissionKey, 403);
             }
             throw error;
         });
