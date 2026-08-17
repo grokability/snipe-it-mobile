@@ -212,7 +212,7 @@ export default function CreateAssetScreen() {
                     message: t('mobile.create_success'),
                     duration: 2,
                 });
-                router.replace(`/(tabs)/(assets)/${response.payload.id}`);
+                router.dismissTo(`/(tabs)/(assets)/${response.payload.id}`);
             })
             .catch(error => {
                 if (error instanceof PermissionDeniedError) return;
