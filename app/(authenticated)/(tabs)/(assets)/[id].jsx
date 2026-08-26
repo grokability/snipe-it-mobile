@@ -1,4 +1,4 @@
-import React, {useMemo, useLayoutEffect} from 'react';
+import React, {useMemo, useLayoutEffect, useState} from 'react';
 import {Image, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View} from 'react-native';
 import {router, useLocalSearchParams, useNavigation} from "expo-router";
 import {useQuery} from '@tanstack/react-query';
@@ -71,6 +71,13 @@ export default function AssetScreen() {
 
     useRefreshOnFocus(assetKeys.detail(id));
 
+    const [isManualRefreshing, setIsManualRefreshing] = useState(false);
+    const onManualRefresh = async () => {
+        setIsManualRefreshing(true);
+        await assetQuery.refetch();
+        setIsManualRefreshing(false);
+    };
+
     const asset = useMemo(
         () => mergeCustomFields(assetQuery.data, fieldsQuery.data),
         [assetQuery.data, fieldsQuery.data]
@@ -119,7 +126,7 @@ export default function AssetScreen() {
             <ScrollView
                 style={styles.container}
                 contentContainerStyle={[styles.contentContainer, {paddingTop: insets.top + 44}]}
-                refreshControl={<RefreshControl refreshing={assetQuery.isFetching} onRefresh={() => assetQuery.refetch()} />}
+                refreshControl={<RefreshControl refreshing={isManualRefreshing} onRefresh={onManualRefresh} />}
             >
                 {/* Image */}
                 {asset.image && (
