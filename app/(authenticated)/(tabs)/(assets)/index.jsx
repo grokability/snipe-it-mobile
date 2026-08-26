@@ -129,6 +129,13 @@ export default function AssetsScreen() {
 
     useRefreshOnFocus(queryKey);
 
+    const [isManualRefreshing, setIsManualRefreshing] = useState(false);
+    const onManualRefresh = async () => {
+        setIsManualRefreshing(true);
+        await assetsQuery.refetch();
+        setIsManualRefreshing(false);
+    };
+
     const data = useMemo(
         () => assetsQuery.data?.pages.flatMap(page => page.rows ?? []) ?? [],
         [assetsQuery.data]
@@ -275,7 +282,7 @@ export default function AssetsScreen() {
                 />
                 }
                 keyExtractor={item => item.id}
-                refreshControl={<RefreshControl refreshing={assetsQuery.isRefetching} onRefresh={() => assetsQuery.refetch()} />}
+                refreshControl={<RefreshControl refreshing={isManualRefreshing} onRefresh={onManualRefresh} />}
             />
             <AssetFilterBottomSheet
                 ref={filterSheetRef}
