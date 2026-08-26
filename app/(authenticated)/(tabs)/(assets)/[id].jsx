@@ -1,5 +1,6 @@
 import React, {useMemo, useLayoutEffect, useState} from 'react';
-import {Image, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View} from 'react-native';
+import {ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View} from 'react-native';
+import {Image} from 'expo-image';
 import {router, useLocalSearchParams, useNavigation} from "expo-router";
 import {useQuery} from '@tanstack/react-query';
 import {Ionicons} from '@expo/vector-icons';
@@ -71,6 +72,7 @@ export default function AssetScreen() {
 
     useRefreshOnFocus(assetKeys.detail(id));
 
+    const [isImageLoading, setIsImageLoading] = useState(true);
     const [isManualRefreshing, setIsManualRefreshing] = useState(false);
     const onManualRefresh = async () => {
         setIsManualRefreshing(true);
@@ -131,7 +133,17 @@ export default function AssetScreen() {
                 {/* Image */}
                 {asset.image && (
                     <View style={styles.imageContainer}>
-                        <Image source={{uri: asset.image}} style={styles.image}/>
+                        <Image
+                            source={{uri: asset.image}}
+                            style={styles.image}
+                            transition={200}
+                            cachePolicy="memory-disk"
+                            onLoadStart={() => setIsImageLoading(true)}
+                            onLoadEnd={() => setIsImageLoading(false)}
+                        />
+                        {isImageLoading && (
+                            <ActivityIndicator style={styles.imageLoadingIndicator} color={colors.textSecondary} />
+                        )}
                     </View>
                 )}
 
@@ -392,11 +404,19 @@ const createStyles = (colors) => StyleSheet.create({
         backgroundColor: colors.backgroundSecondary,
         borderRadius: BorderRadius.md,
         padding: Spacing.lg,
+        position: 'relative',
     },
     image: {
         width: 250,
         height: 250,
         borderRadius: BorderRadius.md,
+    },
+    imageLoadingIndicator: {
+        position: 'absolute',
+        top: '50%',
+        left: '50%',
+        marginTop: -10,
+        marginLeft: -10,
     },
     headerContainer: {
         alignItems: 'center',

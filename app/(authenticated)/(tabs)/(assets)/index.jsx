@@ -1,4 +1,5 @@
-import { View, Text, StyleSheet, Image, RefreshControl, Pressable, Platform, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, RefreshControl, Pressable, Platform, ScrollView } from 'react-native';
+import { Image } from 'expo-image';
 import { useState, useCallback, useMemo, useLayoutEffect, useRef, useEffect } from "react";
 import debounce from 'lodash/debounce';
 import { useInfiniteQuery, keepPreviousData } from '@tanstack/react-query';
@@ -172,38 +173,56 @@ export default function AssetsScreen() {
         );
     }, [filters, activeFilterCount, removeFilter, styles.chipRow]);
 
-    const Item = ({ id, asset_tag, name, serial, image, checkedOut, status }) => (
-        <Pressable
-            onPress={() => router.push(`/${id}`)}
-            style={({ pressed }) => [
-                styles.itemContainer,
-                pressed && styles.itemPressed
-            ]}
-        >
-            <View style={styles.imageContainer}>
-                {image
-                    ? <Image style={styles.image} src={image} />
-                    : <Ionicons name="desktop-outline" size={40} color={colors.textSecondary} />
-                }
-            </View>
-            <View style={styles.contentContainer}>
-                <Text style={styles.assetTag}>#{asset_tag}</Text>
-                <Text style={styles.assetName}>{decode(name)}</Text>
-                {checkedOut && (
-                    <Text style={styles.checkedOutText}>
-                        {t('general.checked_out_to')}<Text style={styles.userName}>{checkedOut.name}</Text>
-                    </Text>
-                )}
-                {status.status_type === 'deployable' ?
-                    (
-                        <Text style={styles.availableText}>{status.name}</Text>
-                    ) :
-                    <Text style={styles.notAvailableText}>{status.name}</Text>
-                }
-                <Text style={styles.serialText}>{serial ? t('mobile.serial_number_display', { serial }) : t('mobile.serial_number_empty')}</Text>
-            </View>
-        </Pressable>
-    );
+    const Item = ({ id, asset_tag, name, serial, image, checkedOut, status }) => {
+        const [isImageLoading, setIsImageLoading] = useState(true);
+
+        return (
+            <Pressable
+                onPress={() => router.push(`/${id}`)}
+                style={({ pressed }) => [
+                    styles.itemContainer,
+                    pressed && styles.itemPressed
+                ]}
+            >
+                <View style={styles.imageContainer}>
+                    {image
+                        ? (
+                            <>
+                                <Image
+                                    style={styles.image}
+                                    source={{ uri: image }}
+                                    transition={200}
+                                    cachePolicy="memory-disk"
+                                    onLoadStart={() => setIsImageLoading(true)}
+                                    onLoadEnd={() => setIsImageLoading(false)}
+                                />
+                                {isImageLoading && (
+                                    <ActivityIndicator style={styles.imageLoadingIndicator} color={colors.textSecondary} />
+                                )}
+                            </>
+                        )
+                        : <Ionicons name="desktop-outline" size={40} color={colors.textSecondary} />
+                    }
+                </View>
+                <View style={styles.contentContainer}>
+                    <Text style={styles.assetTag}>#{asset_tag}</Text>
+                    <Text style={styles.assetName}>{decode(name)}</Text>
+                    {checkedOut && (
+                        <Text style={styles.checkedOutText}>
+                            {t('general.checked_out_to')}<Text style={styles.userName}>{checkedOut.name}</Text>
+                        </Text>
+                    )}
+                    {status.status_type === 'deployable' ?
+                        (
+                            <Text style={styles.availableText}>{status.name}</Text>
+                        ) :
+                        <Text style={styles.notAvailableText}>{status.name}</Text>
+                    }
+                    <Text style={styles.serialText}>{serial ? t('mobile.serial_number_display', { serial }) : t('mobile.serial_number_empty')}</Text>
+                </View>
+            </Pressable>
+        );
+    };
 
     if (!assetsQuery.isPending && data.length === 0 && !debouncedSearch && activeFilterCount === 0) {
         return (
@@ -342,11 +361,15 @@ const createStyles = (colors) => StyleSheet.create({
         alignItems: 'center',
         backgroundColor: colors.backgroundSecondary,
         borderRadius: BorderRadius.sm,
+        position: 'relative',
     },
     image: {
         width: 80,
         height: 80,
         borderRadius: BorderRadius.sm,
+    },
+    imageLoadingIndicator: {
+        position: 'absolute',
     },
     contentContainer: {
         flex: 1,
