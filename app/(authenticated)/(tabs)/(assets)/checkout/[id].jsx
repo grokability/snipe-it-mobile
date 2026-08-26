@@ -79,8 +79,8 @@ export default function CheckoutScreen() {
                 preset: 'heart',
                 duration: 2,
             });
-            queryClient.invalidateQueries({ queryKey: assetKeys.detail(id) });
-            queryClient.invalidateQueries({ queryKey: assetKeys.lists() });
+            queryClient.invalidateQueries({ queryKey: assetKeys.detail(id) }).catch(() => {});
+            queryClient.invalidateQueries({ queryKey: assetKeys.lists() }).catch(() => {});
             router.dismissTo(`/(tabs)/(assets)/${id}`);
         },
         onError: (err) => {

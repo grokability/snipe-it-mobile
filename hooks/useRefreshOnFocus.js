@@ -13,7 +13,7 @@ export function useRefreshOnFocus(queryKey) {
                 return;
             }
 
-            queryClient.refetchQueries({ queryKey, stale: true, type: 'active' });
+            queryClient.refetchQueries({ queryKey, stale: true, type: 'active' }).catch(() => {});
         }, [queryClient, queryKey])
     );
 }
