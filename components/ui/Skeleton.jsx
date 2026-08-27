@@ -65,6 +65,32 @@ export function AssetDetailSkeleton() {
     );
 }
 
+export function AccessoryDetailSkeleton() {
+    const colors = useColors();
+    const insets = useSafeAreaInsets();
+    const styles = useMemo(() => createStyles(colors), [colors]);
+
+    return (
+        <SafeAreaProvider>
+            <View style={[styles.container, {paddingTop: insets.top + 44}]}>
+                <View style={styles.imageContainer}>
+                    <Skeleton width={250} height={250} borderRadius={BorderRadius.md} />
+                </View>
+
+                <View style={styles.headerContainer}>
+                    <Skeleton width={180} height={24} />
+                    <Skeleton width={60} height={20} borderRadius={BorderRadius.lg} />
+                    <Skeleton width={80} height={14} />
+                </View>
+
+                <SkeletonSection titleWidth={110} rows={2} />
+                <SkeletonSection titleWidth={90} rows={7} />
+                <SkeletonSection titleWidth={80} rows={2} />
+            </View>
+        </SafeAreaProvider>
+    );
+}
+
 const createStyles = (colors) => StyleSheet.create({
     container: {
         flex: 1,

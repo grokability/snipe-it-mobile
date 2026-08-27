@@ -1,4 +1,4 @@
-import React, {useCallback, useContext, useMemo, useRef, useState} from 'react';
+import React, {useContext, useMemo, useRef, useState} from 'react';
 import {
     ActivityIndicator,
     KeyboardAvoidingView,
@@ -9,8 +9,10 @@ import {
     Text,
     View,
 } from 'react-native';
-import {router, useFocusEffect, useLocalSearchParams} from 'expo-router';
+import {router, useLocalSearchParams} from 'expo-router';
+import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {makeRequest} from '@/helpers/axiosConfig';
+import {accessoryKeys} from '@/helpers/queryKeys';
 import {PERMISSIONS} from '@/permissions/PermissionKeys';
 import {PermissionGate} from '@/permissions/PermissionGate';
 import {AuthContext} from '@/context/AuthProvider';
@@ -36,9 +38,7 @@ export default function AccessoryCheckoutScreen() {
     const {t} = useTranslation();
     const {id} = useLocalSearchParams();
 
-    const [accessory, setAccessory] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [submitting, setSubmitting] = useState(false);
+    const queryClient = useQueryClient();
 
     const [checkoutTo, setCheckoutTo] = useState('user');
     const [selectedUser, setSelectedUser] = useState(null);
@@ -51,17 +51,52 @@ export default function AccessoryCheckoutScreen() {
     const locationRef = useRef(null);
     const assetRef = useRef(null);
 
-    const fetchAccessory = useCallback(() => {
-        setLoading(true);
-        return makeRequest({url: `/accessories/${id}`, method: 'get', permissionKey: PERMISSIONS.ACCESSORIES_VIEW})
-            .then(setAccessory)
-            .catch(console.error)
-            .finally(() => setLoading(false));
-    }, [id]);
+    const accessoryQuery = useQuery({
+        queryKey: accessoryKeys.detail(id),
+        queryFn: () => makeRequest({url: `/accessories/${id}`, method: 'get', permissionKey: PERMISSIONS.ACCESSORIES_VIEW}),
+    });
 
-    useFocusEffect(useCallback(() => {
-        fetchAccessory();
-    }, [fetchAccessory]));
+    const accessory = accessoryQuery.data;
+
+    const checkoutMutation = useMutation({
+        mutationFn: (data) => makeRequest({
+            url: `/accessories/${id}/checkout`,
+            method: 'POST',
+            data,
+            permissionKey: PERMISSIONS.ACCESSORIES_CHECKOUT,
+        }),
+        onSuccess: (res) => {
+            if (res.status === 'error') {
+                Burnt.alert({
+                    title: t('general.error'),
+                    preset: 'error',
+                    message: res.messages
+                        ? Object.values(res.messages).flat().join('\n')
+                        : t('mobile.accessory_checkout_failed'),
+                    duration: 4,
+                });
+                return;
+            }
+            Burnt.alert({
+                title: t('general.notification_success'),
+                preset: 'heart',
+                message: t('mobile.accessory_checkout_success'),
+                duration: 2,
+            });
+            queryClient.invalidateQueries({ queryKey: accessoryKeys.detail(id) }).catch(() => {});
+            queryClient.invalidateQueries({ queryKey: accessoryKeys.lists() }).catch(() => {});
+            router.dismissTo(`/(tabs)/(accessories)/${id}`);
+        },
+        onError: (err) => {
+            console.error(err);
+            Burnt.alert({
+                title: t('general.error'),
+                preset: 'error',
+                message: t('mobile.accessory_checkout_failed'),
+                duration: 4,
+            });
+        },
+    });
 
     const getTarget = () => {
         if (checkoutTo === 'user') return selectedUser;
@@ -93,51 +128,17 @@ export default function AccessoryCheckoutScreen() {
             return;
         }
 
-        setSubmitting(true);
-
-        const data = {
+        checkoutMutation.mutate({
             checkout_to_type: checkoutTo,
             ...(checkoutTo === 'user' && {assigned_user: selectedUser.id}),
             ...(checkoutTo === 'location' && {assigned_location: selectedLocation.id}),
             ...(checkoutTo === 'asset' && {assigned_asset: selectedAsset.id}),
             checkout_qty: parsedQty,
             note: note || null,
-        };
-
-        makeRequest({url: `/accessories/${id}/checkout`, method: 'POST', data, permissionKey: PERMISSIONS.ACCESSORIES_CHECKOUT})
-            .then((res) => {
-                if (res.status === 'error') {
-                    Burnt.alert({
-                        title: t('general.error'),
-                        preset: 'error',
-                        message: res.messages
-                            ? Object.values(res.messages).flat().join('\n')
-                            : t('mobile.accessory_checkout_failed'),
-                        duration: 4,
-                    });
-                    return;
-                }
-                Burnt.alert({
-                    title: t('general.notification_success'),
-                    preset: 'heart',
-                    message: t('mobile.accessory_checkout_success'),
-                    duration: 2,
-                });
-                router.replace(`/(tabs)/(accessories)/${id}`);
-            })
-            .catch((err) => {
-                console.error(err);
-                Burnt.alert({
-                    title: t('general.error'),
-                    preset: 'error',
-                    message: t('mobile.accessory_checkout_failed'),
-                    duration: 4,
-                });
-            })
-            .finally(() => setSubmitting(false));
+        });
     };
 
-    if (loading || !accessory) {
+    if (!accessory) {
         return (
             <View style={styles.loadingContainer}>
                 <ActivityIndicator size="large" color={colors.primary} />
@@ -156,7 +157,8 @@ export default function AccessoryCheckoutScreen() {
             >
             <ScrollView
                 style={styles.container}
-                contentContainerStyle={[styles.contentContainer, {paddingTop: insets.top}]}
+                contentInsetAdjustmentBehavior="automatic"
+                contentContainerStyle={[styles.contentContainer, {paddingTop: Platform.OS === 'android' ? insets.top + 56 : 0}]}
                 keyboardShouldPersistTaps="handled"
             >
                 {/* Accessory info header */}
@@ -233,14 +235,14 @@ export default function AccessoryCheckoutScreen() {
                 <PermissionGate permission={PERMISSIONS.ACCESSORIES_CHECKOUT}>
                     <Pressable
                         onPress={handleSubmit}
-                        disabled={submitting}
+                        disabled={checkoutMutation.isPending}
                         style={({pressed}) => [
                             styles.submitButton,
                             pressed && styles.submitButtonPressed,
-                            submitting && styles.submitButtonDisabled,
+                            checkoutMutation.isPending && styles.submitButtonDisabled,
                         ]}
                     >
-                        {submitting ? (
+                        {checkoutMutation.isPending ? (
                             <ActivityIndicator color="#fff" />
                         ) : (
                             <Text style={styles.submitButtonText}>{t('general.checkout')}</Text>
