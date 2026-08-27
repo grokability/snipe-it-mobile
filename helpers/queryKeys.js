@@ -18,3 +18,11 @@ export const accessoryKeys = {
     detail: (id) => [...accessoryKeys.details(), id],
     checkedOut: (id) => [...accessoryKeys.detail(id), 'checkedOut'],
 };
+
+export const consumableKeys = {
+    all: ['consumables'],
+    lists: () => [...consumableKeys.all, 'list'],
+    list: (params) => [...consumableKeys.lists(), params],
+    details: () => [...consumableKeys.all, 'detail'],
+    detail: (id) => [...consumableKeys.details(), id],
+};

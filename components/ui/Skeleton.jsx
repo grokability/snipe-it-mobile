@@ -40,7 +40,9 @@ function SkeletonSection({titleWidth = 120, rows}) {
     );
 }
 
-export function AssetDetailSkeleton() {
+// Shared geometry for the entity detail screens: image, title block, then one
+// SkeletonSection per Section the real screen renders.
+function DetailScreenSkeleton({showQtyBadge = false, subtitleWidth = 100, subtitleHeight = 16, sections}) {
     const colors = useColors();
     const insets = useSafeAreaInsets();
     const styles = useMemo(() => createStyles(colors), [colors]);
@@ -54,40 +56,57 @@ export function AssetDetailSkeleton() {
 
                 <View style={styles.headerContainer}>
                     <Skeleton width={180} height={24} />
-                    <Skeleton width={100} height={16} />
+                    {showQtyBadge && <Skeleton width={60} height={20} borderRadius={BorderRadius.lg} />}
+                    <Skeleton width={subtitleWidth} height={subtitleHeight} />
                 </View>
 
-                <SkeletonSection titleWidth={100} rows={4} />
-                <SkeletonSection titleWidth={80} rows={2} />
-                <SkeletonSection titleWidth={90} rows={5} />
+                {sections.map((section, index) => (
+                    <SkeletonSection key={index} titleWidth={section.titleWidth} rows={section.rows} />
+                ))}
             </View>
         </SafeAreaProvider>
     );
 }
 
-export function AccessoryDetailSkeleton() {
-    const colors = useColors();
-    const insets = useSafeAreaInsets();
-    const styles = useMemo(() => createStyles(colors), [colors]);
-
+export function AssetDetailSkeleton() {
     return (
-        <SafeAreaProvider>
-            <View style={[styles.container, {paddingTop: insets.top + 44}]}>
-                <View style={styles.imageContainer}>
-                    <Skeleton width={250} height={250} borderRadius={BorderRadius.md} />
-                </View>
+        <DetailScreenSkeleton
+            sections={[
+                {titleWidth: 100, rows: 4},
+                {titleWidth: 80, rows: 2},
+                {titleWidth: 90, rows: 5},
+            ]}
+        />
+    );
+}
 
-                <View style={styles.headerContainer}>
-                    <Skeleton width={180} height={24} />
-                    <Skeleton width={60} height={20} borderRadius={BorderRadius.lg} />
-                    <Skeleton width={80} height={14} />
-                </View>
+export function AccessoryDetailSkeleton() {
+    return (
+        <DetailScreenSkeleton
+            showQtyBadge
+            subtitleWidth={80}
+            subtitleHeight={14}
+            sections={[
+                {titleWidth: 110, rows: 2},
+                {titleWidth: 90, rows: 7},
+                {titleWidth: 80, rows: 2},
+            ]}
+        />
+    );
+}
 
-                <SkeletonSection titleWidth={110} rows={2} />
-                <SkeletonSection titleWidth={90} rows={7} />
-                <SkeletonSection titleWidth={80} rows={2} />
-            </View>
-        </SafeAreaProvider>
+export function ConsumableDetailSkeleton() {
+    return (
+        <DetailScreenSkeleton
+            showQtyBadge
+            subtitleWidth={80}
+            subtitleHeight={14}
+            sections={[
+                {titleWidth: 90, rows: 8},
+                {titleWidth: 80, rows: 2},
+                {titleWidth: 90, rows: 3},
+            ]}
+        />
     );
 }
 
