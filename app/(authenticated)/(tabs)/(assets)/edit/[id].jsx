@@ -1,4 +1,4 @@
-import React, {useCallback, useContext, useState, useMemo, useRef} from 'react';
+import React, {useContext, useEffect, useState, useMemo, useRef} from 'react';
 import {decode} from "html-entities";
 import {
     ActivityIndicator,
@@ -10,9 +10,12 @@ import {
     Text,
     View,
 } from 'react-native';
-import {router, useFocusEffect, useLocalSearchParams} from "expo-router";
+import {router, useLocalSearchParams} from "expo-router";
+import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {makeRequest} from "@/helpers/axiosConfig";
+import {PermissionDeniedError} from "@/helpers/errors";
 import {PERMISSIONS} from "@/permissions/PermissionKeys";
+import {assetKeys, customFieldKeys} from "@/helpers/queryKeys";
 import {PermissionGate} from '@/permissions/PermissionGate';
 import {AuthContext} from "@/context/AuthProvider";
 import {SafeAreaProvider, useSafeAreaInsets} from "react-native-safe-area-context";
@@ -51,10 +54,8 @@ export default function EditAssetScreen() {
     const styles = useMemo(() => createStyles(colors), [colors]);
     const { t } = useTranslation();
 
-    const [loading, setLoading] = useState(true);
-    const [submitting, setSubmitting] = useState(false);
-    const [asset, setAsset] = useState(null);
     const { id } = useLocalSearchParams();
+    const queryClient = useQueryClient();
 
     // Text fields
     const [name, setName] = useState('');
@@ -94,29 +95,18 @@ export default function EditAssetScreen() {
     const supplierRef = useRef(null);
     const rtdLocationRef = useRef(null);
 
-    const getAsset = useCallback(() => {
-        setLoading(true);
-        return Promise.all([
-            makeRequest({ url: `/hardware/${id}`, method: 'get', permissionKey: PERMISSIONS.ASSETS_VIEW }),
-            makeRequest({ url: '/fields', method: 'get', permissionKey: PERMISSIONS.CUSTOMFIELDS_VIEW }),
-        ])
-            .then(([asset, fields]) => {
-                setAsset(asset);
-                const fieldDefs = {};
-                if (fields?.rows) {
-                    fields.rows.forEach(fieldDefinition => {
-                        fieldDefs[fieldDefinition.db_column_name] = fieldDefinition.field_values_array;
-                    });
-                }
-                populateFields(asset, fieldDefs);
-            })
-            .catch(error => {
-                console.error(error);
-            })
-            .finally(() => {
-                setLoading(false);
-            });
-    }, [id]);
+    const assetQuery = useQuery({
+        queryKey: assetKeys.detail(id),
+        queryFn: () => makeRequest({ url: `/hardware/${id}`, method: 'get', permissionKey: PERMISSIONS.ASSETS_VIEW }),
+    });
+
+    const fieldsQuery = useQuery({
+        queryKey: customFieldKeys.all,
+        queryFn: () => makeRequest({ url: '/fields', method: 'get', permissionKey: PERMISSIONS.CUSTOMFIELDS_VIEW }),
+        staleTime: Infinity,
+    });
+
+    const populatedForIdRef = useRef(null);
 
     const populateFields = (asset, fieldDefs = {}) => {
         setName(asset.name ? decode(asset.name) : '');
@@ -174,11 +164,19 @@ export default function EditAssetScreen() {
         }
     };
 
-    useFocusEffect(
-        useCallback(() => {
-            getAsset();
-        }, [getAsset])
-    );
+    useEffect(() => {
+        if (!assetQuery.data || !fieldsQuery.isFetched) return;
+        if (populatedForIdRef.current === id) return;
+        populatedForIdRef.current = id;
+
+        const fieldDefs = {};
+        if (fieldsQuery.data?.rows) {
+            fieldsQuery.data.rows.forEach(fieldDefinition => {
+                fieldDefs[fieldDefinition.db_column_name] = fieldDefinition.field_values_array;
+            });
+        }
+        populateFields(assetQuery.data, fieldDefs);
+    }, [assetQuery.data, fieldsQuery.data, fieldsQuery.isFetched, id]);
 
     const formatDateForApi = (date) => {
         if (!date) return undefined;
@@ -187,6 +185,45 @@ export default function EditAssetScreen() {
         const day = String(date.getDate()).padStart(2, '0');
         return `${year}-${month}-${day}`;
     };
+
+    const editMutation = useMutation({
+        mutationFn: (data) => makeRequest({
+            url: `/hardware/${id}`,
+            method: 'PUT',
+            data,
+            permissionKey: PERMISSIONS.ASSETS_EDIT,
+        }),
+        onSuccess: (response) => {
+            if (response.status === 'error') {
+                Burnt.alert({
+                    title: t('general.error'),
+                    preset: "error",
+                    message: response.messages ? Object.values(response.messages).flat().join('\n') : t('mobile.edit_failed'),
+                    duration: 4,
+                });
+                return;
+            }
+            Burnt.alert({
+                title: t('general.notification_success'),
+                preset: "heart",
+                message: t('mobile.edit_success'),
+                duration: 2,
+            });
+            queryClient.invalidateQueries({ queryKey: assetKeys.detail(id) }).catch(() => {});
+            queryClient.invalidateQueries({ queryKey: assetKeys.lists() }).catch(() => {});
+            router.dismissTo(`/(tabs)/(assets)/${id}`);
+        },
+        onError: (error) => {
+            if (error instanceof PermissionDeniedError) return;
+            console.error(error);
+            Burnt.alert({
+                title: t('general.error'),
+                preset: "error",
+                message: t('mobile.edit_failed'),
+                duration: 4,
+            });
+        },
+    });
 
     const handleSubmit = () => {
         if (!assetTag.trim()) {
@@ -198,8 +235,6 @@ export default function EditAssetScreen() {
             });
             return;
         }
-
-        setSubmitting(true);
 
         const data = {
             name: name || null,
@@ -232,43 +267,7 @@ export default function EditAssetScreen() {
             }
         });
 
-        makeRequest({
-            url: `/hardware/${id}`,
-            method: 'PUT',
-            data,
-            permissionKey: PERMISSIONS.ASSETS_EDIT,
-        })
-            .then(response => {
-                if (response === null) return;
-                if (response.status === 'error') {
-                    Burnt.alert({
-                        title: t('general.error'),
-                        preset: "error",
-                        message: response.messages ? Object.values(response.messages).flat().join('\n') : t('mobile.edit_failed'),
-                        duration: 4,
-                    });
-                    return;
-                }
-                Burnt.alert({
-                    title: t('general.notification_success'),
-                    preset: "heart",
-                    message: t('mobile.edit_success'),
-                    duration: 2,
-                });
-                router.replace(`/(tabs)/(assets)/${id}`);
-            })
-            .catch(error => {
-                console.error(error);
-                Burnt.alert({
-                    title: t('general.error'),
-                    preset: "error",
-                    message: t('mobile.edit_failed'),
-                    duration: 4,
-                });
-            })
-            .finally(() => {
-                setSubmitting(false);
-            });
+        editMutation.mutate(data);
     };
 
     const selectPlaceholder = t('general.select');
@@ -424,7 +423,7 @@ export default function EditAssetScreen() {
         );
     };
 
-    if (loading || !asset) {
+    if (!assetQuery.data || !fieldsQuery.isFetched) {
         return (
             <View style={styles.loadingContainer}>
                 <ActivityIndicator size="large" color={colors.primary}/>
@@ -440,7 +439,8 @@ export default function EditAssetScreen() {
             >
             <ScrollView
                 style={styles.container}
-                contentContainerStyle={[styles.contentContainer, {paddingTop: insets.top + 44}]}
+                contentInsetAdjustmentBehavior="automatic"
+                contentContainerStyle={[styles.contentContainer, {paddingTop: Platform.OS === 'android' ? insets.top + 56 : 0}]}
                 keyboardShouldPersistTaps="handled"
             >
                     {/* Image Upload */}
@@ -576,14 +576,14 @@ export default function EditAssetScreen() {
                     <PermissionGate permission={PERMISSIONS.ASSETS_EDIT}>
                         <Pressable
                             onPress={handleSubmit}
-                            disabled={submitting}
+                            disabled={editMutation.isPending}
                             style={({pressed}) => [
                                 styles.submitButton,
                                 pressed && styles.submitButtonPressed,
-                                submitting && styles.submitButtonDisabled,
+                                editMutation.isPending && styles.submitButtonDisabled,
                             ]}
                         >
-                            {submitting ? (
+                            {editMutation.isPending ? (
                                 <ActivityIndicator color="#fff" />
                             ) : (
                                 <Text style={styles.submitButtonText}>{t('mobile.save_changes')}</Text>

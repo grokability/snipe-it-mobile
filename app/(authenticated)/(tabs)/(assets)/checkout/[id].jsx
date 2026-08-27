@@ -1,8 +1,10 @@
 import React, {useContext, useMemo, useRef, useState} from 'react';
 import {ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View} from 'react-native';
 import {router, useLocalSearchParams} from 'expo-router';
+import {useMutation, useQueryClient} from '@tanstack/react-query';
 import {SafeAreaProvider, useSafeAreaInsets} from 'react-native-safe-area-context';
 import {makeRequest} from '@/helpers/axiosConfig';
+import {assetKeys} from '@/helpers/queryKeys';
 import {PERMISSIONS} from '@/permissions/PermissionKeys';
 import {PermissionGate} from '@/permissions/PermissionGate';
 import {AuthContext} from '@/context/AuthProvider';
@@ -29,6 +31,7 @@ export default function CheckoutScreen() {
     const {t} = useTranslation();
     const {id, assetName: initialAssetName, assetTag, statusId, statusName, statusType} = useLocalSearchParams();
     const {user} = useContext(AuthContext);
+    const queryClient = useQueryClient();
 
     const userBottomSheetRef = useRef(null);
     const statusBottomSheetRef = useRef(null);
@@ -48,7 +51,48 @@ export default function CheckoutScreen() {
     const [notes, setNotes] = useState('');
     const [checkoutDate, setCheckoutDate] = useState(null);
     const [expectedCheckinDate, setExpectedCheckinDate] = useState(null);
-    const [submitting, setSubmitting] = useState(false);
+
+    const checkoutMutation = useMutation({
+        mutationFn: (data) => makeRequest({
+            url: `/hardware/${id}/checkout`,
+            method: 'POST',
+            permissionKey: PERMISSIONS.ASSETS_CHECKOUT,
+            data,
+        }),
+        onSuccess: (res) => {
+            if (res.status === 'error') {
+                const msg = typeof res.messages === 'string'
+                    ? res.messages
+                    : res.messages
+                        ? Object.values(res.messages).flat().join('\n')
+                        : t('mobile.checkout_failed');
+                Burnt.alert({
+                    title: t('general.error'),
+                    preset: 'error',
+                    message: msg,
+                    duration: 4,
+                });
+                return;
+            }
+            Burnt.alert({
+                title: t('general.notification_success'),
+                preset: 'heart',
+                duration: 2,
+            });
+            queryClient.invalidateQueries({ queryKey: assetKeys.detail(id) }).catch(() => {});
+            queryClient.invalidateQueries({ queryKey: assetKeys.lists() }).catch(() => {});
+            router.dismissTo(`/(tabs)/(assets)/${id}`);
+        },
+        onError: (err) => {
+            console.error(err);
+            Burnt.alert({
+                title: t('general.error'),
+                preset: 'error',
+                message: t('mobile.checkout_failed'),
+                duration: 4,
+            });
+        },
+    });
 
     const handleSubmit = () => {
         if (!selectedStatus) {
@@ -75,55 +119,17 @@ export default function CheckoutScreen() {
             return;
         }
 
-        setSubmitting(true);
-        makeRequest({
-            url: `/hardware/${id}/checkout`,
-            method: 'POST',
-            permissionKey: PERMISSIONS.ASSETS_CHECKOUT,
-            data: {
-                name: assetName || undefined,
-                checkout_to_type: selectedCheckoutTo,
-                assigned_user: selectedUser?.id,
-                assigned_location: selectedLocation?.id,
-                assigned_asset: selectedAsset?.id,
-                status_id: selectedStatus.value,
-                checkout_at: checkoutDate,
-                expected_checkin: expectedCheckinDate,
-                note: notes || undefined,
-            },
-        })
-            .then((res) => {
-                if (res.status === 'error') {
-                    const msg = typeof res.messages === 'string'
-                        ? res.messages
-                        : res.messages
-                            ? Object.values(res.messages).flat().join('\n')
-                            : t('mobile.checkout_failed');
-                    Burnt.alert({
-                        title: t('general.error'),
-                        preset: 'error',
-                        message: msg,
-                        duration: 4,
-                    });
-                    return;
-                }
-                Burnt.alert({
-                    title: t('general.notification_success'),
-                    preset: 'heart',
-                    duration: 2,
-                });
-                router.replace(`/(tabs)/(assets)/${id}`);
-            })
-            .catch((err) => {
-                console.error(err);
-                Burnt.alert({
-                    title: t('general.error'),
-                    preset: 'error',
-                    message: t('mobile.checkout_failed'),
-                    duration: 4,
-                });
-            })
-            .finally(() => setSubmitting(false));
+        checkoutMutation.mutate({
+            name: assetName || undefined,
+            checkout_to_type: selectedCheckoutTo,
+            assigned_user: selectedUser?.id,
+            assigned_location: selectedLocation?.id,
+            assigned_asset: selectedAsset?.id,
+            status_id: selectedStatus.value,
+            checkout_at: checkoutDate,
+            expected_checkin: expectedCheckinDate,
+            note: notes || undefined,
+        });
     };
 
     return (
@@ -134,7 +140,8 @@ export default function CheckoutScreen() {
             >
             <ScrollView
                 style={styles.container}
-                contentContainerStyle={[styles.contentContainer, {paddingTop: insets.top + 44}]}
+                contentInsetAdjustmentBehavior="automatic"
+                contentContainerStyle={[styles.contentContainer, {paddingTop: Platform.OS === 'android' ? insets.top + 56 : 0}]}
                 keyboardShouldPersistTaps="handled"
             >
                 {/* Asset info */}
@@ -231,14 +238,14 @@ export default function CheckoutScreen() {
                 <PermissionGate permission={PERMISSIONS.ASSETS_CHECKOUT}>
                     <Pressable
                         onPress={handleSubmit}
-                        disabled={submitting}
+                        disabled={checkoutMutation.isPending}
                         style={({pressed}) => [
                             styles.submitButton,
                             pressed && styles.submitButtonPressed,
-                            submitting && styles.submitButtonDisabled,
+                            checkoutMutation.isPending && styles.submitButtonDisabled,
                         ]}
                     >
-                        {submitting ? (
+                        {checkoutMutation.isPending ? (
                             <ActivityIndicator color="#fff" />
                         ) : (
                             <Text style={styles.submitButtonText}>{t('general.checkout')}</Text>

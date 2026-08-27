@@ -11,7 +11,9 @@ import {
 } from 'react-native';
 import {decode} from 'html-entities';
 import {router, useLocalSearchParams} from 'expo-router';
+import {useMutation, useQueryClient} from '@tanstack/react-query';
 import {makeRequest} from '@/helpers/axiosConfig';
+import {assetKeys} from '@/helpers/queryKeys';
 import {PERMISSIONS} from '@/permissions/PermissionKeys';
 import {PermissionGate} from '@/permissions/PermissionGate';
 import {SafeAreaProvider, useSafeAreaInsets} from 'react-native-safe-area-context';
@@ -30,56 +32,60 @@ export default function CheckinScreen() {
     const styles = useMemo(() => createStyles(colors), [colors]);
     const {t} = useTranslation();
     const {id, assetName, assetTag, assignedToName, statusId, statusName} = useLocalSearchParams();
+    const queryClient = useQueryClient();
 
     const statusBottomSheetRef = useRef(null);
     const [selectedStatus, setSelectedStatus] = useState(
         statusId ? { id: parseInt(statusId), name: statusName, value: parseInt(statusId) } : null
     );
     const [note, setNote] = useState('');
-    const [submitting, setSubmitting] = useState(false);
 
-    const handleSubmit = () => {
-        setSubmitting(true);
-        makeRequest({
+    const checkinMutation = useMutation({
+        mutationFn: (data) => makeRequest({
             url: `/hardware/${id}/checkin`,
             method: 'POST',
             permissionKey: PERMISSIONS.ASSETS_CHECKIN,
-            data: {
-                status_id: selectedStatus?.id ?? (parseInt(statusId) || 1),
-                note: note || null,
-            },
-        })
-            .then((res) => {
-                if (res.status === 'error') {
-                    const msg = typeof res.messages === 'string'
-                        ? res.messages
-                        : res.messages
-                            ? Object.values(res.messages).flat().join('\n')
-                            : t('general.checkin') + ' failed';
-                    Burnt.alert({
-                        title: t('general.error'),
-                        preset: 'error',
-                        message: msg,
-                        duration: 4,
-                    });
-                    return;
-                }
-                Burnt.alert({
-                    title: t('general.notification_success'),
-                    preset: 'heart',
-                    duration: 2,
-                });
-                router.replace(`/(tabs)/(assets)/${id}`);
-            })
-            .catch((err) => {
-                console.error(err);
+            data,
+        }),
+        onSuccess: (res) => {
+            if (res.status === 'error') {
+                const msg = typeof res.messages === 'string'
+                    ? res.messages
+                    : res.messages
+                        ? Object.values(res.messages).flat().join('\n')
+                        : t('general.checkin') + ' failed';
                 Burnt.alert({
                     title: t('general.error'),
                     preset: 'error',
+                    message: msg,
                     duration: 4,
                 });
-            })
-            .finally(() => setSubmitting(false));
+                return;
+            }
+            Burnt.alert({
+                title: t('general.notification_success'),
+                preset: 'heart',
+                duration: 2,
+            });
+            queryClient.invalidateQueries({ queryKey: assetKeys.detail(id) }).catch(() => {});
+            queryClient.invalidateQueries({ queryKey: assetKeys.lists() }).catch(() => {});
+            router.dismissTo(`/(tabs)/(assets)/${id}`);
+        },
+        onError: (err) => {
+            console.error(err);
+            Burnt.alert({
+                title: t('general.error'),
+                preset: 'error',
+                duration: 4,
+            });
+        },
+    });
+
+    const handleSubmit = () => {
+        checkinMutation.mutate({
+            status_id: selectedStatus?.id ?? (parseInt(statusId) || 1),
+            note: note || null,
+        });
     };
 
     return (
@@ -90,7 +96,8 @@ export default function CheckinScreen() {
             >
             <ScrollView
                 style={styles.container}
-                contentContainerStyle={[styles.contentContainer, {paddingTop: insets.top + 44}]}
+                contentInsetAdjustmentBehavior="automatic"
+                contentContainerStyle={[styles.contentContainer, {paddingTop: Platform.OS === 'android' ? insets.top + 56 : 0}]}
                 keyboardShouldPersistTaps="handled"
             >
                 {/* Asset info */}
@@ -126,14 +133,14 @@ export default function CheckinScreen() {
                 <PermissionGate permission={PERMISSIONS.ASSETS_CHECKIN}>
                     <Pressable
                         onPress={handleSubmit}
-                        disabled={submitting}
+                        disabled={checkinMutation.isPending}
                         style={({pressed}) => [
                             styles.submitButton,
                             pressed && styles.submitButtonPressed,
-                            submitting && styles.submitButtonDisabled,
+                            checkinMutation.isPending && styles.submitButtonDisabled,
                         ]}
                     >
-                        {submitting ? (
+                        {checkinMutation.isPending ? (
                             <ActivityIndicator color="#fff" />
                         ) : (
                             <Text style={styles.submitButtonText}>{t('general.checkin')}</Text>

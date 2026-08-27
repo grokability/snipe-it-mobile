@@ -1,9 +1,14 @@
-import React, {useCallback, useState, useMemo, useLayoutEffect} from 'react';
-import {ActivityIndicator, Image, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View} from 'react-native';
-import {router, useFocusEffect, useLocalSearchParams, useNavigation} from "expo-router";
+import React, {useMemo, useLayoutEffect, useState} from 'react';
+import {ActivityIndicator, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View} from 'react-native';
+import {Image} from 'expo-image';
+import {router, useLocalSearchParams, useNavigation} from "expo-router";
+import {useQuery} from '@tanstack/react-query';
 import {Ionicons} from '@expo/vector-icons';
 import {makeRequest} from "@/helpers/axiosConfig";
 import {PERMISSIONS} from "@/permissions/PermissionKeys";
+import {assetKeys, customFieldKeys} from "@/helpers/queryKeys";
+import {useRefreshOnFocus} from "@/hooks/useRefreshOnFocus";
+import {AssetDetailSkeleton} from "@/components/ui/Skeleton";
 import {decode} from "html-entities";
 import {SafeAreaProvider, useSafeAreaInsets} from "react-native-safe-area-context";
 import {useColors} from "@/hooks/useThemeColors";
@@ -20,6 +25,27 @@ export const unstable_settings = {
     initialRouteName: 'index',
 };
 
+// Merges field_values_array and field_encrypted from the /fields definitions into the asset's
+// custom_fields, without mutating either query's cached data.
+function mergeCustomFields(asset, fieldsRes) {
+    if (!asset?.custom_fields || !fieldsRes?.rows) return asset;
+    const fieldDefs = {};
+    fieldsRes.rows.forEach(fieldDefinition => {
+        fieldDefs[fieldDefinition.db_column_name] = fieldDefinition;
+    });
+    const custom_fields = {};
+    Object.entries(asset.custom_fields).forEach(([key, field]) => {
+        const fieldDefinition = fieldDefs[field.field];
+        custom_fields[key] = fieldDefinition
+            ? {
+                ...field,
+                field_values: fieldDefinition.field_values_array ?? field.field_values,
+                field_encrypted: Boolean(fieldDefinition.field_encrypted),
+            }
+            : field;
+    });
+    return {...asset, custom_fields};
+}
 
 export default function AssetScreen() {
     const colors = useColors();
@@ -30,11 +56,34 @@ export default function AssetScreen() {
     const { denied: createDenied } = usePermission(PERMISSIONS.ASSETS_CREATE);
     const { denied: editDenied } = usePermission(PERMISSIONS.ASSETS_EDIT);
 
-    const [data, setData] = useState({});
-    const [loading, setLoading] = useState(true);
-    const [refreshing, setRefreshing] = useState(false);
     const { id } = useLocalSearchParams();
     const navigation = useNavigation();
+
+    const assetQuery = useQuery({
+        queryKey: assetKeys.detail(id),
+        queryFn: () => makeRequest({ url: `/hardware/${id}`, method: 'get', permissionKey: PERMISSIONS.ASSETS_VIEW }),
+    });
+
+    const fieldsQuery = useQuery({
+        queryKey: customFieldKeys.all,
+        queryFn: () => makeRequest({ url: '/fields', method: 'get', permissionKey: PERMISSIONS.CUSTOMFIELDS_VIEW }),
+        staleTime: Infinity, // i'm not sure i like this - we might just make it 24 hours or something but maybe i'm wrong /shrug
+    });
+
+    useRefreshOnFocus(assetKeys.detail(id));
+
+    const [isImageLoading, setIsImageLoading] = useState(true);
+    const [isManualRefreshing, setIsManualRefreshing] = useState(false);
+    const onManualRefresh = async () => {
+        setIsManualRefreshing(true);
+        await assetQuery.refetch();
+        setIsManualRefreshing(false);
+    };
+
+    const asset = useMemo(
+        () => mergeCustomFields(assetQuery.data, fieldsQuery.data),
+        [assetQuery.data, fieldsQuery.data]
+    );
 
     useLayoutEffect(() => {
         navigation.setOptions({
@@ -55,68 +104,16 @@ export default function AssetScreen() {
         });
     }, [navigation, id, colors.text, createDenied, editDenied]);
 
-    const getAsset = useCallback(() => {
-        setLoading(true);
-        return Promise.allSettled([
-            makeRequest({ url: `/hardware/${id}`, method: 'get', permissionKey: PERMISSIONS.ASSETS_VIEW }),
-            makeRequest({ url: '/fields', method: 'get', permissionKey: PERMISSIONS.CUSTOMFIELDS_VIEW }),
-        ])
-            .then(([assetResult, fieldsResult]) => {
-                if (assetResult.status === 'rejected') throw assetResult.reason;
-                const assetRes = assetResult.value;
-                const fieldsRes = fieldsResult.status === 'fulfilled' ? fieldsResult.value : null;
-                // Merge field_values and field_encrypted from field definitions into asset custom_fields
-                if (assetRes.custom_fields && fieldsRes?.rows) {
-                    const fieldDefs = {};
-                    fieldsRes.rows.forEach(fieldDefinition => {
-                        fieldDefs[fieldDefinition.db_column_name] = fieldDefinition;
-                    });
-                    Object.values(assetRes.custom_fields).forEach(field => {
-                        const fieldDefinition = fieldDefs[field.field];
-                        if (fieldDefinition) {
-                            if (fieldDefinition.field_values_array) {
-                                field.field_values = fieldDefinition.field_values_array;
-                            }
-                            field.field_encrypted = Boolean(fieldDefinition.field_encrypted);
-                        }
-                    });
-                }
-                setData({ asset: assetRes });
-            })
-            .catch(error => {
-                console.log(error);
-            })
-            .finally(() => {
-                setLoading(false);
-            });
-    }, [id]);
-
-    useFocusEffect(
-        useCallback(() => {
-            getAsset();
-        }, [getAsset])
-    );
-
-    const onRefresh = useCallback(() => {
-        setRefreshing(true);
-        getAsset().finally(() => setRefreshing(false));
-    }, [getAsset]);
-
     const na = t('mobile.na');
     const displayValue = (value) => value ? decode(String(value)) : na;
     const nestedName = (object) => object?.name ? decode(object.name) : na;
     const formatDate = (dateObject) => dateObject?.formatted || na;
     const formatBool = (value) => value ? t('mobile.yes') : t('mobile.no');
 
-    if (loading || !data.asset) {
-        return (
-            <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color={colors.primary}/>
-            </View>
-        )
+    if (!asset) {
+        return <AssetDetailSkeleton />;
     }
 
-    const asset = data.asset;
     const cannotCheckout = ['undeployable', 'archived'].includes(asset.status_label?.status_type);
     const statusColor = asset.status_label?.status_meta === 'deployed'
         ? colors.success
@@ -130,13 +127,24 @@ export default function AssetScreen() {
         <SafeAreaProvider>
             <ScrollView
                 style={styles.container}
-                contentContainerStyle={[styles.contentContainer, {paddingTop: insets.top + 44}]}
-                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+                contentInsetAdjustmentBehavior="automatic"
+                contentContainerStyle={[styles.contentContainer, {paddingTop: Platform.OS === 'android' ? insets.top + 56 : 0}]}
+                refreshControl={<RefreshControl refreshing={isManualRefreshing} onRefresh={onManualRefresh} />}
             >
                 {/* Image */}
                 {asset.image && (
                     <View style={styles.imageContainer}>
-                        <Image source={{uri: asset.image}} style={styles.image}/>
+                        <Image
+                            source={{uri: asset.image}}
+                            style={styles.image}
+                            transition={200}
+                            cachePolicy="memory-disk"
+                            onLoadStart={() => setIsImageLoading(true)}
+                            onLoadEnd={() => setIsImageLoading(false)}
+                        />
+                        {isImageLoading && (
+                            <ActivityIndicator style={styles.imageLoadingIndicator} color={colors.textSecondary} />
+                        )}
                     </View>
                 )}
 
@@ -383,12 +391,6 @@ export default function AssetScreen() {
 }
 
 const createStyles = (colors) => StyleSheet.create({
-    loadingContainer: {
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-        backgroundColor: colors.background,
-    },
     container: {
         flex: 1,
         backgroundColor: colors.background,
@@ -403,11 +405,19 @@ const createStyles = (colors) => StyleSheet.create({
         backgroundColor: colors.backgroundSecondary,
         borderRadius: BorderRadius.md,
         padding: Spacing.lg,
+        position: 'relative',
     },
     image: {
         width: 250,
         height: 250,
         borderRadius: BorderRadius.md,
+    },
+    imageLoadingIndicator: {
+        position: 'absolute',
+        top: '50%',
+        left: '50%',
+        marginTop: -10,
+        marginLeft: -10,
     },
     headerContainer: {
         alignItems: 'center',

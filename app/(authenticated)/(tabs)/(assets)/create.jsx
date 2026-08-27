@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import {router} from "expo-router";
 import {makeRequest} from "@/helpers/axiosConfig";
+import {PermissionDeniedError} from "@/helpers/errors";
 import {PERMISSIONS} from "@/permissions/PermissionKeys";
 import {PermissionGate} from '@/permissions/PermissionGate';
 import {AuthContext} from "@/context/AuthProvider";
@@ -196,7 +197,6 @@ export default function CreateAssetScreen() {
             permissionKey: PERMISSIONS.ASSETS_CREATE,
         })
             .then(response => {
-                if (response === null) return;
                 if (response.status === 'error') {
                     Burnt.alert({
                         title: t('general.error'),
@@ -212,9 +212,10 @@ export default function CreateAssetScreen() {
                     message: t('mobile.create_success'),
                     duration: 2,
                 });
-                router.replace(`/(tabs)/(assets)/${response.payload.id}`);
+                router.dismissTo(`/(tabs)/(assets)/${response.payload.id}`);
             })
             .catch(error => {
+                if (error instanceof PermissionDeniedError) return;
                 console.error(error);
                 Burnt.alert({
                     title: t('general.error'),
