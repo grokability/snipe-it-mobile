@@ -57,7 +57,7 @@
     "updated_at": "已更新",
     "byod": "BYOD (自備裝置)",
     "requestable": "可申領",
-    "model_number": "型號",
+    "model_number": "型號編號",
     "custom_fields": "自訂欄位",
     "checkin_counter": "繳回",
     "checkout_counter": "借出",

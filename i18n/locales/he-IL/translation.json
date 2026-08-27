@@ -245,6 +245,9 @@
     "refresh_permissions": "Refresh Permissions",
     "refresh_permissions_success": "Permissions refreshed successfully.",
     "refresh_permissions_error": "Could not refresh permissions. Check your connection and try again.",
+    "clear_all_caches": "Clear All Caches (Dev)",
+    "clear_all_caches_success": "All caches cleared.",
+    "clear_all_caches_error": "Could not clear caches.",
     "help": "Help & Support",
     "help_triage_intro": "Bug reports and feature requests start as GitHub Discussions. Once a maintainer confirms a bug is reproducible and actionable, it is promoted to an Issue.",
     "help_section_reporting": "Reporting & Feedback",
@@ -256,7 +259,6 @@
     "help_view_issues": "View Open Issues",
     "audit_session_count_one": "{{count}} audited this session",
     "audit_session_count_two": "{{count}} audited this session",
-    "audit_session_count_many": "{{count}} audited this session",
     "audit_session_count_other": "{{count}} audited this session"
   }
 }
