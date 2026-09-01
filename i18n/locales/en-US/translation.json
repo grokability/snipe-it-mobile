@@ -79,11 +79,11 @@
     "quantity": "Quantity",
     "action_source": "Action Source",
     "action_date": "Action Date",
-    "ok": "OK",
     "available": "Available",
     "not_available": "Not Available"
   },
   "mobile": {
+    "ok": "OK",
     "na": "N/A",
     "version": "Version: {{version}} ({{build}})",
     "show_more": "Show More",
@@ -154,7 +154,7 @@
     "section_checked_out": "Checked Out",
     "min_qty_alert": "Min Qty Alert",
     "no_checkouts": "No active checkouts",
-    "edit_accessory_success": "Accessory updated successfully",
+    "edit_accessory_success": "The accessory was updated successfully",
     "edit_accessory_failed": "Failed to update accessory",
     "accessory_name_required": "Accessory name is required",
     "accessory_qty_required": "Quantity is required",
@@ -185,7 +185,6 @@
     "audit_notes_placeholder": "Add audit notes...",
     "audit_location_update": "Update Location",
     "audit_mode": "AUDIT MODE",
-    "audit_session_count": "{{count}} audited this session",
     "audit_session_audited": "Audited",
     "audit_session_duration": "Duration",
     "audit_session_empty": "No assets audited yet",
@@ -246,14 +245,19 @@
     "refresh_permissions": "Refresh Permissions",
     "refresh_permissions_success": "Permissions refreshed successfully.",
     "refresh_permissions_error": "Could not refresh permissions. Check your connection and try again.",
+    "clear_all_caches": "Clear All Caches (Dev)",
+    "clear_all_caches_success": "All caches cleared.",
+    "clear_all_caches_error": "Could not clear caches.",
     "help": "Help & Support",
     "help_triage_intro": "Bug reports and feature requests start as GitHub Discussions. Once a maintainer confirms a bug is reproducible and actionable, it is promoted to an Issue.",
     "help_section_reporting": "Reporting & Feedback",
-    "help_report_bug": "Report a Bug",
+    "help_report_bug": "Report a bug",
     "help_request_feature": "Request a Feature",
     "help_ask_question": "Ask a Question",
     "help_join_discord": "Join Discord",
     "help_view_discussions": "View All Discussions",
-    "help_view_issues": "View Open Issues"
+    "help_view_issues": "View Open Issues",
+    "audit_session_count_one": "{{count}} audited this session",
+    "audit_session_count_other": "{{count}} audited this session"
   }
 }

@@ -1,9 +1,13 @@
-import { View, Text, StyleSheet, Image, RefreshControl, Pressable, Platform, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, RefreshControl, Pressable, Platform, ScrollView } from 'react-native';
+import { Image } from 'expo-image';
 import { useState, useCallback, useMemo, useLayoutEffect, useRef, useEffect } from "react";
 import debounce from 'lodash/debounce';
+import { useInfiniteQuery, keepPreviousData } from '@tanstack/react-query';
 import { makeRequest } from "@/helpers/axiosConfig";
+import { assetKeys } from "@/helpers/queryKeys";
+import { useRefreshOnFocus } from "@/hooks/useRefreshOnFocus";
 import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
-import { router, useFocusEffect, useNavigation } from "expo-router";
+import { router, useNavigation } from "expo-router";
 import { useColors } from "@/hooks/useThemeColors";
 import { Spacing, BorderRadius, Typography, FontWeight } from "@/constants/sizes";
 import { decode } from "html-entities";
@@ -26,6 +30,21 @@ const EMPTY_FILTERS = {
     model: null,
 };
 
+const PAGE_SIZE = 25;
+
+const buildQuery = ({ offset = 0, search = '', filters = EMPTY_FILTERS }) => {
+    let query = `limit=${PAGE_SIZE}&offset=${offset}&sort=created_at&order=asc`;
+    if (search) query += `&search=${encodeURIComponent(search)}`;
+    if (filters.status) query += `&status_id=${filters.status.id}`;
+    if (filters.category) query += `&category_id=${filters.category.id}`;
+    if (filters.manufacturer) query += `&manufacturer_id=${filters.manufacturer.id}`;
+    if (filters.supplier) query += `&supplier_id=${filters.supplier.id}`;
+    if (filters.location) query += `&location_id=${filters.location.id}`;
+    if (filters.company) query += `&company_id=${filters.company.id}`;
+    if (filters.model) query += `&model_id=${filters.model.id}`;
+    return query;
+};
+
 export default function AssetsScreen() {
     const colors = useColors();
     const insets = useSafeAreaInsets();
@@ -33,22 +52,12 @@ export default function AssetsScreen() {
     const { t } = useTranslation();
     const navigation = useNavigation();
 
-    const [data, setData] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [refreshing, setRefreshing] = useState(false);
-    const [offset, setOffset] = useState(0);
-    const [hasMore, setHasMore] = useState(true);
-
     useRedirectIfDenied(PERMISSIONS.ASSETS_VIEW);
     const { denied: createDenied } = usePermission(PERMISSIONS.ASSETS_CREATE);
 
     const [debouncedSearch, setDebouncedSearch] = useState('');
-    const debouncedSearchRef = useRef('');
-    const isSearchFirstRenderRef = useRef(true);
-    const isFiltersFirstRenderRef = useRef(true);
 
     const [filters, setFilters] = useState(EMPTY_FILTERS);
-    const filtersRef = useRef(EMPTY_FILTERS);
     const filterSheetRef = useRef(null);
 
     const activeFilterCount = useMemo(
@@ -103,95 +112,41 @@ export default function AssetsScreen() {
     // cancel any pending debounce on unmount so we don't update state after user navigates away
     useEffect(() => () => debouncedSetSearch.cancel(), [debouncedSetSearch]);
 
-    // Keep refs in sync so useFocusEffect can always read the latest values without changing its callback
-    useEffect(() => {
-        debouncedSearchRef.current = debouncedSearch;
-    }, [debouncedSearch]);
+    const queryKey = assetKeys.list({ search: debouncedSearch, filters });
 
-    useEffect(() => {
-        filtersRef.current = filters;
-    }, [filters]);
+    const assetsQuery = useInfiniteQuery({
+        queryKey,
+        queryFn: ({ pageParam }) => makeRequest({
+            url: `/hardware?${buildQuery({ offset: pageParam, search: debouncedSearch, filters })}`,
+            method: 'get',
+            permissionKey: PERMISSIONS.ASSETS_VIEW,
+        }),
+        initialPageParam: 0,
+        getNextPageParam: (lastPage, allPages) => (
+            lastPage?.rows?.length === PAGE_SIZE ? allPages.length * PAGE_SIZE : undefined
+        ),
+        placeholderData: keepPreviousData,
+    });
 
-    const buildQuery = ({ offset: fetchOffset = 0, search: fetchSearch = '', filters: fetchFilters = EMPTY_FILTERS }) => {
-        let query = `limit=25&offset=${fetchOffset}&sort=created_at&order=asc`;
-        if (fetchSearch) query += `&search=${encodeURIComponent(fetchSearch)}`;
-        if (fetchFilters.status) query += `&status_id=${fetchFilters.status.id}`;
-        if (fetchFilters.category) query += `&category_id=${fetchFilters.category.id}`;
-        if (fetchFilters.manufacturer) query += `&manufacturer_id=${fetchFilters.manufacturer.id}`;
-        if (fetchFilters.supplier) query += `&supplier_id=${fetchFilters.supplier.id}`;
-        if (fetchFilters.location) query += `&location_id=${fetchFilters.location.id}`;
-        if (fetchFilters.company) query += `&company_id=${fetchFilters.company.id}`;
-        if (fetchFilters.model) query += `&model_id=${fetchFilters.model.id}`;
-        return query;
+    useRefreshOnFocus(queryKey);
+
+    const [isManualRefreshing, setIsManualRefreshing] = useState(false);
+    const onManualRefresh = async () => {
+        setIsManualRefreshing(true);
+        await assetsQuery.refetch();
+        setIsManualRefreshing(false);
     };
 
-    const getAssets = useCallback(({ offset: fetchOffset = 0, search: fetchSearch = '', filters: fetchFilters = EMPTY_FILTERS } = {}) => {
-        setLoading(true);
-        const query = buildQuery({ offset: fetchOffset, search: fetchSearch, filters: fetchFilters });
-        return makeRequest({ url: `/hardware?${query}`, method: 'get', permissionKey: PERMISSIONS.ASSETS_VIEW })
-            .then((res) => {
-                if (res?.rows) {
-                    if (fetchOffset === 0) {
-                        setData(res.rows);
-                    } else {
-                        setData((prev) => [...prev, ...res.rows]);
-                    }
-                    setHasMore(res.rows.length === 25);
-                }
-            })
-            .catch(err => {
-                console.log(err);
-            })
-            .finally(() => {
-                setLoading(false);
-            });
-    }, []);
-
-    // Initial load + refetch when screen regains focus.
-    useFocusEffect(
-        useCallback(() => {
-            setOffset(0);
-            setData([]);
-            getAssets({ offset: 0, search: debouncedSearchRef.current, filters: filtersRef.current });
-        }, [getAssets])
+    const data = useMemo(
+        () => assetsQuery.data?.pages.flatMap(page => page.rows ?? []) ?? [],
+        [assetsQuery.data]
     );
 
-    // Re-fetch when debouncedSearch changes while the screen is focused.
-    useEffect(() => {
-        if (isSearchFirstRenderRef.current) {
-            isSearchFirstRenderRef.current = false;
-            return;
-        }
-        setOffset(0);
-        setData([]);
-        getAssets({ offset: 0, search: debouncedSearch, filters });
-    }, [debouncedSearch, getAssets]);
-
-    // Re-fetch when filters change (chip removal or sheet apply)
-    useEffect(() => {
-        if (isFiltersFirstRenderRef.current) {
-            isFiltersFirstRenderRef.current = false;
-            return;
-        }
-        setOffset(0);
-        setData([]);
-        getAssets({ offset: 0, search: debouncedSearch, filters });
-    }, [filters]);
-
-    const onRefresh = useCallback(() => {
-        setRefreshing(true);
-        setOffset(0);
-        setData([]);
-        getAssets({ offset: 0, search: debouncedSearch, filters })
-            .finally(() => setRefreshing(false));
-    }, [debouncedSearch, filters, getAssets]);
-
     const loadMore = useCallback(() => {
-        if (loading || !hasMore) return;
-        const nextOffset = offset + 25;
-        setOffset(nextOffset);
-        getAssets({ offset: nextOffset, search: debouncedSearch, filters });
-    }, [loading, hasMore, offset, debouncedSearch, filters, getAssets]);
+        if (assetsQuery.hasNextPage && !assetsQuery.isFetchingNextPage) {
+            assetsQuery.fetchNextPage();
+        }
+    }, [assetsQuery]);
 
     const removeFilter = useCallback((key) => {
         setFilters((prev) => ({ ...prev, [key]: null }));
@@ -218,53 +173,71 @@ export default function AssetsScreen() {
         );
     }, [filters, activeFilterCount, removeFilter, styles.chipRow]);
 
-    const Item = ({ id, asset_tag, name, serial, image, checkedOut, status }) => (
-        <Pressable
-            onPress={() => router.push(`/${id}`)}
-            style={({ pressed }) => [
-                styles.itemContainer,
-                pressed && styles.itemPressed
-            ]}
-        >
-            <View style={styles.imageContainer}>
-                {image
-                    ? <Image style={styles.image} src={image} />
-                    : <Ionicons name="desktop-outline" size={40} color={colors.textSecondary} />
-                }
-            </View>
-            <View style={styles.contentContainer}>
-                <Text style={styles.assetTag}>#{asset_tag}</Text>
-                <Text style={styles.assetName}>{decode(name)}</Text>
-                {checkedOut && (
-                    <Text style={styles.checkedOutText}>
-                        {t('general.checked_out_to')}<Text style={styles.userName}>{checkedOut.name}</Text>
-                    </Text>
-                )}
-                {status.status_type === 'deployable' ?
-                    (
-                        <Text style={styles.availableText}>{status.name}</Text>
-                    ) :
-                    <Text style={styles.notAvailableText}>{status.name}</Text>
-                }
-                <Text style={styles.serialText}>{serial ? t('mobile.serial_number_display', { serial }) : t('mobile.serial_number_empty')}</Text>
-            </View>
-        </Pressable>
-    );
+    const Item = ({ id, asset_tag, name, serial, image, checkedOut, status }) => {
+        const [isImageLoading, setIsImageLoading] = useState(true);
 
-    if (!loading && data.length === 0 && !debouncedSearch && activeFilterCount === 0) {
+        return (
+            <Pressable
+                onPress={() => router.push(`/${id}`)}
+                style={({ pressed }) => [
+                    styles.itemContainer,
+                    pressed && styles.itemPressed
+                ]}
+            >
+                <View style={styles.imageContainer}>
+                    {image
+                        ? (
+                            <>
+                                <Image
+                                    style={styles.image}
+                                    source={{ uri: image }}
+                                    transition={200}
+                                    cachePolicy="memory-disk"
+                                    onLoadStart={() => setIsImageLoading(true)}
+                                    onLoadEnd={() => setIsImageLoading(false)}
+                                />
+                                {isImageLoading && (
+                                    <ActivityIndicator style={styles.imageLoadingIndicator} color={colors.textSecondary} />
+                                )}
+                            </>
+                        )
+                        : <Ionicons name="desktop-outline" size={40} color={colors.textSecondary} />
+                    }
+                </View>
+                <View style={styles.contentContainer}>
+                    <Text style={styles.assetTag}>#{asset_tag}</Text>
+                    <Text style={styles.assetName}>{decode(name)}</Text>
+                    {checkedOut && (
+                        <Text style={styles.checkedOutText}>
+                            {t('general.checked_out_to')}<Text style={styles.userName}>{checkedOut.name}</Text>
+                        </Text>
+                    )}
+                    {status.status_type === 'deployable' ?
+                        (
+                            <Text style={styles.availableText}>{status.name}</Text>
+                        ) :
+                        <Text style={styles.notAvailableText}>{status.name}</Text>
+                    }
+                    <Text style={styles.serialText}>{serial ? t('mobile.serial_number_display', { serial }) : t('mobile.serial_number_empty')}</Text>
+                </View>
+            </Pressable>
+        );
+    };
+
+    if (!assetsQuery.isPending && data.length === 0 && !debouncedSearch && activeFilterCount === 0) {
         return (
             <SafeAreaProvider style={styles.container}>
                 <EmptyState
                     icon="file-tray-outline"
                     title={t('mobile.no_results')}
                     message={t('mobile.no_results_message')}
-                    onRetry={() => getAssets()}
+                    onRetry={() => assetsQuery.refetch()}
                 />
             </SafeAreaProvider>
         );
     }
 
-    if (!loading && data.length === 0 && debouncedSearch) {
+    if (!assetsQuery.isPending && data.length === 0 && debouncedSearch) {
         return (
             <SafeAreaProvider style={styles.container}>
                 <EmptyState
@@ -285,7 +258,7 @@ export default function AssetsScreen() {
         );
     }
 
-    if (!loading && data.length === 0 && activeFilterCount > 0) {
+    if (!assetsQuery.isPending && data.length === 0 && activeFilterCount > 0) {
         return (
             <SafeAreaProvider style={styles.container}>
                 <EmptyState
@@ -328,7 +301,7 @@ export default function AssetsScreen() {
                 />
                 }
                 keyExtractor={item => item.id}
-                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+                refreshControl={<RefreshControl refreshing={isManualRefreshing} onRefresh={onManualRefresh} />}
             />
             <AssetFilterBottomSheet
                 ref={filterSheetRef}
@@ -388,11 +361,15 @@ const createStyles = (colors) => StyleSheet.create({
         alignItems: 'center',
         backgroundColor: colors.backgroundSecondary,
         borderRadius: BorderRadius.sm,
+        position: 'relative',
     },
     image: {
         width: 80,
         height: 80,
         borderRadius: BorderRadius.sm,
+    },
+    imageLoadingIndicator: {
+        position: 'absolute',
     },
     contentContainer: {
         flex: 1,
