@@ -1,10 +1,12 @@
 import {View, Text, StyleSheet, RefreshControl, Platform} from 'react-native';
-import {useCallback, useMemo, useState} from "react";
+import {useMemo, useState} from "react";
+import {useQuery} from '@tanstack/react-query';
 import {makeRequest} from "@/helpers/axiosConfig";
+import {licenseKeys} from "@/helpers/queryKeys";
+import {useRefreshOnFocus} from "@/hooks/useRefreshOnFocus";
 import {PERMISSIONS} from "@/permissions/PermissionKeys";
 import {useRedirectIfDenied} from "@/permissions/PermissionContext";
 import {SafeAreaProvider, useSafeAreaInsets} from "react-native-safe-area-context";
-import {useFocusEffect} from "expo-router";
 import {useColors} from "@/hooks/useThemeColors";
 import {Spacing, BorderRadius, Typography, FontWeight} from "@/constants/sizes";
 import {FlashList} from "@shopify/flash-list";
@@ -20,43 +22,27 @@ export default function LicensesScreen() {
     const {t} = useTranslation();
 
     useRedirectIfDenied(PERMISSIONS.LICENSES_VIEW);
-    const [data, setData] = useState({});
-    const [loading, setLoading] = useState(true);
-    const [refreshing, setRefreshing] = useState(false);
+    const queryKey = licenseKeys.list({});
 
-    const getLicenses = useCallback(() => {
-        setLoading(true);
-        return makeRequest({
+    const licensesQuery = useQuery({
+        queryKey,
+        queryFn: () => makeRequest({
             method: 'get',
             url: '/licenses',
             permissionKey: PERMISSIONS.LICENSES_VIEW,
-        })
-            .then(res => {
-                if (res?.rows) {
-                    setData({
-                        licenses: res.rows,
-                        count: res.total,
-                    });
-                }
-            })
-            .catch(err => {
-                console.log(err);
-            })
-            .finally(() => {
-                setLoading(false);
-            });
-    }, []);
+        }),
+    });
 
-    useFocusEffect(
-        useCallback(() => {
-            getLicenses();
-        }, [getLicenses])
-    );
+    useRefreshOnFocus(queryKey);
 
-    const onRefresh = useCallback(() => {
-        setRefreshing(true);
-        getLicenses().finally(() => setRefreshing(false));
-    }, [getLicenses]);
+    const [isManualRefreshing, setIsManualRefreshing] = useState(false);
+    const onManualRefresh = async () => {
+        setIsManualRefreshing(true);
+        await licensesQuery.refetch();
+        setIsManualRefreshing(false);
+    };
+
+    const licenses = licensesQuery.data?.rows ?? [];
 
     const Item = ({name, category, manufacturer, seats, free_seats_count}) => {
         const available = free_seats_count > 0;
@@ -89,14 +75,14 @@ export default function LicensesScreen() {
         );
     };
 
-    if (!loading && (!data.licenses || data.licenses.length === 0)) {
+    if (!licensesQuery.isPending && licenses.length === 0) {
         return (
             <SafeAreaProvider style={styles.container}>
                 <EmptyState
                     icon="file-tray-outline"
                     title={t('mobile.no_results')}
                     message={t('mobile.no_results_message')}
-                    onRetry={getLicenses}
+                    onRetry={() => licensesQuery.refetch()}
                 />
             </SafeAreaProvider>
         );
@@ -110,7 +96,7 @@ export default function LicensesScreen() {
                     paddingBottom: 80,
                 }}
                 style={styles.flatlist}
-                data={data.licenses}
+                data={licenses}
                 estimatedItemSize={120}
                 renderItem={({item}) => <Item
                     name={item.name}
@@ -120,7 +106,7 @@ export default function LicensesScreen() {
                     free_seats_count={item.free_seats_count}
                 />}
                 keyExtractor={item => item.id}
-                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+                refreshControl={<RefreshControl refreshing={isManualRefreshing} onRefresh={onManualRefresh} />}
             />
         </SafeAreaProvider>
     );

@@ -1,8 +1,11 @@
-import React, {useCallback, useMemo, useState} from 'react';
+import React, {useMemo} from 'react';
 import {ActivityIndicator, Pressable, StyleSheet, Text, View} from "react-native";
 import {decode} from 'html-entities';
+import {useQuery} from '@tanstack/react-query';
 import {makeRequest} from "@/helpers/axiosConfig";
-import {router, useFocusEffect} from "expo-router";
+import {actionLogKeys} from "@/helpers/queryKeys";
+import {useRefreshOnFocus} from "@/hooks/useRefreshOnFocus";
+import {router} from "expo-router";
 import {useColors} from "@/hooks/useThemeColors";
 import {Typography, FontWeight, Spacing, BorderRadius} from "@/constants/sizes";
 import {useTranslation} from "react-i18next";
@@ -46,31 +49,25 @@ const RecentActions = () => {
     const colors = useColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const {t} = useTranslation();
-    const [actionLogs, setActionLogs] = useState([]);
-    const [loading, setLoading] = useState(true);
     const { denied: reportsViewDenied } = usePermission(PERMISSIONS.REPORTS_VIEW);
 
-    const fetchActionLogs = useCallback(() => {
-        setLoading(true);
-        makeRequest({
+    const actionLogsQuery = useQuery({
+        queryKey: actionLogKeys.recent(),
+        queryFn: () => makeRequest({
             url: '/reports/activity?limit=5&offset=0&sort=created_at&order=desc',
             method: 'get',
             permissionKey: PERMISSIONS.REPORTS_VIEW,
             silent: true,
-        })
-            .then(res => setActionLogs(res.rows ?? []))
-            .catch(error => console.error('Error fetching recent actionLogs:', error))
-            .finally(() => setLoading(false));
-    }, []);
+        }),
+        enabled: !reportsViewDenied,
+    });
 
-    useFocusEffect(
-        useCallback(() => {
-            if (reportsViewDenied) return;
-            fetchActionLogs();
-        }, [fetchActionLogs, reportsViewDenied])
-    );
+    useRefreshOnFocus(actionLogKeys.recent());
 
-    if (reportsViewDenied || (!loading && actionLogs.length === 0)) return null;
+    const actionLogs = actionLogsQuery.data?.rows ?? [];
+
+    if (reportsViewDenied) return null;
+    if (actionLogsQuery.isSuccess && actionLogs.length === 0) return null;
 
     return (
         <View>
@@ -81,11 +78,18 @@ const RecentActions = () => {
                 </Pressable>
             </View>
             <View style={styles.card}>
-                {loading ? (
+                {actionLogsQuery.isPending ? (
                     <ActivityIndicator
                         color={colors.primary}
                         style={styles.spinner}
                     />
+                ) : actionLogsQuery.isError ? (
+                    <View style={styles.errorContainer}>
+                        <Text style={styles.errorText}>{t('table.load_error_title')}</Text>
+                        <Pressable onPress={() => actionLogsQuery.refetch()} hitSlop={8}>
+                            <Text style={styles.retryText}>{t('mobile.retry')}</Text>
+                        </Pressable>
+                    </View>
                 ) : actionLogs.map((actionLog, index) => (
                     <ActionRow
                         key={actionLog.id}
@@ -169,6 +173,21 @@ const createStyles = (colors) => StyleSheet.create({
     },
     spinner: {
         paddingVertical: Spacing.xl,
+    },
+    errorContainer: {
+        paddingVertical: Spacing.xl,
+        alignItems: 'center',
+        gap: Spacing.sm,
+    },
+    errorText: {
+        fontSize: Typography.caption,
+        color: colors.textSecondary,
+        textAlign: 'center',
+    },
+    retryText: {
+        fontSize: Typography.caption,
+        color: colors.primary,
+        fontWeight: FontWeight.medium,
     },
 });
 

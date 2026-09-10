@@ -1,10 +1,12 @@
 import {View, Text, StyleSheet, RefreshControl, Platform, Image} from 'react-native';
-import {useCallback, useMemo, useState} from "react";
+import {useMemo, useState} from "react";
+import {useQuery} from '@tanstack/react-query';
 import {makeRequest} from "@/helpers/axiosConfig";
+import {componentKeys} from "@/helpers/queryKeys";
+import {useRefreshOnFocus} from "@/hooks/useRefreshOnFocus";
 import {PERMISSIONS} from "@/permissions/PermissionKeys";
 import {useRedirectIfDenied} from "@/permissions/PermissionContext";
 import {SafeAreaProvider, useSafeAreaInsets} from "react-native-safe-area-context";
-import {useFocusEffect} from "expo-router";
 import {useColors} from "@/hooks/useThemeColors";
 import {Spacing, BorderRadius, Typography, FontWeight} from "@/constants/sizes";
 import {FlashList} from "@shopify/flash-list";
@@ -20,43 +22,27 @@ export default function ComponentsScreen() {
     const {t} = useTranslation();
 
     useRedirectIfDenied(PERMISSIONS.COMPONENTS_VIEW);
-    const [data, setData] = useState({});
-    const [loading, setLoading] = useState(true);
-    const [refreshing, setRefreshing] = useState(false);
+    const queryKey = componentKeys.list({});
 
-    const getComponents = useCallback(() => {
-        setLoading(true);
-        return makeRequest({
+    const componentsQuery = useQuery({
+        queryKey,
+        queryFn: () => makeRequest({
             method: 'get',
             url: '/components',
             permissionKey: PERMISSIONS.COMPONENTS_VIEW,
-        })
-            .then(res => {
-                if (res?.rows) {
-                    setData({
-                        components: res.rows,
-                        count: res.total,
-                    });
-                }
-            })
-            .catch(err => {
-                console.log(err);
-            })
-            .finally(() => {
-                setLoading(false);
-            });
-    }, []);
+        }),
+    });
 
-    useFocusEffect(
-        useCallback(() => {
-            getComponents();
-        }, [getComponents])
-    );
+    useRefreshOnFocus(queryKey);
 
-    const onRefresh = useCallback(() => {
-        setRefreshing(true);
-        getComponents().finally(() => setRefreshing(false));
-    }, [getComponents]);
+    const [isManualRefreshing, setIsManualRefreshing] = useState(false);
+    const onManualRefresh = async () => {
+        setIsManualRefreshing(true);
+        await componentsQuery.refetch();
+        setIsManualRefreshing(false);
+    };
+
+    const components = componentsQuery.data?.rows ?? [];
 
     const Item = ({image, name, category, manufacturer, qty, remaining}) => {
         const available = remaining > 0;
@@ -92,14 +78,14 @@ export default function ComponentsScreen() {
         );
     };
 
-    if (!loading && (!data.components || data.components.length === 0)) {
+    if (!componentsQuery.isPending && components.length === 0) {
         return (
             <SafeAreaProvider style={styles.container}>
                 <EmptyState
                     icon="file-tray-outline"
                     title={t('mobile.no_results')}
                     message={t('mobile.no_results_message')}
-                    onRetry={getComponents}
+                    onRetry={() => componentsQuery.refetch()}
                 />
             </SafeAreaProvider>
         );
@@ -113,7 +99,7 @@ export default function ComponentsScreen() {
                     paddingBottom: 80,
                 }}
                 style={styles.flatlist}
-                data={data.components}
+                data={components}
                 estimatedItemSize={120}
                 renderItem={({item}) => <Item
                     image={item.image}
@@ -124,7 +110,7 @@ export default function ComponentsScreen() {
                     remaining={item.remaining}
                 />}
                 keyExtractor={item => item.id}
-                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+                refreshControl={<RefreshControl refreshing={isManualRefreshing} onRefresh={onManualRefresh} />}
             />
         </SafeAreaProvider>
     );

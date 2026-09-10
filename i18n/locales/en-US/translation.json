@@ -82,6 +82,9 @@
     "available": "Available",
     "not_available": "Not Available"
   },
+  "table": {
+    "load_error_title": "Could not load results"
+  },
   "mobile": {
     "ok": "OK",
     "na": "N/A",

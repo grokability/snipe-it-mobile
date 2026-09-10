@@ -1,8 +1,12 @@
-import React, {useCallback, useState, useMemo, useLayoutEffect} from 'react';
-import {ActivityIndicator, Image, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View} from 'react-native';
-import {router, useFocusEffect, useLocalSearchParams, useNavigation} from "expo-router";
+import React, {useState, useMemo, useLayoutEffect} from 'react';
+import {Image, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View} from 'react-native';
+import {router, useLocalSearchParams, useNavigation} from "expo-router";
+import {useQuery} from '@tanstack/react-query';
 import {Ionicons} from '@expo/vector-icons';
 import {makeRequest} from "@/helpers/axiosConfig";
+import {consumableKeys} from "@/helpers/queryKeys";
+import {useRefreshOnFocus} from "@/hooks/useRefreshOnFocus";
+import {ConsumableDetailSkeleton} from "@/components/ui/Skeleton";
 import {PERMISSIONS} from "@/permissions/PermissionKeys";
 import {PermissionGate} from "@/permissions/PermissionGate";
 import {decode} from "html-entities";
@@ -23,11 +27,22 @@ export default function ConsumableScreen() {
     const styles = useMemo(() => createStyles(colors), [colors]);
     const { t } = useTranslation();
 
-    const [data, setData] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [refreshing, setRefreshing] = useState(false);
     const { id } = useLocalSearchParams();
     const navigation = useNavigation();
+
+    const consumableQuery = useQuery({
+        queryKey: consumableKeys.detail(id),
+        queryFn: () => makeRequest({ url: `/consumables/${id}`, method: 'get', permissionKey: PERMISSIONS.CONSUMABLES_VIEW }),
+    });
+
+    useRefreshOnFocus(consumableKeys.detail(id));
+
+    const [isManualRefreshing, setIsManualRefreshing] = useState(false);
+    const onManualRefresh = async () => {
+        setIsManualRefreshing(true);
+        await consumableQuery.refetch();
+        setIsManualRefreshing(false);
+    };
 
     useLayoutEffect(() => {
         navigation.setOptions({
@@ -41,68 +56,42 @@ export default function ConsumableScreen() {
         });
     }, [navigation, id, colors.text]);
 
-    const getConsumable = useCallback(() => {
-        setLoading(true);
-        return makeRequest({ url: `/consumables/${id}`, method: 'get', permissionKey: PERMISSIONS.CONSUMABLES_VIEW })
-            .then(res => {
-                setData(res);
-            })
-            .catch(error => {
-                console.log(error);
-            })
-            .finally(() => {
-                setLoading(false);
-            });
-    }, [id]);
-
-    useFocusEffect(
-        useCallback(() => {
-            getConsumable();
-        }, [getConsumable])
-    );
-
-    const onRefresh = useCallback(() => {
-        setRefreshing(true);
-        getConsumable().finally(() => setRefreshing(false));
-    }, [getConsumable]);
-
     const na = t('mobile.na');
     const displayValue = (value) => value ? decode(String(value)) : na;
     const nestedName = (object) => object?.name ? decode(object.name) : na;
     const formatDate = (dateObject) => dateObject?.formatted ?? na;
     const formatBool = (value) => value ? t('mobile.yes') : t('mobile.no');
 
-    if (loading || !data) {
-        return (
-            <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color={colors.primary}/>
-            </View>
-        );
+    const consumable = consumableQuery.data;
+
+    if (!consumable) {
+        return <ConsumableDetailSkeleton />;
     }
 
-    const available = data.remaining > 0;
+    const available = consumable.remaining > 0;
 
     return (
         <SafeAreaProvider>
             <ScrollView
                 style={styles.container}
-                contentContainerStyle={[styles.contentContainer, {paddingTop: insets.top}]}
-                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+                contentInsetAdjustmentBehavior="automatic"
+                contentContainerStyle={[styles.contentContainer, {paddingTop: Platform.OS === 'android' ? insets.top + 56 : 0}]}
+                refreshControl={<RefreshControl refreshing={isManualRefreshing} onRefresh={onManualRefresh} />}
             >
                 {/* Image */}
                 <View style={styles.imageContainer}>
-                    {data.image
-                        ? <Image source={{uri: data.image}} style={styles.image}/>
+                    {consumable.image
+                        ? <Image source={{uri: consumable.image}} style={styles.image}/>
                         : <Ionicons name="cube-outline" size={80} color={colors.textSecondary} />
                     }
                 </View>
 
                 {/* Header */}
                 <View style={styles.headerContainer}>
-                    <Text style={styles.title}>{displayValue(data.name)}</Text>
+                    <Text style={styles.title}>{displayValue(consumable.name)}</Text>
                     <View style={[styles.qtyBadge, available ? styles.qtyBadgeAvailable : styles.qtyBadgeEmpty]}>
                         <Text style={[styles.qtyBadgeText, available ? styles.qtyBadgeTextAvailable : styles.qtyBadgeTextEmpty]}>
-                            {data.remaining}/{data.qty}
+                            {consumable.remaining}/{consumable.qty}
                         </Text>
                     </View>
                     <Text style={[styles.availText, available ? styles.availTextGreen : styles.availTextRed]}>
@@ -112,7 +101,7 @@ export default function ConsumableScreen() {
 
                 {/* Checkout Action */}
                 <PermissionGate permission={PERMISSIONS.CONSUMABLES_CHECKOUT}>
-                    {data.user_can_checkout && (
+                    {consumable.user_can_checkout && (
                         <Pressable
                             style={({pressed}) => [styles.checkoutButton, pressed && styles.buttonPressed]}
                             onPress={() => router.push(`/(tabs)/(consumables)/checkout/${id}`)}
@@ -124,33 +113,33 @@ export default function ConsumableScreen() {
 
                 {/* Details */}
                 <Section title={t('mobile.section_details')}>
-                    <DetailRow label={t('general.category')} value={nestedName(data.category)}/>
-                    <DetailRow label={t('general.manufacturer')} value={nestedName(data.manufacturer)}/>
-                    <DetailRow label={t('general.supplier')} value={nestedName(data.supplier)}/>
-                    <DetailRow label={t('mobile.item_number')} value={displayValue(data.item_no)}/>
-                    <DetailRow label={t('general.model_number')} value={displayValue(data.model_number)}/>
-                    <DetailRow label={t('general.order_number')} value={displayValue(data.order_number)}/>
-                    <DetailRow label={t('mobile.min_qty_alert')} value={displayValue(data.min_amt)}/>
-                    <DetailRow label={t('general.requestable')} value={formatBool(data.requestable)}/>
+                    <DetailRow label={t('general.category')} value={nestedName(consumable.category)}/>
+                    <DetailRow label={t('general.manufacturer')} value={nestedName(consumable.manufacturer)}/>
+                    <DetailRow label={t('general.supplier')} value={nestedName(consumable.supplier)}/>
+                    <DetailRow label={t('mobile.item_number')} value={displayValue(consumable.item_no)}/>
+                    <DetailRow label={t('general.model_number')} value={displayValue(consumable.model_number)}/>
+                    <DetailRow label={t('general.order_number')} value={displayValue(consumable.order_number)}/>
+                    <DetailRow label={t('mobile.min_qty_alert')} value={displayValue(consumable.min_amt)}/>
+                    <DetailRow label={t('general.requestable')} value={formatBool(consumable.requestable)}/>
                 </Section>
 
                 {/* Location */}
                 <Section title={t('mobile.section_location')}>
-                    <DetailRow label={t('general.location')} value={nestedName(data.location)}/>
-                    <DetailRow label={t('general.company')} value={nestedName(data.company)}/>
+                    <DetailRow label={t('general.location')} value={nestedName(consumable.location)}/>
+                    <DetailRow label={t('general.company')} value={nestedName(consumable.company)}/>
                 </Section>
 
                 {/* Purchase */}
                 <Section title={t('mobile.section_purchase')}>
-                    <DetailRow label={t('general.purchase_date')} value={formatDate(data.purchase_date)}/>
-                    <DetailRow label={t('general.purchase_cost')} value={displayValue(data.purchase_cost)}/>
-                    <DetailRow label={t('general.total_cost')} value={displayValue(data.total_cost)}/>
+                    <DetailRow label={t('general.purchase_date')} value={formatDate(consumable.purchase_date)}/>
+                    <DetailRow label={t('general.purchase_cost')} value={displayValue(consumable.purchase_cost)}/>
+                    <DetailRow label={t('general.total_cost')} value={displayValue(consumable.total_cost)}/>
                 </Section>
 
                 {/* Notes */}
-                {data.notes && (
+                {consumable.notes && (
                     <Section title={t('mobile.section_notes')}>
-                        <Text selectable style={styles.notesText}>{data.notes}</Text>
+                        <Text selectable style={styles.notesText}>{consumable.notes}</Text>
                     </Section>
                 )}
             </ScrollView>
@@ -159,12 +148,6 @@ export default function ConsumableScreen() {
 }
 
 const createStyles = (colors) => StyleSheet.create({
-    loadingContainer: {
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-        backgroundColor: colors.background,
-    },
     container: {
         flex: 1,
         backgroundColor: colors.background,
