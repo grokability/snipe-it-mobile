@@ -17,6 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
 import EmptyState from "@/components/ui/EmptyState";
 import FilterChip from "@/components/ui/FilterChip";
 import AssetFilterBottomSheet from "@/components/bottomSheets/AssetFilterBottomSheet";
+import {AssetListSkeleton} from "@/components/ui/Skeleton";
 import {usePermission, useRedirectIfDenied} from "@/permissions/PermissionContext";
 import {PERMISSIONS} from "@/permissions/PermissionKeys";
 
@@ -224,7 +225,11 @@ export default function AssetsScreen() {
         );
     };
 
-    if (!assetsQuery.isPending && data.length === 0 && !debouncedSearch && activeFilterCount === 0) {
+    if (assetsQuery.isPending) {
+        return <AssetListSkeleton />;
+    }
+
+    if (data.length === 0 && !debouncedSearch && activeFilterCount === 0) {
         return (
             <SafeAreaProvider style={styles.container}>
                 <EmptyState
@@ -237,7 +242,7 @@ export default function AssetsScreen() {
         );
     }
 
-    if (!assetsQuery.isPending && data.length === 0 && debouncedSearch) {
+    if (data.length === 0 && debouncedSearch) {
         return (
             <SafeAreaProvider style={styles.container}>
                 <EmptyState
@@ -258,7 +263,7 @@ export default function AssetsScreen() {
         );
     }
 
-    if (!assetsQuery.isPending && data.length === 0 && activeFilterCount > 0) {
+    if (data.length === 0 && activeFilterCount > 0) {
         return (
             <SafeAreaProvider style={styles.container}>
                 <EmptyState
