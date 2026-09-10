@@ -1,11 +1,14 @@
 import {View, Text, StyleSheet, RefreshControl, Pressable, Platform} from 'react-native';
-import {useContext, useState, useCallback, useMemo} from "react";
+import {useContext, useState, useMemo} from "react";
+import {useQuery} from '@tanstack/react-query';
 import {AuthContext} from "@/context/AuthProvider";
 import {makeRequest} from "@/helpers/axiosConfig";
+import {consumableKeys} from "@/helpers/queryKeys";
+import {useRefreshOnFocus} from "@/hooks/useRefreshOnFocus";
 import {PERMISSIONS} from "@/permissions/PermissionKeys";
 import {useRedirectIfDenied} from "@/permissions/PermissionContext";
 import {SafeAreaProvider, useSafeAreaInsets} from "react-native-safe-area-context";
-import {router, useFocusEffect} from "expo-router";
+import {router} from "expo-router";
 import {useColors} from "@/hooks/useThemeColors";
 import {Spacing, BorderRadius, Typography, FontWeight} from "@/constants/sizes";
 import {FlashList} from "@shopify/flash-list";
@@ -23,46 +26,27 @@ export default function ConsumablesScreen() {
 
     const { user } = useContext(AuthContext);
     useRedirectIfDenied(PERMISSIONS.CONSUMABLES_VIEW);
-    const [data, setData] = useState({});
-    const [loading, setLoading] = useState(true);
-    const [refreshing, setRefreshing] = useState(false);
+    const queryKey = consumableKeys.list({});
 
-    const getConsumables = useCallback(() => {
-        setLoading(true);
-        return makeRequest({
+    const consumablesQuery = useQuery({
+        queryKey,
+        queryFn: () => makeRequest({
             method: 'get',
             url: '/consumables',
             permissionKey: PERMISSIONS.CONSUMABLES_VIEW,
-        })
-            .then(res => {
-                if (res?.rows) {
-                    setData({
-                        consumables: res.rows,
-                        count: res.total
-                    });
-                }
-            })
-            .catch(err => {
-                console.log(err);
-            })
-            .finally(() => {
-                setLoading(false);
-            });
-    }, []);
+        }),
+    });
 
-    useFocusEffect(
-        useCallback(() => {
-            getConsumables();
-        }, [getConsumables])
-    );
+    useRefreshOnFocus(queryKey);
 
-    const onRefresh = useCallback(() => {
-        setRefreshing(true);
-        getConsumables()
-            .finally(() => {
-                setRefreshing(false);
-            });
-    }, [getConsumables]);
+    const [isManualRefreshing, setIsManualRefreshing] = useState(false);
+    const onManualRefresh = async () => {
+        setIsManualRefreshing(true);
+        await consumablesQuery.refetch();
+        setIsManualRefreshing(false);
+    };
+
+    const consumables = consumablesQuery.data?.rows ?? [];
 
     const Item = ({id, image, name, category, manufacturer, qty, remaining}) => {
         const available = remaining > 0;
@@ -104,14 +88,14 @@ export default function ConsumablesScreen() {
         );
     };
 
-    if (!loading && (!data.consumables || data.consumables.length === 0)) {
+    if (!consumablesQuery.isPending && consumables.length === 0) {
         return (
             <SafeAreaProvider style={styles.container}>
                 <EmptyState
                     icon="file-tray-outline"
                     title={t('mobile.no_results')}
                     message={t('mobile.no_results_message')}
-                    onRetry={getConsumables}
+                    onRetry={() => consumablesQuery.refetch()}
                 />
             </SafeAreaProvider>
         );
@@ -125,7 +109,7 @@ export default function ConsumablesScreen() {
                     paddingBottom: 80
                 }}
                 style={styles.flatlist}
-                data={data.consumables}
+                data={consumables}
                 estimatedItemSize={120}
                 renderItem={({item}) => <Item
                     id={item.id}
@@ -137,7 +121,7 @@ export default function ConsumablesScreen() {
                     remaining={item.remaining}
                 />}
                 keyExtractor={item => item.id}
-                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+                refreshControl={<RefreshControl refreshing={isManualRefreshing} onRefresh={onManualRefresh} />}
             />
         </SafeAreaProvider>
     );

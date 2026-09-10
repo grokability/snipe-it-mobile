@@ -1,4 +1,4 @@
-import React, {useCallback, useMemo, useRef, useState} from 'react';
+import React, {useMemo, useRef, useState} from 'react';
 import {
     ActivityIndicator,
     KeyboardAvoidingView,
@@ -9,8 +9,10 @@ import {
     Text,
     View,
 } from 'react-native';
-import {router, useFocusEffect, useLocalSearchParams} from 'expo-router';
+import {router, useLocalSearchParams} from 'expo-router';
+import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {makeRequest} from '@/helpers/axiosConfig';
+import {consumableKeys} from '@/helpers/queryKeys';
 import {PermissionDeniedError} from '@/helpers/errors';
 import {PERMISSIONS} from '@/permissions/PermissionKeys';
 import {PermissionGate} from '@/permissions/PermissionGate';
@@ -32,9 +34,7 @@ export default function ConsumableCheckoutScreen() {
     const {t} = useTranslation();
     const {id} = useLocalSearchParams();
 
-    const [consumable, setConsumable] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [submitting, setSubmitting] = useState(false);
+    const queryClient = useQueryClient();
 
     const [selectedUser, setSelectedUser] = useState(null);
     const [qty, setQty] = useState('1');
@@ -42,17 +42,56 @@ export default function ConsumableCheckoutScreen() {
 
     const userRef = useRef(null);
 
-    const fetchConsumable = useCallback(() => {
-        setLoading(true);
-        return makeRequest({url: `/consumables/${id}`, method: 'get', permissionKey: PERMISSIONS.CONSUMABLES_VIEW})
-            .then(setConsumable)
-            .catch(console.error)
-            .finally(() => setLoading(false));
-    }, [id]);
+    const consumableQuery = useQuery({
+        queryKey: consumableKeys.detail(id),
+        queryFn: () => makeRequest({url: `/consumables/${id}`, method: 'get', permissionKey: PERMISSIONS.CONSUMABLES_VIEW}),
+    });
 
-    useFocusEffect(useCallback(() => {
-        fetchConsumable();
-    }, [fetchConsumable]));
+    const consumable = consumableQuery.data;
+
+    const checkoutMutation = useMutation({
+        mutationFn: (data) => makeRequest({
+            url: `/consumables/${id}/checkout`,
+            method: 'POST',
+            data,
+            permissionKey: PERMISSIONS.CONSUMABLES_CHECKOUT,
+        }),
+        onSuccess: (res) => {
+            if (res.status === 'error') {
+                const errMsg = typeof res.messages === 'string'
+                    ? res.messages
+                    : res.messages
+                        ? Object.values(res.messages).flat().join('\n')
+                        : t('mobile.consumable_checkout_failed');
+                Burnt.alert({
+                    title: t('general.error'),
+                    preset: 'error',
+                    message: errMsg,
+                    duration: 4,
+                });
+                return;
+            }
+            Burnt.alert({
+                title: t('general.notification_success'),
+                preset: 'heart',
+                message: t('mobile.consumable_checkout_success'),
+                duration: 2,
+            });
+            queryClient.invalidateQueries({ queryKey: consumableKeys.detail(id) }).catch(() => {});
+            queryClient.invalidateQueries({ queryKey: consumableKeys.lists() }).catch(() => {});
+            router.dismissTo(`/(tabs)/(consumables)/${id}`);
+        },
+        onError: (err) => {
+            if (err instanceof PermissionDeniedError) return;
+            console.error(err);
+            Burnt.alert({
+                title: t('general.error'),
+                preset: 'error',
+                message: t('mobile.consumable_checkout_failed'),
+                duration: 4,
+            });
+        },
+    });
 
     const handleSubmit = () => {
         if (!selectedUser) {
@@ -77,55 +116,14 @@ export default function ConsumableCheckoutScreen() {
             return;
         }
 
-        setSubmitting(true);
-
-        makeRequest({
-            url: `/consumables/${id}/checkout`,
-            method: 'POST',
-            permissionKey: PERMISSIONS.CONSUMABLES_CHECKOUT,
-            data: {
-                assigned_to: selectedUser.id,
-                checkout_qty: parsedQty,
-                note: note || null,
-            },
-        })
-            .then((res) => {
-                if (res.status === 'error') {
-                    const errMsg = typeof res.messages === 'string'
-                        ? res.messages
-                        : res.messages
-                            ? Object.values(res.messages).flat().join('\n')
-                            : t('mobile.consumable_checkout_failed');
-                    Burnt.alert({
-                        title: t('general.error'),
-                        preset: 'error',
-                        message: errMsg,
-                        duration: 4,
-                    });
-                    return;
-                }
-                Burnt.alert({
-                    title: t('general.notification_success'),
-                    preset: 'heart',
-                    message: t('mobile.consumable_checkout_success'),
-                    duration: 2,
-                });
-                router.replace(`/(tabs)/(consumables)/${id}`);
-            })
-            .catch((err) => {
-                if (err instanceof PermissionDeniedError) return;
-                console.error(err);
-                Burnt.alert({
-                    title: t('general.error'),
-                    preset: 'error',
-                    message: t('mobile.consumable_checkout_failed'),
-                    duration: 4,
-                });
-            })
-            .finally(() => setSubmitting(false));
+        checkoutMutation.mutate({
+            assigned_to: selectedUser.id,
+            checkout_qty: parsedQty,
+            note: note || null,
+        });
     };
 
-    if (loading || !consumable) {
+    if (!consumable) {
         return (
             <View style={styles.loadingContainer}>
                 <ActivityIndicator size="large" color={colors.primary} />
@@ -144,7 +142,8 @@ export default function ConsumableCheckoutScreen() {
             >
             <ScrollView
                 style={styles.container}
-                contentContainerStyle={[styles.contentContainer, {paddingTop: insets.top}]}
+                contentInsetAdjustmentBehavior="automatic"
+                contentContainerStyle={[styles.contentContainer, {paddingTop: Platform.OS === 'android' ? insets.top + 56 : 0}]}
                 keyboardShouldPersistTaps="handled"
             >
                 {/* Consumable info header */}
@@ -193,14 +192,14 @@ export default function ConsumableCheckoutScreen() {
                 <PermissionGate permission={PERMISSIONS.CONSUMABLES_CHECKOUT}>
                     <Pressable
                         onPress={handleSubmit}
-                        disabled={submitting}
+                        disabled={checkoutMutation.isPending}
                         style={({pressed}) => [
                             styles.submitButton,
                             pressed && styles.submitButtonPressed,
-                            submitting && styles.submitButtonDisabled,
+                            checkoutMutation.isPending && styles.submitButtonDisabled,
                         ]}
                     >
-                        {submitting ? (
+                        {checkoutMutation.isPending ? (
                             <ActivityIndicator color="#fff" />
                         ) : (
                             <Text style={styles.submitButtonText}>{t('general.checkout')}</Text>

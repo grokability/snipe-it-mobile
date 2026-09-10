@@ -1,8 +1,12 @@
-import React, {useCallback, useState, useMemo, useLayoutEffect} from 'react';
-import {ActivityIndicator, Image, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View} from 'react-native';
-import {router, useFocusEffect, useLocalSearchParams, useNavigation} from "expo-router";
+import React, {useState, useMemo, useLayoutEffect} from 'react';
+import {Image, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View} from 'react-native';
+import {router, useLocalSearchParams, useNavigation} from "expo-router";
+import {useQuery} from '@tanstack/react-query';
 import {Ionicons} from '@expo/vector-icons';
 import {makeRequest} from "@/helpers/axiosConfig";
+import {accessoryKeys} from "@/helpers/queryKeys";
+import {useRefreshOnFocus} from "@/hooks/useRefreshOnFocus";
+import {AccessoryDetailSkeleton} from "@/components/ui/Skeleton";
 import {decode} from "html-entities";
 import {SafeAreaProvider, useSafeAreaInsets} from "react-native-safe-area-context";
 import {useColors} from "@/hooks/useThemeColors";
@@ -28,11 +32,28 @@ export default function AccessoryScreen() {
 
     const { denied: editDenied } = usePermission(PERMISSIONS.ACCESSORIES_EDIT);
 
-    const [data, setData] = useState({});
-    const [loading, setLoading] = useState(true);
-    const [refreshing, setRefreshing] = useState(false);
     const { id } = useLocalSearchParams();
     const navigation = useNavigation();
+
+    const accessoryQuery = useQuery({
+        queryKey: accessoryKeys.detail(id),
+        queryFn: () => makeRequest({ url: `/accessories/${id}`, method: 'get', permissionKey: PERMISSIONS.ACCESSORIES_VIEW }),
+    });
+
+    const checkedOutQuery = useQuery({
+        queryKey: accessoryKeys.checkedOut(id),
+        queryFn: () => makeRequest({ url: `/accessories/${id}/checkedout`, method: 'get', permissionKey: PERMISSIONS.ACCESSORIES_VIEW }),
+    });
+
+    useRefreshOnFocus(accessoryKeys.detail(id));
+    useRefreshOnFocus(accessoryKeys.checkedOut(id));
+
+    const [isManualRefreshing, setIsManualRefreshing] = useState(false);
+    const onManualRefresh = async () => {
+        setIsManualRefreshing(true);
+        await Promise.all([accessoryQuery.refetch(), checkedOutQuery.refetch()]);
+        setIsManualRefreshing(false);
+    };
 
     useLayoutEffect(() => {
         navigation.setOptions({
@@ -48,61 +69,28 @@ export default function AccessoryScreen() {
         });
     }, [navigation, id, colors.text, editDenied]);
 
-    const getAccessory = useCallback(() => {
-        setLoading(true);
-        return Promise.all([
-            makeRequest({ url: `/accessories/${id}`, method: 'get', permissionKey: PERMISSIONS.ACCESSORIES_VIEW }),
-            makeRequest({ url: `/accessories/${id}/checkedout`, method: 'get', permissionKey: PERMISSIONS.ACCESSORIES_VIEW }),
-        ])
-            .then(([accessoryRes, checkedOutRes]) => {
-                setData({
-                    accessory: accessoryRes,
-                    checkedOut: checkedOutRes?.rows ?? [],
-                });
-            })
-            .catch(error => {
-                console.log(error);
-            })
-            .finally(() => {
-                setLoading(false);
-            });
-    }, [id]);
-
-    useFocusEffect(
-        useCallback(() => {
-            getAccessory();
-        }, [getAccessory])
-    );
-
-    const onRefresh = useCallback(() => {
-        setRefreshing(true);
-        getAccessory().finally(() => setRefreshing(false));
-    }, [getAccessory]);
-
     const na = t('mobile.na');
     const displayValue = (value) => value ? decode(String(value)) : na;
     const nestedName = (object) => object?.name ? decode(object.name) : na;
     const formatDate = (dateObject) => dateObject?.formatted ?? na;
     const formatBool = (value) => value ? t('mobile.yes') : t('mobile.no');
 
-    if (loading || !data.accessory) {
-        return (
-            <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color={colors.primary}/>
-            </View>
-        );
+    const item = accessoryQuery.data;
+
+    if (!item) {
+        return <AccessoryDetailSkeleton />;
     }
 
-    const item = data.accessory;
-    const checkedOut = data.checkedOut ?? [];
+    const checkedOut = checkedOutQuery.data?.rows ?? [];
     const available = item.remaining_qty > 0;
 
     return (
         <SafeAreaProvider>
             <ScrollView
                 style={styles.container}
-                contentContainerStyle={[styles.contentContainer, {paddingTop: insets.top}]}
-                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+                contentInsetAdjustmentBehavior="automatic"
+                contentContainerStyle={[styles.contentContainer, {paddingTop: Platform.OS === 'android' ? insets.top + 56 : 0}]}
+                refreshControl={<RefreshControl refreshing={isManualRefreshing} onRefresh={onManualRefresh} />}
             >
                 {/* Image */}
                 {item.image && (
@@ -205,12 +193,6 @@ export default function AccessoryScreen() {
 }
 
 const createStyles = (colors) => StyleSheet.create({
-    loadingContainer: {
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-        backgroundColor: colors.background,
-    },
     container: {
         flex: 1,
         backgroundColor: colors.background,
