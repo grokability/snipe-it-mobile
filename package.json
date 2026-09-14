@@ -15,6 +15,7 @@
     "@react-native-async-storage/async-storage": "2.2.0",
     "@react-native-community/datetimepicker": "9.1.0",
     "@react-native-segmented-control/segmented-control": "^2.5.7",
+    "@sentry/react-native": "^8.26.0",
     "@shopify/flash-list": "2.0.2",
     "@tanstack/react-query": "^5.101.4",
     "axios": "1.12.0",
@@ -63,6 +64,13 @@
   "devDependencies": {
     "@babel/core": "^7.29.0",
     "expo-mcp": "~0.2.1"
+  },
+  "expo": {
+    "install": {
+      "exclude": [
+        "@sentry/react-native"
+      ]
+    }
   },
   "private": true
 }
