@@ -3,7 +3,6 @@ import {makeRequest} from "../helpers/axiosConfig";
 import * as SecureStore from 'expo-secure-store';
 import { PermissionManager } from '../permissions/PermissionManager';
 import { deviceName } from "expo-device";
-import {useRouter} from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {makeRedirectUri} from "expo-auth-session";
 import {captureLoginException, addLoginBreadcrumb, axiosFailureCode} from "@/helpers/loginTelemetry";
@@ -11,7 +10,6 @@ import {captureLoginException, addLoginBreadcrumb, axiosFailureCode} from "@/hel
 export const AuthContext = createContext();
 
 export const AuthProvider = ({children}) => {
-    const router = useRouter();
     const [user, setUser] = useState(null);
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
@@ -186,9 +184,11 @@ export const AuthProvider = ({children}) => {
                        setUser(null);
                        setIsAuthenticated(false);
                    })
+                   // No navigation here: the root layout routes off isAuthenticated/isLoading,
+                   // so navigating unconditionally sent failed logins to /home and let the
+                   // layout bounce them straight back to /login.
                    .finally(() => {
                        setIsLoading(false);
-                       router.replace('/home');
                    });
                 }
             }}
