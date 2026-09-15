@@ -57,7 +57,7 @@
         "groups": ["Initial Group"]
       },
       "android": {
-        "track": "alpha"
+        "track": "beta"
       }
     },
     "internal-testing": {

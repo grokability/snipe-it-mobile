@@ -68,17 +68,20 @@ jobs:
             submit_beta_review:true
 
   distribute_android_reuse:
-    name: Promote Android to Alpha (Reuse)
+    name: Promote Android to Open Testing (Reuse)
     needs: [get_build_android]
     if: ${{ needs.get_build_android.outputs.build_id }}
     runs_on: linux-medium
     steps:
-      - name: Promote existing build from internal to alpha
+      # Play's track ids do not match the Play Console labels: `internal` is Internal testing,
+      # `alpha` is Closed testing and `beta` is Open testing. This branch distributes to Open
+      # testing, so the target is `beta` — `alpha` would leave Open testing without builds.
+      - name: Promote existing build from internal to open testing
         run: |
           fastlane supply \
             --package_name com.grokability.snipeitmobile \
             --track internal \
-            --track_promote_to alpha \
+            --track_promote_to beta \
             --json_key "$GOOGLE_SERVICE_ACCOUNT_JSON" \
             --changes_not_sent_for_review false \
             --skip_upload_apk true \
