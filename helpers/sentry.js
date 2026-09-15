@@ -25,7 +25,11 @@ export function initSentry() {
 
     // Which JS bundle produced an event. Source maps for OTA updates are matched by debug
     // ID rather than by release, so these tags are how an event gets tied back to an update.
-    Sentry.setTag('expo-update-id', Updates.updateId);
+    //
+    // updateId and runtimeVersion are both nullable — there is no update id when running the
+    // embedded bundle or a Metro dev build. A null reaches Sentry as the literal <invalid>
+    // rather than being dropped, so it is coerced to a value that can actually be filtered on.
+    Sentry.setTag('expo-update-id', Updates.updateId ?? 'none');
     Sentry.setTag('expo-is-embedded-update', String(Updates.isEmbeddedLaunch));
-    Sentry.setTag('expo-runtime-version', Updates.runtimeVersion);
+    Sentry.setTag('expo-runtime-version', Updates.runtimeVersion ?? 'none');
 }
