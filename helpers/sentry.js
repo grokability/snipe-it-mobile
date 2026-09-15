@@ -1,5 +1,6 @@
 import * as Sentry from '@sentry/react-native';
 import * as Updates from 'expo-updates';
+import { scrubEvent, scrubBreadcrumb } from '@/helpers/sentryScrub';
 
 // The DSN is embedded in the client bundle by design and is not a secret. The upload
 // auth token is, and it never appears here — it lives in EAS/GitHub secrets.
@@ -18,6 +19,8 @@ export function initSentry() {
         // Tracing and session replay bill as separate quota dimensions and neither helps
         // with the login failures this was added for. Enable them deliberately, not by default.
         tracesSampleRate: 0,
+        beforeSend: scrubEvent,
+        beforeBreadcrumb: scrubBreadcrumb,
     });
 
     // Which JS bundle produced an event. Source maps for OTA updates are matched by debug
