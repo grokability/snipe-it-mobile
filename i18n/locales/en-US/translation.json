@@ -268,6 +268,13 @@
     "share_error_report_hide_payload": "Hide what's sent",
     "share_error_report_share": "Share",
     "share_error_report_always": "Always share",
-    "share_error_report_not_now": "Not now"
+    "share_error_report_not_now": "Not now",
+    "error_reporting": "Error Reporting",
+    "error_reporting_always": "Always",
+    "error_reporting_ask": "Ask",
+    "error_reporting_never": "Never",
+    "error_reporting_always_description": "Errors are sent to the developers automatically. They never include your instance address, your login details, or anything that identifies you.",
+    "error_reporting_ask_description": "You are asked before each error is sent, and can see exactly what it contains first. Crashes that close the app are sent without asking, because the app is no longer running to ask you. Choose Never to stop those too.",
+    "error_reporting_never_description": "Nothing is sent, including crashes that close the app."
   }
 }
