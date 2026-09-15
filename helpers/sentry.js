@@ -7,6 +7,7 @@ import {
     setErrorReportingConsent,
 } from '@/helpers/errorReportingConsent';
 import { queueErrorReport, discardPendingReports } from '@/helpers/pendingErrorReports';
+import { recordErrorReportReference, clearErrorReportReference } from '@/helpers/errorReportReference';
 
 // The DSN is embedded in the client bundle by design and is not a secret. The upload
 // auth token is, and it never appears here — it lives in EAS/GitHub secrets.
@@ -30,6 +31,7 @@ function gateEvent(event, hint) {
 
     switch (getErrorReportingConsent()) {
         case ErrorReportingConsent.ALWAYS:
+            recordErrorReportReference(scrubbed);
             return scrubbed;
         case ErrorReportingConsent.ASK:
             queueErrorReport(scrubbed, hint);
@@ -82,6 +84,7 @@ export function initSentry() {
 // a second time and gateEvent would queue it again instead of sending it.
 export function sendErrorReport({ event, hint }) {
     Sentry.getClient()?.sendEvent(event, hint);
+    recordErrorReportReference(event);
 }
 
 export async function applyErrorReportingConsent(consent) {
@@ -89,6 +92,7 @@ export async function applyErrorReportingConsent(consent) {
 
     if (consent === ErrorReportingConsent.NEVER) {
         discardPendingReports();
+        await clearErrorReportReference();
         if (isRunning) {
             isRunning = false;
             await Sentry.close();
