@@ -38,6 +38,22 @@ export function scrubEvent(event) {
     }
     if (event.extra) event.extra = redact(event.extra);
     if (event.contexts) event.contexts = redact(event.contexts);
+
+    if (typeof event.message === 'string') event.message = stripHost(event.message);
+    if (typeof event.logentry?.message === 'string') {
+        event.logentry.message = stripHost(event.logentry.message);
+    }
+
+    for (const exception of event.exception?.values ?? []) {
+        if (typeof exception.value === 'string') exception.value = stripHost(exception.value);
+        // A Metro dev bundle is served over the LAN, so frame filenames carry an address.
+        for (const frame of exception.stacktrace?.frames ?? []) {
+            if (typeof frame.filename === 'string') frame.filename = stripHost(frame.filename);
+        }
+    }
+
+    for (const breadcrumb of event.breadcrumbs ?? []) scrubBreadcrumb(breadcrumb);
+
     return event;
 }
 
