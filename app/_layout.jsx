@@ -13,6 +13,7 @@ import {queryClient} from "@/helpers/queryClient";
 import i18n from "@/i18n"; //this says unused but it's just providing for the entire app
 import * as Sentry from "@sentry/react-native";
 import {initSentry} from "@/helpers/sentry";
+import ErrorReportConsentPrompt from "@/components/errorReporting/ErrorReportConsentPrompt";
 
 // Runs at module scope so the global error handler is installed before any provider mounts.
 initSentry();
@@ -44,6 +45,7 @@ function RootLayout() {
                         <SafeAreaProvider>
                             <GestureHandlerRootView style={{ flex: 1 }}>
                                     <AuthLayoutContent/>
+                                    <ErrorReportConsentPrompt/>
                             </GestureHandlerRootView>
                         </SafeAreaProvider>
                     </AuditSessionProvider>

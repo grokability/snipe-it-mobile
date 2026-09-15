@@ -261,6 +261,13 @@
     "help_view_discussions": "View All Discussions",
     "help_view_issues": "View Open Issues",
     "audit_session_count_one": "{{count}} audited this session",
-    "audit_session_count_other": "{{count}} audited this session"
+    "audit_session_count_other": "{{count}} audited this session",
+    "share_error_report_title": "Share this error report?",
+    "share_error_report_message": "Sending this helps us find and fix problems like this one. It does not include your instance address, your login details, or anything that identifies you.",
+    "share_error_report_show_payload": "See exactly what's sent",
+    "share_error_report_hide_payload": "Hide what's sent",
+    "share_error_report_share": "Share",
+    "share_error_report_always": "Always share",
+    "share_error_report_not_now": "Not now"
   }
 }
