@@ -70,6 +70,18 @@ body:
     validations:
       required: true
   - type: input
+    id: error-report-reference
+    attributes:
+      label: Error Report Reference
+      description: |
+        If the app showed you an error and you chose to share the report, it gave you a reference. Paste it here and we can pull up that exact error.
+
+        The app fills this in for you if you tap "Open a discussion" from the prompt, or you can copy it from Help & Support. Leave it blank if you do not have one.
+      placeholder: |
+        a1b2c3d4e5f64a7b8c9d0e1f2a3b4c5d
+    validations:
+      required: false
+  - type: input
     attributes:
       label: OS/Platform/Hardware Version Information
       description: |

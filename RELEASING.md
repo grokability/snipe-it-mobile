@@ -12,6 +12,19 @@ feature/* → develop → testflight → main
 | `testflight` | beta | EAS workflow auto-builds + OTA on push; promotes existing build if fingerprint matches |
 | `main` | production | EAS workflow (currently disabled — see below); GitHub Actions auto-tags |
 
+## Store Destinations
+
+Google Play's API track ids do not match the labels in the Play Console. `beta` is Open
+testing, not the closed track — a profile aimed at `alpha` leaves Open testing without builds.
+
+| Branch | iOS | Play track id | Play Console label |
+|--------|-----|---------------|--------------------|
+| `develop` | TestFlight (no group) | `internal` | Internal testing |
+| `testflight` | TestFlight → Initial Group | `beta` | Open testing |
+| `main` | App Store | `production` | Production |
+
+Closed testing (`alpha`) is deliberately unused.
+
 ## Version Numbers
 
 - **`expo.version`** in `app.json` — semantic version shown in the App Store and Play Store. Bump this manually before merging to `main`.

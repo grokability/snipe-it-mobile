@@ -5,6 +5,7 @@
   },
   "build": {
     "development": {
+      "environment": "development",
       "developmentClient": true,
       "distribution": "internal",
       "ios": {
@@ -12,6 +13,7 @@
       }
     },
     "preview": {
+      "environment": "preview",
       "distribution": "internal"
     },
     "development-simulator": {
@@ -23,15 +25,18 @@
       "environment": "development"
     },
     "production": {
+      "environment": "production",
       "channel": "production",
       "autoIncrement": true
     },
     "beta": {
+      "environment": "production",
       "channel": "beta",
       "distribution": "store",
       "autoIncrement": true
     },
     "internal-testing": {
+      "environment": "production",
       "channel": "internal-testing",
       "distribution": "store",
       "autoIncrement": true
@@ -52,7 +57,7 @@
         "groups": ["Initial Group"]
       },
       "android": {
-        "track": "alpha"
+        "track": "beta"
       }
     },
     "internal-testing": {

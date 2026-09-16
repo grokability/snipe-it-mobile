@@ -68,17 +68,20 @@ jobs:
             submit_beta_review:true
 
   distribute_android_reuse:
-    name: Promote Android to Alpha (Reuse)
+    name: Promote Android to Open Testing (Reuse)
     needs: [get_build_android]
     if: ${{ needs.get_build_android.outputs.build_id }}
     runs_on: linux-medium
     steps:
-      - name: Promote existing build from internal to alpha
+      # Play's track ids do not match the Play Console labels: `internal` is Internal testing,
+      # `alpha` is Closed testing and `beta` is Open testing. This branch distributes to Open
+      # testing, so the target is `beta` — `alpha` would leave Open testing without builds.
+      - name: Promote existing build from internal to open testing
         run: |
           fastlane supply \
             --package_name com.grokability.snipeitmobile \
             --track internal \
-            --track_promote_to alpha \
+            --track_promote_to beta \
             --json_key "$GOOGLE_SERVICE_ACCOUNT_JSON" \
             --changes_not_sent_for_review false \
             --skip_upload_apk true \
@@ -107,6 +110,7 @@ jobs:
   publish_ota:
     name: Publish OTA Update (beta)
     needs: [get_build_ios, get_build_android]
+    environment: production
     steps:
       - uses: eas/checkout
       - uses: eas/use_npm_token
@@ -117,6 +121,16 @@ jobs:
           SHA=$(git rev-parse --short HEAD)
           MSG="v$VERSION ($SHA)"
           EXPO_PUBLIC_UPDATE_MESSAGE="$MSG" npx eas-cli@latest update --branch ${{ github.ref_name }} --message "$MSG" --environment production --non-interactive
+      - name: Upload source maps to Sentry
+        # eas update exports into ./dist and always passes --dump-sourcemap, so the maps are
+        # already sitting there. Native builds upload via the config plugin; OTA updates do
+        # not, and most releases here are OTA — without this their stack traces stay minified.
+        # Sentry matches maps to events by debug ID rather than by release, so a failure here
+        # leaves the update live and re-runnable rather than needing a republish.
+        # The binary ships with @sentry/react-native, so it is version-matched to the SDK.
+        # The scoped form in Sentry's docs is not linked into node_modules here and would
+        # be fetched from npm instead.
+        run: npx sentry-expo-upload-sourcemaps dist
 
   notify_native_success:
     name: ✅ Notify — Native Build Distributed
