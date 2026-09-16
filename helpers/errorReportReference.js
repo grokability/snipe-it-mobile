@@ -9,9 +9,13 @@ import * as SecureStore from 'expo-secure-store';
 
 const STORAGE_KEY = 'last_error_report_reference';
 
+// Returns the reference it recorded, or null when there was nothing to record or the write
+// failed. Callers that want to show the user what was just sent need the id from here rather
+// than from getErrorReportReference(): on a no-op the stored value is the *previous* report's,
+// and handing that back would show a reference belonging to a different error.
 export function recordErrorReportReference(event) {
     const eventId = event?.event_id;
-    if (!eventId) return;
+    if (!eventId) return null;
 
     try {
         SecureStore.setItem(STORAGE_KEY, JSON.stringify({
@@ -22,8 +26,10 @@ export function recordErrorReportReference(event) {
             traceId: event.contexts?.trace?.trace_id ?? null,
             sentAt: new Date().toISOString(),
         }));
+        return eventId;
     } catch {
         // Losing the reference is not worth failing a send over.
+        return null;
     }
 }
 

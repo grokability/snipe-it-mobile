@@ -82,9 +82,12 @@ export function initSentry() {
 // Sends a report the user approved. The event has already been through beforeSend, so it goes
 // straight to envelope creation and the transport. captureEvent would run the whole pipeline
 // a second time and gateEvent would queue it again instead of sending it.
+//
+// Returns the reference recorded for this report, so a caller can offer the user something to
+// do with it while they are still looking at the prompt.
 export function sendErrorReport({ event, hint }) {
     Sentry.getClient()?.sendEvent(event, hint);
-    recordErrorReportReference(event);
+    return recordErrorReportReference(event);
 }
 
 export async function applyErrorReportingConsent(consent) {
