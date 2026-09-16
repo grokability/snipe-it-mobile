@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useSyncExternalStore } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Linking, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useColors } from '@/hooks/useThemeColors';
@@ -12,6 +12,8 @@ import {
     subscribeToPendingReports,
     takeAllPendingReports,
 } from '@/helpers/pendingErrorReports';
+import { buildErrorReportDiscussionUrl } from '@/helpers/errorReportDiscussion';
+import { useCopyErrorReportReference } from '@/hooks/useCopyErrorReportReference';
 
 // Asks before an error report leaves the device, when consent is ASK.
 //
@@ -30,6 +32,8 @@ export default function ErrorReportConsentPrompt() {
     const styles = useMemo(() => createStyles(colors), [colors]);
     const { t } = useTranslation();
     const [showPayload, setShowPayload] = useState(false);
+    const [sentReference, setSentReference] = useState(null);
+    const copyReference = useCopyErrorReportReference();
 
     const report = useSyncExternalStore(subscribeToPendingReports, getNextPendingReport);
 
@@ -37,6 +41,65 @@ export default function ErrorReportConsentPrompt() {
         () => (report ? JSON.stringify(report.event, null, 2) : ''),
         [report]
     );
+
+    // Offers the one thing worth doing with a reference, at the moment the user is most likely
+    // to do it. Reaching the Help screen for it instead means noticing a card they were not
+    // looking for, copying the string, and pasting it into an empty discussion body.
+    //
+    // Rendered ahead of the `!report` guard below, deliberately. Sharing resolves the pending
+    // report, so by the time this state exists `report` is already the next queued report or
+    // null — guarding first would unmount the follow-up the instant it appeared.
+    if (sentReference) {
+        const openDiscussion = () => Linking.openURL(buildErrorReportDiscussionUrl(sentReference));
+        // Clearing this lets anything queued behind the shared report raise its own prompt.
+        const closeFollowUp = () => setSentReference(null);
+
+        return (
+            <Modal visible transparent animationType="fade" onRequestClose={() => closeFollowUp()}>
+                <View style={styles.backdrop}>
+                    <View style={styles.card}>
+                        <Text style={styles.title}>{t('mobile.error_report_sent_title')}</Text>
+                        <Text style={styles.message}>{t('mobile.error_report_sent_message')}</Text>
+
+                        <Text style={styles.referenceLabel}>
+                            {t('mobile.error_report_sent_reference_label')}
+                        </Text>
+                        {/* Tap the reference itself to copy it. The icon is what makes that
+                            discoverable — a bare monospace string does not read as tappable. */}
+                        <Pressable
+                            onPress={() => copyReference(sentReference)}
+                            style={({ pressed }) => [styles.reference, pressed && styles.pressed]}
+                            accessibilityRole="button"
+                            accessibilityLabel={`${t('mobile.error_report_sent_reference_label')}: ${sentReference}`}
+                            accessibilityHint={t('mobile.error_report_sent_copy_hint')}
+                        >
+                            <Text style={styles.referenceText}>{sentReference}</Text>
+                            <Ionicons name="copy-outline" size={16} color={colors.primary} />
+                        </Pressable>
+
+                        <View style={styles.actions}>
+                            <Pressable
+                                onPress={() => openDiscussion()}
+                                style={({ pressed }) => [styles.button, styles.primaryButton, pressed && styles.pressed]}
+                                accessibilityRole="button"
+                            >
+                                <Text style={styles.primaryButtonText}>
+                                    {t('mobile.error_report_sent_open_discussion')}
+                                </Text>
+                            </Pressable>
+                            <Pressable
+                                onPress={() => closeFollowUp()}
+                                style={({ pressed }) => [styles.button, pressed && styles.pressed]}
+                                accessibilityRole="button"
+                            >
+                                <Text style={styles.plainButtonText}>{t('mobile.error_report_sent_done')}</Text>
+                            </Pressable>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
+        );
+    }
 
     if (!report) return null;
 
@@ -46,8 +109,11 @@ export default function ErrorReportConsentPrompt() {
     };
 
     const handleShare = () => {
-        sendErrorReport(report);
+        const eventId = sendErrorReport(report);
         dismiss();
+        // No reference means nothing to offer, so the prompt just closes as it did before
+        // rather than showing a follow-up the user cannot act on.
+        if (eventId) setSentReference(eventId);
     };
 
     const handleAlwaysShare = async () => {
@@ -152,6 +218,29 @@ const createStyles = (colors) => StyleSheet.create({
         backgroundColor: colors.backgroundTertiary,
         borderRadius: BorderRadius.sm,
         padding: Spacing.md,
+    },
+    referenceLabel: {
+        fontSize: Typography.caption,
+        fontWeight: FontWeight.medium,
+        color: colors.textMuted,
+    },
+    reference: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: Spacing.sm,
+        minHeight: 44,
+        backgroundColor: colors.backgroundTertiary,
+        borderRadius: BorderRadius.sm,
+        paddingHorizontal: Spacing.md,
+        paddingVertical: Spacing.sm,
+    },
+    // Monospaced to match how the Help screen presents the same string.
+    referenceText: {
+        flex: 1,
+        fontSize: Typography.body,
+        fontFamily: 'Courier',
+        color: colors.text,
     },
     disclosure: {
         flexDirection: 'row',
