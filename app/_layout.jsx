@@ -11,6 +11,12 @@ import {useReactQueryDevTools} from "@dev-plugins/react-query";
 import * as Network from "expo-network";
 import {queryClient} from "@/helpers/queryClient";
 import i18n from "@/i18n"; //this says unused but it's just providing for the entire app
+import * as Sentry from "@sentry/react-native";
+import {initSentry} from "@/helpers/sentry";
+import ErrorReportConsentPrompt from "@/components/errorReporting/ErrorReportConsentPrompt";
+
+// Runs at module scope so the global error handler is installed before any provider mounts.
+initSentry();
 
 // addNetworkStateListener emits the current path as soon as it subscribes, so it is the
 // only signal we need. getNetworkStateAsync is deliberately not used to seed this: on iOS it
@@ -28,7 +34,7 @@ AppState.addEventListener('change', (status) => {
     focusManager.setFocused(status === 'active');
 });
 
-export default function RootLayout() {
+function RootLayout() {
     useReactQueryDevTools(queryClient);
 
     return (
@@ -39,6 +45,7 @@ export default function RootLayout() {
                         <SafeAreaProvider>
                             <GestureHandlerRootView style={{ flex: 1 }}>
                                     <AuthLayoutContent/>
+                                    <ErrorReportConsentPrompt/>
                             </GestureHandlerRootView>
                         </SafeAreaProvider>
                     </AuditSessionProvider>
@@ -86,3 +93,5 @@ export default function RootLayout() {
         );
     }
 }
+
+export default Sentry.wrap(RootLayout);

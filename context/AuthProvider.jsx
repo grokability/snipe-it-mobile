@@ -6,6 +6,7 @@ import { deviceName } from "expo-device";
 import {useRouter} from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {makeRedirectUri} from "expo-auth-session";
+import {reportLoginFailure, addLoginBreadcrumb} from "@/helpers/loginTelemetry";
 
 export const AuthContext = createContext();
 
@@ -72,6 +73,7 @@ export const AuthProvider = ({children}) => {
                 // leaving this here for now, may serve as a backup login method
                 bearerLogin: (domain, token) => {
                     setIsLoading(true);
+                    addLoginBreadcrumb('Bearer login attempt', { has_token: Boolean(token) });
                     if (!token) {
                         console.log('token is empty');
                     }
@@ -106,6 +108,7 @@ export const AuthProvider = ({children}) => {
                         .catch(error => {
                             setUser(null);
                             setIsAuthenticated(false);
+                            reportLoginFailure({ stage: 'bearer-login', error, domain });
                             console.error(error);
                             console.error(error.message);
                         })
@@ -116,6 +119,10 @@ export const AuthProvider = ({children}) => {
                 oAuthLogin: (domain, code, codeVerifier, clientId) => {
                     console.log('oAuthLogin');
                    setIsLoading(true);
+                   addLoginBreadcrumb('OAuth token exchange attempt', {
+                       has_code: Boolean(code),
+                       has_client_id: Boolean(clientId),
+                   });
                    if (!code) {
                        console.log('code is empty');
                    }
@@ -184,6 +191,15 @@ export const AuthProvider = ({children}) => {
                        if (error.response && error.response.data) {
                            console.log('Server Error Data:', JSON.stringify(error.response.data, null, 2));
                        }
+                       // The OAuth error code says whether this was a bad verifier, an expired
+                       // code or a redirect_uri mismatch, and is safe to send: it is a fixed
+                       // vocabulary from the spec, not user data.
+                       reportLoginFailure({
+                           stage: 'oauth-token-exchange',
+                           error,
+                           domain,
+                           extra: { oauth_error: error?.response?.data?.error ?? null },
+                       });
                        console.log(error);
                        setUser(null);
                        setIsAuthenticated(false);

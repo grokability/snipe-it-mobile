@@ -7,6 +7,8 @@ import { useColors } from "@/hooks/useThemeColors";
 import { Spacing, BorderRadius, Typography } from "@/constants/sizes";
 import { useTranslation } from "react-i18next";
 import { discoverOAuthClient } from "@/helpers/oauthClientDiscovery";
+import { addLoginBreadcrumb } from "@/helpers/loginTelemetry";
+import { describeDomain } from "@/helpers/domainShape";
 
 const PHASE = {
     DOMAIN: 'domain',
@@ -66,18 +68,24 @@ const LoginForm = ({ onBearerLogin, onDomainChange }) => {
     const handleContinue = async () => {
         const generation = ++checkGeneration.current;
         setPhase(PHASE.CHECKING);
+        // The shape of what was typed is the single most useful thing to know when a login
+        // fails, and it identifies nothing. See helpers/domainShape.js.
+        addLoginBreadcrumb('Continue pressed', describeDomain(domain));
         try {
             const result = await discoverOAuthClient(domain);
             if (generation !== checkGeneration.current) return;
             if (result) {
                 setClientId(result.clientId);
                 setPhase(PHASE.OAUTH);
+                addLoginBreadcrumb('Instance supports OAuth, showing browser login');
             } else {
                 setPhase(PHASE.BEARER);
+                addLoginBreadcrumb('No OAuth client, falling back to token entry');
             }
         } catch {
             if (generation !== checkGeneration.current) return;
             setPhase(PHASE.ERROR);
+            addLoginBreadcrumb('Instance unreachable, showing error state');
         }
     };
 

@@ -1,11 +1,12 @@
 import React, {useContext, useMemo} from 'react';
-import { StyleSheet, View, Text, KeyboardAvoidingView, Platform } from 'react-native';
+import { StyleSheet, View, Text, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import LottieView from 'lottie-react-native';
 import { AuthContext } from '@/context/AuthProvider';
 import LoginForm from '@/components/auth/LoginForm';
 import {useColors} from "@/hooks/useThemeColors";
 import {Spacing, Typography, FontWeight, BorderRadius} from "@/constants/sizes";
 import {useTranslation} from "react-i18next";
+import VersionFooter from '@/components/misc/VersionFooter';
 
 export default function LoginScreen() {
     const colors = useColors();
@@ -18,18 +19,27 @@ export default function LoginScreen() {
             style={styles.container}
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
-            <View style={styles.content}>
-                <LottieView
-                    source={require('@/assets/spinning_star_eye.json')}
-                    style={styles.lottie}
-                    autoPlay
-                    loop
-                />
-                <Text style={styles.title}>{t('mobile.login_title')}</Text>
-                <View style={styles.formCard}>
-                    <LoginForm onBearerLogin={bearerLogin} />
+            {/* Scrolls only when it has to. The footer pushes this past a short screen once
+                the keyboard is up, and flexGrow keeps everything centred when it fits. */}
+            <ScrollView
+                contentContainerStyle={styles.scrollContent}
+                keyboardShouldPersistTaps="handled"
+                showsVerticalScrollIndicator={false}
+            >
+                <View style={styles.content}>
+                    <LottieView
+                        source={require('@/assets/spinning_star_eye.json')}
+                        style={styles.lottie}
+                        autoPlay
+                        loop
+                    />
+                    <Text style={styles.title}>{t('mobile.login_title')}</Text>
+                    <View style={styles.formCard}>
+                        <LoginForm onBearerLogin={bearerLogin} />
+                    </View>
+                    <VersionFooter style={styles.versionFooter} />
                 </View>
-            </View>
+            </ScrollView>
         </KeyboardAvoidingView>
     );
 }
@@ -37,10 +47,13 @@ export default function LoginScreen() {
 const createStyles = (colors) => StyleSheet.create({
     container: {
         flex: 1,
+        backgroundColor: colors.background,
+    },
+    scrollContent: {
+        flexGrow: 1,
         justifyContent: 'center',
         alignItems: 'center',
         padding: Spacing.xl,
-        backgroundColor: colors.background,
     },
     content: {
         width: '100%',
@@ -64,5 +77,8 @@ const createStyles = (colors) => StyleSheet.create({
         padding: Spacing.lg,
         borderRadius: BorderRadius.md,
         gap: Spacing.lg,
+    },
+    versionFooter: {
+        marginTop: Spacing.lg,
     },
 });
