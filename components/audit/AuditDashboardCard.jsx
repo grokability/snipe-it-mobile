@@ -2,6 +2,7 @@ import React, {useCallback, useMemo, useState} from 'react';
 import {Pressable, StyleSheet, Text, View} from 'react-native';
 import {router, useFocusEffect} from 'expo-router';
 import {makeRequest} from '@/helpers/axiosConfig';
+import {PermissionDeniedError} from '@/helpers/errors';
 import {PERMISSIONS} from '@/permissions/PermissionKeys';
 import {useColors} from '@/hooks/useThemeColors';
 import {Spacing, BorderRadius, Typography, FontWeight} from '@/constants/sizes';
@@ -21,16 +22,18 @@ export default function AuditDashboardCard() {
         useCallback(() => {
             makeRequest({url: '/hardware/audits/due', method: 'GET', permissionKey: PERMISSIONS.ASSETS_AUDIT, silent: true})
                 .then((res) => {
-                    if (res === null) { setVisible(false); return; }
                     setDueCount(res.total || 0);
                 })
-                .catch(() => {});
+                .catch((error) => {
+                    if (error instanceof PermissionDeniedError) setVisible(false);
+                });
             makeRequest({url: '/hardware/audits/overdue', method: 'GET', permissionKey: PERMISSIONS.ASSETS_AUDIT, silent: true})
                 .then((res) => {
-                    if (res === null) { setVisible(false); return; }
                     setOverdueCount(res.total || 0);
                 })
-                .catch(() => {});
+                .catch((error) => {
+                    if (error instanceof PermissionDeniedError) setVisible(false);
+                });
         }, [])
     );
 
@@ -40,14 +43,14 @@ export default function AuditDashboardCard() {
         <Section title={t('general.audit')}>
             <View style={styles.badgeRow}>
                 <Pressable
-                    onPress={() => router.push('/(authenticated)/audit/')}
+                    onPress={() => router.push('/(authenticated)/audit/?tab=due')}
                     style={({pressed}) => [styles.badge, styles.badgeDue, pressed && styles.badgePressed]}
                 >
                     <Text style={styles.badgeCount}>{dueCount}</Text>
                     <Text style={styles.badgeLabel} numberOfLines={1}>{t('general.audit_due')}</Text>
                 </Pressable>
                 <Pressable
-                    onPress={() => router.push('/(authenticated)/audit/')}
+                    onPress={() => router.push('/(authenticated)/audit/?tab=overdue')}
                     style={({pressed}) => [styles.badge, styles.badgeOverdue, pressed && styles.badgePressed]}
                 >
                     <Text style={styles.badgeCount}>{overdueCount}</Text>

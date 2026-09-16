@@ -1,4 +1,4 @@
-import React, {useCallback, useState, useMemo, useRef} from 'react';
+import React, {useEffect, useState, useMemo, useRef} from 'react';
 import {decode} from 'html-entities';
 import {
     ActivityIndicator,
@@ -10,8 +10,10 @@ import {
     Text,
     View,
 } from 'react-native';
-import {router, useFocusEffect, useLocalSearchParams} from 'expo-router';
+import {router, useLocalSearchParams} from 'expo-router';
+import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {makeRequest} from '@/helpers/axiosConfig';
+import {consumableKeys} from '@/helpers/queryKeys';
 import {PERMISSIONS} from '@/permissions/PermissionKeys';
 import {PermissionGate} from '@/permissions/PermissionGate';
 import {SafeAreaProvider, useSafeAreaInsets} from 'react-native-safe-area-context';
@@ -45,9 +47,8 @@ export default function EditConsumableScreen() {
     const styles = useMemo(() => createStyles(colors), [colors]);
     const {t} = useTranslation();
 
-    const [loading, setLoading] = useState(true);
-    const [submitting, setSubmitting] = useState(false);
     const {id} = useLocalSearchParams();
+    const queryClient = useQueryClient();
 
     // Text fields
     const [name, setName] = useState('');
@@ -79,13 +80,12 @@ export default function EditConsumableScreen() {
     const companyRef = useRef(null);
     const locationRef = useRef(null);
 
-    const getConsumable = useCallback(() => {
-        setLoading(true);
-        return makeRequest({url: `/consumables/${id}`, method: 'get', permissionKey: PERMISSIONS.CONSUMABLES_VIEW})
-            .then(populateFields)
-            .catch(console.error)
-            .finally(() => setLoading(false));
-    }, [id]);
+    const consumableQuery = useQuery({
+        queryKey: consumableKeys.detail(id),
+        queryFn: () => makeRequest({url: `/consumables/${id}`, method: 'get', permissionKey: PERMISSIONS.CONSUMABLES_VIEW}),
+    });
+
+    const populatedForIdRef = useRef(null);
 
     const populateFields = (consumable) => {
         setName(consumable.name ? decode(consumable.name) : '');
@@ -106,9 +106,13 @@ export default function EditConsumableScreen() {
         setRequestable(!!consumable.requestable);
     };
 
-    useFocusEffect(useCallback(() => {
-        getConsumable();
-    }, [getConsumable]));
+    useEffect(() => {
+        if (!consumableQuery.data) return;
+        if (populatedForIdRef.current === id) return;
+        populatedForIdRef.current = id;
+
+        populateFields(consumableQuery.data);
+    }, [consumableQuery.data, id]);
 
     const formatDateForApi = (date) => {
         if (!date) return undefined;
@@ -117,6 +121,49 @@ export default function EditConsumableScreen() {
         const d = String(date.getDate()).padStart(2, '0');
         return `${y}-${m}-${d}`;
     };
+
+    const editMutation = useMutation({
+        mutationFn: (data) => makeRequest({
+            url: `/consumables/${id}`,
+            method: 'PUT',
+            data,
+            permissionKey: PERMISSIONS.CONSUMABLES_EDIT,
+        }),
+        onSuccess: (res) => {
+            if (res.status === 'error') {
+                const errMsg = typeof res.messages === 'string'
+                    ? res.messages
+                    : res.messages
+                        ? Object.values(res.messages).flat().join('\n')
+                        : t('mobile.edit_consumable_failed');
+                Burnt.alert({
+                    title: t('general.error'),
+                    preset: 'error',
+                    message: errMsg,
+                    duration: 4,
+                });
+                return;
+            }
+            Burnt.alert({
+                title: t('general.notification_success'),
+                preset: 'heart',
+                message: t('mobile.edit_consumable_success'),
+                duration: 2,
+            });
+            queryClient.invalidateQueries({ queryKey: consumableKeys.detail(id) }).catch(() => {});
+            queryClient.invalidateQueries({ queryKey: consumableKeys.lists() }).catch(() => {});
+            router.dismissTo(`/(tabs)/(consumables)/${id}`);
+        },
+        onError: (err) => {
+            console.error(err);
+            Burnt.alert({
+                title: t('general.error'),
+                preset: 'error',
+                message: t('mobile.edit_consumable_failed'),
+                duration: 4,
+            });
+        },
+    });
 
     const handleSubmit = () => {
         if (!name.trim()) {
@@ -138,66 +185,26 @@ export default function EditConsumableScreen() {
             return;
         }
 
-        setSubmitting(true);
-
-        makeRequest({
-            url: `/consumables/${id}`,
-            method: 'PUT',
-            permissionKey: PERMISSIONS.CONSUMABLES_EDIT,
-            data: {
-                name,
-                qty: parseInt(qty, 10),
-                item_no: itemNo || null,
-                category_id: selectedCategory?.id || null,
-                manufacturer_id: selectedManufacturer?.id || null,
-                supplier_id: selectedSupplier?.id || null,
-                company_id: selectedCompany?.id || null,
-                location_id: selectedLocation?.id || null,
-                model_number: modelNumber || null,
-                order_number: orderNumber || null,
-                purchase_cost: purchaseCost || null,
-                purchase_date: formatDateForApi(purchaseDate),
-                min_amt: minAmt ? parseInt(minAmt, 10) : null,
-                requestable: requestable ? 1 : 0,
-                notes: notes || null,
-            },
-        })
-            .then((res) => {
-                if (res.status === 'error') {
-                    const errMsg = typeof res.messages === 'string'
-                        ? res.messages
-                        : res.messages
-                            ? Object.values(res.messages).flat().join('\n')
-                            : t('mobile.edit_consumable_failed');
-                    Burnt.alert({
-                        title: t('general.error'),
-                        preset: 'error',
-                        message: errMsg,
-                        duration: 4,
-                    });
-                    return;
-                }
-                Burnt.alert({
-                    title: t('general.notification_success'),
-                    preset: 'heart',
-                    message: t('mobile.edit_consumable_success'),
-                    duration: 2,
-                });
-                router.replace(`/(tabs)/(consumables)/${id}`);
-            })
-            .catch((err) => {
-                console.error(err);
-                Burnt.alert({
-                    title: t('general.error'),
-                    preset: 'error',
-                    message: t('mobile.edit_consumable_failed'),
-                    duration: 4,
-                });
-            })
-            .finally(() => setSubmitting(false));
+        editMutation.mutate({
+            name,
+            qty: parseInt(qty, 10),
+            item_no: itemNo || null,
+            category_id: selectedCategory?.id || null,
+            manufacturer_id: selectedManufacturer?.id || null,
+            supplier_id: selectedSupplier?.id || null,
+            company_id: selectedCompany?.id || null,
+            location_id: selectedLocation?.id || null,
+            model_number: modelNumber || null,
+            order_number: orderNumber || null,
+            purchase_cost: purchaseCost || null,
+            purchase_date: formatDateForApi(purchaseDate),
+            min_amt: minAmt ? parseInt(minAmt, 10) : null,
+            requestable: requestable ? 1 : 0,
+            notes: notes || null,
+        });
     };
 
-    if (loading) {
+    if (!consumableQuery.data) {
         return (
             <View style={styles.loadingContainer}>
                 <ActivityIndicator size="large" color={colors.primary} />
@@ -213,7 +220,8 @@ export default function EditConsumableScreen() {
             >
             <ScrollView
                 style={styles.container}
-                contentContainerStyle={[styles.contentContainer, {paddingTop: insets.top}]}
+                contentInsetAdjustmentBehavior="automatic"
+                contentContainerStyle={[styles.contentContainer, {paddingTop: Platform.OS === 'android' ? insets.top + 56 : 0}]}
                 keyboardShouldPersistTaps="handled"
             >
                 {/* Details */}
@@ -326,14 +334,14 @@ export default function EditConsumableScreen() {
                 <PermissionGate permission={PERMISSIONS.CONSUMABLES_EDIT}>
                     <Pressable
                         onPress={handleSubmit}
-                        disabled={submitting}
+                        disabled={editMutation.isPending}
                         style={({pressed}) => [
                             styles.submitButton,
                             pressed && styles.submitButtonPressed,
-                            submitting && styles.submitButtonDisabled,
+                            editMutation.isPending && styles.submitButtonDisabled,
                         ]}
                     >
-                        {submitting ? (
+                        {editMutation.isPending ? (
                             <ActivityIndicator color="#fff" />
                         ) : (
                             <Text style={styles.submitButtonText}>{t('mobile.save_changes')}</Text>
@@ -346,27 +354,32 @@ export default function EditConsumableScreen() {
             <SelectCategoryBottomSheet
                 title={t('general.select_category')}
                 ref={categoryRef}
+                selectedCategory={selectedCategory}
                 setSelectedCategory={setSelectedCategory}
                 categoryType="consumable"
             />
             <SelectManufacturerBottomSheet
                 title={t('general.select_manufacturer')}
                 ref={manufacturerRef}
+                selectedManufacturer={selectedManufacturer}
                 setSelectedManufacturer={setSelectedManufacturer}
             />
             <SelectSupplierBottomSheet
                 title={t('mobile.select_supplier')}
                 ref={supplierRef}
+                selectedSupplier={selectedSupplier}
                 setSelectedSupplier={setSelectedSupplier}
             />
             <SelectCompanyBottomSheet
                 title={t('mobile.select_company')}
                 ref={companyRef}
+                selectedCompany={selectedCompany}
                 setSelectedCompany={setSelectedCompany}
             />
             <SelectLocationBottomSheet
                 title={t('general.select_location')}
                 ref={locationRef}
+                selectedLocation={selectedLocation}
                 setSelectedLocation={setSelectedLocation}
             />
         </SafeAreaProvider>

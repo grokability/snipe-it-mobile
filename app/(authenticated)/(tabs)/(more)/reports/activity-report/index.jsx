@@ -1,8 +1,11 @@
 import {View, Text, StyleSheet, RefreshControl, Platform, Pressable} from 'react-native';
 import {useState, useCallback, useMemo} from 'react';
-import {router, useFocusEffect} from 'expo-router';
+import {router} from 'expo-router';
+import {useInfiniteQuery} from '@tanstack/react-query';
 import {decode} from 'html-entities';
 import {makeRequest} from '@/helpers/axiosConfig';
+import {actionLogKeys} from '@/helpers/queryKeys';
+import {useRefreshOnFocus} from '@/hooks/useRefreshOnFocus';
 import {PERMISSIONS} from '@/permissions/PermissionKeys';
 import {useColors} from '@/hooks/useThemeColors';
 import {Spacing, BorderRadius, Typography, FontWeight} from '@/constants/sizes';
@@ -13,6 +16,8 @@ import {SafeAreaProvider} from 'react-native-safe-area-context';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import EmptyState from '@/components/ui/EmptyState';
 import {formatActionDate, getActionBadgeColor} from '@/helpers/utils';
+
+const PAGE_SIZE = 25;
 
 const ActionRow = ({actionLog, colors, styles}) => {
     const badgeColor = getActionBadgeColor(colors, actionLog.action_type);
@@ -53,63 +58,49 @@ export default function ActivityReportScreen() {
     const {t} = useTranslation();
     const insets = useSafeAreaInsets();
 
-    const [data, setData] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [refreshing, setRefreshing] = useState(false);
-    const [offset, setOffset] = useState(0);
-    const [hasMore, setHasMore] = useState(true);
+    const queryKey = actionLogKeys.list({});
 
-    const fetchActivityReport = ({fetchOffset = 0} = {}) => {
-        setLoading(true);
-        return makeRequest({
-            url: `/reports/activity?limit=25&offset=${fetchOffset}&sort=created_at&order=desc`,
+    const activityReportQuery = useInfiniteQuery({
+        queryKey,
+        queryFn: ({pageParam}) => makeRequest({
+            url: `/reports/activity?limit=${PAGE_SIZE}&offset=${pageParam}&sort=created_at&order=desc`,
             method: 'get',
             permissionKey: PERMISSIONS.REPORTS_VIEW,
-        })
-            .then(res => {
-                if (res?.rows) {
-                    if (fetchOffset === 0) {
-                        setData(res.rows);
-                    } else {
-                        setData(prev => [...prev, ...res.rows]);
-                    }
-                    setHasMore(res.rows.length === 25);
-                }
-            })
-            .catch(err => console.error('Error fetching activity report:', err))
-            .finally(() => setLoading(false));
+        }),
+        initialPageParam: 0,
+        getNextPageParam: (lastPage, allPages) => (
+            lastPage?.rows?.length === PAGE_SIZE ? allPages.length * PAGE_SIZE : undefined
+        ),
+    });
+
+    useRefreshOnFocus(queryKey);
+
+    const [isManualRefreshing, setIsManualRefreshing] = useState(false);
+    const onManualRefresh = async () => {
+        setIsManualRefreshing(true);
+        await activityReportQuery.refetch();
+        setIsManualRefreshing(false);
     };
 
-    useFocusEffect(
-        useCallback(() => {
-            setOffset(0);
-            setData([]);
-            fetchActivityReport({fetchOffset: 0});
-        }, [])
+    const actionLogs = useMemo(
+        () => activityReportQuery.data?.pages.flatMap(page => page.rows ?? []) ?? [],
+        [activityReportQuery.data]
     );
 
-    const onRefresh = () => {
-        setRefreshing(true);
-        setOffset(0);
-        setData([]);
-        fetchActivityReport({fetchOffset: 0}).finally(() => setRefreshing(false));
-    };
+    const loadMore = useCallback(() => {
+        if (activityReportQuery.hasNextPage && !activityReportQuery.isFetchingNextPage) {
+            activityReportQuery.fetchNextPage();
+        }
+    }, [activityReportQuery]);
 
-    const loadMore = () => {
-        if (loading || !hasMore) return;
-        const nextOffset = offset + 25;
-        setOffset(nextOffset);
-        fetchActivityReport({fetchOffset: nextOffset});
-    };
-
-    if (!loading && data.length === 0) {
+    if (!activityReportQuery.isPending && actionLogs.length === 0) {
         return (
             <SafeAreaProvider style={styles.container}>
                 <EmptyState
                     icon="file-tray-outline"
                     title={t('mobile.no_results')}
                     message={t('mobile.no_results_message')}
-                    onRetry={() => fetchActivityReport({fetchOffset: 0})}
+                    onRetry={() => activityReportQuery.refetch()}
                 />
             </SafeAreaProvider>
         );
@@ -118,7 +109,7 @@ export default function ActivityReportScreen() {
     return (
         <SafeAreaProvider style={styles.container}>
             <FlashList
-                data={data}
+                data={actionLogs}
                 renderItem={({item}) => (
                     <ActionRow actionLog={item} colors={colors} styles={styles} />
                 )}
@@ -131,7 +122,7 @@ export default function ActivityReportScreen() {
                     paddingTop: Platform.OS === 'android' ? insets.top + 56 : 0,
                     paddingBottom: 80,
                 }}
-                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+                refreshControl={<RefreshControl refreshing={isManualRefreshing} onRefresh={onManualRefresh} />}
             />
         </SafeAreaProvider>
     );

@@ -1,18 +1,18 @@
-import {View, Text, StyleSheet, ActivityIndicator, Button, Linking, ScrollView, TouchableOpacity} from 'react-native';
+import {View, Text, StyleSheet, ActivityIndicator, Pressable, Linking, ScrollView} from 'react-native';
 import {useCameraPermissions} from 'expo-camera';
 import {router} from "expo-router";
 import React, {useMemo} from "react";
 import {useSafeAreaInsets} from "react-native-safe-area-context";
 import LottieView from "lottie-react-native";
-import ExpoApplication from "expo-application/src/ExpoApplication";
-import { useUpdates, reloadAsync, checkForUpdateAsync, fetchUpdateAsync } from 'expo-updates';
+import {Ionicons} from "@expo/vector-icons";
 import RecentActions from "@/components/misc/RecentActions";
+import VersionFooter from "@/components/misc/VersionFooter";
 import AuditDashboardCard from "@/components/audit/AuditDashboardCard";
 import {useTranslation} from "react-i18next";
 import {PermissionGate} from "@/permissions/PermissionGate";
 import {PERMISSIONS} from "@/permissions/PermissionKeys";
 import {useColors} from "@/hooks/useThemeColors";
-import {Typography, FontWeight, Spacing} from "@/constants/sizes";
+import {Typography, FontWeight, Spacing, BorderRadius} from "@/constants/sizes";
 
 export default function HomeScreen() {
     const colors = useColors();
@@ -20,26 +20,6 @@ export default function HomeScreen() {
     const styles = useMemo(() => createStyles(colors), [colors]);
     const [permission, requestPermission] = useCameraPermissions();
     const { t } = useTranslation();
-    const { currentlyRunning, isUpdatePending, isChecking, isDownloading, downloadedUpdate } = useUpdates();
-    const otaText = currentlyRunning.isEmbeddedLaunch
-        ? t('mobile.update_embedded')
-        : t('mobile.update_channel', {
-            channel: currentlyRunning.channel,
-            date: currentlyRunning.createdAt?.toLocaleString(),
-          });
-    const runningMessage = process.env.EXPO_PUBLIC_UPDATE_MESSAGE;
-    const pendingMessage = downloadedUpdate?.manifest?.metadata?.message;
-
-    const handleCheckForUpdate = async () => {
-        try {
-            const result = await checkForUpdateAsync();
-            if (result.isAvailable) {
-                await fetchUpdateAsync();
-            }
-        } catch (error) {
-            console.error('Update check failed:', error);
-        }
-    };
 
     if (!permission) {
         return (
@@ -66,11 +46,28 @@ export default function HomeScreen() {
 
                 <View style={styles.scannerSection}>
                     {permission.granted ? (
-                        <Button title={t('mobile.open_scanner')} onPress={() => router.push('/scanner')}/>
+                        <Pressable
+                            testID="open-scanner-button"
+                            onPress={() => router.push('/scanner')}
+                            style={({pressed}) => [styles.scanButton, pressed && styles.scanButtonPressed]}
+                        >
+                            <Ionicons name="scan" size={22} color="#fff" />
+                            <Text style={styles.scanButtonText}>{t('mobile.open_scanner')}</Text>
+                        </Pressable>
                     ) : permission.canAskAgain ? (
-                        <Button title={t('mobile.request_camera_permissions')} onPress={requestPermission}/>
+                        <Pressable
+                            onPress={requestPermission}
+                            style={({pressed}) => [styles.secondaryButton, pressed && styles.secondaryButtonPressed]}
+                        >
+                            <Text style={styles.secondaryButtonText}>{t('mobile.request_camera_permissions')}</Text>
+                        </Pressable>
                     ) : (
-                        <Button title={t('mobile.open_settings')} onPress={() => Linking.openSettings()}/>
+                        <Pressable
+                            onPress={() => Linking.openSettings()}
+                            style={({pressed}) => [styles.secondaryButton, pressed && styles.secondaryButtonPressed]}
+                        >
+                            <Text style={styles.secondaryButtonText}>{t('mobile.open_settings')}</Text>
+                        </Pressable>
                     )}
                 </View>
 
@@ -82,27 +79,7 @@ export default function HomeScreen() {
                         loop
                     />
                     <Text style={styles.welcomeText}>{t('mobile.welcome')}</Text>
-                    <Text style={styles.versionText}>
-                        {t('mobile.version', { version: ExpoApplication.nativeApplicationVersion, build: ExpoApplication.nativeBuildVersion })}
-                    </Text>
-                    <Text style={styles.versionText}>{otaText}</Text>
-                    {runningMessage ? (
-                        <Text style={styles.versionText}>{runningMessage}</Text>
-                    ) : null}
-                    {isUpdatePending ? (
-                        <TouchableOpacity style={styles.updateBanner} onPress={reloadAsync} activeOpacity={0.7}>
-                            <Text style={styles.updateBannerLabel}>{t('mobile.update_pending')}</Text>
-                            {pendingMessage ? (
-                                <Text style={styles.updateBannerMessage}>msg: {pendingMessage}</Text>
-                            ) : null}
-                        </TouchableOpacity>
-                    ) : (
-                        <TouchableOpacity onPress={handleCheckForUpdate} disabled={isChecking || isDownloading} activeOpacity={0.6}>
-                            <Text style={styles.checkUpdateText}>
-                                {isDownloading ? t('mobile.update_downloading') : isChecking ? t('mobile.update_checking') : t('mobile.update_check')}
-                            </Text>
-                        </TouchableOpacity>
-                    )}
+                    <VersionFooter />
                 </View>
             </ScrollView>
         </View>
@@ -124,6 +101,45 @@ const createStyles = (colors) => StyleSheet.create({
     scannerSection: {
         alignItems: 'center',
     },
+    scanButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: Spacing.sm,
+        alignSelf: 'stretch',
+        backgroundColor: colors.primary,
+        paddingVertical: Spacing.lg,
+        borderRadius: BorderRadius.md,
+        shadowColor: colors.primary,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        elevation: 5,
+    },
+    scanButtonPressed: {
+        opacity: 0.85,
+    },
+    scanButtonText: {
+        color: '#fff',
+        fontSize: Typography.bodyLarge,
+        fontWeight: FontWeight.bold,
+    },
+    secondaryButton: {
+        alignSelf: 'stretch',
+        alignItems: 'center',
+        paddingVertical: Spacing.md,
+        borderRadius: BorderRadius.md,
+        borderWidth: 1,
+        borderColor: colors.primary,
+    },
+    secondaryButtonPressed: {
+        opacity: 0.7,
+    },
+    secondaryButtonText: {
+        color: colors.primary,
+        fontSize: Typography.body,
+        fontWeight: FontWeight.semibold,
+    },
     footer: {
         alignItems: 'center',
         gap: Spacing.sm,
@@ -138,37 +154,5 @@ const createStyles = (colors) => StyleSheet.create({
         fontWeight: FontWeight.semibold,
         color: colors.text,
         textAlign: 'center',
-    },
-    versionText: {
-        fontSize: Typography.caption,
-        color: colors.textSecondary,
-        textAlign: 'center',
-    },
-    updateBanner: {
-        marginTop: Spacing.sm,
-        paddingHorizontal: Spacing.md,
-        paddingVertical: Spacing.sm,
-        borderRadius: 8,
-        borderWidth: 1,
-        borderColor: colors.primary,
-        alignItems: 'center',
-        gap: Spacing.xs,
-    },
-    updateBannerLabel: {
-        fontSize: Typography.caption,
-        color: colors.primary,
-        fontWeight: FontWeight.semibold,
-        textAlign: 'center',
-    },
-    updateBannerMessage: {
-        fontSize: Typography.caption,
-        color: colors.textSecondary,
-        textAlign: 'center',
-    },
-    checkUpdateText: {
-        fontSize: Typography.caption,
-        color: colors.textSecondary,
-        textAlign: 'center',
-        textDecorationLine: 'underline',
     },
 });

@@ -1,7 +1,7 @@
-import {Picker, Host} from "@expo/ui/jetpack-compose";
+import {Host, SegmentedButton, SingleChoiceSegmentedButtonRow, Text} from "@expo/ui/jetpack-compose";
+import {fillMaxWidth, weight} from "@expo/ui/jetpack-compose/modifiers";
 import {StyleSheet, View} from "react-native";
 import ExpoDevice from "expo-device/src/ExpoDevice";
-import {indexOf} from "lodash";
 import {useColors} from "@/hooks/useThemeColors";
 
 export function CheckoutPicker({ selectedCheckoutTo, setSelectedCheckoutTo }) {
@@ -21,28 +21,29 @@ export function CheckoutPicker({ selectedCheckoutTo, setSelectedCheckoutTo }) {
                 paddingVertical: isIpad ? Math.round(4 * SPACE_SCALE) : 4,
             }}
         >
-            <Host matchContents>
-                <Picker
-                    options={options.map(option => option.label)}
-                    selectedIndex={indexOf(options, options.find(option => option.value === selectedCheckoutTo))}
-                    onOptionSelected={({nativeEvent: {index}}) => {
-                        setSelectedCheckoutTo(options[index].value);
-                    }}
-                    variant="segmented"
-                    color={colors.textSecondary}
-                    elementColors={{
-                        activeContainerColor: colors.primary,
-                        activeContentColor: colors.background,
-                        activeBorderColor: "transparent",
-                        inactiveContainerColor: colors.backgroundTertiary,
-                        inactiveContentColor: colors.textSecondary,
-                        inactiveBorderColor: colors.backgroundTertiary,
-                    }}
-                    style={{
-                        ...styles.picker,
-                        width: 300,
-                    }}
-                />
+            <Host style={styles.host}>
+                <SingleChoiceSegmentedButtonRow modifiers={[fillMaxWidth()]}>
+                    {options.map(option => (
+                        <SegmentedButton
+                            key={option.value}
+                            selected={option.value === selectedCheckoutTo}
+                            onClick={() => setSelectedCheckoutTo(option.value)}
+                            modifiers={[weight(1)]}
+                            colors={{
+                                activeContainerColor: colors.primary,
+                                activeContentColor: colors.background,
+                                activeBorderColor: "transparent",
+                                inactiveContainerColor: colors.backgroundTertiary,
+                                inactiveContentColor: colors.textSecondary,
+                                inactiveBorderColor: colors.backgroundTertiary,
+                            }}
+                        >
+                            <SegmentedButton.Label>
+                                <Text>{option.label}</Text>
+                            </SegmentedButton.Label>
+                        </SegmentedButton>
+                    ))}
+                </SingleChoiceSegmentedButtonRow>
             </Host>
         </View>
     )
@@ -56,8 +57,9 @@ const styles = StyleSheet.create({
         position: "absolute",
         width: "100%",
     },
-    picker: {
+    host: {
         alignSelf: "center",
+        width: 300,
         height: 40,
         paddingVertical: isIpad ? Math.round(24 * SPACE_SCALE) : 24,
     },

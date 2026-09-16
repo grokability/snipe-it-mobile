@@ -258,6 +258,7 @@ export default function AuditConfirmScreen() {
             <SelectLocationBottomSheet
                 title={t('general.select_location')}
                 ref={locationBottomSheetRef}
+                selectedLocation={selectedLocation}
                 setSelectedLocation={setSelectedLocation}
             />
         </View>

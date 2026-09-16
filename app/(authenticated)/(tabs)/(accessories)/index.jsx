@@ -1,17 +1,21 @@
 import {View, Text, StyleSheet, RefreshControl, Pressable, Platform} from 'react-native';
-import {useContext, useState, useCallback, useMemo} from "react";
+import {useContext, useState, useMemo} from "react";
+import {useQuery} from '@tanstack/react-query';
 import {AuthContext} from "@/context/AuthProvider";
 import {makeRequest} from "@/helpers/axiosConfig";
+import {accessoryKeys} from "@/helpers/queryKeys";
+import {useRefreshOnFocus} from "@/hooks/useRefreshOnFocus";
 import {PERMISSIONS} from "@/permissions/PermissionKeys";
 import {useRedirectIfDenied} from "@/permissions/PermissionContext";
 import {SafeAreaProvider, useSafeAreaInsets} from "react-native-safe-area-context";
-import {router, useFocusEffect} from "expo-router";
+import {router} from "expo-router";
 import {useColors} from "@/hooks/useThemeColors";
 import {Spacing, BorderRadius, Typography, FontWeight} from "@/constants/sizes";
 import {FlashList} from "@shopify/flash-list";
 import {decode} from "html-entities";
 import {useTranslation} from "react-i18next";
 import {Image} from "react-native";
+import {Ionicons} from "@expo/vector-icons";
 import EmptyState from "@/components/ui/EmptyState";
 
 export default function AccessoriesScreen() {
@@ -22,46 +26,27 @@ export default function AccessoriesScreen() {
 
     const { user } = useContext(AuthContext);
     useRedirectIfDenied(PERMISSIONS.ACCESSORIES_VIEW);
-    const [data, setData] = useState({});
-    const [loading, setLoading] = useState(true);
-    const [refreshing, setRefreshing] = useState(false);
+    const queryKey = accessoryKeys.list({});
 
-    const getAccessories = useCallback(() => {
-        setLoading(true);
-        return makeRequest({
+    const accessoriesQuery = useQuery({
+        queryKey,
+        queryFn: () => makeRequest({
             method: 'get',
             url: '/accessories',
             permissionKey: PERMISSIONS.ACCESSORIES_VIEW,
-        })
-            .then(res => {
-                if (res?.rows) {
-                    setData({
-                        accessories: res.rows,
-                        count: res.total
-                    });
-                }
-            })
-            .catch(err => {
-                console.log(err);
-            })
-            .finally(() => {
-                setLoading(false);
-            });
-    }, []);
+        }),
+    });
 
-    useFocusEffect(
-        useCallback(() => {
-            getAccessories();
-        }, [getAccessories])
-    );
+    useRefreshOnFocus(queryKey);
 
-    const onRefresh = useCallback(() => {
-        setRefreshing(true);
-        getAccessories()
-            .finally(() => {
-                setRefreshing(false);
-            });
-    }, [getAccessories]);
+    const [isManualRefreshing, setIsManualRefreshing] = useState(false);
+    const onManualRefresh = async () => {
+        setIsManualRefreshing(true);
+        await accessoriesQuery.refetch();
+        setIsManualRefreshing(false);
+    };
+
+    const accessories = accessoriesQuery.data?.rows ?? [];
 
     const Item = ({id, image, name, category, manufacturer, qty, remaining_qty}) => {
         const available = remaining_qty > 0;
@@ -74,7 +59,10 @@ export default function AccessoriesScreen() {
                 ]}
             >
                 <View style={styles.imageContainer}>
-                    <Image style={styles.image} src={image} />
+                    {image
+                        ? <Image style={styles.image} src={image} />
+                        : <Ionicons name="headset-outline" size={40} color={colors.textSecondary} />
+                    }
                 </View>
                 <View style={styles.contentContainer}>
                     <Text style={styles.itemName}>{decode(name)}</Text>
@@ -100,14 +88,14 @@ export default function AccessoriesScreen() {
         );
     };
 
-    if (!loading && (!data.accessories || data.accessories.length === 0)) {
+    if (!accessoriesQuery.isPending && accessories.length === 0) {
         return (
             <SafeAreaProvider style={styles.container}>
                 <EmptyState
                     icon="file-tray-outline"
                     title={t('mobile.no_results')}
                     message={t('mobile.no_results_message')}
-                    onRetry={getAccessories}
+                    onRetry={() => accessoriesQuery.refetch()}
                 />
             </SafeAreaProvider>
         );
@@ -121,7 +109,7 @@ export default function AccessoriesScreen() {
                     paddingBottom: 80
                 }}
                 style={styles.flatlist}
-                data={data.accessories}
+                data={accessories}
                 estimatedItemSize={120}
                 renderItem={({item}) => <Item
                     id={item.id}
@@ -133,7 +121,7 @@ export default function AccessoriesScreen() {
                     remaining_qty={item.remaining_qty}
                 />}
                 keyExtractor={item => item.id}
-                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+                refreshControl={<RefreshControl refreshing={isManualRefreshing} onRefresh={onManualRefresh} />}
             />
         </SafeAreaProvider>
     );

@@ -2,28 +2,56 @@ import { Stack, router } from 'expo-router';
 import { useAuth, AuthProvider } from "@/context/AuthProvider";
 import { AuditSessionProvider } from "@/context/AuditSessionProvider";
 import { PermissionProvider } from "@/permissions/PermissionContext";
-import { ActivityIndicator, View } from "react-native";
+import { ActivityIndicator, AppState, View } from "react-native";
 import React, {useEffect} from "react";
 import {GestureHandlerRootView} from "react-native-gesture-handler";
-import {BottomSheetModalProvider} from "@gorhom/bottom-sheet";
 import {SafeAreaProvider} from "react-native-safe-area-context";
+import {QueryClientProvider, onlineManager, focusManager} from "@tanstack/react-query";
+import {useReactQueryDevTools} from "@dev-plugins/react-query";
+import * as Network from "expo-network";
+import {queryClient} from "@/helpers/queryClient";
 import i18n from "@/i18n"; //this says unused but it's just providing for the entire app
+import * as Sentry from "@sentry/react-native";
+import {initSentry} from "@/helpers/sentry";
+import ErrorReportConsentPrompt from "@/components/errorReporting/ErrorReportConsentPrompt";
 
+// Runs at module scope so the global error handler is installed before any provider mounts.
+initSentry();
 
-export default function RootLayout() {
+// addNetworkStateListener emits the current path as soon as it subscribes, so it is the
+// only signal we need. getNetworkStateAsync is deliberately not used to seed this: on iOS it
+// waits on a throwaway NWPathMonitor and resolves with isConnected false on a 5s timeout
+// rather than rejecting, which would mark us offline and leave every query paused with no
+// error. isConnected is optional in NetworkState, so only an explicit false counts as offline.
+onlineManager.setEventListener((setOnline) => {
+    const subscription = Network.addNetworkStateListener((state) => {
+        setOnline(state.isConnected !== false);
+    });
+    return () => subscription.remove();
+});
+
+AppState.addEventListener('change', (status) => {
+    focusManager.setFocused(status === 'active');
+});
+
+function RootLayout() {
+    useReactQueryDevTools(queryClient);
 
     return (
-        <AuthProvider>
-            <PermissionProvider>
-                <AuditSessionProvider>
-                    <SafeAreaProvider>
-                        <GestureHandlerRootView style={{ flex: 1 }}>
-                                <AuthLayoutContent/>
-                        </GestureHandlerRootView>
-                    </SafeAreaProvider>
-                </AuditSessionProvider>
-            </PermissionProvider>
-        </AuthProvider>
+        <QueryClientProvider client={queryClient}>
+            <AuthProvider>
+                <PermissionProvider>
+                    <AuditSessionProvider>
+                        <SafeAreaProvider>
+                            <GestureHandlerRootView style={{ flex: 1 }}>
+                                    <AuthLayoutContent/>
+                                    <ErrorReportConsentPrompt/>
+                            </GestureHandlerRootView>
+                        </SafeAreaProvider>
+                    </AuditSessionProvider>
+                </PermissionProvider>
+            </AuthProvider>
+        </QueryClientProvider>
     )
 
     function AuthLayoutContent() {
@@ -49,21 +77,21 @@ export default function RootLayout() {
         }
 
         return (
-            <BottomSheetModalProvider>
-                <Stack screenOptions={{ headerShown: false }}>
-                    {isAuthenticated ? (
-                        <Stack.Screen name="(authenticated)" />
-                    ) : (
-                        <Stack.Screen
-                            name="login"
-                            options={{
-                                headerShown: true,
-                                headerTitle: "Login"
-                            }}
-                        />
-                    )}
-                </Stack>
-            </BottomSheetModalProvider>
+            <Stack screenOptions={{ headerShown: false }}>
+                {isAuthenticated ? (
+                    <Stack.Screen name="(authenticated)" />
+                ) : (
+                    <Stack.Screen
+                        name="login"
+                        options={{
+                            headerShown: true,
+                            headerTitle: "Login"
+                        }}
+                    />
+                )}
+            </Stack>
         );
     }
 }
+
+export default Sentry.wrap(RootLayout);

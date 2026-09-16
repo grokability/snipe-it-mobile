@@ -1,4 +1,4 @@
-import React, {useCallback, useContext, useState, useMemo, useRef} from 'react';
+import React, {useContext, useEffect, useState, useMemo, useRef} from 'react';
 import {decode} from "html-entities";
 import {
     ActivityIndicator,
@@ -10,8 +10,11 @@ import {
     Text,
     View,
 } from 'react-native';
-import {router, useFocusEffect, useLocalSearchParams} from "expo-router";
+import {router, useLocalSearchParams} from "expo-router";
+import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {makeRequest} from "@/helpers/axiosConfig";
+import {accessoryKeys} from "@/helpers/queryKeys";
+import {PermissionDeniedError} from "@/helpers/errors";
 import {PERMISSIONS} from "@/permissions/PermissionKeys";
 import {PermissionGate} from '@/permissions/PermissionGate';
 import {AuthContext} from "@/context/AuthProvider";
@@ -46,9 +49,8 @@ export default function EditAccessoryScreen() {
     const styles = useMemo(() => createStyles(colors), [colors]);
     const { t } = useTranslation();
 
-    const [loading, setLoading] = useState(true);
-    const [submitting, setSubmitting] = useState(false);
     const { id } = useLocalSearchParams();
+    const queryClient = useQueryClient();
 
     // Text fields
     const [name, setName] = useState('');
@@ -79,19 +81,12 @@ export default function EditAccessoryScreen() {
     const companyRef = useRef(null);
     const locationRef = useRef(null);
 
-    const getAccessory = useCallback(() => {
-        setLoading(true);
-        return makeRequest({ url: `/accessories/${id}`, method: 'get', permissionKey: PERMISSIONS.ACCESSORIES_VIEW })
-            .then((accessory) => {
-                populateFields(accessory);
-            })
-            .catch((error) => {
-                console.error(error);
-            })
-            .finally(() => {
-                setLoading(false);
-            });
-    }, [id]);
+    const accessoryQuery = useQuery({
+        queryKey: accessoryKeys.detail(id),
+        queryFn: () => makeRequest({ url: `/accessories/${id}`, method: 'get', permissionKey: PERMISSIONS.ACCESSORIES_VIEW }),
+    });
+
+    const populatedForIdRef = useRef(null);
 
     const populateFields = (accessory) => {
         setName(accessory.name ? decode(accessory.name) : '');
@@ -123,11 +118,13 @@ export default function EditAccessoryScreen() {
         setRequestable(!!accessory.requestable);
     };
 
-    useFocusEffect(
-        useCallback(() => {
-            getAccessory();
-        }, [getAccessory])
-    );
+    useEffect(() => {
+        if (!accessoryQuery.data) return;
+        if (populatedForIdRef.current === id) return;
+        populatedForIdRef.current = id;
+
+        populateFields(accessoryQuery.data);
+    }, [accessoryQuery.data, id]);
 
     const formatDateForApi = (date) => {
         if (!date) return undefined;
@@ -136,6 +133,47 @@ export default function EditAccessoryScreen() {
         const day = String(date.getDate()).padStart(2, '0');
         return `${year}-${month}-${day}`;
     };
+
+    const editMutation = useMutation({
+        mutationFn: (data) => makeRequest({
+            url: `/accessories/${id}`,
+            method: 'PUT',
+            data,
+            permissionKey: PERMISSIONS.ACCESSORIES_EDIT,
+        }),
+        onSuccess: (response) => {
+            if (response.status === 'error') {
+                Burnt.alert({
+                    title: t('general.error'),
+                    preset: 'error',
+                    message: response.messages
+                        ? Object.values(response.messages).flat().join('\n')
+                        : t('mobile.edit_accessory_failed'),
+                    duration: 4,
+                });
+                return;
+            }
+            Burnt.alert({
+                title: t('general.notification_success'),
+                preset: 'heart',
+                message: t('mobile.edit_accessory_success'),
+                duration: 2,
+            });
+            queryClient.invalidateQueries({ queryKey: accessoryKeys.detail(id) }).catch(() => {});
+            queryClient.invalidateQueries({ queryKey: accessoryKeys.lists() }).catch(() => {});
+            router.dismissTo(`/(tabs)/(accessories)/${id}`);
+        },
+        onError: (error) => {
+            if (error instanceof PermissionDeniedError) return;
+            console.error(error);
+            Burnt.alert({
+                title: t('general.error'),
+                preset: 'error',
+                message: t('mobile.edit_accessory_failed'),
+                duration: 4,
+            });
+        },
+    });
 
     const handleSubmit = () => {
         if (!name.trim()) {
@@ -166,8 +204,6 @@ export default function EditAccessoryScreen() {
             return;
         }
 
-        setSubmitting(true);
-
         const data = {
             name: name,
             qty: parseInt(qty, 10),
@@ -185,48 +221,10 @@ export default function EditAccessoryScreen() {
             notes: notes || null,
         };
 
-        makeRequest({
-            url: `/accessories/${id}`,
-            method: 'PUT',
-            data,
-            permissionKey: PERMISSIONS.ACCESSORIES_EDIT,
-        })
-            .then((response) => {
-                if (response === null) return;
-                if (response.status === 'error') {
-                    Burnt.alert({
-                        title: t('general.error'),
-                        preset: 'error',
-                        message: response.messages
-                            ? Object.values(response.messages).flat().join('\n')
-                            : t('mobile.edit_accessory_failed'),
-                        duration: 4,
-                    });
-                    return;
-                }
-                Burnt.alert({
-                    title: t('general.notification_success'),
-                    preset: 'heart',
-                    message: t('mobile.edit_accessory_success'),
-                    duration: 2,
-                });
-                router.replace(`/(tabs)/(accessories)/${id}`);
-            })
-            .catch((error) => {
-                console.error(error);
-                Burnt.alert({
-                    title: t('general.error'),
-                    preset: 'error',
-                    message: t('mobile.edit_accessory_failed'),
-                    duration: 4,
-                });
-            })
-            .finally(() => {
-                setSubmitting(false);
-            });
+        editMutation.mutate(data);
     };
 
-    if (loading) {
+    if (!accessoryQuery.data) {
         return (
             <View style={styles.loadingContainer}>
                 <ActivityIndicator size="large" color={colors.primary} />
@@ -349,14 +347,14 @@ export default function EditAccessoryScreen() {
                 <PermissionGate permission={PERMISSIONS.ACCESSORIES_EDIT}>
                     <Pressable
                         onPress={handleSubmit}
-                        disabled={submitting}
+                        disabled={editMutation.isPending}
                         style={({pressed}) => [
                             styles.submitButton,
                             pressed && styles.submitButtonPressed,
-                            submitting && styles.submitButtonDisabled,
+                            editMutation.isPending && styles.submitButtonDisabled,
                         ]}
                     >
-                        {submitting ? (
+                        {editMutation.isPending ? (
                             <ActivityIndicator color="#fff" />
                         ) : (
                             <Text style={styles.submitButtonText}>{t('mobile.save_changes')}</Text>
@@ -370,27 +368,32 @@ export default function EditAccessoryScreen() {
             <SelectCategoryBottomSheet
                 title={t('general.select_category')}
                 ref={categoryRef}
+                selectedCategory={selectedCategory}
                 setSelectedCategory={setSelectedCategory}
                 categoryType="accessory"
             />
             <SelectManufacturerBottomSheet
                 title={t('general.select_manufacturer')}
                 ref={manufacturerRef}
+                selectedManufacturer={selectedManufacturer}
                 setSelectedManufacturer={setSelectedManufacturer}
             />
             <SelectSupplierBottomSheet
                 title={t('mobile.select_supplier')}
                 ref={supplierRef}
+                selectedSupplier={selectedSupplier}
                 setSelectedSupplier={setSelectedSupplier}
             />
             <SelectCompanyBottomSheet
                 title={t('mobile.select_company')}
                 ref={companyRef}
+                selectedCompany={selectedCompany}
                 setSelectedCompany={setSelectedCompany}
             />
             <SelectLocationBottomSheet
                 title={t('general.select_location')}
                 ref={locationRef}
+                selectedLocation={selectedLocation}
                 setSelectedLocation={setSelectedLocation}
             />
         </SafeAreaProvider>
