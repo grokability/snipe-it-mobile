@@ -7,14 +7,18 @@ import {useColors} from '@/hooks/useThemeColors';
 import {Spacing, Typography, FontWeight, BorderRadius} from '@/constants/sizes';
 import {useTranslation} from 'react-i18next';
 import {getErrorReportReference} from '@/helpers/errorReportReference';
+import {ISSUE_TRIAGE_DISCUSSION_URL, buildErrorReportDiscussionUrl} from '@/helpers/errorReportDiscussion';
 import {useCopyErrorReportReference} from '@/hooks/useCopyErrorReportReference';
 
 const REPORT_ITEMS = [
     {
+        // The only row whose destination depends on state, so its url is resolved at render
+        // from the stored reference rather than fixed here.
         key: 'report-bug',
         icon: 'bug',
         labelKey: 'mobile.help_report_bug',
-        url: 'https://github.com/grokability/snipe-it-mobile/discussions/new?category=issue-triage',
+        url: ISSUE_TRIAGE_DISCUSSION_URL,
+        prefillReference: true,
     },
     {
         key: 'request-feature',
@@ -107,13 +111,22 @@ export default function HelpScreen() {
             )}
 
             <Text style={styles.sectionHeader}>{t('mobile.help_section_reporting')}</Text>
-            {REPORT_ITEMS.map((item) => (
-                <Pressable key={item.key} style={styles.row} onPress={() => openUrl(item.url)}>
-                    <FontAwesome name={item.icon} size={20} color={colors.text} style={styles.icon} />
-                    <Text style={styles.label}>{t(item.labelKey)}</Text>
-                    <FontAwesome name="external-link" size={14} color={colors.textSecondary} />
-                </Pressable>
-            ))}
+            {REPORT_ITEMS.map((item) => {
+                // Carries the reference into the discussion body so the user does not have to
+                // copy it across themselves. Falls back to the plain category URL when nothing
+                // has been shared yet.
+                const url = item.prefillReference
+                    ? buildErrorReportDiscussionUrl(reference?.eventId)
+                    : item.url;
+
+                return (
+                    <Pressable key={item.key} style={styles.row} onPress={() => openUrl(url)}>
+                        <FontAwesome name={item.icon} size={20} color={colors.text} style={styles.icon} />
+                        <Text style={styles.label}>{t(item.labelKey)}</Text>
+                        <FontAwesome name="external-link" size={14} color={colors.textSecondary} />
+                    </Pressable>
+                );
+            })}
 
         </ScrollView>
     );
