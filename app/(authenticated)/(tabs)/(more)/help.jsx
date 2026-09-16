@@ -3,12 +3,11 @@ import {useCallback, useMemo, useState} from 'react';
 import {useFocusEffect} from 'expo-router';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import * as Clipboard from 'expo-clipboard';
-import * as Burnt from 'burnt';
 import {useColors} from '@/hooks/useThemeColors';
 import {Spacing, Typography, FontWeight, BorderRadius} from '@/constants/sizes';
 import {useTranslation} from 'react-i18next';
 import {getErrorReportReference} from '@/helpers/errorReportReference';
+import {useCopyErrorReportReference} from '@/hooks/useCopyErrorReportReference';
 
 const REPORT_ITEMS = [
     {
@@ -56,6 +55,7 @@ export default function HelpScreen() {
     const {t} = useTranslation();
     const insets = useSafeAreaInsets();
     const [reference, setReference] = useState(null);
+    const copyReference = useCopyErrorReportReference();
 
     // Re-read on focus rather than on mount. The user reaches this screen after hitting the
     // error and sharing the report, so the reference is usually written while this screen is
@@ -68,14 +68,6 @@ export default function HelpScreen() {
 
     const openUrl = (url) => Linking.openURL(url);
 
-    const handleCopyReference = async (eventId) => {
-        const copied = await Clipboard.setStringAsync(eventId);
-        Burnt.toast({
-            title: copied ? t('mobile.help_error_reference_copied') : t('general.error'),
-            preset: copied ? 'done' : 'error',
-            duration: 1.5,
-        });
-    };
 
     return (
         <ScrollView
@@ -102,7 +94,7 @@ export default function HelpScreen() {
                                 })}
                             </Text>
                             <Pressable
-                                onPress={() => handleCopyReference(reference.eventId)}
+                                onPress={() => copyReference(reference.eventId)}
                                 style={({pressed}) => [styles.copyButton, pressed && styles.copyButtonPressed]}
                                 accessibilityRole="button"
                             >
