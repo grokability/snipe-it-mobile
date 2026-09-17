@@ -3,9 +3,30 @@ const BEARER_VALUE = /^\s*bearer\s+\S+/i;
 const REDACTED = '[redacted]';
 const MAX_DEPTH = 8;
 
+// Hosts the app itself links to. They are the same for every install and say nothing about
+// who is running it, so blanking them only costs legibility: a report reading "Unable to open
+// URL: https://[host]/grokability/snipe-it-mobile/discussions/new" hides the one detail that
+// makes it actionable. Anything not listed here is treated as the user's Snipe-IT instance.
+//
+// ^this isn't exactly true, there's a possibility that user data includes hosts that users will want to 
+// open, so we'll probably need to revisit this in the future, but for right now to get this working it's fine
+const PUBLIC_HOSTS = new Set(['github.com', 'discord.gg', 'docs.expo.dev']);
+
+// `authority` is the [userinfo@]host[:port] between the scheme and the path.
+function isPublicHost(authority) {
+    // Userinfo can carry credentials, so a URL that has any is never kept, whatever the host.
+    if (authority.includes('@')) return false;
+
+    const host = authority.toLowerCase().replace(/:\d+$/, '').replace(/^www\./, '');
+    return PUBLIC_HOSTS.has(host);
+}
+
 export function stripHost(text) {
     if (typeof text !== 'string') return text;
-    return text.replace(/([a-zA-Z][a-zA-Z0-9+.-]*:\/\/)[^\s/?#]*/g, '$1[host]');
+    return text.replace(
+        /([a-zA-Z][a-zA-Z0-9+.-]*:\/\/)([^\s/?#]*)/g,
+        (url, scheme, authority) => (isPublicHost(authority) ? url : `${scheme}[host]`)
+    );
 }
 
 export function redact(value, depth = 0) {

@@ -289,6 +289,10 @@
     "help_error_reference_description": "Include this reference when you report a problem, so we can find the error report you shared.",
     "help_error_reference_shared": "Shared {{date}}",
     "help_error_reference_copy": "Copy",
-    "help_error_reference_copied": "Copied"
+    "help_error_reference_copied": "Copied",
+    "open_link_failed_title": "Couldn't open the link",
+    "open_link_failed_message": "Your device would not open this link. Copy it and paste it into a browser.",
+    "open_link_copy": "Copy Link",
+    "open_link_copied": "Link copied"
   }
 }
