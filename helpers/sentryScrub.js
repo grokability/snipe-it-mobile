@@ -7,6 +7,9 @@ const MAX_DEPTH = 8;
 // who is running it, so blanking them only costs legibility: a report reading "Unable to open
 // URL: https://[host]/grokability/snipe-it-mobile/discussions/new" hides the one detail that
 // makes it actionable. Anything not listed here is treated as the user's Snipe-IT instance.
+//
+// ^this isn't exactly true, there's a possibility that user data includes hosts that users will want to 
+// open, so we'll probably need to revisit this in the future, but for right now to get this working it's fine
 const PUBLIC_HOSTS = new Set(['github.com', 'discord.gg', 'docs.expo.dev']);
 
 // `authority` is the [userinfo@]host[:port] between the scheme and the path.
