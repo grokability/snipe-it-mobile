@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useSyncExternalStore } from 'react';
-import { Linking, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useColors } from '@/hooks/useThemeColors';
@@ -14,6 +14,7 @@ import {
 } from '@/helpers/pendingErrorReports';
 import { buildErrorReportDiscussionUrl } from '@/helpers/errorReportDiscussion';
 import { useCopyErrorReportReference } from '@/hooks/useCopyErrorReportReference';
+import { useOpenExternalUrl } from '@/hooks/useOpenExternalUrl';
 
 // Asks before an error report leaves the device, when consent is ASK.
 //
@@ -34,6 +35,7 @@ export default function ErrorReportConsentPrompt() {
     const [showPayload, setShowPayload] = useState(false);
     const [sentReference, setSentReference] = useState(null);
     const copyReference = useCopyErrorReportReference();
+    const openExternalUrl = useOpenExternalUrl();
 
     const report = useSyncExternalStore(subscribeToPendingReports, getNextPendingReport);
 
@@ -50,7 +52,7 @@ export default function ErrorReportConsentPrompt() {
     // report, so by the time this state exists `report` is already the next queued report or
     // null — guarding first would unmount the follow-up the instant it appeared.
     if (sentReference) {
-        const openDiscussion = () => Linking.openURL(buildErrorReportDiscussionUrl(sentReference));
+        const openDiscussion = () => openExternalUrl(buildErrorReportDiscussionUrl(sentReference));
         // Clearing this lets anything queued behind the shared report raise its own prompt.
         const closeFollowUp = () => setSentReference(null);
 
