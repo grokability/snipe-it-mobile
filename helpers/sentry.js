@@ -62,6 +62,20 @@ export function initSentry() {
         // Tracing and session replay bill as separate quota dimensions and neither helps
         // with the login failures this was added for. Enable them deliberately, not by default.
         tracesSampleRate: 0,
+        // Sentry's exception carries only an error's name, message and stack. A native
+        // rejection arrives with more: expo-modules-core's CodedError has a `code`, an axios
+        // failure has `config` and `response`, and that is usually where the specific cause
+        // is. ExtraErrorData copies those properties onto the event, with the `cause` chain,
+        // so a login failure does not have to be inferred from its message alone.
+        //
+        // It captures whatever the error happens to hold, which for an axios failure includes
+        // the request that produced it. gateEvent runs scrubEvent over event.contexts after
+        // this, so the host and every credential-bearing key are stripped before the event
+        // leaves the device.
+        integrations: (defaultIntegrations) => [
+            ...defaultIntegrations,
+            Sentry.extraErrorDataIntegration(),
+        ],
         beforeSend: gateEvent,
         beforeBreadcrumb: scrubBreadcrumb,
     });
