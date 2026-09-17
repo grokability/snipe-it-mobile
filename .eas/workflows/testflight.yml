@@ -70,7 +70,12 @@ jobs:
   distribute_android_reuse:
     name: Promote Android to Open Testing (Reuse)
     needs: [get_build_android]
-    if: ${{ needs.get_build_android.outputs.build_id }}
+    # Only a develop build sits on the `internal` track and can be promoted from it. A build
+    # from an earlier testflight run carries the `beta` profile and was submitted straight to
+    # `beta`, so there is nothing to promote and `internal` holds an older versionCode —
+    # promoting that is a downgrade Play rejects with "does not allow any existing users to
+    # upgrade to the newly added APKs".
+    if: ${{ needs.get_build_android.outputs.build_id && needs.get_build_android.outputs.profile == 'internal-testing' }}
     runs_on: linux-medium
     steps:
       # Play's track ids do not match the Play Console labels: `internal` is Internal testing,
@@ -82,6 +87,7 @@ jobs:
             --package_name com.grokability.snipeitmobile \
             --track internal \
             --track_promote_to beta \
+            --version_code ${{ needs.get_build_android.outputs.app_build_version }} \
             --json_key "$GOOGLE_SERVICE_ACCOUNT_JSON" \
             --changes_not_sent_for_review false \
             --skip_upload_apk true \
