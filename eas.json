@@ -53,8 +53,7 @@
     },
     "beta": {
       "ios": {
-        "ascAppId": "6754097538",
-        "groups": ["Initial Group"]
+        "ascAppId": "6754097538"
       },
       "android": {
         "track": "beta"
