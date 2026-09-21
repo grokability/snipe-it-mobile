@@ -1,4 +1,4 @@
-import {View, Text, Pressable, StyleSheet, ScrollView, Linking, Platform} from 'react-native';
+import {View, Text, Pressable, StyleSheet, ScrollView, Platform} from 'react-native';
 import {useCallback, useMemo, useState} from 'react';
 import {useFocusEffect} from 'expo-router';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
@@ -9,6 +9,7 @@ import {useTranslation} from 'react-i18next';
 import {getErrorReportReference} from '@/helpers/errorReportReference';
 import {ISSUE_TRIAGE_DISCUSSION_URL, buildErrorReportDiscussionUrl} from '@/helpers/errorReportDiscussion';
 import {useCopyErrorReportReference} from '@/hooks/useCopyErrorReportReference';
+import {useOpenExternalUrl} from '@/hooks/useOpenExternalUrl';
 
 const REPORT_ITEMS = [
     {
@@ -60,6 +61,7 @@ export default function HelpScreen() {
     const insets = useSafeAreaInsets();
     const [reference, setReference] = useState(null);
     const copyReference = useCopyErrorReportReference();
+    const openUrl = useOpenExternalUrl();
 
     // Re-read on focus rather than on mount. The user reaches this screen after hitting the
     // error and sharing the report, so the reference is usually written while this screen is
@@ -69,8 +71,6 @@ export default function HelpScreen() {
             setReference(getErrorReportReference());
         }, [])
     );
-
-    const openUrl = (url) => Linking.openURL(url);
 
 
     return (
