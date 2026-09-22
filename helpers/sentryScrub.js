@@ -65,6 +65,48 @@ function stripAddressLiterals(text) {
         (octets.slice(0, 4).every((octet) => Number(octet) <= 255) ? '[host]' : literal));
 }
 
+function escapeRegExp(text) {
+    return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function isPlainContainer(value) {
+    if (Array.isArray(value)) return true;
+    const prototype = Object.getPrototypeOf(value);
+    return prototype === Object.prototype || prototype === null;
+}
+
+function replaceKnownHost(value, pattern, seen, depth) {
+    if (typeof value === 'string') return value.replace(pattern, '$1[host]');
+    if (value == null || typeof value !== 'object' || depth > MAX_DEPTH || seen.has(value)) return value;
+    // Class instances, such as an Error or a Sentry scope, are left as they are.
+    if (!isPlainContainer(value)) return value;
+    seen.add(value);
+
+    // Copies rather than edits: breadcrumb objects are shared with the scope's buffer and
+    // with every other event, and must not carry this capture's scrub into theirs.
+    if (Array.isArray(value)) return value.map((entry) => replaceKnownHost(entry, pattern, seen, depth + 1));
+    const copy = {};
+    for (const [key, entry] of Object.entries(value)) {
+        copy[key] = replaceKnownHost(entry, pattern, seen, depth + 1);
+    }
+    return copy;
+}
+
+// Replaces one known host, with any port, everywhere in an event. The boundaries keep an
+// unqualified host such as "snipe" from eating "snipe-it" in a file path, while a subdomain
+// of the host is still hidden.
+export function stripKnownHost(event, host) {
+    if (!host) return event;
+    const pattern = new RegExp(`(^|[^\\w-])${escapeRegExp(host)}(?::\\d{1,5})?(?![\\w-])`, 'gi');
+    const seen = new WeakSet();
+    const scrubbed = {};
+    for (const [key, entry] of Object.entries(event)) {
+        // Sentry's own bookkeeping, which holds references to live scopes. It is not sent.
+        scrubbed[key] = key === 'sdkProcessingMetadata' ? entry : replaceKnownHost(entry, pattern, seen, 0);
+    }
+    return scrubbed;
+}
+
 function stripSerializedSecrets(text) {
     return text
         .replace(SENSITIVE_FORM_PAIR, (pair, lead, key) => `${lead}${key}=${REDACTED}`)

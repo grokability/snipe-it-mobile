@@ -1,5 +1,6 @@
 import * as Sentry from '@sentry/react-native';
-import { describeDomain, isLikelyCleartextBlocked } from '@/helpers/domainShape';
+import { describeDomain, isLikelyCleartextBlocked, parseHost } from '@/helpers/domainShape';
+import { stripKnownHost } from '@/helpers/sentryScrub';
 
 // Every login failure is reported through here so the tags are consistent across the OAuth
 // discovery probe, the OAuth token exchange and bearer-token login. Filtering Sentry by
@@ -49,9 +50,22 @@ function tagsFor(stage, error, shape) {
     };
 }
 
+// The generic scrub in beforeSend cannot recognise a hostname in free text, so each report
+// carries the one host it is about. The processor lives on a scope forked for this capture
+// alone: two failures for different instances in flight together each scrub only their own
+// host, and the raw host is never stored anywhere the event can reach. Sentry runs scope
+// processors after integrations such as ExtraErrorData, so what those add is covered too.
+function captureForDomain(domain, capture) {
+    const host = parseHost(domain);
+    Sentry.withScope((scope) => {
+        scope.addEventProcessor((event) => stripKnownHost(event, host));
+        capture();
+    });
+}
+
 export function reportLoginFailure({ stage, error, domain, level = 'error', extra = {} }) {
     const shape = describeDomain(domain);
-    Sentry.captureException(error, {
+    captureForDomain(domain, () => Sentry.captureException(error, {
         level,
         tags: tagsFor(stage, error, shape),
         contexts: { domain_shape: shape },
@@ -66,12 +80,12 @@ export function reportLoginFailure({ stage, error, domain, level = 'error', extr
             likely_cleartext_blocked: isLikelyCleartextBlocked(shape),
             ...extra,
         },
-    });
+    }));
 }
 
 export function reportLoginProblem({ stage, message, domain, reason, level = 'warning', extra = {} }) {
     const shape = describeDomain(domain);
-    Sentry.captureMessage(message, {
+    captureForDomain(domain, () => Sentry.captureMessage(message, {
         level,
         tags: {
             login_stage: stage,
@@ -82,7 +96,7 @@ export function reportLoginProblem({ stage, message, domain, reason, level = 'wa
         },
         contexts: { domain_shape: shape },
         extra,
-    });
+    }));
 }
 
 // Breadcrumbs give the sequence leading to a failure: which domain shape was entered, which

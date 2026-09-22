@@ -40,11 +40,9 @@ function classifyHost(host) {
     return { host_type: 'hostname', address_range: 'none' };
 }
 
-export function describeDomain(domain) {
-    if (typeof domain !== 'string' || domain.trim() === '') {
-        return { scheme: 'empty', host_type: 'none', address_range: 'none' };
-    }
-
+// Splits what the user typed into its URL parts without requiring it to be a valid URL:
+// the input is often missing a scheme, which new URL() rejects outright.
+function splitDomain(domain) {
     const raw = domain.trim();
     const schemeMatch = raw.match(/^([a-zA-Z][a-zA-Z0-9+.-]*):\/\//);
     const scheme = schemeMatch ? schemeMatch[1].toLowerCase() : 'none';
@@ -75,6 +73,23 @@ export function describeDomain(domain) {
         }
     }
 
+    return { raw, scheme, host, port, path, hasCredentials: atIndex !== -1 };
+}
+
+// The bare host a native error message would name, lowercased. Null when nothing usable was
+// typed.
+export function parseHost(domain) {
+    if (typeof domain !== 'string' || domain.trim() === '') return null;
+    const host = splitDomain(domain).host.toLowerCase();
+    return host === '' ? null : host;
+}
+
+export function describeDomain(domain) {
+    if (typeof domain !== 'string' || domain.trim() === '') {
+        return { scheme: 'empty', host_type: 'none', address_range: 'none' };
+    }
+
+    const { raw, scheme, host, port, path, hasCredentials } = splitDomain(domain);
     const { host_type, address_range } = classifyHost(host);
 
     return {
@@ -86,7 +101,7 @@ export function describeDomain(domain) {
         port: port === null || port === '' ? null : port,
         has_path: path !== '' && path !== '/',
         has_trailing_slash: raw.endsWith('/'),
-        has_embedded_credentials: atIndex !== -1,
+        has_embedded_credentials: hasCredentials,
         has_whitespace: /\s/.test(domain),
         host_label_count: host.includes('.') ? host.split('.').length : 1,
         length: raw.length,
