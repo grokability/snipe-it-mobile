@@ -53,6 +53,18 @@ export function stripHost(text) {
     );
 }
 
+// stripHost only sees a host that follows a scheme, and native network errors name one
+// without it: "CLEARTEXT communication to 192.168.20.200 not permitted". A hostname in free
+// text cannot be told apart from an ordinary word, so the host the user typed is replaced by
+// value in loginTelemetry. An IPv4 literal can be matched by pattern, and this also
+// catches one the user never typed, such as the target of a redirect.
+const IPV4_LITERAL = /\b(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})(:\d{1,5})?\b/g;
+
+function stripAddressLiterals(text) {
+    return text.replace(IPV4_LITERAL, (literal, ...octets) =>
+        (octets.slice(0, 4).every((octet) => Number(octet) <= 255) ? '[host]' : literal));
+}
+
 function stripSerializedSecrets(text) {
     return text
         .replace(SENSITIVE_FORM_PAIR, (pair, lead, key) => `${lead}${key}=${REDACTED}`)
@@ -63,7 +75,7 @@ function stripSerializedSecrets(text) {
 // a host is not the only thing worth hiding in a string.
 export function scrubText(text) {
     if (typeof text !== 'string') return text;
-    return stripSerializedSecrets(stripHost(text));
+    return stripSerializedSecrets(stripAddressLiterals(stripHost(text)));
 }
 
 export function redact(value, depth = 0) {
@@ -94,6 +106,8 @@ export function scrubEvent(event) {
         if (event.request.url) event.request.url = scrubText(event.request.url);
         if (event.request.data) event.request.data = redact(event.request.data);
     }
+    // failure_reason carries the native error message verbatim, host and all.
+    if (event.tags) event.tags = redact(event.tags);
     if (event.extra) event.extra = redact(event.extra);
     if (event.contexts) event.contexts = redact(event.contexts);
 
@@ -104,6 +118,7 @@ export function scrubEvent(event) {
 
     for (const exception of event.exception?.values ?? []) {
         if (typeof exception.value === 'string') exception.value = scrubText(exception.value);
+        if (exception.mechanism?.data) exception.mechanism.data = redact(exception.mechanism.data);
         // A Metro dev bundle is served over the LAN, so frame filenames carry an address.
         for (const frame of exception.stacktrace?.frames ?? []) {
             if (typeof frame.filename === 'string') frame.filename = scrubText(frame.filename);
