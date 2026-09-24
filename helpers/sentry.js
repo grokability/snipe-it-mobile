@@ -1,4 +1,5 @@
 import * as Sentry from '@sentry/react-native';
+import * as Application from 'expo-application';
 import * as Updates from 'expo-updates';
 import { scrubEvent, scrubBreadcrumb } from '@/helpers/sentryScrub';
 import {
@@ -81,6 +82,12 @@ export function initSentry() {
     Sentry.setTag('expo-update-id', Updates.updateId ?? 'none');
     Sentry.setTag('expo-is-embedded-update', String(Updates.isEmbeddedLaunch));
     Sentry.setTag('expo-runtime-version', Updates.runtimeVersion ?? 'none');
+    // The installed build and the update's commit, "1.0.0+41 (abc1234)", so an alert names both
+    // without looking the update id up on EAS. An update runs on every build with its runtime
+    // version and cannot know which one, so the two are joined here. eas update inlines the
+    // commit; the embedded bundle and dev builds have none.
+    const buildVersion = `${Application.nativeApplicationVersion}+${Application.nativeBuildVersion}`;
+    Sentry.setTag('expo-update-message', `${buildVersion} (${process.env.EXPO_PUBLIC_UPDATE_COMMIT ?? 'none'})`);
 }
 
 // Sends a report the user approved. The event has already been through beforeSend, so it goes
