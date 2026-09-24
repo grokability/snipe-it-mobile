@@ -9,6 +9,7 @@ import { useTranslation } from "react-i18next";
 import { discoverOAuthClient } from "@/helpers/oauthClientDiscovery";
 import { addLoginBreadcrumb } from "@/helpers/loginTelemetry";
 import { describeDomain } from "@/helpers/domainShape";
+import { normalizeDomain } from "@/helpers/normalizeDomain";
 
 const PHASE = {
     DOMAIN: 'domain',
@@ -23,11 +24,13 @@ const LoginForm = ({ onBearerLogin, onDomainChange }) => {
     const styles = useMemo(() => createStyles(colors), [colors]);
     const { t } = useTranslation();
 
-    const [domain, setDomain] = useState('https://example.example.com');
+    const [domain, setDomain] = useState('');
     const [phase, setPhase] = useState(PHASE.DOMAIN);
     const [clientId, setClientId] = useState(null);
     const [showManualOAuth, setShowManualOAuth] = useState(false);
     const [manualClientId, setManualClientId] = useState('');
+    const [isDomainInvalid, setIsDomainInvalid] = useState(false);
+    const [schemeWasAdded, setSchemeWasAdded] = useState(false);
     const checkGeneration = useRef(0);
 
     useEffect(() => {
@@ -63,16 +66,46 @@ const LoginForm = ({ onBearerLogin, onDomainChange }) => {
         setClientId(null);
         setShowManualOAuth(false);
         setManualClientId('');
+        setIsDomainInvalid(false);
+        setSchemeWasAdded(false);
     };
 
+    // The normalized form names the same instance, so rewriting the field leaves the phase and
+    // any discovery in flight alone.
+    const showNormalizedDomain = (baseUrl, addedScheme) => {
+        if (baseUrl === domain) return;
+        setDomain(baseUrl);
+        // Once rewritten the field shows https://, so this is the only record that the user
+        // did not type it. Editing the field clears it.
+        if (addedScheme) setSchemeWasAdded(true);
+        if (onDomainChange) onDomainChange(baseUrl);
+    };
+
+    const handleDomainBlur = () => {
+        const { baseUrl, addedScheme } = normalizeDomain(domain);
+        if (baseUrl) showNormalizedDomain(baseUrl, addedScheme);
+    };
+
+    const isDomainBlank = domain.trim() === '';
+
     const handleContinue = async () => {
-        const generation = ++checkGeneration.current;
-        setPhase(PHASE.CHECKING);
+        if (isDomainBlank) return;
         // The shape of what was typed is the single most useful thing to know when a login
         // fails, and it identifies nothing. See helpers/domainShape.js.
         addLoginBreadcrumb('Continue pressed', describeDomain(domain));
+
+        const { baseUrl, addedScheme, error } = normalizeDomain(domain);
+        if (error) {
+            setIsDomainInvalid(true);
+            return;
+        }
+        // Discovery takes baseUrl directly: the state update below has not landed yet.
+        showNormalizedDomain(baseUrl, addedScheme);
+
+        const generation = ++checkGeneration.current;
+        setPhase(PHASE.CHECKING);
         try {
-            const result = await discoverOAuthClient(domain);
+            const result = await discoverOAuthClient(baseUrl);
             if (generation !== checkGeneration.current) return;
             if (result) {
                 setClientId(result.clientId);
@@ -92,8 +125,10 @@ const LoginForm = ({ onBearerLogin, onDomainChange }) => {
     return (
         <View>
             <TextInput
-                placeholder={t('mobile.domain')}
+                placeholder={t('mobile.domain_placeholder')}
+                accessibilityLabel={t('mobile.domain')}
                 onChangeText={handleDomainChange}
+                onBlur={handleDomainBlur}
                 value={domain}
                 style={styles.input}
                 placeholderTextColor={colors.textMuted}
@@ -104,8 +139,16 @@ const LoginForm = ({ onBearerLogin, onDomainChange }) => {
                 editable={phase !== PHASE.CHECKING}
             />
 
+            {schemeWasAdded && (
+                <Text style={styles.fieldNote}>{t('mobile.domain_assumed_https')}</Text>
+            )}
+
+            {phase === PHASE.DOMAIN && isDomainInvalid && (
+                <Text style={styles.errorText}>{t('mobile.invalid_domain_message')}</Text>
+            )}
+
             {phase === PHASE.DOMAIN && (
-                <Button title={t('mobile.continue')} onPress={handleContinue} />
+                <Button title={t('mobile.continue')} onPress={handleContinue} disabled={isDomainBlank} />
             )}
 
             {phase === PHASE.CHECKING && (
@@ -172,6 +215,12 @@ const createStyles = (colors) => StyleSheet.create({
         fontSize: Typography.body,
         color: colors.text,
         backgroundColor: colors.background,
+    },
+    fieldNote: {
+        color: colors.textSecondary,
+        fontSize: Typography.caption,
+        marginTop: -Spacing.sm,
+        marginBottom: Spacing.md,
     },
     checkingRow: {
         flexDirection: 'row',
