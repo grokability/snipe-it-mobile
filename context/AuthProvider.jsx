@@ -46,7 +46,6 @@ export const AuthProvider = ({children}) => {
                 setUser,
                 logout: () => {
                     // Token is not invalidated on logout — see commented block below for full OAuth logout
-                    console.log('logout');
                     // return makeRequest({
                     //     url: '/mobile/logout',
                     //     method: 'POST',
@@ -74,12 +73,6 @@ export const AuthProvider = ({children}) => {
                 bearerLogin: (domain, token) => {
                     setIsLoading(true);
                     addLoginBreadcrumb('Bearer login attempt', { has_token: Boolean(token) });
-                    if (!token) {
-                        console.log('token is empty');
-                    }
-                    if (!domain) {
-                        console.log('domain is empty');
-                    }
                     makeRequest({
                         domain: domain,
                         url: 'users/me',
@@ -88,7 +81,6 @@ export const AuthProvider = ({children}) => {
                         headers: { 'Authorization': `Bearer ${token}` }
                     })
                         .then(response => {
-                            console.log(response);
                             setIsAuthenticated(true);
                             SecureStore.setItemAsync('domain', domain);
                             const userResponse = {
@@ -109,27 +101,17 @@ export const AuthProvider = ({children}) => {
                             setUser(null);
                             setIsAuthenticated(false);
                             reportLoginFailure({ stage: 'bearer-login', error, domain });
-                            console.error(error);
-                            console.error(error.message);
                         })
                         .finally(() => {
                             setIsLoading(false);
                         });
                 },
                 oAuthLogin: (domain, code, codeVerifier, clientId) => {
-                    console.log('oAuthLogin');
                    setIsLoading(true);
                    addLoginBreadcrumb('OAuth token exchange attempt', {
                        has_code: Boolean(code),
                        has_client_id: Boolean(clientId),
                    });
-                   if (!code) {
-                       console.log('code is empty');
-                   }
-                   console.log('code:', code);
-                   if (!domain) {
-                       console.log('domain is empty');
-                   }
                    const redirectUri = makeRedirectUri({
                        scheme: 'com.grokability.snipeitmobile',
                        path: 'home',
@@ -142,7 +124,6 @@ export const AuthProvider = ({children}) => {
                     params.append('code_verifier', codeVerifier);
                     params.append('redirect_uri', redirectUri);
                     params.append('name', deviceName); // hm, this isn't working.
-                    console.log('params:', params);
 
                     // make the actual token request
                     makeRequest({
@@ -183,14 +164,10 @@ export const AuthProvider = ({children}) => {
 
                         setUser(userResponse);
                         setIsAuthenticated(true);
-                        console.log('user:', userResponse);
                         PermissionManager.initializeFromUsersMe(userData.permissions, userData.id, domain);
                         PermissionManager.probeViewPermissions(domain, accessToken);
                     })
                    .catch(error => {
-                       if (error.response && error.response.data) {
-                           console.log('Server Error Data:', JSON.stringify(error.response.data, null, 2));
-                       }
                        // The OAuth error code says whether this was a bad verifier, an expired
                        // code or a redirect_uri mismatch, and is safe to send: it is a fixed
                        // vocabulary from the spec, not user data.
@@ -200,7 +177,6 @@ export const AuthProvider = ({children}) => {
                            domain,
                            extra: { oauth_error: error?.response?.data?.error ?? null },
                        });
-                       console.log(error);
                        setUser(null);
                        setIsAuthenticated(false);
                    })
