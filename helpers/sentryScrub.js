@@ -1,3 +1,7 @@
+// Keys whose value is redacted wherever they appear in an event. `code` is not one of them:
+// nothing the app attaches holds an OAuth code under that key, and on an error object it is
+// the machine-readable error code.
+//
 // Longest first, so a shorter name cannot claim a longer one's prefix while the engine is
 // working through the alternation.
 const SENSITIVE_KEYS = [
@@ -10,19 +14,15 @@ const SENSITIVE_KEYS = [
     'password',
     'secret',
     'token',
-    'code',
 ];
-const KEY_ALTERNATION = SENSITIVE_KEYS.join('|');
-
-const SENSITIVE_KEY = new RegExp(`^(?:${KEY_ALTERNATION})$`, 'i');
+const SENSITIVE_KEY = new RegExp(`^(?:${SENSITIVE_KEYS.join('|')})$`, 'i');
 const BEARER_VALUE = /^\s*bearer\s+\S+/i;
 
-// A request body is already serialized by the time a failed request is reported, so the
-// key-by-key redaction below never sees inside it: the OAuth token exchange posts
-// `grant_type=...&code=...&code_verifier=...` as a single string. The same is true of a
-// redirect URL carrying `?code=` in its query.
-const SENSITIVE_FORM_PAIR = new RegExp(`(^|[?&])(${KEY_ALTERNATION})=[^&#\\s]*`, 'gi');
-const SENSITIVE_JSON_PAIR = new RegExp(`("(?:${KEY_ALTERNATION})"\\s*:\\s*)"(?:[^"\\\\]|\\\\.)*"`, 'gi');
+// A URL is a single string, so the key-by-key redaction above never sees inside it. The OAuth
+// redirect URL carries `?code=` in its query, and can reach a breadcrumb, so `code` is
+// included here.
+const SENSITIVE_PAIR_KEYS = [...SENSITIVE_KEYS, 'code'];
+const SENSITIVE_FORM_PAIR = new RegExp(`(^|[?&])(${SENSITIVE_PAIR_KEYS.join('|')})=[^&#\\s]*`, 'gi');
 
 const REDACTED = '[redacted]';
 const MAX_DEPTH = 8;
@@ -53,17 +53,69 @@ export function stripHost(text) {
     );
 }
 
+// stripHost only sees a host that follows a scheme, and native network errors name one
+// without it: "CLEARTEXT communication to 192.168.20.200 not permitted". A hostname in free
+// text cannot be told apart from an ordinary word, so the host the user typed is replaced by
+// value in loginTelemetry. An IPv4 literal can be matched by pattern, and this also
+// catches one the user never typed, such as the target of a redirect.
+const IPV4_LITERAL = /\b(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})(:\d{1,5})?\b/g;
+
+function stripAddressLiterals(text) {
+    return text.replace(IPV4_LITERAL, (literal, ...octets) =>
+        (octets.slice(0, 4).every((octet) => Number(octet) <= 255) ? '[host]' : literal));
+}
+
+function escapeRegExp(text) {
+    return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function isPlainContainer(value) {
+    if (Array.isArray(value)) return true;
+    const prototype = Object.getPrototypeOf(value);
+    return prototype === Object.prototype || prototype === null;
+}
+
+function replaceKnownHost(value, pattern, seen, depth) {
+    if (typeof value === 'string') return value.replace(pattern, '$1[host]');
+    if (value == null || typeof value !== 'object' || depth > MAX_DEPTH || seen.has(value)) return value;
+    // Class instances, such as an Error or a Sentry scope, are left as they are.
+    if (!isPlainContainer(value)) return value;
+    seen.add(value);
+
+    // Copies rather than edits: breadcrumb objects are shared with the scope's buffer and
+    // with every other event, and must not carry this capture's scrub into theirs.
+    if (Array.isArray(value)) return value.map((entry) => replaceKnownHost(entry, pattern, seen, depth + 1));
+    const copy = {};
+    for (const [key, entry] of Object.entries(value)) {
+        copy[key] = replaceKnownHost(entry, pattern, seen, depth + 1);
+    }
+    return copy;
+}
+
+// Replaces one known host, with any port, everywhere in an event. The boundaries keep an
+// unqualified host such as "snipe" from eating "snipe-it" in a file path, while a subdomain
+// of the host is still hidden.
+export function stripKnownHost(event, host) {
+    if (!host) return event;
+    const pattern = new RegExp(`(^|[^\\w-])${escapeRegExp(host)}(?::\\d{1,5})?(?![\\w-])`, 'gi');
+    const seen = new WeakSet();
+    const scrubbed = {};
+    for (const [key, entry] of Object.entries(event)) {
+        // Sentry's own bookkeeping, which holds references to live scopes. It is not sent.
+        scrubbed[key] = key === 'sdkProcessingMetadata' ? entry : replaceKnownHost(entry, pattern, seen, 0);
+    }
+    return scrubbed;
+}
+
 function stripSerializedSecrets(text) {
-    return text
-        .replace(SENSITIVE_FORM_PAIR, (pair, lead, key) => `${lead}${key}=${REDACTED}`)
-        .replace(SENSITIVE_JSON_PAIR, (pair, prefix) => `${prefix}"${REDACTED}"`);
+    return text.replace(SENSITIVE_FORM_PAIR, (pair, lead, key) => `${lead}${key}=${REDACTED}`);
 }
 
 // Everything that reaches Sentry as free text goes through here rather than stripHost alone:
 // a host is not the only thing worth hiding in a string.
 export function scrubText(text) {
     if (typeof text !== 'string') return text;
-    return stripSerializedSecrets(stripHost(text));
+    return stripSerializedSecrets(stripAddressLiterals(stripHost(text)));
 }
 
 export function redact(value, depth = 0) {
@@ -94,6 +146,8 @@ export function scrubEvent(event) {
         if (event.request.url) event.request.url = scrubText(event.request.url);
         if (event.request.data) event.request.data = redact(event.request.data);
     }
+    // failure_reason carries the native error message verbatim, host and all.
+    if (event.tags) event.tags = redact(event.tags);
     if (event.extra) event.extra = redact(event.extra);
     if (event.contexts) event.contexts = redact(event.contexts);
 
@@ -104,6 +158,7 @@ export function scrubEvent(event) {
 
     for (const exception of event.exception?.values ?? []) {
         if (typeof exception.value === 'string') exception.value = scrubText(exception.value);
+        if (exception.mechanism?.data) exception.mechanism.data = redact(exception.mechanism.data);
         // A Metro dev bundle is served over the LAN, so frame filenames carry an address.
         for (const frame of exception.stacktrace?.frames ?? []) {
             if (typeof frame.filename === 'string') frame.filename = scrubText(frame.filename);
