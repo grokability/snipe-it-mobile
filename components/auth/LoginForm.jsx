@@ -23,7 +23,7 @@ const LoginForm = ({ onBearerLogin, onDomainChange }) => {
     const styles = useMemo(() => createStyles(colors), [colors]);
     const { t } = useTranslation();
 
-    const [domain, setDomain] = useState('https://example.example.com');
+    const [domain, setDomain] = useState('');
     const [phase, setPhase] = useState(PHASE.DOMAIN);
     const [clientId, setClientId] = useState(null);
     const [showManualOAuth, setShowManualOAuth] = useState(false);
@@ -65,7 +65,10 @@ const LoginForm = ({ onBearerLogin, onDomainChange }) => {
         setManualClientId('');
     };
 
+    const isDomainBlank = domain.trim() === '';
+
     const handleContinue = async () => {
+        if (isDomainBlank) return;
         const generation = ++checkGeneration.current;
         setPhase(PHASE.CHECKING);
         // The shape of what was typed is the single most useful thing to know when a login
@@ -92,7 +95,8 @@ const LoginForm = ({ onBearerLogin, onDomainChange }) => {
     return (
         <View>
             <TextInput
-                placeholder={t('mobile.domain')}
+                placeholder={t('mobile.domain_placeholder')}
+                accessibilityLabel={t('mobile.domain')}
                 onChangeText={handleDomainChange}
                 value={domain}
                 style={styles.input}
@@ -105,7 +109,7 @@ const LoginForm = ({ onBearerLogin, onDomainChange }) => {
             />
 
             {phase === PHASE.DOMAIN && (
-                <Button title={t('mobile.continue')} onPress={handleContinue} />
+                <Button title={t('mobile.continue')} onPress={handleContinue} disabled={isDomainBlank} />
             )}
 
             {phase === PHASE.CHECKING && (

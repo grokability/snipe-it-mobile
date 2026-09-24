@@ -93,6 +93,7 @@
     "no_email": "No Email Provided",
     "login_title": "Login Screen",
     "domain": "Domain",
+    "domain_placeholder": "https://snipeit.example.com",
     "login_failed": "Login Failed",
     "login_failed_message": "Please check your domain",
     "welcome": "Welcome to Snipe-IT Mobile!",
