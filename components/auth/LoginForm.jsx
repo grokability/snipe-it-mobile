@@ -30,6 +30,7 @@ const LoginForm = ({ onBearerLogin, onDomainChange }) => {
     const [showManualOAuth, setShowManualOAuth] = useState(false);
     const [manualClientId, setManualClientId] = useState('');
     const [isDomainInvalid, setIsDomainInvalid] = useState(false);
+    const [schemeWasAdded, setSchemeWasAdded] = useState(false);
     const checkGeneration = useRef(0);
 
     useEffect(() => {
@@ -66,19 +67,23 @@ const LoginForm = ({ onBearerLogin, onDomainChange }) => {
         setShowManualOAuth(false);
         setManualClientId('');
         setIsDomainInvalid(false);
+        setSchemeWasAdded(false);
     };
 
     // The normalized form names the same instance, so rewriting the field leaves the phase and
     // any discovery in flight alone.
-    const showNormalizedDomain = (baseUrl) => {
+    const showNormalizedDomain = (baseUrl, addedScheme) => {
         if (baseUrl === domain) return;
         setDomain(baseUrl);
+        // Once rewritten the field shows https://, so this is the only record that the user
+        // did not type it. Editing the field clears it.
+        if (addedScheme) setSchemeWasAdded(true);
         if (onDomainChange) onDomainChange(baseUrl);
     };
 
     const handleDomainBlur = () => {
-        const { baseUrl } = normalizeDomain(domain);
-        if (baseUrl) showNormalizedDomain(baseUrl);
+        const { baseUrl, addedScheme } = normalizeDomain(domain);
+        if (baseUrl) showNormalizedDomain(baseUrl, addedScheme);
     };
 
     const isDomainBlank = domain.trim() === '';
@@ -89,13 +94,13 @@ const LoginForm = ({ onBearerLogin, onDomainChange }) => {
         // fails, and it identifies nothing. See helpers/domainShape.js.
         addLoginBreadcrumb('Continue pressed', describeDomain(domain));
 
-        const { baseUrl, error } = normalizeDomain(domain);
+        const { baseUrl, addedScheme, error } = normalizeDomain(domain);
         if (error) {
             setIsDomainInvalid(true);
             return;
         }
         // Discovery takes baseUrl directly: the state update below has not landed yet.
-        showNormalizedDomain(baseUrl);
+        showNormalizedDomain(baseUrl, addedScheme);
 
         const generation = ++checkGeneration.current;
         setPhase(PHASE.CHECKING);
@@ -133,6 +138,10 @@ const LoginForm = ({ onBearerLogin, onDomainChange }) => {
                 submitBehavior="blurAndSubmit"
                 editable={phase !== PHASE.CHECKING}
             />
+
+            {schemeWasAdded && (
+                <Text style={styles.fieldNote}>{t('mobile.domain_assumed_https')}</Text>
+            )}
 
             {phase === PHASE.DOMAIN && isDomainInvalid && (
                 <Text style={styles.errorText}>{t('mobile.invalid_domain_message')}</Text>
@@ -206,6 +215,12 @@ const createStyles = (colors) => StyleSheet.create({
         fontSize: Typography.body,
         color: colors.text,
         backgroundColor: colors.background,
+    },
+    fieldNote: {
+        color: colors.textSecondary,
+        fontSize: Typography.caption,
+        marginTop: -Spacing.sm,
+        marginBottom: Spacing.md,
     },
     checkingRow: {
         flexDirection: 'row',
