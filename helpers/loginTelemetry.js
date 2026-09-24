@@ -54,7 +54,7 @@ function tagsFor(stage, error, shape) {
 // carries the one host it is about. The processor lives on a scope forked for this capture
 // alone: two failures for different instances in flight together each scrub only their own
 // host, and the raw host is never stored anywhere the event can reach. Sentry runs scope
-// processors after integrations such as ExtraErrorData, so what those add is covered too.
+// processors after its integrations, so what those add is covered too.
 function captureForDomain(domain, capture) {
     const host = parseHost(domain);
     Sentry.withScope((scope) => {
@@ -72,9 +72,8 @@ export function reportLoginFailure({ stage, error, domain, level = 'error', extr
         extra: {
             error_name: error?.name ?? null,
             // expo-modules-core's CodedError and axios both put a machine-readable code here.
-            // ExtraErrorData copies it onto the event too, but under the error's own `code`
-            // key, which the scrub redacts — it cannot tell an error code from the OAuth
-            // authorization code of the same name. Under this key it survives.
+            // Sentry's exception carries only the error's name, message and stack, so fields
+            // like this one reach the event only by being copied here explicitly.
             error_code: error?.code ?? null,
             response_status: error?.response?.status ?? null,
             likely_cleartext_blocked: isLikelyCleartextBlocked(shape),

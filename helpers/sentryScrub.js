@@ -1,3 +1,7 @@
+// Keys whose value is redacted wherever they appear in an event. `code` is not one of them:
+// nothing the app attaches holds an OAuth code under that key, and on an error object it is
+// the machine-readable error code.
+//
 // Longest first, so a shorter name cannot claim a longer one's prefix while the engine is
 // working through the alternation.
 const SENSITIVE_KEYS = [
@@ -10,19 +14,15 @@ const SENSITIVE_KEYS = [
     'password',
     'secret',
     'token',
-    'code',
 ];
-const KEY_ALTERNATION = SENSITIVE_KEYS.join('|');
-
-const SENSITIVE_KEY = new RegExp(`^(?:${KEY_ALTERNATION})$`, 'i');
+const SENSITIVE_KEY = new RegExp(`^(?:${SENSITIVE_KEYS.join('|')})$`, 'i');
 const BEARER_VALUE = /^\s*bearer\s+\S+/i;
 
-// A request body is already serialized by the time a failed request is reported, so the
-// key-by-key redaction below never sees inside it: the OAuth token exchange posts
-// `grant_type=...&code=...&code_verifier=...` as a single string. The same is true of a
-// redirect URL carrying `?code=` in its query.
-const SENSITIVE_FORM_PAIR = new RegExp(`(^|[?&])(${KEY_ALTERNATION})=[^&#\\s]*`, 'gi');
-const SENSITIVE_JSON_PAIR = new RegExp(`("(?:${KEY_ALTERNATION})"\\s*:\\s*)"(?:[^"\\\\]|\\\\.)*"`, 'gi');
+// A URL is a single string, so the key-by-key redaction above never sees inside it. The OAuth
+// redirect URL carries `?code=` in its query, and can reach a breadcrumb, so `code` is
+// included here.
+const SENSITIVE_PAIR_KEYS = [...SENSITIVE_KEYS, 'code'];
+const SENSITIVE_FORM_PAIR = new RegExp(`(^|[?&])(${SENSITIVE_PAIR_KEYS.join('|')})=[^&#\\s]*`, 'gi');
 
 const REDACTED = '[redacted]';
 const MAX_DEPTH = 8;
@@ -108,9 +108,7 @@ export function stripKnownHost(event, host) {
 }
 
 function stripSerializedSecrets(text) {
-    return text
-        .replace(SENSITIVE_FORM_PAIR, (pair, lead, key) => `${lead}${key}=${REDACTED}`)
-        .replace(SENSITIVE_JSON_PAIR, (pair, prefix) => `${prefix}"${REDACTED}"`);
+    return text.replace(SENSITIVE_FORM_PAIR, (pair, lead, key) => `${lead}${key}=${REDACTED}`);
 }
 
 // Everything that reaches Sentry as free text goes through here rather than stripHost alone:
