@@ -73,7 +73,7 @@ jobs:
           VERSION=$(node -p "require('./app.json').expo.version")
           SHA=$(git rev-parse --short HEAD)
           MSG="v$VERSION ($SHA)"
-          EXPO_PUBLIC_UPDATE_MESSAGE="$MSG" npx eas-cli@latest update --branch ${{ github.ref_name }} --message "$MSG" --environment production --non-interactive
+          EXPO_PUBLIC_UPDATE_MESSAGE="$MSG" EXPO_PUBLIC_UPDATE_COMMIT="$SHA" npx eas-cli@latest update --branch ${{ github.ref_name }} --message "$MSG" --environment production --non-interactive
       - name: Upload source maps to Sentry
         # eas update exports into ./dist and always passes --dump-sourcemap, so the maps are
         # already sitting there. Native builds upload via the config plugin; OTA updates do
