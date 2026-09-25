@@ -4,6 +4,11 @@
 // the reporters tried "all combinations of url/ip and https/http" without us ever learning
 // which combination they actually used. These fields answer that question. None of them
 // identify the host: they describe the form of the input, not its value.
+//
+// Everything here reads the URL normalizeDomain produces. `scheme_added` records that the user
+// typed no scheme and https:// was assumed.
+
+import { normalizeDomain } from '@/helpers/normalizeDomain';
 
 const IPV4 = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/;
 
@@ -25,13 +30,7 @@ function classifyHost(host) {
     }
 
     const ipv4 = lower.match(IPV4);
-    if (ipv4) {
-        const octets = ipv4.slice(1, 5).map(Number);
-        if (octets.some((octet) => octet > 255)) {
-            return { host_type: 'invalid-ipv4', address_range: 'none' };
-        }
-        return { host_type: 'ipv4', address_range: classifyIpv4(octets) };
-    }
+    if (ipv4) return { host_type: 'ipv4', address_range: classifyIpv4(ipv4.slice(1, 5).map(Number)) };
 
     if (lower === 'localhost') return { host_type: 'localhost', address_range: 'loopback' };
     // A .local name resolves over mDNS, which behaves differently from normal DNS on device.
@@ -40,56 +39,27 @@ function classifyHost(host) {
     return { host_type: 'hostname', address_range: 'none' };
 }
 
+// The bare host a native error message would name, lowercased. Null when the domain did not
+// normalize, since no request is made for it.
+export function parseHost(domain) {
+    return normalizeDomain(domain).url?.hostname ?? null;
+}
+
 export function describeDomain(domain) {
-    if (typeof domain !== 'string' || domain.trim() === '') {
-        return { scheme: 'empty', host_type: 'none', address_range: 'none' };
+    const { url, addedScheme, error } = normalizeDomain(domain);
+    if (error) {
+        return { scheme: 'none', host_type: 'none', address_range: 'none', port: null, has_path: false, scheme_added: false, validation_error: error };
     }
-
-    const raw = domain.trim();
-    const schemeMatch = raw.match(/^([a-zA-Z][a-zA-Z0-9+.-]*):\/\//);
-    const scheme = schemeMatch ? schemeMatch[1].toLowerCase() : 'none';
-    const afterScheme = schemeMatch ? raw.slice(schemeMatch[0].length) : raw;
-
-    const firstSlash = afterScheme.indexOf('/');
-    const authority = firstSlash === -1 ? afterScheme : afterScheme.slice(0, firstSlash);
-    const path = firstSlash === -1 ? '' : afterScheme.slice(firstSlash);
-
-    // Credentials embedded in the URL are their own problem; flag it without capturing it.
-    const atIndex = authority.lastIndexOf('@');
-    const hostAndPort = atIndex === -1 ? authority : authority.slice(atIndex + 1);
-
-    let host = hostAndPort;
-    let port = null;
-    if (hostAndPort.startsWith('[')) {
-        const close = hostAndPort.indexOf(']');
-        if (close !== -1) {
-            host = hostAndPort.slice(0, close + 1);
-            const remainder = hostAndPort.slice(close + 1);
-            if (remainder.startsWith(':')) port = remainder.slice(1);
-        }
-    } else {
-        const colon = hostAndPort.lastIndexOf(':');
-        if (colon !== -1) {
-            host = hostAndPort.slice(0, colon);
-            port = hostAndPort.slice(colon + 1);
-        }
-    }
-
-    const { host_type, address_range } = classifyHost(host);
 
     return {
-        scheme,
-        host_type,
-        address_range,
+        scheme: url.protocol.slice(0, -1),
+        ...classifyHost(url.hostname),
         // The port number is not identifying and distinguishes a reverse-proxied instance
         // from one served directly.
-        port: port === null || port === '' ? null : port,
-        has_path: path !== '' && path !== '/',
-        has_trailing_slash: raw.endsWith('/'),
-        has_embedded_credentials: atIndex !== -1,
-        has_whitespace: /\s/.test(domain),
-        host_label_count: host.includes('.') ? host.split('.').length : 1,
-        length: raw.length,
+        port: url.port === '' ? null : url.port,
+        has_path: url.pathname !== '/',
+        scheme_added: addedScheme,
+        validation_error: null,
     };
 }
 

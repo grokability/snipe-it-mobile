@@ -1,5 +1,6 @@
 import * as Sentry from '@sentry/react-native';
-import { describeDomain, isLikelyCleartextBlocked } from '@/helpers/domainShape';
+import { describeDomain, isLikelyCleartextBlocked, parseHost } from '@/helpers/domainShape';
+import { stripKnownHost } from '@/helpers/sentryScrub';
 
 // Every login failure is reported through here so the tags are consistent across the OAuth
 // discovery probe, the OAuth token exchange and bearer-token login. Filtering Sentry by
@@ -49,29 +50,41 @@ function tagsFor(stage, error, shape) {
     };
 }
 
+// The generic scrub in beforeSend cannot recognise a hostname in free text, so each report
+// carries the one host it is about. The processor lives on a scope forked for this capture
+// alone: two failures for different instances in flight together each scrub only their own
+// host, and the raw host is never stored anywhere the event can reach. Sentry runs scope
+// processors after its integrations, so what those add is covered too.
+function captureForDomain(domain, capture) {
+    const host = parseHost(domain);
+    Sentry.withScope((scope) => {
+        scope.addEventProcessor((event) => stripKnownHost(event, host));
+        capture();
+    });
+}
+
 export function reportLoginFailure({ stage, error, domain, level = 'error', extra = {} }) {
     const shape = describeDomain(domain);
-    Sentry.captureException(error, {
+    captureForDomain(domain, () => Sentry.captureException(error, {
         level,
         tags: tagsFor(stage, error, shape),
         contexts: { domain_shape: shape },
         extra: {
             error_name: error?.name ?? null,
             // expo-modules-core's CodedError and axios both put a machine-readable code here.
-            // ExtraErrorData copies it onto the event too, but under the error's own `code`
-            // key, which the scrub redacts — it cannot tell an error code from the OAuth
-            // authorization code of the same name. Under this key it survives.
+            // Sentry's exception carries only the error's name, message and stack, so fields
+            // like this one reach the event only by being copied here explicitly.
             error_code: error?.code ?? null,
             response_status: error?.response?.status ?? null,
             likely_cleartext_blocked: isLikelyCleartextBlocked(shape),
             ...extra,
         },
-    });
+    }));
 }
 
 export function reportLoginProblem({ stage, message, domain, reason, level = 'warning', extra = {} }) {
     const shape = describeDomain(domain);
-    Sentry.captureMessage(message, {
+    captureForDomain(domain, () => Sentry.captureMessage(message, {
         level,
         tags: {
             login_stage: stage,
@@ -82,7 +95,7 @@ export function reportLoginProblem({ stage, message, domain, reason, level = 'wa
         },
         contexts: { domain_shape: shape },
         extra,
-    });
+    }));
 }
 
 // Breadcrumbs give the sequence leading to a failure: which domain shape was entered, which
