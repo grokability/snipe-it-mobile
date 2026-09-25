@@ -266,8 +266,6 @@
     "help_join_discord": "Join Discord",
     "help_view_discussions": "View All Discussions",
     "help_view_issues": "View Open Issues",
-    "audit_session_count_one": "{{count}} audited this session",
-    "audit_session_count_other": "{{count}} audited this session",
     "share_error_report_title": "Share this error report?",
     "share_error_report_message": "Sending this helps us find and fix problems like this one. We remove your instance address and login details first, and you can see exactly what will be sent.",
     "share_error_report_show_payload": "See exactly what's sent",
@@ -296,6 +294,8 @@
     "open_link_failed_title": "Couldn't open the link",
     "open_link_failed_message": "Your device would not open this link. Copy it and paste it into a browser.",
     "open_link_copy": "Copy Link",
-    "open_link_copied": "Link copied"
+    "open_link_copied": "Link copied",
+    "audit_session_count_one": "{{count}} audited this session",
+    "audit_session_count_other": "{{count}} audited this session"
   }
 }
