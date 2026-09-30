@@ -28,7 +28,9 @@ const TRACKS = {
     beta: { source: 'develop', sourceWorkflow: 'develop.yml', destination: 'testflight', destinationWorkflow: 'testflight.yml' },
     production: { source: 'testflight', sourceWorkflow: 'testflight.yml', destination: 'main', destinationWorkflow: 'main.yml' },
 };
-const PENDING_STATUSES = new Set(['NEW', 'IN_PROGRESS', 'WAITING']);
+// ACTION_REQUIRED is a run paused partway, waiting for someone in EAS. It counts as still going:
+// the checks refuse to push beside it, and a wait on it keeps waiting and prints the run link.
+const PENDING_STATUSES = new Set(['NEW', 'IN_PROGRESS', 'WAITING', 'ACTION_REQUIRED']);
 const POLL_INTERVAL_MS = 20_000;
 const RUN_START_TIMEOUT_MS = 3 * 60_000;
 const RUN_URL = 'https://expo.dev/accounts/grokability/projects/snipe-it-mobile/workflows/';
