@@ -98,13 +98,13 @@ Building to a physical iOS device requires Xcode code signing to be configured. 
 Every track runs the same commit and the same update. PRs merge into `develop`, which ships to internal testers. `testflight` (beta) and `main` (production) never take PRs: they are fast-forwarded to a commit that already passed the track before them.
 
 ```bash
-npm run promote beta [sha]          # develop → testflight
-npm run promote production [sha]    # testflight → main
-npm run promote beta -- --dry-run   # run every check; push and publish nothing
-npm run promote beta -- --yes       # skip the confirmation prompt
+node scripts/promote.mjs beta [sha]          # develop → testflight
+node scripts/promote.mjs production [sha]    # testflight → main
+node scripts/promote.mjs beta --dry-run      # run every check; push and publish nothing
+node scripts/promote.mjs beta --yes          # skip the confirmation prompt
 ```
 
-Flags need the `--` separator. Without it npm takes `--dry-run` and `--yes` as its own options and the script never sees them.
+It is deliberately not an npm script. package.json's `scripts` are part of the app's fingerprint (only `android` and `ios` are skipped), so adding one would force new native builds on every track.
 
 Without a sha, the tip of the source branch is promoted. The script:
 

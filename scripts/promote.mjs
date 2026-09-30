@@ -1,12 +1,13 @@
 // Promotes a commit that already passed one track to the next, by fast-forwarding the next
 // track's branch to it. The commit, its update bundle and its release number stay the same.
 //
-//   npm run promote beta [sha]          # develop → testflight
-//   npm run promote production [sha]    # testflight → main
-//   npm run promote beta -- --dry-run   # every check; prints what would be pushed and published
-//   npm run promote beta -- --yes       # skips the confirmation prompt
+//   node scripts/promote.mjs beta [sha]            # develop → testflight
+//   node scripts/promote.mjs production [sha]      # testflight → main
+//   node scripts/promote.mjs beta --dry-run        # every check; prints what would be pushed and published
+//   node scripts/promote.mjs beta --yes            # skips the confirmation prompt
 //
-// Flags need the `--` separator: without it npm takes --dry-run and --yes as its own options.
+// It is not an npm script: package.json's scripts are part of the app's fingerprint, so adding
+// one would force new native builds.
 //
 // Without a sha, the tip of the source branch is promoted. The script refuses unless the
 // source track's EAS run for that commit succeeded (it waits while that run is in progress),
@@ -177,12 +178,10 @@ async function confirm(question) {
 async function main() {
     const positionalArgs = process.argv.slice(2).filter((arg) => !arg.startsWith('--'));
     const skipConfirmation = process.argv.includes('--yes');
-    // npm sets npm_config_dry_run when it swallows a --dry-run given without `--`. Honoring it
-    // keeps that mistake from publishing a release the caller asked not to publish.
-    const isDryRun = process.argv.includes('--dry-run') || process.env.npm_config_dry_run === 'true';
+    const isDryRun = process.argv.includes('--dry-run');
     const [trackName, requestedCommit] = positionalArgs;
     const track = TRACKS[trackName];
-    if (!track) fail('Usage: npm run promote <beta|production> [sha] -- [--yes] [--dry-run]');
+    if (!track) fail('Usage: node scripts/promote.mjs <beta|production> [sha] [--yes] [--dry-run]');
 
     // Checked before anything is pushed, so a missing login cannot leave a promotion without its release.
     try {

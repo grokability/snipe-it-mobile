@@ -6,8 +6,7 @@
     "start": "expo start",
     "android": "expo run:android",
     "ios": "expo run:ios",
-    "web": "expo start --web",
-    "promote": "node scripts/promote.mjs"
+    "web": "expo start --web"
   },
   "dependencies": {
     "@dev-plugins/react-query": "^0.4.0",
