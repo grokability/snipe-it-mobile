@@ -3,8 +3,10 @@
 //
 //   npm run promote beta [sha]          # develop → testflight
 //   npm run promote production [sha]    # testflight → main
-//   add --yes to skip the confirmation prompt, or --dry-run to run every check and print what
-//   would be pushed and published without doing either
+//   npm run promote beta -- --dry-run   # every check; prints what would be pushed and published
+//   npm run promote beta -- --yes       # skips the confirmation prompt
+//
+// Flags need the `--` separator: without it npm takes --dry-run and --yes as its own options.
 //
 // Without a sha, the tip of the source branch is promoted. The script refuses unless the
 // source track's EAS run for that commit succeeded (it waits while that run is in progress),
@@ -173,10 +175,12 @@ async function confirm(question) {
 async function main() {
     const positionalArgs = process.argv.slice(2).filter((arg) => !arg.startsWith('--'));
     const skipConfirmation = process.argv.includes('--yes');
-    const isDryRun = process.argv.includes('--dry-run');
+    // npm sets npm_config_dry_run when it swallows a --dry-run given without `--`. Honoring it
+    // keeps that mistake from publishing a release the caller asked not to publish.
+    const isDryRun = process.argv.includes('--dry-run') || process.env.npm_config_dry_run === 'true';
     const [trackName, requestedCommit] = positionalArgs;
     const track = TRACKS[trackName];
-    if (!track) fail('Usage: npm run promote <beta|production> [sha] [--yes] [--dry-run]');
+    if (!track) fail('Usage: npm run promote <beta|production> [sha] -- [--yes] [--dry-run]');
 
     // Checked before anything is pushed, so a missing login cannot leave a promotion without its release.
     try {

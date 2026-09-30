@@ -100,8 +100,11 @@ Every track runs the same commit and the same update. PRs merge into `develop`, 
 ```bash
 npm run promote beta [sha]          # develop → testflight
 npm run promote production [sha]    # testflight → main
-npm run promote beta --dry-run      # run every check; push and publish nothing
+npm run promote beta -- --dry-run   # run every check; push and publish nothing
+npm run promote beta -- --yes       # skip the confirmation prompt
 ```
+
+Flags need the `--` separator. Without it npm takes `--dry-run` and `--yes` as its own options and the script never sees them.
 
 Without a sha, the tip of the source branch is promoted. The script:
 
