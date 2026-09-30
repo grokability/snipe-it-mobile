@@ -9,6 +9,7 @@
 // and an eas-cli login (automatic inside EAS workflows). WORKFLOW_NAME is optional and only
 // shows up in the header.
 import { execFileSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 
 const GIST_FILENAME = 'snipe-it-mobile-deployments.md';
 const PLATFORMS = ['ios', 'android'];
@@ -22,6 +23,24 @@ function runEas(args) {
         maxBuffer: 64 * 1024 * 1024,
     });
     return JSON.parse(output);
+}
+
+function runGit(args) {
+    return execFileSync('git', args, { encoding: 'utf8' }).trim();
+}
+
+// The same number the release_info job computes: app.json's major.minor plus the commit's
+// position in the first-parent history. Only commits on that line get one; the testflight
+// merge commits from before promotion became a fast-forward return null.
+function loadReleaseNumbers() {
+    // eas/checkout clones with --depth 1, which would leave only the newest commit.
+    if (runGit(['rev-parse', '--is-shallow-repository']) === 'true') {
+        runGit(['fetch', '--unshallow', '--quiet']);
+    }
+    const appVersion = JSON.parse(readFileSync(new URL('../app.json', import.meta.url), 'utf8')).expo.version;
+    const majorMinor = appVersion.split('.').slice(0, 2).join('.');
+    const commits = runGit(['rev-list', '--first-parent', '--reverse', 'HEAD']).split('\n');
+    return new Map(commits.map((commit, index) => [commit, `${majorMinor}.${index + 1}`]));
 }
 
 function shortHash(hash) {
@@ -73,7 +92,13 @@ async function loadDeployments() {
         if (!newestBuildByKey.has(key)) newestBuildByKey.set(key, build);
     }
 
-    return { channels, branchByChannel, newestUpdates, builds: [...newestBuildByKey.values()] };
+    return {
+        channels,
+        branchByChannel,
+        newestUpdates,
+        builds: [...newestBuildByKey.values()],
+        releaseNumbers: loadReleaseNumbers(),
+    };
 }
 
 // A build launches an OTA only when it is newer than the bundle embedded at build time. An update
@@ -90,8 +115,9 @@ function findRunningUpdate(build, branchName, newestUpdates) {
     ) ?? null;
 }
 
-function renderMarkdown({ channels, branchByChannel, newestUpdates, builds }) {
+function renderMarkdown({ channels, branchByChannel, newestUpdates, builds, releaseNumbers }) {
     const workflowName = process.env.WORKFLOW_NAME;
+    const releaseFor = (commitHash) => releaseNumbers.get(commitHash) ?? '—';
     const lines = [
         '# Snipe-IT Mobile deployments',
         '',
@@ -99,10 +125,10 @@ function renderMarkdown({ channels, branchByChannel, newestUpdates, builds }) {
         '',
         '## Builds',
         '',
-        'The newest store build on each channel. **Runs** is the JS that build launches.',
+        'The newest store build on each channel. **Runs** is the JS that build launches, and **Release** is that JS\'s release.',
         '',
-        '| Platform | Build | Channel | Runtime | Built from | Finished | Runs |',
-        '| --- | --- | --- | --- | --- | --- | --- |',
+        '| Platform | Build | Channel | Release | Runtime | Built from | Finished | Runs |',
+        '| --- | --- | --- | --- | --- | --- | --- | --- |',
     ];
 
     const sortedBuilds = builds.sort((first, second) =>
@@ -115,8 +141,9 @@ function renderMarkdown({ channels, branchByChannel, newestUpdates, builds }) {
         const runs = runningUpdate
             ? `OTA ${shortHash(runningUpdate.gitCommitHash)} (${formatTime(runningUpdate.createdAt)})`
             : 'embedded bundle (no newer OTA)';
+        const runningCommit = runningUpdate ? runningUpdate.gitCommitHash : build.gitCommitHash;
         lines.push(
-            `| ${PLATFORM_LABELS[build.platform.toLowerCase()]} | ${build.appVersion}+${build.appBuildVersion} | ${channelName} | ` +
+            `| ${PLATFORM_LABELS[build.platform.toLowerCase()]} | ${build.appBuildVersion} | ${channelName} | ${releaseFor(runningCommit)} | ` +
             `${shortRuntime(build.runtime?.version)} | ${shortHash(build.gitCommitHash)} | ${formatTime(build.completedAt)} | ${runs} |`,
         );
     }
@@ -127,8 +154,8 @@ function renderMarkdown({ channels, branchByChannel, newestUpdates, builds }) {
         '',
         'The newest OTA on each channel\'s branch. It only reaches builds with the same runtime.',
         '',
-        '| Channel | Branch | Platform | Newest OTA | Runtime | Published |',
-        '| --- | --- | --- | --- | --- | --- |',
+        '| Channel | Branch | Platform | Release | Newest OTA | Runtime | Published |',
+        '| --- | --- | --- | --- | --- | --- | --- |',
     );
     for (const channel of [...channels].sort((first, second) => first.name.localeCompare(second.name))) {
         const branchName = branchByChannel.get(channel.name);
@@ -139,6 +166,7 @@ function renderMarkdown({ channels, branchByChannel, newestUpdates, builds }) {
                 .sort(newestFirst)[0];
             lines.push(
                 `| ${channelLabel} | ${branchName ?? '—'} | ${PLATFORM_LABELS[platform]} | ` +
+                `${newestUpdate ? releaseFor(newestUpdate.gitCommitHash) : '—'} | ` +
                 `${newestUpdate ? shortHash(newestUpdate.gitCommitHash) : '—'} | ${shortRuntime(newestUpdate?.runtimeVersion)} | ` +
                 `${formatTime(newestUpdate?.createdAt)} |`,
             );
@@ -149,9 +177,9 @@ function renderMarkdown({ channels, branchByChannel, newestUpdates, builds }) {
         '',
         '## Reading this',
         '',
-        '- **Build** matches the `expo-update-message` tag in Sentry. iOS and Android count build numbers separately, so the same number on both platforms is two different binaries.',
-        '- **Embedded bundle** means the build is running the JS it shipped with. It picks up the next OTA published for its runtime, and until then Sentry shows its commit as `(none)`.',
-        '- **Channel** is baked into the binary. A develop build promoted to TestFlight or Play open testing keeps listening on `internal-testing`.',
+        '- **Release** matches the first line of the app footer and Sentry\'s `release` (`snipe-it-mobile@1.0.104`). It is the same for the same commit on every channel and platform, and a higher number is newer code. `—` means a commit that is not on develop\'s first-parent history, such as a testflight merge commit from before promotions became fast-forwards.',
+        '- **Build** matches Sentry\'s `dist` (`ios-43`). iOS and Android count build numbers separately, so the same number on both platforms is two different binaries.',
+        '- **Embedded bundle** means the build is running the JS it shipped with. It picks up the next OTA published for its runtime.',
         '',
     );
     return lines.join('\n');
