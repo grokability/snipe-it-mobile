@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 import * as Sentry from '@sentry/react-native';
 import * as Application from 'expo-application';
 import * as Updates from 'expo-updates';
@@ -13,6 +14,9 @@ import { recordErrorReportReference, clearErrorReportReference } from '@/helpers
 // The DSN is embedded in the client bundle by design and is not a secret. The upload
 // auth token is, and it never appears here — it lives in EAS/GitHub secrets.
 const dsn = process.env.EXPO_PUBLIC_SENTRY_DSN;
+
+// Set by the release_info job in the EAS workflows; local and dev builds have none.
+const releaseNumber = process.env.EXPO_PUBLIC_RELEASE_NUMBER;
 
 // Sentry.close() leaves the closed client on the scope, so getClient() cannot answer whether
 // the SDK is currently running. Track it here instead.
@@ -59,6 +63,16 @@ export function initSentry() {
         dsn,
         enabled: !__DEV__ || process.env.EXPO_PUBLIC_SENTRY_DEBUG === 'true',
         environment: Updates.channel || (__DEV__ ? 'development' : 'unknown'),
+        // One release per version of the code, "snipe-it-mobile@1.0.104", which Sentry parses
+        // as semver, so release.version:<1.0.107 finds everyone behind it. dist names the
+        // binary, "ios-43"; the platform prefix is there because iOS and Android count build
+        // numbers separately. Source maps match by debug ID, not by release, so neither value
+        // affects symbolication. Without a release number, the SDK's native release and dist
+        // apply, so both are left out together rather than mixing the two schemes.
+        ...(releaseNumber && {
+            release: `snipe-it-mobile@${releaseNumber}`,
+            dist: `${Platform.OS}-${Application.nativeBuildVersion}`,
+        }),
         sendDefaultPii: false,
         // Tracing and session replay bill as separate quota dimensions and neither helps
         // with the login failures this was added for. Enable them deliberately, not by default.
@@ -72,22 +86,6 @@ export function initSentry() {
     });
 
     isRunning = true;
-
-    // Which JS bundle produced an event. Source maps for OTA updates are matched by debug
-    // ID rather than by release, so these tags are how an event gets tied back to an update.
-    //
-    // updateId and runtimeVersion are both nullable — there is no update id when running the
-    // embedded bundle or a Metro dev build. A null reaches Sentry as the literal <invalid>
-    // rather than being dropped, so it is coerced to a value that can actually be filtered on.
-    Sentry.setTag('expo-update-id', Updates.updateId ?? 'none');
-    Sentry.setTag('expo-is-embedded-update', String(Updates.isEmbeddedLaunch));
-    Sentry.setTag('expo-runtime-version', Updates.runtimeVersion ?? 'none');
-    // The installed build and the update's commit, "1.0.0+41 (abc1234)", so an alert names both
-    // without looking the update id up on EAS. An update runs on every build with its runtime
-    // version and cannot know which one, so the two are joined here. eas update inlines the
-    // commit; the embedded bundle and dev builds have none.
-    const buildVersion = `${Application.nativeApplicationVersion}+${Application.nativeBuildVersion}`;
-    Sentry.setTag('expo-update-message', `${buildVersion} (${process.env.EXPO_PUBLIC_UPDATE_COMMIT ?? 'none'})`);
 }
 
 // Sends a report the user approved. The event has already been through beforeSend, so it goes
