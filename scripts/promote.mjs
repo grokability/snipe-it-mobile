@@ -108,6 +108,11 @@ async function waitForNewRun(workflowFile, commitHash, knownRunIds) {
 
 // The same number the release_info job computes, read from the promoted commit itself.
 function releaseNumberFor(commitHash) {
+    // A shallow clone counts only the commits it has, which gives a lower number that can match an
+    // older release. release_info refuses a shallow checkout for the same reason.
+    if (runGit(['rev-parse', '--is-shallow-repository']) === 'true') {
+        fail('This clone is shallow, so the release number would be wrong. Run `git fetch --unshallow` first.');
+    }
     const appVersion = JSON.parse(runGit(['show', `${commitHash}:app.json`])).expo.version;
     const majorMinor = appVersion.split('.').slice(0, 2).join('.');
     return `${majorMinor}.${runGit(['rev-list', '--count', '--first-parent', commitHash])}`;
