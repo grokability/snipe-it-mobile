@@ -201,7 +201,7 @@ async function main() {
     // gives a lower release number that can match an older release. release_info refuses a
     // shallow checkout for the same reason.
     if (runGit(['rev-parse', '--is-shallow-repository']) === 'true') {
-        fail('This clone is shallow, so the ancestry checks and the release number would be wrong. Run `git fetch --unshallow` first.');
+        fail('This clone is shallow, so the ancestry checks and the release number would be wrong. Run `git fetch --unshallow` first: it downloads the rest of the history the clone left out, and changes nothing on origin.');
     }
     const sourceRef = `origin/${track.source}`;
     const destinationRef = `origin/${track.destination}`;
