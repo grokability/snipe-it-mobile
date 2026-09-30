@@ -1,6 +1,8 @@
 import React, { useMemo } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import ExpoApplication from 'expo-application/src/ExpoApplication';
+import * as Clipboard from 'expo-clipboard';
+import * as Burnt from 'burnt';
 import { useUpdates, reloadAsync, checkForUpdateAsync, fetchUpdateAsync } from 'expo-updates';
 import { useTranslation } from 'react-i18next';
 import { useColors } from '@/hooks/useThemeColors';
@@ -15,14 +17,26 @@ export default function VersionFooter({ style }) {
     const { t } = useTranslation();
     const { currentlyRunning, isUpdatePending, isChecking, isDownloading, downloadedUpdate } = useUpdates();
 
+    // One line a tester can read out: the release the running JS was built from, the binary's
+    // build number, and the channel. The release number is inlined by the EAS workflow, into
+    // both OTA updates and embedded bundles; local and dev builds fall back to app.json's version.
+    // It holds no words to translate, and the copied text should be identical in every locale.
+    const release = process.env.EXPO_PUBLIC_RELEASE_NUMBER ?? ExpoApplication.nativeApplicationVersion;
+    const channel = currentlyRunning.channel || (__DEV__ ? 'development' : 'unknown');
+    const releaseText = `${release} (${ExpoApplication.nativeBuildVersion}) · ${channel}`;
     const otaText = currentlyRunning.isEmbeddedLaunch
         ? t('mobile.update_embedded')
-        : t('mobile.update_channel', {
-            channel: currentlyRunning.channel,
-            date: currentlyRunning.createdAt?.toLocaleString(),
-          });
-    const runningMessage = process.env.EXPO_PUBLIC_UPDATE_MESSAGE;
+        : t('mobile.update_date', { date: currentlyRunning.createdAt?.toLocaleString() });
     const pendingMessage = downloadedUpdate?.manifest?.metadata?.message;
+
+    const handleCopyRelease = async () => {
+        const copied = await Clipboard.setStringAsync(releaseText);
+        Burnt.toast({
+            title: copied ? t('general.copied') : t('general.error'),
+            preset: copied ? 'done' : 'error',
+            duration: 1.5,
+        });
+    };
 
     const handleCheckForUpdate = async () => {
         try {
@@ -37,16 +51,15 @@ export default function VersionFooter({ style }) {
 
     return (
         <View style={[styles.container, style]}>
-            <Text style={styles.versionText}>
-                {t('mobile.version', {
-                    version: ExpoApplication.nativeApplicationVersion,
-                    build: ExpoApplication.nativeBuildVersion,
-                })}
-            </Text>
+            <TouchableOpacity
+                onPress={handleCopyRelease}
+                activeOpacity={0.6}
+                accessibilityRole="button"
+                accessibilityHint={t('general.copy_to_clipboard')}
+            >
+                <Text style={styles.versionText}>{releaseText}</Text>
+            </TouchableOpacity>
             <Text style={styles.versionText}>{otaText}</Text>
-            {runningMessage ? (
-                <Text style={styles.versionText}>{runningMessage}</Text>
-            ) : null}
             {isUpdatePending ? (
                 <TouchableOpacity style={styles.updateBanner} onPress={reloadAsync} activeOpacity={0.7}>
                     <Text style={styles.updateBannerLabel}>{t('mobile.update_pending')}</Text>
