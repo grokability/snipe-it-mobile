@@ -10,8 +10,8 @@
 //
 // Without a sha, the tip of the source branch is promoted. The script refuses unless the
 // source track's EAS run for that commit succeeded (it waits while that run is in progress),
-// the push is a fast-forward, and no run is in progress on the destination. After the push it
-// waits for the destination run, and when that succeeds it publishes the GitHub Release
+// the push is a fast-forward, and no other run is in progress on either track. After the push
+// it waits for the destination run, and when that succeeds it publishes the GitHub Release
 // v<release>: a prerelease for beta, turned into the Latest release on production.
 //
 // It runs on your machine with your own logins: git push rights to the destination branch (the
@@ -241,6 +241,12 @@ async function main() {
         const runningOnDestination = listRuns(track.destinationWorkflow).find((run) => PENDING_STATUSES.has(run.status));
         if (runningOnDestination) {
             fail(`A ${track.destination} run is still going. Promote once it finishes: ${describeRun(runningOnDestination)}`);
+        }
+        // The promoted commit's own run has finished by now, so a pending one is another run.
+        // Both tracks submit to Google Play, and two runs doing that at once race for one edit.
+        const runningOnSource = listRuns(track.sourceWorkflow).find((run) => PENDING_STATUSES.has(run.status));
+        if (runningOnSource) {
+            fail(`Another ${track.source} run is still going. Promote once it finishes: ${describeRun(runningOnSource)}`);
         }
 
         console.log(`\nWhat ${track.destination} gains:`);

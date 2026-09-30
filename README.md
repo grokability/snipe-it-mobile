@@ -108,7 +108,7 @@ Flags need the `--` separator. Without it npm takes `--dry-run` and `--yes` as i
 
 Without a sha, the tip of the source branch is promoted. The script:
 
-1. Refuses unless the commit is on the source branch, the push is a fast-forward, the source track's EAS run for that commit succeeded (it waits while that run is going), and nothing is running on the destination.
+1. Refuses unless the commit is on the source branch, the push is a fast-forward, the source track's EAS run for that commit succeeded (it waits while that run is going), and no other run is going on either track.
 2. Lists the commits the destination gains and asks before pushing.
 3. Pushes, waits for the destination's EAS run, and when that succeeds publishes the GitHub Release `v1.0.<n>`: a prerelease for beta, made the Latest release on production. The notes are generated from the titles of the PRs merged since the previous release, so PR titles should make sense to testers.
 
