@@ -5,7 +5,7 @@
 // History: first ← second (a merge) ← third on develop (releases 1.0.1, 1.0.2, 1.0.3). testflight and main
 // start at first. develop.yml succeeded on all three, and testflight.yml and main.yml on first.
 // A push to testflight or main starts a run that is still going for two listings, then succeeds.
-import { execFileSync, spawnSync } from 'node:child_process';
+import { execFileSync, spawn } from 'node:child_process';
 import { chmodSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -136,9 +136,20 @@ export function createFixture({ shallow = null } = {}) {
         release: (tagName) => readState(statePath).releases.find((candidate) => candidate.tagName === tagName),
 
         // Runs `node promote.mjs <args>` in the work clone, answering the confirmation prompt with `input`.
+        // Asynchronous so the test runner's event loop stays free to print each result as it comes.
         promote(args, { input = 'y\n' } = {}) {
-            const result = spawnSync('node', [promoteScript, ...args], { cwd: workDirectory, env, input, encoding: 'utf8' });
-            return { exitCode: result.status, stdout: result.stdout, stderr: result.stderr, output: result.stdout + result.stderr };
+            return new Promise((resolve, reject) => {
+                const child = spawn('node', [promoteScript, ...args], { cwd: workDirectory, env });
+                let stdout = '';
+                let stderr = '';
+                child.stdout.setEncoding('utf8').on('data', (chunk) => (stdout += chunk));
+                child.stderr.setEncoding('utf8').on('data', (chunk) => (stderr += chunk));
+                child.on('error', reject);
+                child.on('close', (exitCode) => resolve({ exitCode, stdout, stderr, output: stdout + stderr }));
+                // A run that refuses early exits without reading stdin; writing to it then fails harmlessly.
+                child.stdin.on('error', () => {});
+                child.stdin.end(input);
+            });
         },
 
         remove: () => rmSync(root, { recursive: true, force: true }),
