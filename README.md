@@ -114,7 +114,7 @@ Without a sha, the tip of the source branch is promoted. The script:
 
 Running it again after an interruption is safe: an already promoted commit is not pushed again, and an existing release is left alone.
 
-After changing the script, run `node scripts/promote-test/run.mjs` (add `--test-name-pattern=<regex>` to run only some scenarios). It runs the script against a throwaway origin with fake EAS and `gh` commands and checks, for each refusal, dry run, promotion and re-run, what was pushed and what was published. It needs no logins and touches nothing outside a temporary directory.
+After changing the script, run `node --test scripts/promote-test/promote.test.mjs` (add `--test-name-pattern=<regex>` to run only some scenarios). It runs the script against a throwaway origin with fake EAS and `gh` commands and checks, for each refusal, dry run, promotion and re-run, what was pushed and what was published. It needs no logins and touches nothing outside a temporary directory.
 
 ### What you need
 
