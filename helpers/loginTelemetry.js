@@ -39,10 +39,33 @@ function describeFailure(error) {
     return message.slice(0, MAX_TAG_LENGTH);
 }
 
-function tagsFor(stage, error, shape) {
+// The token endpoint error codes from RFC 6749 §5.2. A response's `error` field becomes the code
+// only when it is one of these, so a proxy's own JSON cannot put arbitrary text into a tag.
+const OAUTH_TOKEN_ERRORS = new Set([
+    'invalid_request',
+    'invalid_client',
+    'invalid_grant',
+    'unauthorized_client',
+    'unsupported_grant_type',
+    'invalid_scope',
+]);
+
+// A fixed code for a login request that went through axios: bearer login and the OAuth token
+// exchange. axios runs on React Native's XMLHttpRequest, which reports every transport failure as
+// ERR_NETWORK "Network Error" with no native detail, so `network` is as fine as it gets.
+// `unexpected` is an error thrown by the app's own code after the request succeeded.
+export function axiosFailureCode(error) {
+    if (!error?.isAxiosError) return 'unexpected';
+    if (!error.response) return 'network';
+    const oauthError = error.response.data?.error;
+    if (OAUTH_TOKEN_ERRORS.has(oauthError)) return oauthError;
+    return `http-${error.response.status}`;
+}
+
+function tagsFor(stage, error, shape, code) {
     return {
         login_stage: stage,
-        failure_reason: describeFailure(error),
+        failure_reason: code ?? describeFailure(error),
         http_status: String(error?.response?.status ?? 'none'),
         domain_scheme: shape.scheme,
         domain_host_type: shape.host_type,
@@ -63,11 +86,11 @@ function captureForDomain(domain, capture) {
     });
 }
 
-export function reportLoginFailure({ stage, error, domain, level = 'error', extra = {} }) {
+export function reportLoginFailure({ stage, error, domain, code, level = 'error', extra = {} }) {
     const shape = describeDomain(domain);
     captureForDomain(domain, () => Sentry.captureException(error, {
         level,
-        tags: tagsFor(stage, error, shape),
+        tags: tagsFor(stage, error, shape, code),
         contexts: { domain_shape: shape },
         extra: {
             error_name: error?.name ?? null,

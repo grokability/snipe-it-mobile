@@ -6,7 +6,7 @@ import { deviceName } from "expo-device";
 import {useRouter} from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {makeRedirectUri} from "expo-auth-session";
-import {reportLoginFailure, addLoginBreadcrumb} from "@/helpers/loginTelemetry";
+import {reportLoginFailure, addLoginBreadcrumb, axiosFailureCode} from "@/helpers/loginTelemetry";
 
 export const AuthContext = createContext();
 
@@ -100,7 +100,12 @@ export const AuthProvider = ({children}) => {
                         .catch(error => {
                             setUser(null);
                             setIsAuthenticated(false);
-                            reportLoginFailure({ stage: 'bearer-login', error, domain });
+                            reportLoginFailure({
+                                stage: 'bearer-login',
+                                error,
+                                domain,
+                                code: axiosFailureCode(error),
+                            });
                         })
                         .finally(() => {
                             setIsLoading(false);
@@ -175,6 +180,7 @@ export const AuthProvider = ({children}) => {
                            stage: 'oauth-token-exchange',
                            error,
                            domain,
+                           code: axiosFailureCode(error),
                            extra: { oauth_error: error?.response?.data?.error ?? null },
                        });
                        setUser(null);
