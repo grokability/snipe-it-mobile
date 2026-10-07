@@ -19,12 +19,38 @@ export function mayNeedLocalNetworkPermission(domain) {
 
 const wait = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
 
+// On Android, expo/fetch rejects with the OkHttp exception's toString(), so the message starts
+// with its Java class name: "fetch failed: java.net.UnknownHostException: Unable to resolve…".
+// Class names are not localized.
+const LEADING_JAVA_CLASS = /^fetch failed: ([\w.$]+)/;
+
+// Android's fixed text for a certificate that chains to no trusted CA (self-signed, or issued by a
+// CA the device does not have). An expired certificate reads "Unacceptable certificate" instead,
+// and installing a CA would not fix it.
+const UNTRUSTED_CERTIFICATE = 'java.security.cert.CertPathValidatorException: Trust anchor for certification path not found';
+
+// iOS gives no structured distinction at all: every rejection is the same error type carrying
+// only the localized NSURLError text, so DNS, TLS and a declined local network prompt share one
+// code there.
+function transportFailureCode(error) {
+    if (Platform.OS !== 'android') return 'transport-security';
+
+    const message = String(error?.message ?? '');
+    const javaClass = message.match(LEADING_JAVA_CLASS)?.[1];
+    if (javaClass === 'java.net.UnknownHostException') return 'host-not-found';
+    if (javaClass?.startsWith('javax.net.ssl.')) {
+        return message.includes(UNTRUSTED_CERTIFICATE) ? 'certificate-untrusted' : 'tls';
+    }
+    return 'transport';
+}
+
 // Resolves to one of:
 // - { outcome: 'oauth', clientId }
 // - { outcome: 'no-oauth' }: no mobile OAuth client, so the form falls through to token entry.
 // - { outcome: 'superseded' }: isCurrent() turned false while retrying; the form discards it.
-// - { outcome: 'failure', code }: code is http-<status>, invalid-response, timeout, cancel or
-//   transport. Aborting `signal` is the user's Cancel, which yields `cancel` without reporting
+// - { outcome: 'failure', code }: code is http-<status>, invalid-response, timeout, cancel, or for
+//   a rejected request host-not-found, tls, certificate-untrusted or transport on Android and
+//   transport-security on iOS. Aborting `signal` is the user's Cancel, which yields `cancel` without reporting
 //   anything to Sentry, since the instance did nothing wrong.
 export async function discoverOAuthClient(domain, { isCurrent = () => true, signal } = {}) {
     const controller = new AbortController();
@@ -85,7 +111,7 @@ export async function discoverOAuthClient(domain, { isCurrent = () => true, sign
                 abort_reason: abortReason,
             },
         });
-        return { outcome: 'failure', code: abortReason === 'timeout' ? 'timeout' : 'transport' };
+        return { outcome: 'failure', code: abortReason === 'timeout' ? 'timeout' : transportFailureCode(error) };
     } finally {
         clearTimeout(timeoutId);
         signal?.removeEventListener('abort', cancelByUser);
