@@ -46,6 +46,9 @@ export async function discoverOAuthClient(domain, { isCurrent = () => true, sign
             attempts++;
             try {
                 response = await fetch(`${domain}/api/v1/client`, {
+                    // Without it, an instance that predates the endpoint redirects to its login
+                    // page, and fetch follows that to a 200 HTML body. See the 401 check below.
+                    headers: { Accept: 'application/json' },
                     signal: controller.signal,
                 });
             } catch (error) {
@@ -89,10 +92,12 @@ export async function discoverOAuthClient(domain, { isCurrent = () => true, sign
         elapsed_ms: Date.now() - startedAt,
     });
 
-    // A 404 is the expected answer from an instance predating the mobile client endpoint, and
-    // the caller falls through to token entry. Anything else non-2xx is a server-side problem
-    // the user cannot act on, so it is worth seeing.
-    if (!response.ok && response.status !== 404) {
+    // An instance older than Snipe-IT v8.5.0 has no /api/v1/client. The request falls to the API's
+    // catch-all route, which sits behind auth:api, so it answers 401 rather than 404. Either way
+    // the caller falls through to token entry. Anything else non-2xx is a server-side problem the
+    // user cannot act on, so it is worth seeing.
+    const hasNoClientEndpoint = response.status === 401 || response.status === 404;
+    if (!response.ok && !hasNoClientEndpoint) {
         reportLoginProblem({
             stage: 'oauth-discovery',
             message: `OAuth client discovery returned HTTP ${response.status}`,
@@ -102,7 +107,6 @@ export async function discoverOAuthClient(domain, { isCurrent = () => true, sign
         });
     }
 
-    if (response.status === 404) return null;
     if (!response.ok) return null;
 
     try {
