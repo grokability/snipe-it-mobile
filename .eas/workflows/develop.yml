@@ -141,19 +141,29 @@ jobs:
       - uses: eas/checkout
       - name: Send Slack notification
         run: |
-          CHANGELOG=$(git log --format="• %s" --no-merges -20)
-          [ -z "$CHANGELOG" ] && CHANGELOG="_No new commits_"
+          # Each develop commit is one PR merge. GitHub writes "Merge pull request #N from <branch>"
+          # as the subject and the PR title as the body, and the depth-1 checkout has both. Any
+          # other commit, such as merging main back into develop, is shown by its subject.
+          SUBJECT=$(git log -1 --format=%s)
+          PR_TITLE=$(git log -1 --format=%b | head -n 1)
+          PR_NUMBER=$(echo "$SUBJECT" | sed -n 's/^Merge pull request #\([0-9]*\) from .*/\1/p')
           curl -s -X POST "$SLACK_WEBHOOK_URL" \
             -H 'Content-type: application/json' \
             -d "$(jq -n \
-              --arg changelog "$CHANGELOG" \
-              '{blocks: [
+              --arg subject "$SUBJECT" \
+              --arg pr_title "$PR_TITLE" \
+              --arg pr_number "$PR_NUMBER" \
+              'def escape: gsub("&"; "&amp;") | gsub("<"; "&lt;") | gsub(">"; "&gt;");
+              (if $pr_number != "" and $pr_title != ""
+                then "• " + ($pr_title | escape) + " (<https://github.com/grokability/snipe-it-mobile/pull/" + $pr_number + "|#" + $pr_number + ">)"
+                else "• " + ($subject | escape) end) as $change |
+              {blocks: [
                 {type: "header", text: {type: "plain_text", text: "✅ Snipe IT Mobile — Internal Testing"}},
                 {type: "section", fields: [
                   {type: "mrkdwn", text: "🔨 *Type:* Native Build"},
                   {type: "mrkdwn", text: "🌿 *Branch:* develop"}
                 ]},
-                {type: "section", text: {type: "mrkdwn", text: ("📋 *Changes*\n" + $changelog)}}
+                {type: "section", text: {type: "mrkdwn", text: ("📋 *Change*\n" + $change)}}
               ]}')"
 
   notify_ota_success:
@@ -165,19 +175,29 @@ jobs:
       - uses: eas/checkout
       - name: Send Slack notification
         run: |
-          CHANGELOG=$(git log --format="• %s" --no-merges -20)
-          [ -z "$CHANGELOG" ] && CHANGELOG="_No new commits_"
+          # Each develop commit is one PR merge. GitHub writes "Merge pull request #N from <branch>"
+          # as the subject and the PR title as the body, and the depth-1 checkout has both. Any
+          # other commit, such as merging main back into develop, is shown by its subject.
+          SUBJECT=$(git log -1 --format=%s)
+          PR_TITLE=$(git log -1 --format=%b | head -n 1)
+          PR_NUMBER=$(echo "$SUBJECT" | sed -n 's/^Merge pull request #\([0-9]*\) from .*/\1/p')
           curl -s -X POST "$SLACK_WEBHOOK_URL" \
             -H 'Content-type: application/json' \
             -d "$(jq -n \
-              --arg changelog "$CHANGELOG" \
-              '{blocks: [
+              --arg subject "$SUBJECT" \
+              --arg pr_title "$PR_TITLE" \
+              --arg pr_number "$PR_NUMBER" \
+              'def escape: gsub("&"; "&amp;") | gsub("<"; "&lt;") | gsub(">"; "&gt;");
+              (if $pr_number != "" and $pr_title != ""
+                then "• " + ($pr_title | escape) + " (<https://github.com/grokability/snipe-it-mobile/pull/" + $pr_number + "|#" + $pr_number + ">)"
+                else "• " + ($subject | escape) end) as $change |
+              {blocks: [
                 {type: "header", text: {type: "plain_text", text: "✅ Snipe IT Mobile — Internal Testing"}},
                 {type: "section", fields: [
                   {type: "mrkdwn", text: "⚡ *Type:* OTA / JS Update"},
                   {type: "mrkdwn", text: "🌿 *Branch:* develop"}
                 ]},
-                {type: "section", text: {type: "mrkdwn", text: ("📋 *Changes*\n" + $changelog)}}
+                {type: "section", text: {type: "mrkdwn", text: ("📋 *Change*\n" + $change)}}
               ]}')"
 
   notify_failure:
