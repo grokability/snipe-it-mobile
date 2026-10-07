@@ -2,7 +2,7 @@ import { Platform } from 'react-native';
 import { reportLoginFailure, reportLoginProblem, addLoginBreadcrumb } from '@/helpers/loginTelemetry';
 import { addressGroup, describeDomain } from '@/helpers/domainShape';
 
-const DISCOVERY_TIMEOUT_MS = 5000;
+const DISCOVERY_TIMEOUT_MS = 15000;
 
 // While iOS's local network prompt is still open, it rejects the connection it asked about
 // (47 ms after Continue on an iPhone running iOS 27), with the same localized "offline" text it
@@ -23,7 +23,14 @@ const wait = (milliseconds) => new Promise((resolve) => setTimeout(resolve, mill
 // and returns quietly, since the form discards it anyway.
 export async function discoverOAuthClient(domain, { isCurrent = () => true } = {}) {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), DISCOVERY_TIMEOUT_MS);
+    // The app's own record of why it aborted. The rejection itself reads differently per platform
+    // and language ("Fetch request has been canceled" on Android), and does not say who aborted.
+    let abortReason = null;
+    const abortWith = (reason) => {
+        if (!abortReason) abortReason = reason;
+        controller.abort();
+    };
+    const timeoutId = setTimeout(() => abortWith('timeout'), DISCOVERY_TIMEOUT_MS);
     const startedAt = Date.now();
     const retriesWhileAsking = mayNeedLocalNetworkPermission(domain);
     let attempts = 0;
@@ -61,6 +68,7 @@ export async function discoverOAuthClient(domain, { isCurrent = () => true } = {
                 timeout_ms: DISCOVERY_TIMEOUT_MS,
                 elapsed_ms: Date.now() - startedAt,
                 attempts,
+                abort_reason: abortReason,
             },
         });
         throw new Error('network');
