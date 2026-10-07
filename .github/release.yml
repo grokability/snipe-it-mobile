@@ -1,0 +1,19 @@
+# Notes for the GitHub Releases that scripts/promote.mjs publishes on each beta and production
+# promotion. PR titles become the lines, so they should make sense to testers.
+changelog:
+  exclude:
+    labels:
+      - dependencies
+      - github_actions
+      - eas-build
+      - skip-changelog
+  categories:
+    - title: New
+      labels:
+        - enhancement
+    - title: Fixes
+      labels:
+        - bug
+    - title: Other
+      labels:
+        - "*"
