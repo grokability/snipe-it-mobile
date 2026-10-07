@@ -19,9 +19,13 @@ export function mayNeedLocalNetworkPermission(domain) {
 
 const wait = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
 
-// isCurrent reports whether the form still wants this result. A superseded check stops retrying
-// and returns quietly, since the form discards it anyway. Aborting `signal` is the user's Cancel,
-// which also returns quietly: it is not a failure, so nothing reaches Sentry.
+// Resolves to one of:
+// - { outcome: 'oauth', clientId }
+// - { outcome: 'no-oauth' }: no mobile OAuth client, so the form falls through to token entry.
+// - { outcome: 'superseded' }: isCurrent() turned false while retrying; the form discards it.
+// - { outcome: 'failure', code }: code is http-<status>, invalid-response, timeout, cancel or
+//   transport. Aborting `signal` is the user's Cancel, which yields `cancel` without reporting
+//   anything to Sentry, since the instance did nothing wrong.
 export async function discoverOAuthClient(domain, { isCurrent = () => true, signal } = {}) {
     const controller = new AbortController();
     // The app's own record of why it aborted. The rejection itself reads differently per platform
@@ -62,13 +66,13 @@ export async function discoverOAuthClient(domain, { isCurrent = () => true, sign
                     elapsed_ms: Date.now() - startedAt,
                 });
                 await wait(LOCAL_NETWORK_RETRY_INTERVAL_MS);
-                if (!isCurrent()) return null;
+                if (!isCurrent()) return { outcome: 'superseded' };
             }
         }
     } catch (error) {
         if (abortReason === 'user-cancel') {
             addLoginBreadcrumb('Probe cancelled by the user', { elapsed_ms: Date.now() - startedAt });
-            return null;
+            return { outcome: 'failure', code: 'cancel' };
         }
         reportLoginFailure({
             stage: 'oauth-discovery',
@@ -81,7 +85,7 @@ export async function discoverOAuthClient(domain, { isCurrent = () => true, sign
                 abort_reason: abortReason,
             },
         });
-        throw new Error('network');
+        return { outcome: 'failure', code: abortReason === 'timeout' ? 'timeout' : 'transport' };
     } finally {
         clearTimeout(timeoutId);
         signal?.removeEventListener('abort', cancelByUser);
@@ -94,20 +98,22 @@ export async function discoverOAuthClient(domain, { isCurrent = () => true, sign
 
     // An instance older than Snipe-IT v8.5.0 has no /api/v1/client. The request falls to the API's
     // catch-all route, which sits behind auth:api, so it answers 401 rather than 404. Either way
-    // the caller falls through to token entry. Anything else non-2xx is a server-side problem the
-    // user cannot act on, so it is worth seeing.
-    const hasNoClientEndpoint = response.status === 401 || response.status === 404;
-    if (!response.ok && !hasNoClientEndpoint) {
+    // the caller falls through to token entry.
+    if (response.status === 401 || response.status === 404) return { outcome: 'no-oauth' };
+
+    // Anything else non-2xx is a server-side problem, and token entry against the same server
+    // would fail too.
+    if (!response.ok) {
+        const code = `http-${response.status}`;
         reportLoginProblem({
             stage: 'oauth-discovery',
             message: `OAuth client discovery returned HTTP ${response.status}`,
             domain,
-            reason: `http-${response.status}`,
+            reason: code,
             extra: { elapsed_ms: Date.now() - startedAt },
         });
+        return { outcome: 'failure', code };
     }
-
-    if (!response.ok) return null;
 
     try {
         const data = await response.json();
@@ -118,11 +124,12 @@ export async function discoverOAuthClient(domain, { isCurrent = () => true, sign
                 domain,
                 reason: 'missing-client-id',
             });
-            return null;
+            return { outcome: 'no-oauth' };
         }
-        return { clientId: String(data.client_id) };
+        return { outcome: 'oauth', clientId: String(data.client_id) };
     } catch (error) {
-        // A reverse proxy or captive portal answering with HTML rather than JSON lands here.
+        // A 2xx that is not JSON: a wrong URL whose host answers every path with a page, or a
+        // reverse proxy or captive portal. Token entry would send the token to the same place.
         reportLoginFailure({
             stage: 'oauth-discovery',
             error,
@@ -130,6 +137,6 @@ export async function discoverOAuthClient(domain, { isCurrent = () => true, sign
             level: 'warning',
             extra: { reason_detail: 'response body was not JSON' },
         });
-        return null;
+        return { outcome: 'failure', code: 'invalid-response' };
     }
 }

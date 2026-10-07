@@ -120,24 +120,27 @@ const LoginForm = ({ onBearerLogin, onDomainChange }) => {
         const generation = ++checkGeneration.current;
         discoveryCancel.current = new AbortController();
         setPhase(PHASE.CHECKING);
-        try {
-            const result = await discoverOAuthClient(baseUrl, {
-                isCurrent: () => generation === checkGeneration.current,
-                signal: discoveryCancel.current.signal,
-            });
-            if (generation !== checkGeneration.current) return;
-            if (result) {
+        const result = await discoverOAuthClient(baseUrl, {
+            isCurrent: () => generation === checkGeneration.current,
+            signal: discoveryCancel.current.signal,
+        });
+        // A cancel or an edit already moved the form on; this result belongs to an older check.
+        if (generation !== checkGeneration.current) return;
+
+        switch (result.outcome) {
+            case 'oauth':
                 setClientId(result.clientId);
                 setPhase(PHASE.OAUTH);
                 addLoginBreadcrumb('Instance supports OAuth, showing browser login');
-            } else {
+                break;
+            case 'no-oauth':
                 setPhase(PHASE.BEARER);
                 addLoginBreadcrumb('No OAuth client, falling back to token entry');
-            }
-        } catch {
-            if (generation !== checkGeneration.current) return;
-            setPhase(PHASE.ERROR);
-            addLoginBreadcrumb('Instance unreachable, showing error state');
+                break;
+            case 'failure':
+                setPhase(PHASE.ERROR);
+                addLoginBreadcrumb('Instance unreachable, showing error state', { code: result.code });
+                break;
         }
     };
 
