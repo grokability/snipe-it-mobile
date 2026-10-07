@@ -6,7 +6,12 @@ import * as Burnt from 'burnt';
 import { useUpdates, reloadAsync, checkForUpdateAsync, fetchUpdateAsync } from 'expo-updates';
 import { useTranslation } from 'react-i18next';
 import { useColors } from '@/hooks/useThemeColors';
+import { useOpenExternalUrl } from '@/hooks/useOpenExternalUrl';
 import { Typography, FontWeight, Spacing } from '@/constants/sizes';
+
+// Each beta and production promotion publishes a GitHub Release. The list rather than this
+// build's own release, because internal-testing builds have none.
+const RELEASES_URL = 'https://github.com/grokability/snipe-it-mobile/releases';
 
 // Shown on both the home screen and the login screen. On login it matters because fixes ship
 // as OTA updates: someone retrying a failed login needs to confirm they are actually running
@@ -15,6 +20,7 @@ export default function VersionFooter({ style }) {
     const colors = useColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const { t } = useTranslation();
+    const openUrl = useOpenExternalUrl();
     const { currentlyRunning, isUpdatePending, isChecking, isDownloading, downloadedUpdate } = useUpdates();
 
     // One line a tester can read out: the release the running JS was built from, the binary's
@@ -60,6 +66,9 @@ export default function VersionFooter({ style }) {
                 <Text style={styles.versionText}>{releaseText}</Text>
             </TouchableOpacity>
             <Text style={styles.versionText}>{otaText}</Text>
+            <TouchableOpacity onPress={() => openUrl(RELEASES_URL)} activeOpacity={0.6} accessibilityRole="link">
+                <Text style={styles.linkText}>{t('mobile.release_notes')}</Text>
+            </TouchableOpacity>
             {isUpdatePending ? (
                 <TouchableOpacity style={styles.updateBanner} onPress={reloadAsync} activeOpacity={0.7}>
                     <Text style={styles.updateBannerLabel}>{t('mobile.update_pending')}</Text>
@@ -73,7 +82,7 @@ export default function VersionFooter({ style }) {
                     disabled={isChecking || isDownloading}
                     activeOpacity={0.6}
                 >
-                    <Text style={styles.checkUpdateText}>
+                    <Text style={styles.linkText}>
                         {isDownloading
                             ? t('mobile.update_downloading')
                             : isChecking
@@ -117,7 +126,7 @@ const createStyles = (colors) => StyleSheet.create({
         color: colors.textSecondary,
         textAlign: 'center',
     },
-    checkUpdateText: {
+    linkText: {
         fontSize: Typography.caption,
         color: colors.textSecondary,
         textAlign: 'center',
