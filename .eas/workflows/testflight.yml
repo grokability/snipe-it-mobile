@@ -18,13 +18,15 @@ jobs:
     outputs:
       release_number: ${{ steps.release.outputs.release_number }}
       commit: ${{ steps.release.outputs.commit }}
+      notes: ${{ steps.notes.outputs.notes }}
     steps:
       - uses: eas/checkout
       - id: release
         name: Count first-parent commits
         run: |
-          # eas/checkout clones with --depth 1, which would make the count 1.
-          git fetch --unshallow --quiet
+          # eas/checkout clones with --depth 1, which would make the count 1. The tags are for
+          # the notes step, which starts from the previous release tag.
+          git fetch --unshallow --tags --quiet
           if [ "$(git rev-parse --is-shallow-repository)" = "true" ]; then
             echo "Checkout is still shallow; the release number would be wrong." >&2
             exit 1
@@ -33,6 +35,9 @@ jobs:
           COUNT=$(git rev-list --count --first-parent HEAD)
           set-output release_number "$MAJOR_MINOR.$COUNT"
           set-output commit "$(git rev-parse --short HEAD)"
+      - id: notes
+        name: List the PRs since the previous release
+        run: set-output notes "$(node scripts/release-notes.mjs "${{ steps.release.outputs.release_number }}")"
 
   # Only a beta-profile build counts. A develop build with the same fingerprint listens on the
   # `internal-testing` channel, so beta testers who received it would get develop's updates
@@ -88,12 +93,13 @@ jobs:
   distribute_ios:
     name: Distribute iOS to Initial Group
     type: testflight
-    needs: [build_ios]
+    needs: [build_ios, release_info]
     params:
       build_id: ${{ needs.build_ios.outputs.build_id }}
       profile: beta
       external_groups: ["Initial Group"]
       submit_beta_review: true
+      changelog: ${{ needs.release_info.outputs.notes }}
 
   submit_android:
     name: Submit Android (Beta)
