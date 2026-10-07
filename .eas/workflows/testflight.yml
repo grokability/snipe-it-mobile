@@ -10,12 +10,46 @@ jobs:
     name: Calculate Fingerprints
     type: fingerprint
 
+  # Same computation as develop.yml. testflight only ever holds commits fast-forwarded from
+  # develop, so the first-parent count, and the release number, match develop's run.
+  release_info:
+    name: Compute Release Number
+    runs_on: linux-medium
+    outputs:
+      release_number: ${{ steps.release.outputs.release_number }}
+      commit: ${{ steps.release.outputs.commit }}
+      notes: ${{ steps.notes.outputs.notes }}
+    steps:
+      - uses: eas/checkout
+      - id: release
+        name: Count first-parent commits
+        run: |
+          # eas/checkout clones with --depth 1, which would make the count 1. The tags are for
+          # the notes step, which starts from the previous release tag.
+          git fetch --unshallow --tags --quiet
+          if [ "$(git rev-parse --is-shallow-repository)" = "true" ]; then
+            echo "Checkout is still shallow; the release number would be wrong." >&2
+            exit 1
+          fi
+          MAJOR_MINOR=$(node -p "require('./app.json').expo.version.split('.').slice(0, 2).join('.')")
+          COUNT=$(git rev-list --count --first-parent HEAD)
+          set-output release_number "$MAJOR_MINOR.$COUNT"
+          set-output commit "$(git rev-parse --short HEAD)"
+      - id: notes
+        name: List the PRs since the previous release
+        run: set-output notes "$(node scripts/release-notes.mjs "${{ steps.release.outputs.release_number }}")"
+
+  # Only a beta-profile build counts. A develop build with the same fingerprint listens on the
+  # `internal-testing` channel, so beta testers who received it would get develop's updates
+  # instead of this branch's. A beta build that matches is already on TestFlight and open
+  # testing, so there is nothing to distribute.
   get_build_ios:
     name: Find Existing iOS Build
     type: get-build
     needs: [fingerprint]
     params:
       platform: ios
+      profile: beta
       fingerprint_hash: ${{ needs.fingerprint.outputs.ios_fingerprint_hash }}
 
   get_build_android:
@@ -24,13 +58,18 @@ jobs:
     needs: [fingerprint]
     params:
       platform: android
+      profile: beta
       fingerprint_hash: ${{ needs.fingerprint.outputs.android_fingerprint_hash }}
 
   build_ios:
     name: Build iOS (Beta)
     type: build
-    needs: [get_build_ios]
+    needs: [get_build_ios, release_info]
     if: ${{ !needs.get_build_ios.outputs.build_id }}
+    # Inlined into the embedded bundle, as on develop.
+    env:
+      EXPO_PUBLIC_RELEASE_NUMBER: ${{ needs.release_info.outputs.release_number }}
+      EXPO_PUBLIC_UPDATE_COMMIT: ${{ needs.release_info.outputs.commit }}
     params:
       platform: ios
       profile: beta
@@ -38,110 +77,102 @@ jobs:
   build_android:
     name: Build Android (Beta)
     type: build
-    needs: [get_build_android]
+    needs: [get_build_android, release_info]
     if: ${{ !needs.get_build_android.outputs.build_id }}
+    env:
+      EXPO_PUBLIC_RELEASE_NUMBER: ${{ needs.release_info.outputs.release_number }}
+      EXPO_PUBLIC_UPDATE_COMMIT: ${{ needs.release_info.outputs.commit }}
     params:
       platform: android
       profile: beta
 
-  # Path A: existing build found — distribute without re-uploading (develop binary promoted to beta)
-  # EAS Submit always re-uploads the binary, which fails when the same build number was already
-  # uploaded by the develop workflow. Instead:
-  # - iOS uses type: testflight (distributes to groups via ASC API, uses EAS-stored credentials)
-  # - Android uses fastlane supply --track_promote_to (promotes without re-uploading)
-  distribute_ios_reuse:
-    name: Distribute iOS to Initial Group (Reuse)
-    needs: [get_build_ios]
-    if: ${{ needs.get_build_ios.outputs.build_id }}
-    runs_on: linux-medium
-    steps:
-      - name: Add existing build to Initial Group
-        run: |
-          fastlane run pilot \
-            app_identifier:com.grokability.snipeitmobile \
-            api_key_path:"$ASC_API_KEY_JSON" \
-            distribute_only:true \
-            app_platform:ios \
-            build_number:"${{ needs.get_build_ios.outputs.app_build_version }}" \
-            app_version:"${{ needs.get_build_ios.outputs.app_version }}" \
-            groups:"Initial Group" \
-            submit_beta_review:true
-
-  distribute_android_reuse:
-    name: Promote Android to Open Testing (Reuse)
-    needs: [get_build_android]
-    # Only a develop build sits on the `internal` track and can be promoted from it. A build
-    # from an earlier testflight run carries the `beta` profile and was submitted straight to
-    # `beta`, so there is nothing to promote and `internal` holds an older versionCode —
-    # promoting that is a downgrade Play rejects with "does not allow any existing users to
-    # upgrade to the newly added APKs".
-    if: ${{ needs.get_build_android.outputs.build_id && needs.get_build_android.outputs.profile == 'internal-testing' }}
-    runs_on: linux-medium
-    steps:
-      # Play's track ids do not match the Play Console labels: `internal` is Internal testing,
-      # `alpha` is Closed testing and `beta` is Open testing. This branch distributes to Open
-      # testing, so the target is `beta` — `alpha` would leave Open testing without builds.
-      - name: Promote existing build from internal to open testing
-        run: |
-          fastlane supply \
-            --package_name com.grokability.snipeitmobile \
-            --track internal \
-            --track_promote_to beta \
-            --version_code ${{ needs.get_build_android.outputs.app_build_version }} \
-            --json_key "$GOOGLE_SERVICE_ACCOUNT_JSON" \
-            --changes_not_sent_for_review false \
-            --skip_upload_apk true \
-            --skip_upload_aab true \
-            --skip_upload_metadata true \
-            --skip_upload_images true \
-            --skip_upload_screenshots true
-
-  # Path B: no existing build — submit the fresh build
-  submit_ios_fresh:
-    name: Submit iOS (Fresh Build)
-    type: submit
-    needs: [build_ios]
+  # iOS uses type: testflight rather than type: submit because only the testflight job can
+  # create the Beta App Review submission. "Initial Group" is an external group, and an
+  # external group's first build on each version has to clear that review, so type: submit
+  # left the build sitting at "Ready to Submit" and testers never received it.
+  distribute_ios:
+    name: Distribute iOS to Initial Group
+    type: testflight
+    needs: [build_ios, release_info]
     params:
       build_id: ${{ needs.build_ios.outputs.build_id }}
       profile: beta
+      external_groups: ["Initial Group"]
+      submit_beta_review: true
+      changelog: ${{ needs.release_info.outputs.notes }}
 
-  submit_android_fresh:
-    name: Submit Android (Fresh Build)
+  submit_android:
+    name: Submit Android (Beta)
     type: submit
     needs: [build_android]
     params:
       build_id: ${{ needs.build_android.outputs.build_id }}
       profile: beta
 
-  publish_ota:
-    name: Publish OTA Update (beta)
-    needs: [get_build_ios, get_build_android]
+  # Serves beta the update develop already published for this commit instead of exporting a
+  # new one: same bundle, same EXPO_PUBLIC_* values, same gitCommitHash, so testers run the
+  # bytes internal testers ran. The source maps develop uploaded match it by debug ID, so
+  # there is nothing to upload here.
+  promote_update:
+    name: Republish develop's update (beta)
+    needs: [release_info]
     environment: production
+    env:
+      RELEASE_NUMBER: ${{ needs.release_info.outputs.release_number }}
+      COMMIT: ${{ needs.release_info.outputs.commit }}
+      COMMIT_HASH: ${{ github.sha }}
     steps:
       - uses: eas/checkout
       - uses: eas/use_npm_token
+      # eas-cli resolves the app config, and its plugins, before any command that reads the project.
       - uses: eas/install_node_modules
-      - name: Publish update
+      - name: Republish the update groups develop published for this commit
         run: |
-          VERSION=$(node -p "require('./app.json').expo.version")
-          SHA=$(git rev-parse --short HEAD)
-          MSG="v$VERSION ($SHA)"
-          EXPO_PUBLIC_UPDATE_MESSAGE="$MSG" EXPO_PUBLIC_UPDATE_COMMIT="$SHA" npx eas-cli@latest update --branch ${{ github.ref_name }} --message "$MSG" --environment production --non-interactive
-      - name: Upload source maps to Sentry
-        # eas update exports into ./dist and always passes --dump-sourcemap, so the maps are
-        # already sitting there. Native builds upload via the config plugin; OTA updates do
-        # not, and most releases here are OTA — without this their stack traces stay minified.
-        # Sentry matches maps to events by debug ID rather than by release, so a failure here
-        # leaves the update live and re-runnable rather than needing a republish.
-        # The binary ships with @sentry/react-native, so it is version-matched to the SDK.
-        # The scoped form in Sentry's docs is not linked into node_modules here and would
-        # be fetched from npm instead.
-        run: npx sentry-expo-upload-sourcemaps dist
+          set -euo pipefail
+          MESSAGE="$RELEASE_NUMBER ($COMMIT)"
+          # update:list shows each message as "\"<message>\" (<age> by <actor>)" and has no commit
+          # field, so it only narrows the candidates. update:view reports gitCommitHash, which
+          # confirms them. The list is newest first, so a re-run of develop wins.
+          CANDIDATE_GROUPS=$(npx eas-cli@latest update:list --branch develop --limit 50 --json \
+            | jq -r --arg prefix "\"$MESSAGE\"" '.currentPage[] | select(.message | startswith($prefix)) | .group')
+          GROUPS_TO_REPUBLISH=""
+          COVERED_PLATFORMS=" "
+          for GROUP in $CANDIDATE_GROUPS; do
+            GROUP_UPDATES=$(npx eas-cli@latest update:view "$GROUP" --json)
+            if ! echo "$GROUP_UPDATES" | jq -e --arg hash "$COMMIT_HASH" 'all(.gitCommitHash == $hash)' > /dev/null; then
+              continue
+            fi
+            for PLATFORM in $(echo "$GROUP_UPDATES" | jq -r '.[].platform'); do
+              case "$COVERED_PLATFORMS" in
+                *" $PLATFORM "*) ;;
+                *)
+                  COVERED_PLATFORMS="$COVERED_PLATFORMS$PLATFORM "
+                  case " $GROUPS_TO_REPUBLISH " in *" $GROUP "*) ;; *) GROUPS_TO_REPUBLISH="$GROUPS_TO_REPUBLISH $GROUP" ;; esac
+                  ;;
+              esac
+            done
+          done
+          # Checked before republishing anything, so a missing platform doesn't leave beta
+          # with only half of the release.
+          for PLATFORM in ios android; do
+            case "$COVERED_PLATFORMS" in
+              *" $PLATFORM "*) ;;
+              *)
+                echo "develop has no $PLATFORM update for $COMMIT_HASH with the message \"$MESSAGE\"." >&2
+                echo "Only commits that passed develop can be promoted; a hotfix commit needs a fresh export, which this workflow doesn't do yet." >&2
+                exit 1
+                ;;
+            esac
+          done
+          for GROUP in $GROUPS_TO_REPUBLISH; do
+            echo "Republishing $GROUP to ${{ github.ref_name }}"
+            npx eas-cli@latest update:republish --group "$GROUP" --destination-branch ${{ github.ref_name }} --message "$MESSAGE" --non-interactive
+          done
 
   update_deployments_gist:
     name: Update Deployments Gist
     runs_on: linux-medium
-    after: [build_ios, build_android, submit_ios_fresh, submit_android_fresh, distribute_ios_reuse, distribute_android_reuse, publish_ota]
+    after: [build_ios, build_android, distribute_ios, submit_android, promote_update]
     steps:
       - uses: eas/checkout
       - uses: eas/use_npm_token
@@ -153,55 +184,73 @@ jobs:
   notify_native_success:
     name: ✅ Notify — Native Build Distributed
     runs_on: linux-medium
-    after: [submit_ios_fresh, submit_android_fresh, distribute_ios_reuse, distribute_android_reuse, publish_ota]
-    if: ${{ after.submit_ios_fresh.status == 'success' && after.submit_android_fresh.status == 'success' }}
+    after: [release_info, distribute_ios, submit_android, promote_update]
+    if: ${{ after.distribute_ios.status == 'success' && after.submit_android.status == 'success' }}
+    # PR titles reach the script through env, not ${{ }} in the script text, so a title
+    # containing shell syntax stays text.
+    env:
+      RELEASE_NOTES: ${{ after.release_info.outputs.notes }}
+      RELEASE_NUMBER: ${{ after.release_info.outputs.release_number }}
     steps:
-      - uses: eas/checkout
       - name: Send Slack notification
         run: |
-          CHANGELOG=$(git log --format="• %s" --no-merges -20)
-          [ -z "$CHANGELOG" ] && CHANGELOG="_No new commits_"
+          # promote.mjs publishes the release after this run succeeds, so the link can be a few
+          # seconds ahead of the page.
+          RELEASE_URL="https://github.com/grokability/snipe-it-mobile/releases/tag/v$RELEASE_NUMBER"
           curl -s -X POST "$SLACK_WEBHOOK_URL" \
             -H 'Content-type: application/json' \
             -d "$(jq -n \
-              --arg changelog "$CHANGELOG" \
-              '{blocks: [
+              --arg notes "$RELEASE_NOTES" \
+              --arg release "$RELEASE_NUMBER" \
+              --arg release_url "$RELEASE_URL" \
+              '($notes | gsub("&"; "&amp;") | gsub("<"; "&lt;") | gsub(">"; "&gt;")) as $escaped_notes |
+              {blocks: [
                 {type: "header", text: {type: "plain_text", text: "✅ Snipe IT Mobile — TestFlight / Beta"}},
                 {type: "section", fields: [
                   {type: "mrkdwn", text: "🔨 *Type:* Native Build"},
                   {type: "mrkdwn", text: "🌿 *Branch:* testflight"}
                 ]},
-                {type: "section", text: {type: "mrkdwn", text: ("📋 *Changes*\n" + $changelog)}}
+                {type: "section", text: {type: "mrkdwn", text: ("📋 *Changes*\n" + $escaped_notes)}},
+                {type: "section", text: {type: "mrkdwn", text: ("🔗 <" + $release_url + "|Release notes for " + $release + ">")}}
               ]}')"
 
   notify_ota_success:
     name: ✅ Notify — OTA Update Published
     runs_on: linux-medium
-    after: [submit_ios_fresh, submit_android_fresh, distribute_ios_reuse, distribute_android_reuse, publish_ota]
-    if: ${{ after.publish_ota.status == 'success' && after.submit_ios_fresh.status != 'success' }}
+    after: [release_info, distribute_ios, submit_android, promote_update]
+    if: ${{ after.promote_update.status == 'success' && after.distribute_ios.status != 'success' }}
+    # PR titles reach the script through env, not ${{ }} in the script text, so a title
+    # containing shell syntax stays text.
+    env:
+      RELEASE_NOTES: ${{ after.release_info.outputs.notes }}
+      RELEASE_NUMBER: ${{ after.release_info.outputs.release_number }}
     steps:
-      - uses: eas/checkout
       - name: Send Slack notification
         run: |
-          CHANGELOG=$(git log --format="• %s" --no-merges -20)
-          [ -z "$CHANGELOG" ] && CHANGELOG="_No new commits_"
+          # promote.mjs publishes the release after this run succeeds, so the link can be a few
+          # seconds ahead of the page.
+          RELEASE_URL="https://github.com/grokability/snipe-it-mobile/releases/tag/v$RELEASE_NUMBER"
           curl -s -X POST "$SLACK_WEBHOOK_URL" \
             -H 'Content-type: application/json' \
             -d "$(jq -n \
-              --arg changelog "$CHANGELOG" \
-              '{blocks: [
+              --arg notes "$RELEASE_NOTES" \
+              --arg release "$RELEASE_NUMBER" \
+              --arg release_url "$RELEASE_URL" \
+              '($notes | gsub("&"; "&amp;") | gsub("<"; "&lt;") | gsub(">"; "&gt;")) as $escaped_notes |
+              {blocks: [
                 {type: "header", text: {type: "plain_text", text: "✅ Snipe IT Mobile — TestFlight / Beta"}},
                 {type: "section", fields: [
                   {type: "mrkdwn", text: "⚡ *Type:* OTA / JS Update"},
                   {type: "mrkdwn", text: "🌿 *Branch:* testflight"}
                 ]},
-                {type: "section", text: {type: "mrkdwn", text: ("📋 *Changes*\n" + $changelog)}}
+                {type: "section", text: {type: "mrkdwn", text: ("📋 *Changes*\n" + $escaped_notes)}},
+                {type: "section", text: {type: "mrkdwn", text: ("🔗 <" + $release_url + "|Release notes for " + $release + ">")}}
               ]}')"
 
   notify_failure:
     name: ❌ Notify — Failure
     runs_on: linux-medium
-    after: [build_ios, build_android, submit_ios_fresh, submit_android_fresh, distribute_ios_reuse, distribute_android_reuse, publish_ota]
+    after: [release_info, build_ios, build_android, distribute_ios, submit_android, promote_update]
     if: ${{ failure() }}
     steps:
       - name: Send Slack notification
@@ -210,15 +259,13 @@ jobs:
             -H 'Content-type: application/json' \
             -d "$(jq -n \
               --arg ios_build "${{ after.build_ios.status }}" \
-              --arg ios_submit "${{ after.submit_ios_fresh.status }}" \
-              --arg ios_reuse "${{ after.distribute_ios_reuse.status }}" \
+              --arg ios_submit "${{ after.distribute_ios.status }}" \
               --arg android_build "${{ after.build_android.status }}" \
-              --arg android_submit "${{ after.submit_android_fresh.status }}" \
-              --arg android_reuse "${{ after.distribute_android_reuse.status }}" \
-              --arg ota "${{ after.publish_ota.status }}" \
+              --arg android_submit "${{ after.submit_android.status }}" \
+              --arg ota "${{ after.promote_update.status }}" \
               '{blocks: [
                 {type: "header", text: {type: "plain_text", text: "❌ Snipe IT Mobile — TestFlight Failed"}},
                 {type: "section", fields: [{type: "mrkdwn", text: "🌿 *Branch:* testflight"}]},
-                {type: "section", text: {type: "mrkdwn", text: ("📊 *Job Status*\n🍎 iOS build: " + $ios_build + " | submit: " + $ios_submit + " | reuse: " + $ios_reuse + "\n🤖 Android build: " + $android_build + " | submit: " + $android_submit + " | reuse: " + $android_reuse + "\n⚡ OTA: " + $ota)}},
+                {type: "section", text: {type: "mrkdwn", text: ("📊 *Job Status*\n🍎 iOS build: " + $ios_build + " | submit: " + $ios_submit + "\n🤖 Android build: " + $android_build + " | submit: " + $android_submit + "\n⚡ OTA: " + $ota)}},
                 {type: "section", text: {type: "mrkdwn", text: "🔗 Check the EAS dashboard for details."}}
               ]}')"

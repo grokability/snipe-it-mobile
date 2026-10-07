@@ -53,8 +53,7 @@
     },
     "beta": {
       "ios": {
-        "ascAppId": "6754097538",
-        "groups": ["Initial Group"]
+        "ascAppId": "6754097538"
       },
       "android": {
         "track": "beta"
@@ -62,7 +61,8 @@
     },
     "internal-testing": {
       "ios": {
-        "ascAppId": "6754097538"
+        "ascAppId": "6754097538",
+        "groups": ["Grokstars"]
       },
       "android": {
         "track": "internal"
