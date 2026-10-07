@@ -33,6 +33,7 @@ const LoginForm = ({ onBearerLogin, onDomainChange }) => {
     const [domainRejection, setDomainRejection] = useState(null);
     const [schemeWasAdded, setSchemeWasAdded] = useState(false);
     const checkGeneration = useRef(0);
+    const discoveryCancel = useRef(null);
 
     useEffect(() => {
         SecureStore.getItemAsync('domain').then(saved => {
@@ -117,10 +118,12 @@ const LoginForm = ({ onBearerLogin, onDomainChange }) => {
         }
 
         const generation = ++checkGeneration.current;
+        discoveryCancel.current = new AbortController();
         setPhase(PHASE.CHECKING);
         try {
             const result = await discoverOAuthClient(baseUrl, {
                 isCurrent: () => generation === checkGeneration.current,
+                signal: discoveryCancel.current.signal,
             });
             if (generation !== checkGeneration.current) return;
             if (result) {
@@ -136,6 +139,14 @@ const LoginForm = ({ onBearerLogin, onDomainChange }) => {
             setPhase(PHASE.ERROR);
             addLoginBreadcrumb('Instance unreachable, showing error state');
         }
+    };
+
+    // The field is not editable while the check runs, so this is the only way out of it short of
+    // the timeout. Bumping the generation discards whatever the aborted check returns.
+    const handleCancelCheck = () => {
+        checkGeneration.current++;
+        discoveryCancel.current?.abort();
+        setPhase(PHASE.DOMAIN);
     };
 
     return (
@@ -176,10 +187,13 @@ const LoginForm = ({ onBearerLogin, onDomainChange }) => {
             )}
 
             {phase === PHASE.CHECKING && (
-                <View style={styles.checkingRow}>
-                    <ActivityIndicator size="small" color={colors.primary} />
-                    <Text style={styles.checkingText}>{t('mobile.checking_instance')}</Text>
-                </View>
+                <>
+                    <View style={styles.checkingRow}>
+                        <ActivityIndicator size="small" color={colors.primary} />
+                        <Text style={styles.checkingText}>{t('mobile.checking_instance')}</Text>
+                    </View>
+                    <Button title={t('general.cancel')} onPress={() => handleCancelCheck()} />
+                </>
             )}
 
             {phase === PHASE.OAUTH && (

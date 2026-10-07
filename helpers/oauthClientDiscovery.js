@@ -20,8 +20,9 @@ export function mayNeedLocalNetworkPermission(domain) {
 const wait = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
 
 // isCurrent reports whether the form still wants this result. A superseded check stops retrying
-// and returns quietly, since the form discards it anyway.
-export async function discoverOAuthClient(domain, { isCurrent = () => true } = {}) {
+// and returns quietly, since the form discards it anyway. Aborting `signal` is the user's Cancel,
+// which also returns quietly: it is not a failure, so nothing reaches Sentry.
+export async function discoverOAuthClient(domain, { isCurrent = () => true, signal } = {}) {
     const controller = new AbortController();
     // The app's own record of why it aborted. The rejection itself reads differently per platform
     // and language ("Fetch request has been canceled" on Android), and does not say who aborted.
@@ -30,7 +31,9 @@ export async function discoverOAuthClient(domain, { isCurrent = () => true } = {
         if (!abortReason) abortReason = reason;
         controller.abort();
     };
+    const cancelByUser = () => abortWith('user-cancel');
     const timeoutId = setTimeout(() => abortWith('timeout'), DISCOVERY_TIMEOUT_MS);
+    signal?.addEventListener('abort', cancelByUser);
     const startedAt = Date.now();
     const retriesWhileAsking = mayNeedLocalNetworkPermission(domain);
     let attempts = 0;
@@ -60,6 +63,10 @@ export async function discoverOAuthClient(domain, { isCurrent = () => true } = {
             }
         }
     } catch (error) {
+        if (abortReason === 'user-cancel') {
+            addLoginBreadcrumb('Probe cancelled by the user', { elapsed_ms: Date.now() - startedAt });
+            return null;
+        }
         reportLoginFailure({
             stage: 'oauth-discovery',
             error,
@@ -74,6 +81,7 @@ export async function discoverOAuthClient(domain, { isCurrent = () => true } = {
         throw new Error('network');
     } finally {
         clearTimeout(timeoutId);
+        signal?.removeEventListener('abort', cancelByUser);
     }
 
     addLoginBreadcrumb('Probe answered', {
