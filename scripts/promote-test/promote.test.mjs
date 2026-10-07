@@ -1,7 +1,7 @@
 // Runs scripts/promote.mjs against a throwaway origin with fake EAS and GitHub (see fixture.mjs)
 // and checks, for each path through the script, whether it pushed and what it published.
 //
-//   node --test scripts/promote-test/promote.test.mjs
+//   npm run test:promote
 import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
 import { createFixture } from './fixture.mjs';
