@@ -184,49 +184,67 @@ jobs:
   notify_native_success:
     name: ✅ Notify — Native Build Distributed
     runs_on: linux-medium
-    after: [distribute_ios, submit_android, promote_update]
+    after: [release_info, distribute_ios, submit_android, promote_update]
     if: ${{ after.distribute_ios.status == 'success' && after.submit_android.status == 'success' }}
+    # PR titles reach the script through env, not ${{ }} in the script text, so a title
+    # containing shell syntax stays text.
+    env:
+      RELEASE_NOTES: ${{ after.release_info.outputs.notes }}
+      RELEASE_NUMBER: ${{ after.release_info.outputs.release_number }}
     steps:
-      - uses: eas/checkout
       - name: Send Slack notification
         run: |
-          CHANGELOG=$(git log --format="• %s" --no-merges -20)
-          [ -z "$CHANGELOG" ] && CHANGELOG="_No new commits_"
+          # promote.mjs publishes the release after this run succeeds, so the link can be a few
+          # seconds ahead of the page.
+          RELEASE_URL="https://github.com/grokability/snipe-it-mobile/releases/tag/v$RELEASE_NUMBER"
           curl -s -X POST "$SLACK_WEBHOOK_URL" \
             -H 'Content-type: application/json' \
             -d "$(jq -n \
-              --arg changelog "$CHANGELOG" \
-              '{blocks: [
+              --arg notes "$RELEASE_NOTES" \
+              --arg release "$RELEASE_NUMBER" \
+              --arg release_url "$RELEASE_URL" \
+              '($notes | gsub("&"; "&amp;") | gsub("<"; "&lt;") | gsub(">"; "&gt;")) as $escaped_notes |
+              {blocks: [
                 {type: "header", text: {type: "plain_text", text: "✅ Snipe IT Mobile — TestFlight / Beta"}},
                 {type: "section", fields: [
                   {type: "mrkdwn", text: "🔨 *Type:* Native Build"},
                   {type: "mrkdwn", text: "🌿 *Branch:* testflight"}
                 ]},
-                {type: "section", text: {type: "mrkdwn", text: ("📋 *Changes*\n" + $changelog)}}
+                {type: "section", text: {type: "mrkdwn", text: ("📋 *Changes*\n" + $escaped_notes)}},
+                {type: "section", text: {type: "mrkdwn", text: ("🔗 <" + $release_url + "|Release notes for " + $release + ">")}}
               ]}')"
 
   notify_ota_success:
     name: ✅ Notify — OTA Update Published
     runs_on: linux-medium
-    after: [distribute_ios, submit_android, promote_update]
+    after: [release_info, distribute_ios, submit_android, promote_update]
     if: ${{ after.promote_update.status == 'success' && after.distribute_ios.status != 'success' }}
+    # PR titles reach the script through env, not ${{ }} in the script text, so a title
+    # containing shell syntax stays text.
+    env:
+      RELEASE_NOTES: ${{ after.release_info.outputs.notes }}
+      RELEASE_NUMBER: ${{ after.release_info.outputs.release_number }}
     steps:
-      - uses: eas/checkout
       - name: Send Slack notification
         run: |
-          CHANGELOG=$(git log --format="• %s" --no-merges -20)
-          [ -z "$CHANGELOG" ] && CHANGELOG="_No new commits_"
+          # promote.mjs publishes the release after this run succeeds, so the link can be a few
+          # seconds ahead of the page.
+          RELEASE_URL="https://github.com/grokability/snipe-it-mobile/releases/tag/v$RELEASE_NUMBER"
           curl -s -X POST "$SLACK_WEBHOOK_URL" \
             -H 'Content-type: application/json' \
             -d "$(jq -n \
-              --arg changelog "$CHANGELOG" \
-              '{blocks: [
+              --arg notes "$RELEASE_NOTES" \
+              --arg release "$RELEASE_NUMBER" \
+              --arg release_url "$RELEASE_URL" \
+              '($notes | gsub("&"; "&amp;") | gsub("<"; "&lt;") | gsub(">"; "&gt;")) as $escaped_notes |
+              {blocks: [
                 {type: "header", text: {type: "plain_text", text: "✅ Snipe IT Mobile — TestFlight / Beta"}},
                 {type: "section", fields: [
                   {type: "mrkdwn", text: "⚡ *Type:* OTA / JS Update"},
                   {type: "mrkdwn", text: "🌿 *Branch:* testflight"}
                 ]},
-                {type: "section", text: {type: "mrkdwn", text: ("📋 *Changes*\n" + $changelog)}}
+                {type: "section", text: {type: "mrkdwn", text: ("📋 *Changes*\n" + $escaped_notes)}},
+                {type: "section", text: {type: "mrkdwn", text: ("🔗 <" + $release_url + "|Release notes for " + $release + ">")}}
               ]}')"
 
   notify_failure:
