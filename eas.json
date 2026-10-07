@@ -61,7 +61,8 @@
     },
     "internal-testing": {
       "ios": {
-        "ascAppId": "6754097538"
+        "ascAppId": "6754097538",
+        "groups": ["Grokstars"]
       },
       "android": {
         "track": "internal"
