@@ -10,6 +10,30 @@ jobs:
     name: Calculate Fingerprints
     type: fingerprint
 
+  # Same computation as develop.yml. testflight only ever holds commits fast-forwarded from
+  # develop, so the first-parent count, and the release number, match develop's run.
+  release_info:
+    name: Compute Release Number
+    runs_on: linux-medium
+    outputs:
+      release_number: ${{ steps.release.outputs.release_number }}
+      commit: ${{ steps.release.outputs.commit }}
+    steps:
+      - uses: eas/checkout
+      - id: release
+        name: Count first-parent commits
+        run: |
+          # eas/checkout clones with --depth 1, which would make the count 1.
+          git fetch --unshallow --quiet
+          if [ "$(git rev-parse --is-shallow-repository)" = "true" ]; then
+            echo "Checkout is still shallow; the release number would be wrong." >&2
+            exit 1
+          fi
+          MAJOR_MINOR=$(node -p "require('./app.json').expo.version.split('.').slice(0, 2).join('.')")
+          COUNT=$(git rev-list --count --first-parent HEAD)
+          set-output release_number "$MAJOR_MINOR.$COUNT"
+          set-output commit "$(git rev-parse --short HEAD)"
+
   # Only a beta-profile build counts. A develop build with the same fingerprint listens on the
   # `internal-testing` channel, so beta testers who received it would get develop's updates
   # instead of this branch's. A beta build that matches is already on TestFlight and open
@@ -35,8 +59,12 @@ jobs:
   build_ios:
     name: Build iOS (Beta)
     type: build
-    needs: [get_build_ios]
+    needs: [get_build_ios, release_info]
     if: ${{ !needs.get_build_ios.outputs.build_id }}
+    # Inlined into the embedded bundle, as on develop.
+    env:
+      EXPO_PUBLIC_RELEASE_NUMBER: ${{ needs.release_info.outputs.release_number }}
+      EXPO_PUBLIC_UPDATE_COMMIT: ${{ needs.release_info.outputs.commit }}
     params:
       platform: ios
       profile: beta
@@ -44,8 +72,11 @@ jobs:
   build_android:
     name: Build Android (Beta)
     type: build
-    needs: [get_build_android]
+    needs: [get_build_android, release_info]
     if: ${{ !needs.get_build_android.outputs.build_id }}
+    env:
+      EXPO_PUBLIC_RELEASE_NUMBER: ${{ needs.release_info.outputs.release_number }}
+      EXPO_PUBLIC_UPDATE_COMMIT: ${{ needs.release_info.outputs.commit }}
     params:
       platform: android
       profile: beta
@@ -160,7 +191,7 @@ jobs:
   notify_failure:
     name: ❌ Notify — Failure
     runs_on: linux-medium
-    after: [build_ios, build_android, distribute_ios, submit_android, publish_ota]
+    after: [release_info, build_ios, build_android, distribute_ios, submit_android, publish_ota]
     if: ${{ failure() }}
     steps:
       - name: Send Slack notification
