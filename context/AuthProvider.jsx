@@ -6,7 +6,7 @@ import { deviceName } from "expo-device";
 import {useRouter} from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {makeRedirectUri} from "expo-auth-session";
-import {reportLoginFailure, addLoginBreadcrumb, axiosFailureCode} from "@/helpers/loginTelemetry";
+import {captureLoginException, addLoginBreadcrumb, axiosFailureCode} from "@/helpers/loginTelemetry";
 
 export const AuthContext = createContext();
 
@@ -100,7 +100,7 @@ export const AuthProvider = ({children}) => {
                         .catch(error => {
                             setUser(null);
                             setIsAuthenticated(false);
-                            reportLoginFailure({
+                            captureLoginException({
                                 stage: 'bearer-login',
                                 error,
                                 domain,
@@ -176,7 +176,7 @@ export const AuthProvider = ({children}) => {
                        // The OAuth error code says whether this was a bad verifier, an expired
                        // code or a redirect_uri mismatch, and is safe to send: it is a fixed
                        // vocabulary from the spec, not user data.
-                       reportLoginFailure({
+                       captureLoginException({
                            stage: 'oauth-token-exchange',
                            error,
                            domain,

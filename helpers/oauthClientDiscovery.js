@@ -1,5 +1,5 @@
 import { Platform } from 'react-native';
-import { reportLoginFailure, reportLoginProblem, addLoginBreadcrumb } from '@/helpers/loginTelemetry';
+import { captureLoginException, captureLoginMessage, addLoginBreadcrumb } from '@/helpers/loginTelemetry';
 import { addressGroup, describeDomain } from '@/helpers/domainShape';
 
 const DISCOVERY_TIMEOUT_MS = 15000;
@@ -101,7 +101,7 @@ export async function discoverOAuthClient(domain, { isCurrent = () => true, sign
             return { outcome: 'failure', code: 'cancel' };
         }
         const code = abortReason === 'timeout' ? 'timeout' : transportFailureCode(error);
-        reportLoginFailure({
+        captureLoginException({
             stage: 'oauth-discovery',
             error,
             domain,
@@ -133,7 +133,7 @@ export async function discoverOAuthClient(domain, { isCurrent = () => true, sign
     // would fail too.
     if (!response.ok) {
         const code = `http-${response.status}`;
-        reportLoginProblem({
+        captureLoginMessage({
             stage: 'oauth-discovery',
             message: `OAuth client discovery returned HTTP ${response.status}`,
             domain,
@@ -146,7 +146,7 @@ export async function discoverOAuthClient(domain, { isCurrent = () => true, sign
     try {
         const data = await response.json();
         if (!data?.client_id) {
-            reportLoginProblem({
+            captureLoginMessage({
                 stage: 'oauth-discovery',
                 message: 'OAuth client discovery returned a body without client_id',
                 domain,
@@ -158,7 +158,7 @@ export async function discoverOAuthClient(domain, { isCurrent = () => true, sign
     } catch (error) {
         // A 2xx that is not JSON: a wrong URL whose host answers every path with a page, or a
         // reverse proxy or captive portal. Token entry would send the token to the same place.
-        reportLoginFailure({
+        captureLoginException({
             stage: 'oauth-discovery',
             error,
             domain,

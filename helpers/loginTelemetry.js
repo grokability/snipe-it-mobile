@@ -14,7 +14,7 @@ import { stripKnownHost } from '@/helpers/sentryScrub';
 // reaches Sentry on the exception value, which scrubEvent scrubs. The codes:
 // - discovery (oauthClientDiscovery.js): timeout, invalid-response, host-not-found, tls,
 //   certificate-untrusted and transport on Android, transport-security on iOS;
-//   reportLoginProblem adds http-<status> and missing-client-id.
+//   captureLoginMessage adds http-<status> and missing-client-id.
 // - bearer login and the token exchange (axiosFailureCode below): an RFC 6749 token error,
 //   http-<status>, network or unexpected.
 
@@ -74,7 +74,7 @@ function captureForDomain(domain, capture) {
     });
 }
 
-export function reportLoginFailure({ stage, error, domain, code, level = 'error', extra = {} }) {
+export function captureLoginException({ stage, error, domain, code, level = 'error', extra = {} }) {
     const shape = describeDomain(domain);
     captureForDomain(domain, () => Sentry.captureException(error, {
         level,
@@ -94,7 +94,7 @@ export function reportLoginFailure({ stage, error, domain, code, level = 'error'
     }));
 }
 
-export function reportLoginProblem({ stage, message, domain, reason, level = 'warning', extra = {} }) {
+export function captureLoginMessage({ stage, message, domain, reason, level = 'warning', extra = {} }) {
     const shape = describeDomain(domain);
     captureForDomain(domain, () => Sentry.captureMessage(message, {
         level,
