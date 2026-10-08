@@ -36,7 +36,9 @@ const BearerTokenLogin = ({ onLogin, onDomainChange, domain: domainProp }) => {
                     style={styles.input}
                     placeholderTextColor={colors.textMuted}
                     textContentType="URL"
+                    keyboardType="url"
                     autoCapitalize="none"
+                    autoCorrect={false}
                 />
             )}
             <TextInput

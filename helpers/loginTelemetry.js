@@ -1,4 +1,5 @@
 import * as Sentry from '@sentry/react-native';
+import { Platform } from 'react-native';
 import { addressGroup, describeDomain, parseHost } from '@/helpers/domainShape';
 import { stripKnownHost } from '@/helpers/sentryScrub';
 
@@ -7,47 +8,57 @@ import { stripKnownHost } from '@/helpers/sentryScrub';
 // login_stage and failure_reason is the point — see discussions #165 and #166, where we had
 // no way to tell a TLS rejection from a timeout from a blocked cleartext request.
 
-// Sentry's maximum length for a tag value.
-const MAX_TAG_LENGTH = 200;
+// failure_reason is always a code from a fixed list, never the error's own text. The native
+// message is localized, so one failure became one issue per device language (SNIPE-IT-MOBILE-E
+// and -P are the same DNS failure, one of them in Chinese), and it can name the host. It still
+// reaches Sentry on the exception value, which scrubEvent scrubs. The codes:
+// - discovery (oauthClientDiscovery.js): timeout, invalid-response, host-not-found, tls,
+//   certificate-untrusted and transport on Android, transport-security on iOS;
+//   captureLoginMessage adds http-<status> and missing-client-id.
+// - bearer login and the token exchange (axiosFailureCode below): an RFC 6749 token error,
+//   http-<status>, network or unexpected.
 
-// Wrapper text every expo/fetch rejection carries, and the Expo source location appended to a
-// native one. Neither describes the failure, and the location moves between Expo versions,
-// which would split a single failure across several tag values. The message reaches Sentry
-// untouched on the exception itself either way.
-const FETCH_WRAPPER_PREFIX = /^fetch failed:\s*/i;
-const NATIVE_SOURCE_SUFFIX = /\s*\(at [^()]+:\d+\)$/;
+// The token endpoint error codes from RFC 6749 §5.2. A response's `error` field becomes the code
+// only when it is one of these, so a proxy's own JSON cannot put arbitrary text into a tag.
+const OAUTH_TOKEN_ERRORS = new Set([
+    'invalid_request',
+    'invalid_client',
+    'invalid_grant',
+    'unauthorized_client',
+    'unsupported_grant_type',
+    'invalid_scope',
+]);
 
-// The tag is the error's own words — "A TLS error caused the secure connection to fail" —
-// rather than a bucket picked from a list.
-//
-// Global fetch is expo/fetch, not React Native's (expo/src/winter/runtime.native.ts installs
-// it unless EXPO_PUBLIC_USE_RN_FETCH is set). It passes the CFNetwork or OkHttp text through
-// verbatim instead of collapsing everything into "Network request failed", so a specific
-// reason is already there to read. Enumerating the ones we had seen only meant every reason we
-// had not — which is most of them, across two platforms and every OS release — arrived as
-// `unknown`.
-function describeFailure(error) {
-    const raw = typeof error === 'string' ? error : error?.message;
-
-    const message = String(raw ?? '')
-        .replace(FETCH_WRAPPER_PREFIX, '')
-        .replace(NATIVE_SOURCE_SUFFIX, '')
-        .replace(/\s+/g, ' ')
-        .trim();
-
-    if (!message) return error?.name || 'non-error thrown';
-    return message.slice(0, MAX_TAG_LENGTH);
+// A fixed code for a login request that went through axios: bearer login and the OAuth token
+// exchange. axios runs on React Native's XMLHttpRequest, which reports every transport failure as
+// ERR_NETWORK "Network Error" with no native detail, so `network` is as fine as it gets.
+// `unexpected` is an error thrown by the app's own code after the request succeeded.
+export function axiosFailureCode(error) {
+    if (!error?.isAxiosError) return 'unexpected';
+    if (!error.response) return 'network';
+    const oauthError = error.response.data?.error;
+    if (OAUTH_TOKEN_ERRORS.has(oauthError)) return oauthError;
+    return `http-${error.response.status}`;
 }
 
-function tagsFor(stage, error, shape) {
+function tagsFor(stage, error, shape, code) {
     return {
         login_stage: stage,
-        failure_reason: describeFailure(error),
+        failure_reason: code,
         http_status: String(error?.response?.status ?? 'none'),
         domain_scheme: shape.scheme,
         domain_host_type: shape.host_type,
         domain_address_range: shape.address_range,
     };
+}
+
+// Sentry groups a login failure into an issue by its stage, its code and the platform, not by its
+// message and stack. The message is localized, and every fetch rejection carries the same stack,
+// from where expo/fetch builds the error, so the default grouping split one failure across device
+// languages and merged unrelated ones into one issue (SNIPE-IT-MOBILE-M). The platform keeps iOS's broad transport-security code, which holds
+// DNS, TLS and a declined local network prompt together, apart from Android's narrower codes.
+function fingerprintFor(stage, code) {
+    return ['login-failure', stage, code, Platform.OS];
 }
 
 // The generic scrub in beforeSend cannot recognise a hostname in free text, so each report
@@ -63,11 +74,12 @@ function captureForDomain(domain, capture) {
     });
 }
 
-export function reportLoginFailure({ stage, error, domain, level = 'error', extra = {} }) {
+export function captureLoginException({ stage, error, domain, code, level = 'error', extra = {} }) {
     const shape = describeDomain(domain);
     captureForDomain(domain, () => Sentry.captureException(error, {
         level,
-        tags: tagsFor(stage, error, shape),
+        fingerprint: fingerprintFor(stage, code),
+        tags: tagsFor(stage, error, shape, code),
         contexts: { domain_shape: shape },
         extra: {
             error_name: error?.name ?? null,
@@ -82,10 +94,11 @@ export function reportLoginFailure({ stage, error, domain, level = 'error', extr
     }));
 }
 
-export function reportLoginProblem({ stage, message, domain, reason, level = 'warning', extra = {} }) {
+export function captureLoginMessage({ stage, message, domain, reason, level = 'warning', extra = {} }) {
     const shape = describeDomain(domain);
     captureForDomain(domain, () => Sentry.captureMessage(message, {
         level,
+        fingerprint: fingerprintFor(stage, reason),
         tags: {
             login_stage: stage,
             failure_reason: reason,

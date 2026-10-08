@@ -146,8 +146,8 @@ export function scrubEvent(event) {
         if (event.request.url) event.request.url = scrubText(event.request.url);
         if (event.request.data) event.request.data = redact(event.request.data);
     }
-    // failure_reason carries the native error message verbatim, host and all.
-    if (event.tags) event.tags = redact(event.tags);
+    // Tags are left alone: every tag the app sets holds a value from a fixed list, never free
+    // text (see failure_reason in helpers/loginTelemetry.js).
     if (event.extra) event.extra = redact(event.extra);
     if (event.contexts) event.contexts = redact(event.contexts);
 

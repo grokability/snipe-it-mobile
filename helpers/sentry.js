@@ -79,7 +79,7 @@ export function initSentry() {
         tracesSampleRate: 0,
         // No ExtraErrorData. It copies every property an error holds onto the event, and for
         // an axios failure that is the whole request: the Authorization header, and the token
-        // exchange body with the OAuth code and verifier. reportLoginFailure extracts the
+        // exchange body with the OAuth code and verifier. captureLoginException extracts the
         // fields worth sending by name instead.
         beforeSend: gateEvent,
         beforeBreadcrumb: scrubBreadcrumb,

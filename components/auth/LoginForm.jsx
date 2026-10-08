@@ -32,7 +32,10 @@ const LoginForm = ({ onBearerLogin, onDomainChange }) => {
     // Why Continue sent no request: normalizeDomain's error code, or 'cleartext-not-local'.
     const [domainRejection, setDomainRejection] = useState(null);
     const [schemeWasAdded, setSchemeWasAdded] = useState(false);
+    // Why the last check failed: one of discoverOAuthClient's failure codes.
+    const [failureCode, setFailureCode] = useState(null);
     const checkGeneration = useRef(0);
+    const discoveryCancel = useRef(null);
 
     useEffect(() => {
         SecureStore.getItemAsync('domain').then(saved => {
@@ -117,25 +120,61 @@ const LoginForm = ({ onBearerLogin, onDomainChange }) => {
         }
 
         const generation = ++checkGeneration.current;
+        discoveryCancel.current = new AbortController();
         setPhase(PHASE.CHECKING);
-        try {
-            const result = await discoverOAuthClient(baseUrl, {
-                isCurrent: () => generation === checkGeneration.current,
-            });
-            if (generation !== checkGeneration.current) return;
-            if (result) {
+        const result = await discoverOAuthClient(baseUrl, {
+            isCurrent: () => generation === checkGeneration.current,
+            signal: discoveryCancel.current.signal,
+        });
+        // A cancel or an edit already moved the form on; this result belongs to an older check.
+        if (generation !== checkGeneration.current) return;
+
+        switch (result.outcome) {
+            case 'oauth':
                 setClientId(result.clientId);
                 setPhase(PHASE.OAUTH);
                 addLoginBreadcrumb('Instance supports OAuth, showing browser login');
-            } else {
+                break;
+            case 'no-oauth':
                 setPhase(PHASE.BEARER);
                 addLoginBreadcrumb('No OAuth client, falling back to token entry');
-            }
-        } catch {
-            if (generation !== checkGeneration.current) return;
-            setPhase(PHASE.ERROR);
-            addLoginBreadcrumb('Instance unreachable, showing error state');
+                break;
+            case 'failure':
+                setFailureCode(result.code);
+                setPhase(PHASE.ERROR);
+                addLoginBreadcrumb('Instance unreachable, showing error state', { code: result.code });
+                break;
         }
+    };
+
+    // transport (Android) and transport-security (iOS) say only that the request failed, so they
+    // keep the general message.
+    const failureMessage = (code) => {
+        if (code?.startsWith('http-')) {
+            return t('mobile.server_error_message', { status: code.slice('http-'.length) });
+        }
+        switch (code) {
+            case 'host-not-found':
+                return t('mobile.host_not_found_message');
+            case 'certificate-untrusted':
+                return t('mobile.certificate_untrusted_message');
+            case 'tls':
+                return t('mobile.secure_connection_failed_message');
+            case 'timeout':
+                return t('mobile.connection_timeout_message');
+            case 'invalid-response':
+                return t('mobile.invalid_response_message');
+            default:
+                return t('mobile.connection_error_message');
+        }
+    };
+
+    // The field is not editable while the check runs, so this is the only way out of it short of
+    // the timeout. Bumping the generation discards whatever the aborted check returns.
+    const handleCancelCheck = () => {
+        checkGeneration.current++;
+        discoveryCancel.current?.abort();
+        setPhase(PHASE.DOMAIN);
     };
 
     return (
@@ -149,7 +188,9 @@ const LoginForm = ({ onBearerLogin, onDomainChange }) => {
                 style={styles.input}
                 placeholderTextColor={colors.textMuted}
                 textContentType="URL"
+                keyboardType="url"
                 autoCapitalize="none"
+                autoCorrect={false}
                 returnKeyType="done"
                 submitBehavior="blurAndSubmit"
                 editable={phase !== PHASE.CHECKING}
@@ -176,10 +217,13 @@ const LoginForm = ({ onBearerLogin, onDomainChange }) => {
             )}
 
             {phase === PHASE.CHECKING && (
-                <View style={styles.checkingRow}>
-                    <ActivityIndicator size="small" color={colors.primary} />
-                    <Text style={styles.checkingText}>{t('mobile.checking_instance')}</Text>
-                </View>
+                <>
+                    <View style={styles.checkingRow}>
+                        <ActivityIndicator size="small" color={colors.primary} />
+                        <Text style={styles.checkingText}>{t('mobile.checking_instance')}</Text>
+                    </View>
+                    <Button title={t('general.cancel')} onPress={() => handleCancelCheck()} />
+                </>
             )}
 
             {phase === PHASE.OAUTH && (
@@ -219,7 +263,12 @@ const LoginForm = ({ onBearerLogin, onDomainChange }) => {
 
             {phase === PHASE.ERROR && (
                 <>
-                    <Text style={styles.errorText}>{t('mobile.connection_error_message')}</Text>
+                    <Text style={styles.errorText}>{failureMessage(failureCode)}</Text>
+                    {/* iOS reports an untrusted certificate the same way as every other failed
+                        request, so it can only be named as a possible cause, and only over https. */}
+                    {failureCode === 'transport-security' && domainShape.scheme === 'https' && (
+                        <Text style={styles.fieldNote}>{t('mobile.certificate_trust_hint_ios')}</Text>
+                    )}
                     {mayNeedLocalNetworkPermission(domain) && (
                         <Text style={styles.fieldNote}>{t('mobile.local_network_permission_hint')}</Text>
                     )}
