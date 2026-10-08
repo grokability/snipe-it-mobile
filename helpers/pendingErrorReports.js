@@ -10,10 +10,16 @@ const settled = new Set();
 const listeners = new Set();
 
 // Identifies an error by its shape rather than its text, so a login that fails the same way
-// on every retry asks once instead of once per attempt. The tags come from loginTelemetry,
-// which is where the useful distinctions live — a TLS rejection and a timeout are both
-// "Network request failed" until failure_reason separates them.
+// on every retry asks once instead of once per attempt. A login failure is identified by its
+// stage and its fixed failure code alone (helpers/loginTelemetry.js). Its exception value is
+// the native message, which is localized and varies with details like the certificate, so
+// keying on it would ask again for the same failure.
 function fingerprintOf(event) {
+    const loginStage = event.tags?.login_stage;
+    if (loginStage) {
+        return [event.level ?? 'error', loginStage, event.tags.failure_reason ?? ''].join('|');
+    }
+
     const exception = event.exception?.values?.[0];
     return [
         event.level ?? 'error',
