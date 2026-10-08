@@ -7,6 +7,7 @@ import {makeRequest} from "@/helpers/axiosConfig";
 import {accessoryKeys} from "@/helpers/queryKeys";
 import {useRefreshOnFocus} from "@/hooks/useRefreshOnFocus";
 import {AccessoryDetailSkeleton} from "@/components/ui/Skeleton";
+import EmptyState from "@/components/ui/EmptyState";
 import {decode} from "html-entities";
 import {SafeAreaProvider, useSafeAreaInsets} from "react-native-safe-area-context";
 import {useColors} from "@/hooks/useThemeColors";
@@ -55,11 +56,14 @@ export default function AccessoryScreen() {
         setIsManualRefreshing(false);
     };
 
+    // Snipe-IT answers a missing accessory with HTTP 200 and { status: 'error' }, not a 404
+    const accessoryNotFound = accessoryQuery.data?.status === 'error';
+
     useLayoutEffect(() => {
         navigation.setOptions({
             headerRight: () => (
                 <View style={styles.headerButtonGroup}>
-                    {!editDenied && (
+                    {!editDenied && !accessoryNotFound && (
                         <Pressable onPress={() => router.push(`/(tabs)/(accessories)/edit/${id}`)} hitSlop={4}>
                             <Ionicons name="pencil" size={22} color={colors.text} />
                         </Pressable>
@@ -67,7 +71,7 @@ export default function AccessoryScreen() {
                 </View>
             ),
         });
-    }, [navigation, id, colors.text, editDenied]);
+    }, [navigation, id, colors.text, editDenied, accessoryNotFound]);
 
     const na = t('mobile.na');
     const displayValue = (value) => value ? decode(String(value)) : na;
@@ -76,6 +80,18 @@ export default function AccessoryScreen() {
     const formatBool = (value) => value ? t('mobile.yes') : t('mobile.no');
 
     const item = accessoryQuery.data;
+
+    if (accessoryNotFound) {
+        return (
+            <View style={styles.container}>
+                <EmptyState
+                    icon="alert-circle-outline"
+                    title={t('general.item_not_found', { item_type: t('general.accessory'), id })}
+                    message={null}
+                />
+            </View>
+        );
+    }
 
     if (!item) {
         return <AccessoryDetailSkeleton />;

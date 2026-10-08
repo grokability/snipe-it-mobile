@@ -14,7 +14,9 @@ export default function EmptyState({ title, message, icon, onRetry, retryLabel }
         <View style={styles.container}>
             <Ionicons name={icon ?? 'cloud-offline-outline'} size={64} color={colors.textSecondary} />
             <Text style={styles.title}>{title || t('mobile.empty_state_title')}</Text>
-            <Text style={styles.message}>{message || t('mobile.empty_state_message')}</Text>
+            {message !== null && (
+                <Text style={styles.message}>{message || t('mobile.empty_state_message')}</Text>
+            )}
             {onRetry && (
                 <Pressable
                     onPress={onRetry}

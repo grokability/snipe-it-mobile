@@ -82,7 +82,11 @@
     "action_source": "Action Source",
     "action_date": "Action Date",
     "available": "Available",
-    "not_available": "Not Available"
+    "not_available": "Not Available",
+    "asset": "Asset",
+    "accessory": "Accessory",
+    "consumable": "Consumable",
+    "item_not_found": "{{item_type}} ID {{id}} does not exist or has been deleted"
   },
   "table": {
     "load_error_title": "Could not load results"

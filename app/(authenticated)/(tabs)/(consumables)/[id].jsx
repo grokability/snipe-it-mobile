@@ -7,6 +7,7 @@ import {makeRequest} from "@/helpers/axiosConfig";
 import {consumableKeys} from "@/helpers/queryKeys";
 import {useRefreshOnFocus} from "@/hooks/useRefreshOnFocus";
 import {ConsumableDetailSkeleton} from "@/components/ui/Skeleton";
+import EmptyState from "@/components/ui/EmptyState";
 import {PERMISSIONS} from "@/permissions/PermissionKeys";
 import {PermissionGate} from "@/permissions/PermissionGate";
 import {decode} from "html-entities";
@@ -44,17 +45,22 @@ export default function ConsumableScreen() {
         setIsManualRefreshing(false);
     };
 
+    // Snipe-IT answers a missing consumable with HTTP 200 and { status: 'error' }, not a 404
+    const consumableNotFound = consumableQuery.data?.status === 'error';
+
     useLayoutEffect(() => {
         navigation.setOptions({
             headerRight: () => (
                 <View style={styles.headerButtonGroup}>
-                    <Pressable onPress={() => router.push(`/(tabs)/(consumables)/edit/${id}`)} hitSlop={4}>
-                        <Ionicons name="pencil" size={22} color={colors.text} />
-                    </Pressable>
+                    {!consumableNotFound && (
+                        <Pressable onPress={() => router.push(`/(tabs)/(consumables)/edit/${id}`)} hitSlop={4}>
+                            <Ionicons name="pencil" size={22} color={colors.text} />
+                        </Pressable>
+                    )}
                 </View>
             ),
         });
-    }, [navigation, id, colors.text]);
+    }, [navigation, id, colors.text, consumableNotFound]);
 
     const na = t('mobile.na');
     const displayValue = (value) => value ? decode(String(value)) : na;
@@ -63,6 +69,18 @@ export default function ConsumableScreen() {
     const formatBool = (value) => value ? t('mobile.yes') : t('mobile.no');
 
     const consumable = consumableQuery.data;
+
+    if (consumableNotFound) {
+        return (
+            <View style={styles.container}>
+                <EmptyState
+                    icon="alert-circle-outline"
+                    title={t('general.item_not_found', { item_type: t('general.consumable'), id })}
+                    message={null}
+                />
+            </View>
+        );
+    }
 
     if (!consumable) {
         return <ConsumableDetailSkeleton />;
