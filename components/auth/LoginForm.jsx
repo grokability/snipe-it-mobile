@@ -156,6 +156,8 @@ const LoginForm = ({ onBearerLogin, onDomainChange }) => {
         switch (code) {
             case 'host-not-found':
                 return t('mobile.host_not_found_message');
+            case 'certificate-untrusted':
+                return t('mobile.certificate_untrusted_message');
             case 'tls':
                 return t('mobile.secure_connection_failed_message');
             case 'timeout':
@@ -260,6 +262,11 @@ const LoginForm = ({ onBearerLogin, onDomainChange }) => {
             {phase === PHASE.ERROR && (
                 <>
                     <Text style={styles.errorText}>{failureMessage(failureCode)}</Text>
+                    {/* iOS reports an untrusted certificate the same way as every other failed
+                        request, so it can only be named as a possible cause, and only over https. */}
+                    {failureCode === 'transport-security' && domainShape.scheme === 'https' && (
+                        <Text style={styles.fieldNote}>{t('mobile.certificate_trust_hint_ios')}</Text>
+                    )}
                     {mayNeedLocalNetworkPermission(domain) && (
                         <Text style={styles.fieldNote}>{t('mobile.local_network_permission_hint')}</Text>
                     )}
