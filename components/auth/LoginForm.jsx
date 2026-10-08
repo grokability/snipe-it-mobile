@@ -188,7 +188,9 @@ const LoginForm = ({ onBearerLogin, onDomainChange }) => {
                 style={styles.input}
                 placeholderTextColor={colors.textMuted}
                 textContentType="URL"
+                keyboardType="url"
                 autoCapitalize="none"
+                autoCorrect={false}
                 returnKeyType="done"
                 submitBehavior="blurAndSubmit"
                 editable={phase !== PHASE.CHECKING}
