@@ -18,10 +18,6 @@ import {useTranslation} from "react-i18next";
 import {Section} from "@/components/ui/Section";
 import {DetailRow} from "@/components/ui/DetailRow";
 
-export const unstable_settings = {
-    initialRouteName: 'index',
-};
-
 export default function ConsumableScreen() {
     const colors = useColors();
     const insets = useSafeAreaInsets();

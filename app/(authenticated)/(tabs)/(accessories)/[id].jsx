@@ -20,11 +20,6 @@ import {PermissionGate} from "@/permissions/PermissionGate";
 import {PERMISSIONS} from "@/permissions/PermissionKeys";
 
 
-export const unstable_settings = {
-    initialRouteName: 'index',
-};
-
-
 export default function AccessoryScreen() {
     const colors = useColors();
     const insets = useSafeAreaInsets();

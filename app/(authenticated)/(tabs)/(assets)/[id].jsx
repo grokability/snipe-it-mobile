@@ -22,10 +22,6 @@ import {usePermission} from "@/permissions/PermissionContext";
 import {PermissionGate} from "@/permissions/PermissionGate";
 
 
-export const unstable_settings = {
-    initialRouteName: 'index',
-};
-
 // Merges field_values_array and field_encrypted from the /fields definitions into the asset's
 // custom_fields, without mutating either query's cached data.
 function mergeCustomFields(asset, fieldsRes) {
