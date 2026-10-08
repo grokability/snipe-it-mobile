@@ -41,7 +41,7 @@ export default function Home() {
     const isAuditMode = mode === 'audit';
     // Ask on open: "Scan to Audit" and the audit confirm screen open the scanner without asking first,
     // and iOS lists no Camera switch in Settings until the app has asked once
-    const [permission] = useCameraPermissions({ request: true });
+    const [permission, , getPermission] = useCameraPermissions({ request: true });
 
     const [barcodes, setBarcodes] = useState([]);
     const [scanningPaused, setScanningPaused] = useState(false);
@@ -67,6 +67,8 @@ export default function Home() {
             ) {
                 // Reset when app comes back to foreground
                 clearBarcodes();
+                // Pick up access granted in Settings. iOS restarts the app when it changes; Android doesn't
+                getPermission();
             }
             appState.current = nextAppState;
         });
@@ -74,7 +76,7 @@ export default function Home() {
         return () => {
             subscription.remove();
         };
-    }, []);
+    }, [getPermission]);
 
     // Drop highlight boxes for barcodes that are no longer visible in-frame
     useEffect(() => {
