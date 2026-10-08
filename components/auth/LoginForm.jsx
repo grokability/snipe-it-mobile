@@ -32,6 +32,8 @@ const LoginForm = ({ onBearerLogin, onDomainChange }) => {
     // Why Continue sent no request: normalizeDomain's error code, or 'cleartext-not-local'.
     const [domainRejection, setDomainRejection] = useState(null);
     const [schemeWasAdded, setSchemeWasAdded] = useState(false);
+    // Why the last check failed: one of discoverOAuthClient's failure codes.
+    const [failureCode, setFailureCode] = useState(null);
     const checkGeneration = useRef(0);
     const discoveryCancel = useRef(null);
 
@@ -138,9 +140,30 @@ const LoginForm = ({ onBearerLogin, onDomainChange }) => {
                 addLoginBreadcrumb('No OAuth client, falling back to token entry');
                 break;
             case 'failure':
+                setFailureCode(result.code);
                 setPhase(PHASE.ERROR);
                 addLoginBreadcrumb('Instance unreachable, showing error state', { code: result.code });
                 break;
+        }
+    };
+
+    // transport (Android) and transport-security (iOS) say only that the request failed, so they
+    // keep the general message.
+    const failureMessage = (code) => {
+        if (code?.startsWith('http-')) {
+            return t('mobile.server_error_message', { status: code.slice('http-'.length) });
+        }
+        switch (code) {
+            case 'host-not-found':
+                return t('mobile.host_not_found_message');
+            case 'tls':
+                return t('mobile.secure_connection_failed_message');
+            case 'timeout':
+                return t('mobile.connection_timeout_message');
+            case 'invalid-response':
+                return t('mobile.invalid_response_message');
+            default:
+                return t('mobile.connection_error_message');
         }
     };
 
@@ -236,7 +259,7 @@ const LoginForm = ({ onBearerLogin, onDomainChange }) => {
 
             {phase === PHASE.ERROR && (
                 <>
-                    <Text style={styles.errorText}>{t('mobile.connection_error_message')}</Text>
+                    <Text style={styles.errorText}>{failureMessage(failureCode)}</Text>
                     {mayNeedLocalNetworkPermission(domain) && (
                         <Text style={styles.fieldNote}>{t('mobile.local_network_permission_hint')}</Text>
                     )}
