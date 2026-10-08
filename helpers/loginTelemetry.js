@@ -7,37 +7,15 @@ import { stripKnownHost } from '@/helpers/sentryScrub';
 // login_stage and failure_reason is the point — see discussions #165 and #166, where we had
 // no way to tell a TLS rejection from a timeout from a blocked cleartext request.
 
-// Sentry's maximum length for a tag value.
-const MAX_TAG_LENGTH = 200;
-
-// Wrapper text every expo/fetch rejection carries, and the Expo source location appended to a
-// native one. Neither describes the failure, and the location moves between Expo versions,
-// which would split a single failure across several tag values. The message reaches Sentry
-// untouched on the exception itself either way.
-const FETCH_WRAPPER_PREFIX = /^fetch failed:\s*/i;
-const NATIVE_SOURCE_SUFFIX = /\s*\(at [^()]+:\d+\)$/;
-
-// The tag is the error's own words — "A TLS error caused the secure connection to fail" —
-// rather than a bucket picked from a list.
-//
-// Global fetch is expo/fetch, not React Native's (expo/src/winter/runtime.native.ts installs
-// it unless EXPO_PUBLIC_USE_RN_FETCH is set). It passes the CFNetwork or OkHttp text through
-// verbatim instead of collapsing everything into "Network request failed", so a specific
-// reason is already there to read. Enumerating the ones we had seen only meant every reason we
-// had not — which is most of them, across two platforms and every OS release — arrived as
-// `unknown`.
-function describeFailure(error) {
-    const raw = typeof error === 'string' ? error : error?.message;
-
-    const message = String(raw ?? '')
-        .replace(FETCH_WRAPPER_PREFIX, '')
-        .replace(NATIVE_SOURCE_SUFFIX, '')
-        .replace(/\s+/g, ' ')
-        .trim();
-
-    if (!message) return error?.name || 'non-error thrown';
-    return message.slice(0, MAX_TAG_LENGTH);
-}
+// failure_reason is always a code from a fixed list, never the error's own text. The native
+// message is localized, so one failure became one issue per device language (SNIPE-IT-MOBILE-E
+// and -P are the same DNS failure, one of them in Chinese), and it can name the host. It still
+// reaches Sentry on the exception value, which scrubEvent scrubs. The codes:
+// - discovery (oauthClientDiscovery.js): timeout, invalid-response, host-not-found, tls,
+//   certificate-untrusted and transport on Android, transport-security on iOS;
+//   reportLoginProblem adds http-<status> and missing-client-id.
+// - bearer login and the token exchange (axiosFailureCode below): an RFC 6749 token error,
+//   http-<status>, network or unexpected.
 
 // The token endpoint error codes from RFC 6749 §5.2. A response's `error` field becomes the code
 // only when it is one of these, so a proxy's own JSON cannot put arbitrary text into a tag.
@@ -65,7 +43,7 @@ export function axiosFailureCode(error) {
 function tagsFor(stage, error, shape, code) {
     return {
         login_stage: stage,
-        failure_reason: code ?? describeFailure(error),
+        failure_reason: code,
         http_status: String(error?.response?.status ?? 'none'),
         domain_scheme: shape.scheme,
         domain_host_type: shape.host_type,

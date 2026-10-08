@@ -100,10 +100,12 @@ export async function discoverOAuthClient(domain, { isCurrent = () => true, sign
             addLoginBreadcrumb('Probe cancelled by the user', { elapsed_ms: Date.now() - startedAt });
             return { outcome: 'failure', code: 'cancel' };
         }
+        const code = abortReason === 'timeout' ? 'timeout' : transportFailureCode(error);
         reportLoginFailure({
             stage: 'oauth-discovery',
             error,
             domain,
+            code,
             extra: {
                 timeout_ms: DISCOVERY_TIMEOUT_MS,
                 elapsed_ms: Date.now() - startedAt,
@@ -111,7 +113,7 @@ export async function discoverOAuthClient(domain, { isCurrent = () => true, sign
                 abort_reason: abortReason,
             },
         });
-        return { outcome: 'failure', code: abortReason === 'timeout' ? 'timeout' : transportFailureCode(error) };
+        return { outcome: 'failure', code };
     } finally {
         clearTimeout(timeoutId);
         signal?.removeEventListener('abort', cancelByUser);
@@ -160,6 +162,7 @@ export async function discoverOAuthClient(domain, { isCurrent = () => true, sign
             stage: 'oauth-discovery',
             error,
             domain,
+            code: 'invalid-response',
             level: 'warning',
             extra: { reason_detail: 'response body was not JSON' },
         });
