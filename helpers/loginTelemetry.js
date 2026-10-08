@@ -1,4 +1,5 @@
 import * as Sentry from '@sentry/react-native';
+import { Platform } from 'react-native';
 import { addressGroup, describeDomain, parseHost } from '@/helpers/domainShape';
 import { stripKnownHost } from '@/helpers/sentryScrub';
 
@@ -51,6 +52,15 @@ function tagsFor(stage, error, shape, code) {
     };
 }
 
+// Sentry groups a login failure into an issue by its stage, its code and the platform, not by its
+// message and stack. The message is localized, and every fetch rejection carries the same stack,
+// from where expo/fetch builds the error, so the default grouping split one failure across device
+// languages and merged unrelated ones into one issue (SNIPE-IT-MOBILE-M). The platform keeps iOS's broad transport-security code, which holds
+// DNS, TLS and a declined local network prompt together, apart from Android's narrower codes.
+function fingerprintFor(stage, code) {
+    return ['login-failure', stage, code, Platform.OS];
+}
+
 // The generic scrub in beforeSend cannot recognise a hostname in free text, so each report
 // carries the one host it is about. The processor lives on a scope forked for this capture
 // alone: two failures for different instances in flight together each scrub only their own
@@ -68,6 +78,7 @@ export function reportLoginFailure({ stage, error, domain, code, level = 'error'
     const shape = describeDomain(domain);
     captureForDomain(domain, () => Sentry.captureException(error, {
         level,
+        fingerprint: fingerprintFor(stage, code),
         tags: tagsFor(stage, error, shape, code),
         contexts: { domain_shape: shape },
         extra: {
@@ -87,6 +98,7 @@ export function reportLoginProblem({ stage, message, domain, reason, level = 'wa
     const shape = describeDomain(domain);
     captureForDomain(domain, () => Sentry.captureMessage(message, {
         level,
+        fingerprint: fingerprintFor(stage, reason),
         tags: {
             login_stage: stage,
             failure_reason: reason,
