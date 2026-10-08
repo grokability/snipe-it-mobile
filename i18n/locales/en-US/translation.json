@@ -106,7 +106,6 @@
     "login_failed": "Login Failed",
     "login_failed_message": "Please check your domain",
     "welcome": "Welcome to Snipe-IT Mobile!",
-    "request_camera_permissions": "Request Camera Permissions for Scanner",
     "open_scanner": "Open Scanner",
     "camera_permission_denied": "Camera Access Required",
     "camera_permission_denied_detail": "Please enable camera access in your device Settings to use the scanner.",

@@ -1,5 +1,4 @@
-import {View, Text, StyleSheet, ActivityIndicator, Pressable, Linking, ScrollView} from 'react-native';
-import {useCameraPermissions} from 'expo-camera';
+import {View, Text, StyleSheet, Pressable, ScrollView} from 'react-native';
 import {router} from "expo-router";
 import React, {useMemo} from "react";
 import {useSafeAreaInsets} from "react-native-safe-area-context";
@@ -18,16 +17,7 @@ export default function HomeScreen() {
     const colors = useColors();
     const insets = useSafeAreaInsets();
     const styles = useMemo(() => createStyles(colors), [colors]);
-    const [permission, requestPermission] = useCameraPermissions();
     const { t } = useTranslation();
-
-    if (!permission) {
-        return (
-            <View style={{flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: colors.background}}>
-                <ActivityIndicator size="large" color={colors.primary}/>
-            </View>
-        )
-    }
 
     return (
         <View style={styles.container}>
@@ -45,30 +35,14 @@ export default function HomeScreen() {
                 </PermissionGate>
 
                 <View style={styles.scannerSection}>
-                    {permission.granted ? (
-                        <Pressable
-                            testID="open-scanner-button"
-                            onPress={() => router.push('/scanner')}
-                            style={({pressed}) => [styles.scanButton, pressed && styles.scanButtonPressed]}
-                        >
-                            <Ionicons name="scan" size={22} color="#fff" />
-                            <Text style={styles.scanButtonText}>{t('mobile.open_scanner')}</Text>
-                        </Pressable>
-                    ) : permission.canAskAgain ? (
-                        <Pressable
-                            onPress={requestPermission}
-                            style={({pressed}) => [styles.secondaryButton, pressed && styles.secondaryButtonPressed]}
-                        >
-                            <Text style={styles.secondaryButtonText}>{t('mobile.request_camera_permissions')}</Text>
-                        </Pressable>
-                    ) : (
-                        <Pressable
-                            onPress={() => Linking.openSettings()}
-                            style={({pressed}) => [styles.secondaryButton, pressed && styles.secondaryButtonPressed]}
-                        >
-                            <Text style={styles.secondaryButtonText}>{t('mobile.open_settings')}</Text>
-                        </Pressable>
-                    )}
+                    <Pressable
+                        testID="open-scanner-button"
+                        onPress={() => router.push('/scanner')}
+                        style={({pressed}) => [styles.scanButton, pressed && styles.scanButtonPressed]}
+                    >
+                        <Ionicons name="scan" size={22} color="#fff" />
+                        <Text style={styles.scanButtonText}>{t('mobile.open_scanner')}</Text>
+                    </Pressable>
                 </View>
 
                 <View style={styles.footer}>
@@ -123,22 +97,6 @@ const createStyles = (colors) => StyleSheet.create({
         color: '#fff',
         fontSize: Typography.bodyLarge,
         fontWeight: FontWeight.bold,
-    },
-    secondaryButton: {
-        alignSelf: 'stretch',
-        alignItems: 'center',
-        paddingVertical: Spacing.md,
-        borderRadius: BorderRadius.md,
-        borderWidth: 1,
-        borderColor: colors.primary,
-    },
-    secondaryButtonPressed: {
-        opacity: 0.7,
-    },
-    secondaryButtonText: {
-        color: colors.primary,
-        fontSize: Typography.body,
-        fontWeight: FontWeight.semibold,
     },
     footer: {
         alignItems: 'center',
