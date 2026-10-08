@@ -39,7 +39,9 @@ export default function Home() {
     const { mode } = useLocalSearchParams();
     const { t } = useTranslation();
     const isAuditMode = mode === 'audit';
-    const [permission] = useCameraPermissions();
+    // Ask on open: "Scan to Audit" and the audit confirm screen open the scanner without asking first,
+    // and iOS lists no Camera switch in Settings until the app has asked once
+    const [permission] = useCameraPermissions({ request: true });
 
     const [barcodes, setBarcodes] = useState([]);
     const [scanningPaused, setScanningPaused] = useState(false);
