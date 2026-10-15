@@ -176,7 +176,7 @@ export default function Home() {
         }
 
         setTimeout(async () => {
-            await router.replace(`(tabs)/(assets)/${id}`);
+            await router.replace(`/(authenticated)/(tabs)/(assets)/${id}`, { withAnchor: true });
         }, 300);
     };
 
