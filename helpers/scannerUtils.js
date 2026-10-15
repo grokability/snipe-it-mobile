@@ -77,15 +77,36 @@ function decodePathSegment(segment) {
 
 const ASSET_LOOKUP_URLS = {
     assetId: (id) => `/hardware/${encodeURIComponent(id)}`,
-    assetTag: (tag) => `/hardware/bytag/${encodeURIComponent(tag)}`,
-    ambiguous: (tag) => `/hardware/bytag/${encodeURIComponent(tag)}`,
+    assetTag: (tag) => `/hardware/bytag/${encodeURIComponent(tag)}?deleted=true`,
+    ambiguous: (tag) => `/hardware/bytag/${encodeURIComponent(tag)}?deleted=true`,
 };
 
+// Reduces a lookup response to the assets the scan could mean. /hardware/{id} returns one asset
+// object, soft-deleted or not. bytag is asked for deleted assets too, so it returns {total, rows};
+// v6.0.0–v6.0.13 ignore ?deleted=true and return a single live object. A deleted asset's tag can
+// be reused by a live one, so live matches win and deleted ones count only when nothing live does.
+// The deleted assets a live match won over are kept as deletedMatches so the user can be told.
+function scannedAssetCandidates(response) {
+    if (!response || response.status === 'error') {
+        return { candidates: [], deletedMatches: [] };
+    }
+
+    const assets = Array.isArray(response.rows) ? response.rows : [response];
+    const liveAssets = assets.filter((asset) => !asset.deleted_at);
+
+    if (liveAssets.length === 0) {
+        return { candidates: assets, deletedMatches: [] };
+    }
+
+    return { candidates: liveAssets, deletedMatches: assets.filter((asset) => asset.deleted_at) };
+}
+
 // Looks up the asset a scanned code refers to and says what happened, so the scanner can show the
-// right message: 'found' (with the asset), 'notFound', 'notAsset' for accessory, consumable,
-// location and unrecognized codes, or 'otherInstance' for a URL from a different Snipe-IT server.
-// Request errors are thrown, including PermissionDeniedError: not being allowed to view assets
-// isn't the same as the asset not existing.
+// right message: 'found' (with the asset, which is soft-deleted when it has a deleted_at, and any
+// deletedMatches sharing its tag), 'notFound', 'multiple' when several assets match,
+// 'notAsset' for accessory, consumable, location and unrecognized codes, or 'otherInstance' for a
+// URL from a different Snipe-IT server. Request errors are thrown, including PermissionDeniedError:
+// not being allowed to view assets isn't the same as the asset not existing.
 export async function resolveScannedAsset(data, symbology, storedDomain) {
     const { kind, value, url } = parseScannedCode(data, symbology);
 
@@ -101,11 +122,17 @@ export async function resolveScannedAsset(data, symbology, storedDomain) {
 
     const response = await makeRequest({ url: lookupUrl(value), method: 'get', permissionKey: PERMISSIONS.ASSETS_VIEW, silent: true });
 
-    if (!response || response.status === 'error') {
+    const { candidates, deletedMatches } = scannedAssetCandidates(response);
+
+    if (candidates.length === 0) {
         return { outcome: 'notFound', kind, value };
     }
 
-    return { outcome: 'found', asset: response };
+    if (candidates.length > 1) {
+        return { outcome: 'multiple', kind, value };
+    }
+
+    return { outcome: 'found', asset: candidates[0], deletedMatches };
 }
 
 export function extractIdFromScannedData(data) {
