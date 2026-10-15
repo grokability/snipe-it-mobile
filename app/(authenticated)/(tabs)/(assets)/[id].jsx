@@ -115,7 +115,7 @@ export default function AssetScreen() {
             <View style={styles.container}>
                 <EmptyState
                     icon="alert-circle-outline"
-                    title={t('general.item_not_found', { item_type: t('general.asset'), id })}
+                    title={t('general.generic_model_not_found', { model: t('general.asset') })}
                     message={null}
                 />
             </View>
