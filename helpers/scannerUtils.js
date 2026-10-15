@@ -2,8 +2,16 @@ import { makeRequest } from "@/helpers/axiosConfig";
 import { PERMISSIONS } from "@/permissions/PermissionKeys";
 
 const HARDWARE_ID_PATTERN = /\/hardware\/([^/?#]+)/;
-const LOCATION_ID_PATTERN = /\/location\/([^/?#]+)/;
-//etc
+
+// Snipe-IT URLs a scanned QR code can hold: a label's 2D target (app/View/Label.php) or the QR
+// code on an object's page (QrCodeController). Database IDs are numeric; an /ht/ tag can be any text.
+const SCANNED_URL_PATTERNS = [
+    { kind: 'assetId', pattern: /\/hardware\/(\d+)(?:\/|$)/ },
+    { kind: 'assetTag', pattern: /\/ht\/([^/]+)/ },
+    { kind: 'accessoryId', pattern: /\/accessories\/(\d+)(?:\/|$)/ },
+    { kind: 'consumableId', pattern: /\/consumables\/(\d+)(?:\/|$)/ },
+    { kind: 'location', pattern: /\/locations\/(\d+)(?:\/|$)/ },
+];
 
 // Partitions expo-camera's BarcodeType union. Snipe-IT always encodes the asset tag in a 1D
 // barcode, while a 2D code can hold a URL or a plain value, so the two are looked up differently.
@@ -21,6 +29,50 @@ export function classifyBarcodeSymbology(type) {
     }
 
     return 'unknown';
+}
+
+// Describes what a scanned code points at without looking anything up; the kind picks the lookup.
+// A 1D barcode is always an asset tag. A 2D code that isn't an http(s) URL is a plain value that
+// could be a tag or a serial ('ambiguous'). url is set for http(s) codes so the caller can check
+// which Snipe-IT instance they belong to.
+export function parseScannedCode(data, symbology) {
+    if (symbology === '1d') {
+        return { kind: 'assetTag', value: data, url: null };
+    }
+
+    const url = parseHttpUrl(data);
+
+    if (!url) {
+        return { kind: 'ambiguous', value: data, url: null };
+    }
+
+    for (const { kind, pattern } of SCANNED_URL_PATTERNS) {
+        const match = url.pathname.match(pattern);
+
+        if (match) {
+            return { kind, value: decodePathSegment(match[1]), url };
+        }
+    }
+
+    return { kind: 'unknown', value: data, url };
+}
+
+function parseHttpUrl(data) {
+    try {
+        const url = new URL(data);
+        return (url.protocol === 'http:' || url.protocol === 'https:') ? url : null;
+    } catch {
+        return null;
+    }
+}
+
+// An /ht/ tag arrives percent-encoded; a malformed escape is left as scanned rather than thrown
+function decodePathSegment(segment) {
+    try {
+        return decodeURIComponent(segment);
+    } catch {
+        return segment;
+    }
 }
 
 export function extractIdFromScannedData(data) {
