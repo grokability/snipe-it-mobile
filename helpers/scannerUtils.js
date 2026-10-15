@@ -75,6 +75,39 @@ function decodePathSegment(segment) {
     }
 }
 
+const ASSET_LOOKUP_URLS = {
+    assetId: (id) => `/hardware/${encodeURIComponent(id)}`,
+    assetTag: (tag) => `/hardware/bytag/${encodeURIComponent(tag)}`,
+    ambiguous: (tag) => `/hardware/bytag/${encodeURIComponent(tag)}`,
+};
+
+// Looks up the asset a scanned code refers to and says what happened, so the scanner can show the
+// right message: 'found' (with the asset), 'notFound', 'notAsset' for accessory, consumable,
+// location and unrecognized codes, or 'otherInstance' for a URL from a different Snipe-IT server.
+// Request errors are thrown, including PermissionDeniedError: not being allowed to view assets
+// isn't the same as the asset not existing.
+export async function resolveScannedAsset(data, symbology, storedDomain) {
+    const { kind, value, url } = parseScannedCode(data, symbology);
+
+    if (!isScannedUrlForCurrentInstance(url, storedDomain)) {
+        return { outcome: 'otherInstance' };
+    }
+
+    const lookupUrl = ASSET_LOOKUP_URLS[kind];
+
+    if (!lookupUrl) {
+        return { outcome: 'notAsset', kind, value };
+    }
+
+    const response = await makeRequest({ url: lookupUrl(value), method: 'get', permissionKey: PERMISSIONS.ASSETS_VIEW, silent: true });
+
+    if (!response || response.status === 'error') {
+        return { outcome: 'notFound', kind, value };
+    }
+
+    return { outcome: 'found', asset: response };
+}
+
 export function extractIdFromScannedData(data) {
     try {
         const url = new URL(data);
