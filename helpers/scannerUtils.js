@@ -5,6 +5,24 @@ const HARDWARE_ID_PATTERN = /\/hardware\/([^/?#]+)/;
 const LOCATION_ID_PATTERN = /\/location\/([^/?#]+)/;
 //etc
 
+// Partitions expo-camera's BarcodeType union. Snipe-IT always encodes the asset tag in a 1D
+// barcode, while a 2D code can hold a URL or a plain value, so the two are looked up differently.
+// A type missing from both lists (e.g. one added in a future SDK) is 'unknown' rather than guessed.
+const BARCODE_TYPES_2D = new Set(['qr', 'datamatrix', 'aztec', 'pdf417']);
+const BARCODE_TYPES_1D = new Set(['code128', 'code39', 'code93', 'codabar', 'ean13', 'ean8', 'itf14', 'upc_a', 'upc_e']);
+
+export function classifyBarcodeSymbology(type) {
+    if (BARCODE_TYPES_2D.has(type)) {
+        return '2d';
+    }
+
+    if (BARCODE_TYPES_1D.has(type)) {
+        return '1d';
+    }
+
+    return 'unknown';
+}
+
 export function extractIdFromScannedData(data) {
     try {
         const url = new URL(data);
