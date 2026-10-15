@@ -75,16 +75,24 @@ function decodePathSegment(segment) {
     }
 }
 
-const ASSET_LOOKUP_URLS = {
-    assetId: (id) => `/hardware/${encodeURIComponent(id)}`,
-    assetTag: (tag) => `/hardware/bytag/${encodeURIComponent(tag)}?deleted=true`,
-    ambiguous: (tag) => `/hardware/bytag/${encodeURIComponent(tag)}?deleted=true`,
+// matchedBy names the asset field each lookup searches, so the scanner can word its messages
+const LOOKUP_BY_ID = { matchedBy: 'id', url: (id) => `/hardware/${encodeURIComponent(id)}` };
+const LOOKUP_BY_TAG = { matchedBy: 'asset_tag', url: (tag) => `/hardware/bytag/${encodeURIComponent(tag)}?deleted=true` };
+const LOOKUP_BY_SERIAL = { matchedBy: 'serial', url: (serial) => `/hardware/byserial/${encodeURIComponent(serial)}?deleted=true` };
+
+// Lookups tried in order until one matches. A plain 2D value could be a tag or a serial, and is
+// never tried as an ID: any number would then open whichever unrelated asset has that ID.
+const ASSET_LOOKUPS = {
+    assetId: [LOOKUP_BY_ID],
+    assetTag: [LOOKUP_BY_TAG],
+    ambiguous: [LOOKUP_BY_TAG, LOOKUP_BY_SERIAL],
 };
 
 // Reduces a lookup response to the assets the scan could mean. /hardware/{id} returns one asset
-// object, soft-deleted or not. bytag is asked for deleted assets too, so it returns {total, rows};
-// v6.0.0–v6.0.13 ignore ?deleted=true and return a single live object. A deleted asset's tag can
-// be reused by a live one, so live matches win and deleted ones count only when nothing live does.
+// object, soft-deleted or not. bytag and byserial are asked for deleted assets too, so they return
+// {total, rows}; v6.0.0–v6.0.13 ignore ?deleted=true, returning a single live bytag object and
+// always including deleted byserial rows. A deleted asset's tag or serial can be reused by a live
+// one, so live matches win and deleted ones count only when nothing live does.
 // The deleted assets a live match won over are kept as deletedMatches so the user can be told.
 function scannedAssetCandidates(response) {
     if (!response || response.status === 'error') {
@@ -103,10 +111,11 @@ function scannedAssetCandidates(response) {
 
 // Looks up the asset a scanned code refers to and says what happened, so the scanner can show the
 // right message: 'found' (with the asset, which is soft-deleted when it has a deleted_at, and any
-// deletedMatches sharing its tag), 'notFound', 'multiple' when several assets match,
+// deletedMatches sharing its tag or serial), 'notFound', 'multiple' when several assets match,
 // 'notAsset' for accessory, consumable, location and unrecognized codes, or 'otherInstance' for a
-// URL from a different Snipe-IT server. Request errors are thrown, including PermissionDeniedError:
-// not being allowed to view assets isn't the same as the asset not existing.
+// URL from a different Snipe-IT server. 'found' and 'multiple' carry the matchedBy field. Request
+// errors are thrown, including PermissionDeniedError: not being allowed to view assets isn't the
+// same as the asset not existing.
 export async function resolveScannedAsset(data, symbology, storedDomain) {
     const { kind, value, url } = parseScannedCode(data, symbology);
 
@@ -114,25 +123,26 @@ export async function resolveScannedAsset(data, symbology, storedDomain) {
         return { outcome: 'otherInstance' };
     }
 
-    const lookupUrl = ASSET_LOOKUP_URLS[kind];
+    const lookups = ASSET_LOOKUPS[kind];
 
-    if (!lookupUrl) {
+    if (!lookups) {
         return { outcome: 'notAsset', kind, value };
     }
 
-    const response = await makeRequest({ url: lookupUrl(value), method: 'get', permissionKey: PERMISSIONS.ASSETS_VIEW, silent: true });
+    for (const { matchedBy, url: lookupUrl } of lookups) {
+        const response = await makeRequest({ url: lookupUrl(value), method: 'get', permissionKey: PERMISSIONS.ASSETS_VIEW, silent: true });
+        const { candidates, deletedMatches } = scannedAssetCandidates(response);
 
-    const { candidates, deletedMatches } = scannedAssetCandidates(response);
+        if (candidates.length > 1) {
+            return { outcome: 'multiple', kind, value, matchedBy };
+        }
 
-    if (candidates.length === 0) {
-        return { outcome: 'notFound', kind, value };
+        if (candidates.length === 1) {
+            return { outcome: 'found', asset: candidates[0], deletedMatches, matchedBy };
+        }
     }
 
-    if (candidates.length > 1) {
-        return { outcome: 'multiple', kind, value };
-    }
-
-    return { outcome: 'found', asset: candidates[0], deletedMatches };
+    return { outcome: 'notFound', kind, value };
 }
 
 export function extractIdFromScannedData(data) {
