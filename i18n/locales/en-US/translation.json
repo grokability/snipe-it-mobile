@@ -82,7 +82,11 @@
     "action_source": "Action Source",
     "action_date": "Action Date",
     "available": "Available",
-    "not_available": "Not Available"
+    "not_available": "Not Available",
+    "asset": "Asset",
+    "accessory": "Accessory",
+    "consumable": "Consumable",
+    "item_not_found": "{{item_type}} ID {{id}} does not exist or has been deleted"
   },
   "table": {
     "load_error_title": "Could not load results"
@@ -102,7 +106,6 @@
     "login_failed": "Login Failed",
     "login_failed_message": "Please check your domain",
     "welcome": "Welcome to Snipe-IT Mobile!",
-    "request_camera_permissions": "Request Camera Permissions for Scanner",
     "open_scanner": "Open Scanner",
     "camera_permission_denied": "Camera Access Required",
     "camera_permission_denied_detail": "Please enable camera access in your device Settings to use the scanner.",

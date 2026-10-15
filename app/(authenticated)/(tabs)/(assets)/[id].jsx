@@ -9,6 +9,7 @@ import {PERMISSIONS} from "@/permissions/PermissionKeys";
 import {assetKeys, customFieldKeys} from "@/helpers/queryKeys";
 import {useRefreshOnFocus} from "@/hooks/useRefreshOnFocus";
 import {AssetDetailSkeleton} from "@/components/ui/Skeleton";
+import EmptyState from "@/components/ui/EmptyState";
 import {decode} from "html-entities";
 import {SafeAreaProvider, useSafeAreaInsets} from "react-native-safe-area-context";
 import {useColors} from "@/hooks/useThemeColors";
@@ -20,10 +21,6 @@ import {DetailRow, EncryptedDetailRow} from "@/components/ui/DetailRow";
 import {usePermission} from "@/permissions/PermissionContext";
 import {PermissionGate} from "@/permissions/PermissionGate";
 
-
-export const unstable_settings = {
-    initialRouteName: 'index',
-};
 
 // Merges field_values_array and field_encrypted from the /fields definitions into the asset's
 // custom_fields, without mutating either query's cached data.
@@ -85,6 +82,9 @@ export default function AssetScreen() {
         [assetQuery.data, fieldsQuery.data]
     );
 
+    // Snipe-IT answers a missing asset with HTTP 200 and { status: 'error' }, not a 404
+    const assetNotFound = assetQuery.data?.status === 'error';
+
     useLayoutEffect(() => {
         navigation.setOptions({
             headerRight: () => (
@@ -94,7 +94,7 @@ export default function AssetScreen() {
                             <Ionicons name="add" size={26} color={colors.text} />
                         </Pressable>
                     )}
-                    {!editDenied && (
+                    {!editDenied && !assetNotFound && (
                         <Pressable onPress={() => router.push(`/(tabs)/(assets)/edit/${id}`)} hitSlop={4}>
                             <Ionicons name="pencil" size={22} color={colors.text} />
                         </Pressable>
@@ -102,13 +102,25 @@ export default function AssetScreen() {
                 </View>
             ),
         });
-    }, [navigation, id, colors.text, createDenied, editDenied]);
+    }, [navigation, id, colors.text, createDenied, editDenied, assetNotFound]);
 
     const na = t('mobile.na');
     const displayValue = (value) => value ? decode(String(value)) : na;
     const nestedName = (object) => object?.name ? decode(object.name) : na;
     const formatDate = (dateObject) => dateObject?.formatted || na;
     const formatBool = (value) => value ? t('mobile.yes') : t('mobile.no');
+
+    if (assetNotFound) {
+        return (
+            <View style={styles.container}>
+                <EmptyState
+                    icon="alert-circle-outline"
+                    title={t('general.item_not_found', { item_type: t('general.asset'), id })}
+                    message={null}
+                />
+            </View>
+        );
+    }
 
     if (!asset) {
         return <AssetDetailSkeleton />;

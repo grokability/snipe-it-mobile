@@ -39,7 +39,9 @@ export default function Home() {
     const { mode } = useLocalSearchParams();
     const { t } = useTranslation();
     const isAuditMode = mode === 'audit';
-    const [permission] = useCameraPermissions();
+    // Ask on open: "Scan to Audit" and the audit confirm screen open the scanner without asking first,
+    // and iOS lists no Camera switch in Settings until the app has asked once
+    const [permission, , getPermission] = useCameraPermissions({ request: true });
 
     const [barcodes, setBarcodes] = useState([]);
     const [scanningPaused, setScanningPaused] = useState(false);
@@ -65,6 +67,8 @@ export default function Home() {
             ) {
                 // Reset when app comes back to foreground
                 clearBarcodes();
+                // Pick up access granted in Settings. iOS restarts the app when it changes; Android doesn't
+                getPermission();
             }
             appState.current = nextAppState;
         });
@@ -72,7 +76,7 @@ export default function Home() {
         return () => {
             subscription.remove();
         };
-    }, []);
+    }, [getPermission]);
 
     // Drop highlight boxes for barcodes that are no longer visible in-frame
     useEffect(() => {
@@ -172,7 +176,7 @@ export default function Home() {
         }
 
         setTimeout(async () => {
-            await router.replace(`(tabs)/(assets)/${id}`);
+            await router.replace(`/(authenticated)/(tabs)/(assets)/${id}`, { withAnchor: true });
         }, 300);
     };
 

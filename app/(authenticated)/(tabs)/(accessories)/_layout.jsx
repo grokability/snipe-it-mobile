@@ -2,6 +2,10 @@ import {Stack} from 'expo-router';
 import {useColors} from "@/hooks/useThemeColors";
 import {useTranslation} from "react-i18next";
 
+export const unstable_settings = {
+    anchor: 'index',
+};
+
 export default function AccessoriesLayout() {
     const colors = useColors();
     const { t } = useTranslation();
