@@ -17,7 +17,13 @@ import * as SecureStore from 'expo-secure-store';
 import BarcodeOverlay from "@/components/camera/BarcodeOverlay";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
-import { extractIdFromScannedData, isScannedUrlForCurrentInstance, fetchAssetTagForBarcode } from "@/helpers/scannerUtils";
+import {
+    classifyBarcodeSymbology,
+    extractIdFromScannedData,
+    fetchScannedItem,
+    isScannedUrlForCurrentInstance,
+    resolveScannedAsset,
+} from "@/helpers/scannerUtils";
 
 const BARCODE_STALE_MS = 800; // Drop the overlay if its barcode hasn't been re-detected within this window
 const BOUNDS_SMOOTHING_ALPHA = 0.35; // Lower = smoother/more lag, higher = snappier/more jitter
@@ -35,6 +41,15 @@ const smoothBounds = (prevBounds, nextBounds) => ({
     },
 });
 
+// The overlay names what a code opens: an asset's tag, or an accessory's or consumable's name
+const overlayLabel = (scanResolution) => {
+    if (scanResolution?.outcome === 'found') {
+        return scanResolution.asset.asset_tag;
+    }
+
+    return scanResolution?.item?.name;
+};
+
 export default function Home() {
     const { mode } = useLocalSearchParams();
     const { t } = useTranslation();
@@ -45,13 +60,13 @@ export default function Home() {
 
     const [barcodes, setBarcodes] = useState([]);
     const [scanningPaused, setScanningPaused] = useState(false);
-    const [assetTags, setAssetTags] = useState({});
+    const [scanResolutions, setScanResolutions] = useState({});
     const appState = useRef(AppState.currentState);
     const insets = useSafeAreaInsets();
     const cameraRef = useRef(null);
     const isSelectingRef = useRef(false);
     const domainRef = useRef(null);
-    const fetchingAssetTagsRef = useRef(new Set());
+    const resolvingScansRef = useRef(new Set());
 
     useEffect(() => {
         SecureStore.getItemAsync('domain').then(domain => {
@@ -103,23 +118,26 @@ export default function Home() {
         };
     }, [scanningPaused]);
 
-    // Looks up the asset_tag for a newly-detected barcode so BarcodeOverlay can label it.
-    // Caches by scanned data and dedupes in-flight lookups so rapid re-detection of the
-    // same barcode doesn't spam the API.
-    const fetchAssetTag = useCallback((barcode) => {
-        const { data } = barcode;
-        if (fetchingAssetTagsRef.current.has(data) || assetTags[data] !== undefined) return;
+    // Resolves a newly-detected barcode so BarcodeOverlay can label it. Caches by scanned data
+    // and dedupes in-flight lookups so rapid re-detection of the same barcode doesn't spam the API.
+    // A failed lookup isn't cached, so the barcode is tried again the next time it's detected.
+    const resolveScan = useCallback((barcode) => {
+        const { data, type } = barcode;
 
-        fetchingAssetTagsRef.current.add(data);
-        fetchAssetTagForBarcode(data, domainRef.current)
-            .then(assetTag => {
-                if (assetTag) {
-                    setAssetTags(prev => ({ ...prev, [data]: assetTag }));
-                }
+        if (resolvingScansRef.current.has(data) || scanResolutions[data] !== undefined) {
+            return;
+        }
+
+        resolvingScansRef.current.add(data);
+        resolveScannedAsset(data, classifyBarcodeSymbology(type), domainRef.current)
+            .then(async (scanResolution) => {
+                // Without the view permission the item goes unnamed; the scan itself still resolved
+                const item = await fetchScannedItem(scanResolution).catch(() => null);
+                setScanResolutions(prev => ({ ...prev, [data]: { ...scanResolution, item } }));
             })
             .catch(() => {})
-            .finally(() => fetchingAssetTagsRef.current.delete(data));
-    }, [assetTags]);
+            .finally(() => resolvingScansRef.current.delete(data));
+    }, [scanResolutions]);
 
     const handleBarcodeScan = useCallback((barcode) => {
         // pdf417/code39/codabar are decoded by the ZXing fallback provider, which only
@@ -133,13 +151,13 @@ export default function Home() {
             const existing = prevBarcodes.find(prevBarcode => prevBarcode.data === barcode.data);
             if (!existing) {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                fetchAssetTag(barcode);
+                resolveScan(barcode);
             }
             const bounds = existing ? smoothBounds(existing.bounds, barcode.bounds) : barcode.bounds;
             const otherBarcodes = prevBarcodes.filter(prevBarcode => prevBarcode.data !== barcode.data);
             return [...otherBarcodes, { ...barcode, bounds, lastSeenAt }];
         });
-    }, [scanningPaused, fetchAssetTag]);
+    }, [scanningPaused, resolveScan]);
 
     const handleBarcodeSelect = async (barcode) => {
         if (!barcode?.data) {
@@ -245,7 +263,7 @@ export default function Home() {
 
             {/* Barcode Mask Overlay */}
             <BarcodeOverlay
-                barcodes={barcodes.map(barcode => ({ ...barcode, assetTag: assetTags[barcode.data] }))}
+                barcodes={barcodes.map(barcode => ({ ...barcode, label: overlayLabel(scanResolutions[barcode.data]) }))}
                 onBarcodeSelect={(barcode) => handleBarcodeSelect(barcode)}
             />
 

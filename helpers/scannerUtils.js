@@ -145,6 +145,30 @@ export async function resolveScannedAsset(data, symbology, storedDomain) {
     return { outcome: 'notFound', kind, value };
 }
 
+// The overlay labels an accessory's or consumable's page QR code with the item's name
+const ITEM_LOOKUPS = {
+    accessoryId: { permissionKey: PERMISSIONS.ACCESSORIES_VIEW, url: (id) => `/accessories/${encodeURIComponent(id)}` },
+    consumableId: { permissionKey: PERMISSIONS.CONSUMABLES_VIEW, url: (id) => `/consumables/${encodeURIComponent(id)}` },
+};
+
+// Fetches the accessory or consumable a scan resolved to, or returns null for any other scan or
+// an item that isn't found. Throws PermissionDeniedError without the view permission.
+export async function fetchScannedItem({ kind, value }) {
+    const lookup = ITEM_LOOKUPS[kind];
+
+    if (!lookup) {
+        return null;
+    }
+
+    const item = await makeRequest({ url: lookup.url(value), method: 'get', permissionKey: lookup.permissionKey, silent: true });
+
+    if (!item || item.status === 'error') {
+        return null;
+    }
+
+    return item;
+}
+
 export function extractIdFromScannedData(data) {
     try {
         const url = new URL(data);
@@ -166,15 +190,4 @@ export function isScannedUrlForCurrentInstance(url, storedDomain) {
     } catch {
         return true;
     }
-}
-
-// Resolves a scanned barcode's asset_tag via the API. Returns null for codes that don't
-// resolve to an id, or that belong to a different Snipe-IT instance than storedDomain —
-// an id from another instance could otherwise resolve to the wrong asset here.
-export async function fetchAssetTagForBarcode(data, storedDomain) {
-    const { id, url } = extractIdFromScannedData(data);
-    if (!id || !isScannedUrlForCurrentInstance(url, storedDomain)) return null;
-
-    const asset = await makeRequest({ url: `/hardware/${id}`, method: 'get', permissionKey: PERMISSIONS.ASSETS_VIEW, silent: true });
-    return (asset && asset.status !== 'error' && asset.asset_tag) ? asset.asset_tag : null;
 }
