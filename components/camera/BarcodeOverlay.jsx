@@ -23,7 +23,7 @@ const BarcodeOverlay = ({ barcodes, onBarcodeSelect }) => {
                     height: barcode.bounds.size.height,
                 }
             ]}
-            onPress={() => onBarcodeSelect(barcode.data)}
+            onPress={() => onBarcodeSelect(barcode)}
         >
             {barcode.assetTag && (
                 <View style={styles.tagLabel}>

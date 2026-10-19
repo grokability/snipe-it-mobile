@@ -106,7 +106,8 @@ export default function Home() {
     // Looks up the asset_tag for a newly-detected barcode so BarcodeOverlay can label it.
     // Caches by scanned data and dedupes in-flight lookups so rapid re-detection of the
     // same barcode doesn't spam the API.
-    const fetchAssetTag = useCallback((data) => {
+    const fetchAssetTag = useCallback((barcode) => {
+        const { data } = barcode;
         if (fetchingAssetTagsRef.current.has(data) || assetTags[data] !== undefined) return;
 
         fetchingAssetTagsRef.current.add(data);
@@ -132,7 +133,7 @@ export default function Home() {
             const existing = prevBarcodes.find(prevBarcode => prevBarcode.data === barcode.data);
             if (!existing) {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                fetchAssetTag(barcode.data);
+                fetchAssetTag(barcode);
             }
             const bounds = existing ? smoothBounds(existing.bounds, barcode.bounds) : barcode.bounds;
             const otherBarcodes = prevBarcodes.filter(prevBarcode => prevBarcode.data !== barcode.data);
@@ -140,8 +141,8 @@ export default function Home() {
         });
     }, [scanningPaused, fetchAssetTag]);
 
-    const handleBarcodeSelect = async (data) => {
-        if (!data) {
+    const handleBarcodeSelect = async (barcode) => {
+        if (!barcode?.data) {
             clearBarcodes();
             return;
         }
@@ -155,7 +156,7 @@ export default function Home() {
         setScanningPaused(true);
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
 
-        const { id, url } = extractIdFromScannedData(data);
+        const { id, url } = extractIdFromScannedData(barcode.data);
         const storedDomain = await SecureStore.getItemAsync('domain');
 
         if (!isScannedUrlForCurrentInstance(url, storedDomain)) {
@@ -245,7 +246,7 @@ export default function Home() {
             {/* Barcode Mask Overlay */}
             <BarcodeOverlay
                 barcodes={barcodes.map(barcode => ({ ...barcode, assetTag: assetTags[barcode.data] }))}
-                onBarcodeSelect={handleBarcodeSelect}
+                onBarcodeSelect={(barcode) => handleBarcodeSelect(barcode)}
             />
 
             {!scanningPaused && barcodes.length === 0 && (
