@@ -29,6 +29,12 @@ import { assetKeys, scanKeys } from "@/helpers/queryKeys";
 const BARCODE_STALE_MS = 800; // Drop the overlay if its barcode hasn't been re-detected within this window
 const BOUNDS_SMOOTHING_ALPHA = 0.35; // Lower = smoother/more lag, higher = snappier/more jitter
 
+// expo-camera uses only the wide-angle lens on iOS, so it never switches to macro up close, and on
+// Pro iPhones a small label held near the lens stays out of focus. About 1.3-1.7x zoom (iOS maps
+// zoom as maxZoom ^ zoom) lets people hold the phone back far enough to focus. Android maps zoom
+// linearly to each phone's maximum (8x to 100x), so no fixed value is safe there.
+const SCANNER_ZOOM = Platform.OS === 'ios' ? 0.1 : 0;
+
 // Detected bounds are noisy frame-to-frame (autofocus, hand tremor, detector variance);
 // blend toward the new position instead of snapping to it to keep the highlight box steady.
 const smoothBounds = (prevBounds, nextBounds) => ({
@@ -263,6 +269,7 @@ export default function Home() {
                 }}
                 style={styles.camera}
                 facing="back"
+                zoom={SCANNER_ZOOM}
                 onBarcodeScanned={handleBarcodeScan}
                 onCameraReady={() => {}}
             />
