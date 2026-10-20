@@ -24,7 +24,7 @@ import {
     scannedItemHref,
     scannedItemQueryOptions,
 } from "@/helpers/scannerUtils";
-import { scanKeys } from "@/helpers/queryKeys";
+import { assetKeys, scanKeys } from "@/helpers/queryKeys";
 
 const BARCODE_STALE_MS = 800; // Drop the overlay if its barcode hasn't been re-detected within this window
 const BOUNDS_SMOOTHING_ALPHA = 0.35; // Lower = smoother/more lag, higher = snappier/more jitter
@@ -73,7 +73,9 @@ export default function Home() {
         SecureStore.getItemAsync('domain').then((storedDomain) => setDomain(storedDomain));
     }, []);
 
-    // Resolves a barcode. storedDomain decides whether a scanned URL belongs to this Snipe-IT instance.
+    // Resolves a barcode, and fills the cache the found asset's or item's detail screen reads, so
+    // opening it after a scan needs no second request. storedDomain decides whether a scanned URL
+    // belongs to this Snipe-IT instance.
     const scanQueryOptions = (barcode, storedDomain) => {
         const symbology = classifyBarcodeSymbology(barcode.type);
 
@@ -81,6 +83,11 @@ export default function Home() {
             queryKey: scanKeys.resolution(symbology, barcode.data),
             queryFn: async () => {
                 const scanResolution = await resolveScannedAsset(barcode.data, symbology, storedDomain);
+
+                if (scanResolution.outcome === 'found') {
+                    queryClient.setQueryData(assetKeys.detail(String(scanResolution.asset.id)), scanResolution.asset);
+                }
+
                 const itemQuery = scannedItemQueryOptions(scanResolution);
                 // Without the view permission the item goes unnamed; the scan itself still resolved
                 const item = itemQuery ? await queryClient.fetchQuery(itemQuery).catch(() => null) : null;
