@@ -2,8 +2,6 @@ import { makeRequest } from "@/helpers/axiosConfig";
 import { PERMISSIONS } from "@/permissions/PermissionKeys";
 import { accessoryKeys, consumableKeys } from "@/helpers/queryKeys";
 
-const HARDWARE_ID_PATTERN = /\/hardware\/([^/?#]+)/;
-
 // Snipe-IT URLs a scanned QR code can hold: a label's 2D target (app/View/Label.php) or the QR
 // code on an object's page (QrCodeController). Database IDs are numeric; an /ht/ tag can be any text.
 const SCANNED_URL_PATTERNS = [
@@ -176,18 +174,33 @@ export function scannedItemQueryOptions({ kind, value }) {
     };
 }
 
-export function extractIdFromScannedData(data) {
-    try {
-        const url = new URL(data);
-        const hardwareMatch = url.pathname.match(HARDWARE_ID_PATTERN);
-        if (hardwareMatch) {
-            return { id: hardwareMatch[1], url };
+// Where tapping a resolved scan goes, or null when it shouldn't navigate: a code that isn't an
+// asset, accessory or consumable, a lookup that found nothing or several assets, or, in audit mode,
+// anything but a live asset, since Snipe-IT audits only assets and can't audit a deleted one.
+export function scannedItemHref(scanResolution, isAuditMode) {
+    const { outcome, asset, kind, value } = scanResolution;
+
+    if (isAuditMode) {
+        if (outcome !== 'found' || asset.deleted_at) {
+            return null;
         }
-        const segments = url.pathname.split('/');
-        return { id: segments[segments.length - 1], url };
-    } catch {
-        return { id: data, url: null };
+
+        return `/(authenticated)/audit/confirm?asset_id=${encodeURIComponent(asset.id)}&from_scanner=true`;
     }
+
+    if (outcome === 'found') {
+        return `/(authenticated)/(tabs)/(assets)/${asset.id}`;
+    }
+
+    if (outcome === 'notAsset' && kind === 'accessoryId') {
+        return `/(authenticated)/(tabs)/(accessories)/${value}`;
+    }
+
+    if (outcome === 'notAsset' && kind === 'consumableId') {
+        return `/(authenticated)/(tabs)/(consumables)/${value}`;
+    }
+
+    return null;
 }
 
 export function isScannedUrlForCurrentInstance(url, storedDomain) {

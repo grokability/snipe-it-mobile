@@ -20,9 +20,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 import {
     classifyBarcodeSymbology,
-    extractIdFromScannedData,
-    isScannedUrlForCurrentInstance,
     resolveScannedAsset,
+    scannedItemHref,
     scannedItemQueryOptions,
 } from "@/helpers/scannerUtils";
 import { scanKeys } from "@/helpers/queryKeys";
@@ -74,25 +73,26 @@ export default function Home() {
         SecureStore.getItemAsync('domain').then((storedDomain) => setDomain(storedDomain));
     }, []);
 
-    // Resolves each barcode in frame so BarcodeOverlay can label it. Waits for the stored domain,
-    // which decides whether a scanned URL belongs to this Snipe-IT instance.
+    // Resolves a barcode. storedDomain decides whether a scanned URL belongs to this Snipe-IT instance.
+    const scanQueryOptions = (barcode, storedDomain) => {
+        const symbology = classifyBarcodeSymbology(barcode.type);
+
+        return {
+            queryKey: scanKeys.resolution(symbology, barcode.data),
+            queryFn: async () => {
+                const scanResolution = await resolveScannedAsset(barcode.data, symbology, storedDomain);
+                const itemQuery = scannedItemQueryOptions(scanResolution);
+                // Without the view permission the item goes unnamed; the scan itself still resolved
+                const item = itemQuery ? await queryClient.fetchQuery(itemQuery).catch(() => null) : null;
+
+                return { ...scanResolution, item };
+            },
+        };
+    };
+
+    // Resolves each barcode in frame so BarcodeOverlay can label it, once the stored domain is known
     const scanQueries = useQueries({
-        queries: barcodes.map((barcode) => {
-            const symbology = classifyBarcodeSymbology(barcode.type);
-
-            return {
-                queryKey: scanKeys.resolution(symbology, barcode.data),
-                queryFn: async () => {
-                    const scanResolution = await resolveScannedAsset(barcode.data, symbology, domain);
-                    const itemQuery = scannedItemQueryOptions(scanResolution);
-                    // Without the view permission the item goes unnamed; the scan itself still resolved
-                    const item = itemQuery ? await queryClient.fetchQuery(itemQuery).catch(() => null) : null;
-
-                    return { ...scanResolution, item };
-                },
-                enabled: domain !== null,
-            };
-        }),
+        queries: barcodes.map((barcode) => ({ ...scanQueryOptions(barcode, domain), enabled: domain !== null })),
     });
 
     useEffect(() => {
@@ -165,7 +165,7 @@ export default function Home() {
         }
 
         // Guard against a second tap (on another still-visible box) firing while this
-        // selection is still awaiting the domain check / navigating
+        // selection is still being resolved / navigating
         if (isSelectingRef.current) return;
         isSelectingRef.current = true;
 
@@ -173,10 +173,18 @@ export default function Home() {
         setScanningPaused(true);
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
 
-        const { id, url } = extractIdFromScannedData(barcode.data);
-        const storedDomain = await SecureStore.getItemAsync('domain');
+        // Reuses the overlay's lookup: cached if it landed, awaited if it's still in flight
+        let scanResolution;
 
-        if (!isScannedUrlForCurrentInstance(url, storedDomain)) {
+        try {
+            const storedDomain = await SecureStore.getItemAsync('domain');
+            scanResolution = await queryClient.fetchQuery(scanQueryOptions(barcode, storedDomain));
+        } catch {
+            clearBarcodes();
+            return;
+        }
+
+        if (scanResolution.outcome === 'otherInstance') {
             clearBarcodes();
             Alert.alert(
                 t('mobile.scan_domain_mismatch_title'),
@@ -186,15 +194,22 @@ export default function Home() {
             return;
         }
 
+        const href = scannedItemHref(scanResolution, isAuditMode);
+
+        if (!href) {
+            clearBarcodes();
+            return;
+        }
+
         setBarcodes([]);
 
         if (isAuditMode) {
-            router.replace(`/(authenticated)/audit/confirm?asset_id=${encodeURIComponent(id)}&from_scanner=true`);
+            router.replace(href);
             return;
         }
 
         setTimeout(async () => {
-            await router.replace(`/(authenticated)/(tabs)/(assets)/${id}`, { withAnchor: true });
+            await router.replace(href, { withAnchor: true });
         }, 300);
     };
 
