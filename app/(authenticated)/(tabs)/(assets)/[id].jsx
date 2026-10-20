@@ -54,7 +54,10 @@ export default function AssetScreen() {
     const { denied: createDenied } = usePermission(PERMISSIONS.ASSETS_CREATE);
     const { denied: editDenied } = usePermission(PERMISSIONS.ASSETS_EDIT);
 
-    const { id } = useLocalSearchParams();
+    // deleted_matches and matched_by come from a scan whose live asset shares its tag or serial
+    // with deleted ones (scannedItemHref)
+    const { id, deleted_matches, matched_by } = useLocalSearchParams();
+    const deletedMatchIds = deleted_matches ? deleted_matches.split(',') : [];
     const navigation = useNavigation();
 
     const assetQuery = useQuery({
@@ -148,6 +151,17 @@ export default function AssetScreen() {
             >
                 {assetDeleted && (
                     <Callout type="warning">{t('general.asset_deleted_warning')}</Callout>
+                )}
+
+                {deletedMatchIds.length > 0 && (
+                    <Callout
+                        type="info"
+                        onPress={deletedMatchIds.length === 1
+                            ? () => router.push(`/(tabs)/(assets)/${deletedMatchIds[0]}`)
+                            : undefined}
+                    >
+                        {t(matched_by === 'serial' ? 'mobile.scan_deleted_serial_match' : 'mobile.scan_deleted_tag_match', { count: deletedMatchIds.length })}
+                    </Callout>
                 )}
 
                 {/* Image */}

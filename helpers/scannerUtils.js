@@ -177,8 +177,10 @@ export function scannedItemQueryOptions({ kind, value }) {
 // Where tapping a resolved scan goes, or null when it shouldn't navigate: a code that isn't an
 // asset, accessory or consumable, a lookup that found nothing or several assets, or, in audit mode,
 // anything but a live asset, since Snipe-IT audits only assets and can't audit a deleted one.
+// A found asset's deletedMatches go along as deleted_matches IDs, with matched_by, so its screen
+// can note the deleted assets that share its tag or serial.
 export function scannedItemHref(scanResolution, isAuditMode) {
-    const { outcome, asset, kind, value } = scanResolution;
+    const { outcome, asset, deletedMatches, matchedBy, kind, value } = scanResolution;
 
     if (isAuditMode) {
         if (outcome !== 'found' || asset.deleted_at) {
@@ -186,6 +188,12 @@ export function scannedItemHref(scanResolution, isAuditMode) {
         }
 
         return `/(authenticated)/audit/confirm?asset_id=${encodeURIComponent(asset.id)}&from_scanner=true`;
+    }
+
+    if (outcome === 'found' && deletedMatches.length > 0) {
+        const deletedMatchIds = deletedMatches.map((deletedMatch) => deletedMatch.id).join(',');
+
+        return `/(authenticated)/(tabs)/(assets)/${asset.id}?deleted_matches=${deletedMatchIds}&matched_by=${matchedBy}`;
     }
 
     if (outcome === 'found') {

@@ -79,9 +79,9 @@ export default function Home() {
         SecureStore.getItemAsync('domain').then((storedDomain) => setDomain(storedDomain));
     }, []);
 
-    // Resolves a barcode, and fills the cache the found asset's or item's detail screen reads, so
-    // opening it after a scan needs no second request. storedDomain decides whether a scanned URL
-    // belongs to this Snipe-IT instance.
+    // Resolves a barcode, and fills the cache the found asset's (and its deleted matches') or item's
+    // detail screen reads, so opening it after a scan needs no second request. storedDomain decides
+    // whether a scanned URL belongs to this Snipe-IT instance.
     const scanQueryOptions = (barcode, storedDomain) => {
         const symbology = classifyBarcodeSymbology(barcode.type);
 
@@ -91,7 +91,9 @@ export default function Home() {
                 const scanResolution = await resolveScannedAsset(barcode.data, symbology, storedDomain);
 
                 if (scanResolution.outcome === 'found') {
-                    queryClient.setQueryData(assetKeys.detail(String(scanResolution.asset.id)), scanResolution.asset);
+                    [scanResolution.asset, ...scanResolution.deletedMatches].forEach((asset) => {
+                        queryClient.setQueryData(assetKeys.detail(String(asset.id)), asset);
+                    });
                 }
 
                 const itemQuery = scannedItemQueryOptions(scanResolution);
