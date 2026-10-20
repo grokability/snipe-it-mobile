@@ -12,6 +12,7 @@ import {
     TouchableOpacity
 } from "react-native";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useQueries, useQueryClient } from "@tanstack/react-query";
 import * as Haptics from 'expo-haptics';
 import * as SecureStore from 'expo-secure-store';
 import BarcodeOverlay from "@/components/camera/BarcodeOverlay";
@@ -20,10 +21,11 @@ import { useTranslation } from "react-i18next";
 import {
     classifyBarcodeSymbology,
     extractIdFromScannedData,
-    fetchScannedItem,
     isScannedUrlForCurrentInstance,
     resolveScannedAsset,
+    scannedItemQueryOptions,
 } from "@/helpers/scannerUtils";
+import { scanKeys } from "@/helpers/queryKeys";
 
 const BARCODE_STALE_MS = 800; // Drop the overlay if its barcode hasn't been re-detected within this window
 const BOUNDS_SMOOTHING_ALPHA = 0.35; // Lower = smoother/more lag, higher = snappier/more jitter
@@ -41,7 +43,8 @@ const smoothBounds = (prevBounds, nextBounds) => ({
     },
 });
 
-// The overlay names what a code opens: an asset's tag, or an accessory's or consumable's name
+// The overlay names what a code opens: an asset's tag, or an accessory's or consumable's name.
+// An item that isn't found comes back as { status: 'error' }, which has no name.
 const overlayLabel = (scanResolution) => {
     if (scanResolution?.outcome === 'found') {
         return scanResolution.asset.asset_tag;
@@ -60,19 +63,37 @@ export default function Home() {
 
     const [barcodes, setBarcodes] = useState([]);
     const [scanningPaused, setScanningPaused] = useState(false);
-    const [scanResolutions, setScanResolutions] = useState({});
     const appState = useRef(AppState.currentState);
     const insets = useSafeAreaInsets();
     const cameraRef = useRef(null);
     const isSelectingRef = useRef(false);
-    const domainRef = useRef(null);
-    const resolvingScansRef = useRef(new Set());
+    const [domain, setDomain] = useState(null);
+    const queryClient = useQueryClient();
 
     useEffect(() => {
-        SecureStore.getItemAsync('domain').then(domain => {
-            domainRef.current = domain;
-        });
+        SecureStore.getItemAsync('domain').then((storedDomain) => setDomain(storedDomain));
     }, []);
+
+    // Resolves each barcode in frame so BarcodeOverlay can label it. Waits for the stored domain,
+    // which decides whether a scanned URL belongs to this Snipe-IT instance.
+    const scanQueries = useQueries({
+        queries: barcodes.map((barcode) => {
+            const symbology = classifyBarcodeSymbology(barcode.type);
+
+            return {
+                queryKey: scanKeys.resolution(symbology, barcode.data),
+                queryFn: async () => {
+                    const scanResolution = await resolveScannedAsset(barcode.data, symbology, domain);
+                    const itemQuery = scannedItemQueryOptions(scanResolution);
+                    // Without the view permission the item goes unnamed; the scan itself still resolved
+                    const item = itemQuery ? await queryClient.fetchQuery(itemQuery).catch(() => null) : null;
+
+                    return { ...scanResolution, item };
+                },
+                enabled: domain !== null,
+            };
+        }),
+    });
 
     useEffect(() => {
         const subscription = AppState.addEventListener("change", (nextAppState) => {
@@ -118,27 +139,6 @@ export default function Home() {
         };
     }, [scanningPaused]);
 
-    // Resolves a newly-detected barcode so BarcodeOverlay can label it. Caches by scanned data
-    // and dedupes in-flight lookups so rapid re-detection of the same barcode doesn't spam the API.
-    // A failed lookup isn't cached, so the barcode is tried again the next time it's detected.
-    const resolveScan = useCallback((barcode) => {
-        const { data, type } = barcode;
-
-        if (resolvingScansRef.current.has(data) || scanResolutions[data] !== undefined) {
-            return;
-        }
-
-        resolvingScansRef.current.add(data);
-        resolveScannedAsset(data, classifyBarcodeSymbology(type), domainRef.current)
-            .then(async (scanResolution) => {
-                // Without the view permission the item goes unnamed; the scan itself still resolved
-                const item = await fetchScannedItem(scanResolution).catch(() => null);
-                setScanResolutions(prev => ({ ...prev, [data]: { ...scanResolution, item } }));
-            })
-            .catch(() => {})
-            .finally(() => resolvingScansRef.current.delete(data));
-    }, [scanResolutions]);
-
     const handleBarcodeScan = useCallback((barcode) => {
         // pdf417/code39/codabar are decoded by the ZXing fallback provider, which only
         // reports { type, data } — no bounds — so they can't be placed as a highlight box
@@ -151,13 +151,12 @@ export default function Home() {
             const existing = prevBarcodes.find(prevBarcode => prevBarcode.data === barcode.data);
             if (!existing) {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                resolveScan(barcode);
             }
             const bounds = existing ? smoothBounds(existing.bounds, barcode.bounds) : barcode.bounds;
             const otherBarcodes = prevBarcodes.filter(prevBarcode => prevBarcode.data !== barcode.data);
             return [...otherBarcodes, { ...barcode, bounds, lastSeenAt }];
         });
-    }, [scanningPaused, resolveScan]);
+    }, [scanningPaused]);
 
     const handleBarcodeSelect = async (barcode) => {
         if (!barcode?.data) {
@@ -263,7 +262,7 @@ export default function Home() {
 
             {/* Barcode Mask Overlay */}
             <BarcodeOverlay
-                barcodes={barcodes.map(barcode => ({ ...barcode, label: overlayLabel(scanResolutions[barcode.data]) }))}
+                barcodes={barcodes.map((barcode, index) => ({ ...barcode, label: overlayLabel(scanQueries[index].data) }))}
                 onBarcodeSelect={(barcode) => handleBarcodeSelect(barcode)}
             />
 

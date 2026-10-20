@@ -1,5 +1,6 @@
 import { makeRequest } from "@/helpers/axiosConfig";
 import { PERMISSIONS } from "@/permissions/PermissionKeys";
+import { accessoryKeys, consumableKeys } from "@/helpers/queryKeys";
 
 const HARDWARE_ID_PATTERN = /\/hardware\/([^/?#]+)/;
 
@@ -147,26 +148,32 @@ export async function resolveScannedAsset(data, symbology, storedDomain) {
 
 // The overlay labels an accessory's or consumable's page QR code with the item's name
 const ITEM_LOOKUPS = {
-    accessoryId: { permissionKey: PERMISSIONS.ACCESSORIES_VIEW, url: (id) => `/accessories/${encodeURIComponent(id)}` },
-    consumableId: { permissionKey: PERMISSIONS.CONSUMABLES_VIEW, url: (id) => `/consumables/${encodeURIComponent(id)}` },
+    accessoryId: {
+        queryKey: accessoryKeys.detail,
+        permissionKey: PERMISSIONS.ACCESSORIES_VIEW,
+        url: (id) => `/accessories/${encodeURIComponent(id)}`,
+    },
+    consumableId: {
+        queryKey: consumableKeys.detail,
+        permissionKey: PERMISSIONS.CONSUMABLES_VIEW,
+        url: (id) => `/consumables/${encodeURIComponent(id)}`,
+    },
 };
 
-// Fetches the accessory or consumable a scan resolved to, or returns null for any other scan or
-// an item that isn't found. Throws PermissionDeniedError without the view permission.
-export async function fetchScannedItem({ kind, value }) {
+// Query options for the accessory or consumable a scan resolved to, under the key its detail
+// screen reads, so opening the item after a scan needs no second request. Null for any other scan.
+// The query throws PermissionDeniedError without the view permission.
+export function scannedItemQueryOptions({ kind, value }) {
     const lookup = ITEM_LOOKUPS[kind];
 
     if (!lookup) {
         return null;
     }
 
-    const item = await makeRequest({ url: lookup.url(value), method: 'get', permissionKey: lookup.permissionKey, silent: true });
-
-    if (!item || item.status === 'error') {
-        return null;
-    }
-
-    return item;
+    return {
+        queryKey: lookup.queryKey(value),
+        queryFn: () => makeRequest({ url: lookup.url(value), method: 'get', permissionKey: lookup.permissionKey, silent: true }),
+    };
 }
 
 export function extractIdFromScannedData(data) {
