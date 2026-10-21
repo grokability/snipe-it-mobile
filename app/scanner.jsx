@@ -213,6 +213,7 @@ export default function Home() {
 
         if (!href) {
             clearBarcodes();
+            alertScanNotOpened(scanResolution, barcode.data);
             return;
         }
 
@@ -226,6 +227,41 @@ export default function Home() {
         setTimeout(async () => {
             await router.replace(href, { withAnchor: true });
         }, 300);
+    };
+
+    // Says why a scan didn't open anything. Scanning has already resumed underneath.
+    const alertScanNotOpened = (scanResolution, scannedData) => {
+        const { outcome, asset, kind, value, matchedBy } = scanResolution;
+        const okButton = [{ text: t('mobile.ok') }];
+
+        if (outcome === 'found' && asset.deleted_at) {
+            Alert.alert(t('admin.hardware.general.deleted'), undefined, okButton);
+            return;
+        }
+
+        if (outcome === 'notAsset' && (kind === 'accessoryId' || kind === 'consumableId')) {
+            Alert.alert(t('mobile.scan_audit_assets_only'), undefined, okButton);
+            return;
+        }
+
+        if (outcome === 'notAsset') {
+            Alert.alert(t('mobile.scan_not_an_asset'), undefined, okButton);
+            return;
+        }
+
+        if (outcome === 'multiple') {
+            const multipleKey = matchedBy === 'serial' ? 'mobile.scan_multiple_serial' : 'mobile.scan_multiple_tag';
+            Alert.alert(t(multipleKey, { value }), undefined, okButton);
+            return;
+        }
+
+        // The scanned value is the title, so people can see what the app read. Android cuts titles
+        // off after two lines, too short for the not-found string.
+        Alert.alert(
+            scannedData,
+            t('general.generic_model_not_found', { model: t('general.asset') }),
+            okButton
+        );
     };
 
     const clearBarcodes = () => {
