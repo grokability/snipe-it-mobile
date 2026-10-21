@@ -298,6 +298,7 @@ export default function AssetsScreen() {
                     onRetry={() => {
                         debouncedSetSearch.cancel();
                         setDebouncedSearch('');
+                        searchBarRef.current?.clearText();
                     }}
                     retryLabel={t('mobile.clear_search')}
                 />
