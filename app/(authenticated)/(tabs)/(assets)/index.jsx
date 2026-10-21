@@ -29,6 +29,8 @@ const EMPTY_FILTERS = {
     location: null,
     company: null,
     model: null,
+    // Not in the filter sheet: set from a scan whose matches are all deleted, shown as a chip
+    deleted: null,
 };
 
 const PAGE_SIZE = 25;
@@ -43,6 +45,7 @@ const buildQuery = ({ offset = 0, search = '', filters = EMPTY_FILTERS }) => {
     if (filters.location) query += `&location_id=${filters.location.id}`;
     if (filters.company) query += `&company_id=${filters.company.id}`;
     if (filters.model) query += `&model_id=${filters.model.id}`;
+    if (filters.deleted) query += '&status=Deleted';
     return query;
 };
 
@@ -61,8 +64,9 @@ export default function AssetsScreen() {
     // bar may not exist yet when the param arrives. iOS's takes text as soon as it does, so it's
     // filled when it attaches. Android's is created later, collapsed to an icon, and only takes text
     // once expanded, so it's filled when it gets focus: autoFocus on creation, or the effect below
-    // once it exists. The param is then cleared, so scanning the same value again searches again.
-    const { search: searchParam } = useLocalSearchParams();
+    // once it exists. The params are then cleared, so scanning the same value again searches again.
+    // status=Deleted (as in Snipe-IT's own URL) limits the search to deleted assets.
+    const { search: searchParam, status: statusParam } = useLocalSearchParams();
     const searchBarRef = useRef(null);
 
     const fillSearchBarFromParam = useCallback(() => {
@@ -74,7 +78,7 @@ export default function AssetsScreen() {
 
         searchBar.setText(searchParam);
         searchBar.blur();
-        router.setParams({ search: undefined });
+        router.setParams({ search: undefined, status: undefined });
     }, [searchParam]);
 
     const attachSearchBar = useCallback((searchBar) => {
@@ -151,11 +155,12 @@ export default function AssetsScreen() {
 
         debouncedSetSearch.cancel();
         setDebouncedSearch(searchParam);
+        setFilters((previousFilters) => ({ ...previousFilters, deleted: statusParam === 'Deleted' ? true : null }));
 
         if (Platform.OS === 'android') {
             searchBarRef.current?.focus();
         }
-    }, [searchParam, debouncedSetSearch]);
+    }, [searchParam, statusParam, debouncedSetSearch]);
 
     // cancel any pending debounce on unmount so we don't update state after user navigates away
     useEffect(() => () => debouncedSetSearch.cancel(), [debouncedSetSearch]);
@@ -212,14 +217,14 @@ export default function AssetsScreen() {
                     value != null ? (
                         <FilterChip
                             key={key}
-                            label={value.name}
+                            label={key === 'deleted' ? t('general.only_deleted') : value.name}
                             onRemove={() => removeFilter(key)}
                         />
                     ) : null
                 )}
             </ScrollView>
         );
-    }, [filters, activeFilterCount, removeFilter, styles.chipRow]);
+    }, [filters, activeFilterCount, removeFilter, styles.chipRow, t]);
 
     const Item = ({ id, asset_tag, name, serial, image, checkedOut, status, deleted }) => {
         const [isImageLoading, setIsImageLoading] = useState(true);

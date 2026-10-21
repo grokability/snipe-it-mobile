@@ -110,7 +110,8 @@ function scannedAssetCandidates(response) {
 
 // Looks up the asset a scanned code refers to and says what happened, so the scanner can show the
 // right message: 'found' (with the asset, which is soft-deleted when it has a deleted_at, and any
-// deletedMatches sharing its tag or serial), 'notFound', 'multiple' when several assets match,
+// deletedMatches sharing its tag or serial), 'notFound', 'multiple' when several assets match
+// (onlyDeleted when every one of them is deleted),
 // 'notAsset' for accessory, consumable, location and unrecognized codes, or 'otherInstance' for a
 // URL from a different Snipe-IT server. 'found' and 'multiple' carry the matchedBy field. Request
 // errors are thrown, including PermissionDeniedError: not being allowed to view assets isn't the
@@ -133,7 +134,7 @@ export async function resolveScannedAsset(data, symbology, storedDomain) {
         const { candidates, deletedMatches } = scannedAssetCandidates(response);
 
         if (candidates.length > 1) {
-            return { outcome: 'multiple', kind, value, matchedBy };
+            return { outcome: 'multiple', kind, value, matchedBy, onlyDeleted: Boolean(candidates[0].deleted_at) };
         }
 
         if (candidates.length === 1) {

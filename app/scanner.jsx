@@ -233,13 +233,13 @@ export default function Home() {
     // mode, a tag or plain value that found nothing or several assets can be searched for in the
     // asset list, whose search also matches model, manufacturer, location and serial.
     const alertScanNotOpened = (scanResolution, scannedData) => {
-        const { outcome, asset, kind, value, matchedBy } = scanResolution;
+        const { outcome, asset, kind, value, matchedBy, onlyDeleted } = scanResolution;
         const okButton = [{ text: t('mobile.ok') }];
         const canSearchAssets = !isAuditMode && (kind === 'assetTag' || kind === 'ambiguous');
         const searchButtons = canSearchAssets
             ? [
                 { text: t('general.cancel'), style: 'cancel' },
-                { text: t('mobile.scan_search_assets'), onPress: () => searchAssetsFor(value) },
+                { text: t('mobile.scan_search_assets'), onPress: () => searchAssetsFor(value, onlyDeleted) },
             ]
             : okButton;
 
@@ -273,10 +273,14 @@ export default function Home() {
         );
     };
 
-    const searchAssetsFor = (value) => {
+    // Several matches that are all deleted are searched for among deleted assets, since the asset
+    // list otherwise leaves them out
+    const searchAssetsFor = (value, onlyDeleted) => {
+        const statusParam = onlyDeleted ? '&status=Deleted' : '';
+
         setScanningPaused(true);
         setBarcodes([]);
-        router.replace(`/(authenticated)/(tabs)/(assets)?search=${encodeURIComponent(value)}`);
+        router.replace(`/(authenticated)/(tabs)/(assets)?search=${encodeURIComponent(value)}${statusParam}`);
     };
 
     const clearBarcodes = () => {
