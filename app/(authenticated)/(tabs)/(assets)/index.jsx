@@ -221,7 +221,7 @@ export default function AssetsScreen() {
         );
     }, [filters, activeFilterCount, removeFilter, styles.chipRow]);
 
-    const Item = ({ id, asset_tag, name, serial, image, checkedOut, status }) => {
+    const Item = ({ id, asset_tag, name, serial, image, checkedOut, status, deleted }) => {
         const [isImageLoading, setIsImageLoading] = useState(true);
 
         return (
@@ -255,6 +255,11 @@ export default function AssetsScreen() {
                 <View style={styles.contentContainer}>
                     <Text style={styles.assetTag}>#{asset_tag}</Text>
                     <Text style={styles.assetName}>{decode(name)}</Text>
+                    {deleted && (
+                        <View style={styles.deletedBadge}>
+                            <Text style={styles.deletedBadgeText}>{t('general.deleted')}</Text>
+                        </View>
+                    )}
                     {checkedOut && (
                         <Text style={styles.checkedOutText}>
                             {t('general.checked_out_to')}<Text style={styles.userName}>{checkedOut.name}</Text>
@@ -351,6 +356,7 @@ export default function AssetsScreen() {
                     image={item.image}
                     checkedOut={item.assigned_to}
                     status={item.status_label}
+                    deleted={Boolean(item.deleted_at)}
                 />
                 }
                 keyExtractor={item => item.id}
@@ -453,6 +459,18 @@ const createStyles = (colors) => StyleSheet.create({
     notAvailableText: {
         color: colors.danger,
         fontWeight: FontWeight.medium,
+    },
+    deletedBadge: {
+        alignSelf: 'flex-start',
+        paddingHorizontal: Spacing.sm,
+        paddingVertical: 2,
+        borderRadius: BorderRadius.sm,
+        backgroundColor: colors.danger + '20',
+    },
+    deletedBadgeText: {
+        fontSize: Typography.caption,
+        color: colors.danger,
+        fontWeight: FontWeight.semibold,
     },
     serialText: {
         fontSize: Typography.caption,
