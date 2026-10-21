@@ -49,7 +49,7 @@ export default function AuditConfirmScreen() {
     const insets = useSafeAreaInsets();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const {t} = useTranslation();
-    const {asset_id, asset_tag, from_scanner} = useLocalSearchParams();
+    const {asset_id, from_scanner} = useLocalSearchParams();
     const {addAuditedAsset} = useAuditSession();
 
     const locationBottomSheetRef = useRef(null);
@@ -64,13 +64,7 @@ export default function AuditConfirmScreen() {
     const [submitting, setSubmitting] = useState(false);
 
     useEffect(() => {
-        // this is going to have to change somehow, maybe an admin setting or something - if it's not an url,
-        // it's impossible for the app to tell what the number is... (i don't even know what default is)
-        const url = asset_id
-            ? `/hardware/${encodeURIComponent(asset_id)}`
-            : `/hardware/bytag/${encodeURIComponent(asset_tag)}`;
-
-        makeRequest({url, method: 'GET', permissionKey: PERMISSIONS.ASSETS_AUDIT})
+        makeRequest({url: `/hardware/${encodeURIComponent(asset_id)}`, method: 'GET', permissionKey: PERMISSIONS.ASSETS_AUDIT})
             .then((res) => {
                 if (res.status === 'error') {
                     setError(res.messages || t('mobile.audit_failed'));
@@ -85,7 +79,7 @@ export default function AuditConfirmScreen() {
                 setError(t('mobile.audit_failed'));
             })
             .finally(() => setLoading(false));
-    }, [asset_id, asset_tag]);
+    }, [asset_id]);
 
     const handleSubmit = () => {
         setSubmitting(true);
@@ -94,7 +88,7 @@ export default function AuditConfirmScreen() {
             method: 'POST',
             permissionKey: PERMISSIONS.ASSETS_AUDIT,
             data: {
-                asset_tag: asset?.asset_tag || asset_tag,
+                asset_tag: asset?.asset_tag,
                 location_id: selectedLocation?.id || null,
                 next_audit_date: nextAuditDate || null,
                 note: note || null,
@@ -177,7 +171,7 @@ export default function AuditConfirmScreen() {
                             resizeMode="contain"
                         />
                     )}
-                    <Text style={styles.infoName}>{asset?.name ? decode(asset.name) : (asset_tag || asset_id)}</Text>
+                    <Text style={styles.infoName}>{asset?.name ? decode(asset.name) : asset_id}</Text>
                     <Text style={styles.infoTag}>#{asset?.asset_tag}</Text>
                     {asset?.model?.name && (
                         <Text style={styles.infoModel}>{decode(asset.model.name)}</Text>

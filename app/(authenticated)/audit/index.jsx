@@ -137,7 +137,7 @@ export default function AuditListScreen() {
                     <AuditListItem
                         item={item}
                         isOverdue={tab === 'overdue'}
-                        onPress={() => router.push(`/(authenticated)/audit/confirm?asset_tag=${encodeURIComponent(item.asset_tag)}`)}
+                        onPress={() => router.push(`/(authenticated)/audit/confirm?asset_id=${encodeURIComponent(item.id)}`)}
                     />
                 )}
                 keyExtractor={(item) => String(item.id)}
