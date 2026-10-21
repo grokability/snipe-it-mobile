@@ -229,10 +229,19 @@ export default function Home() {
         }, 300);
     };
 
-    // Says why a scan didn't open anything. Scanning has already resumed underneath.
+    // Says why a scan didn't open anything. Scanning has already resumed underneath. Outside audit
+    // mode, a tag or plain value that found nothing or several assets can be searched for in the
+    // asset list, whose search also matches model, manufacturer, location and serial.
     const alertScanNotOpened = (scanResolution, scannedData) => {
         const { outcome, asset, kind, value, matchedBy } = scanResolution;
         const okButton = [{ text: t('mobile.ok') }];
+        const canSearchAssets = !isAuditMode && (kind === 'assetTag' || kind === 'ambiguous');
+        const searchButtons = canSearchAssets
+            ? [
+                { text: t('general.cancel'), style: 'cancel' },
+                { text: t('mobile.scan_search_assets'), onPress: () => searchAssetsFor(value) },
+            ]
+            : okButton;
 
         if (outcome === 'found' && asset.deleted_at) {
             Alert.alert(t('admin.hardware.general.deleted'), undefined, okButton);
@@ -251,7 +260,7 @@ export default function Home() {
 
         if (outcome === 'multiple') {
             const multipleKey = matchedBy === 'serial' ? 'mobile.scan_multiple_serial' : 'mobile.scan_multiple_tag';
-            Alert.alert(t(multipleKey, { value }), undefined, okButton);
+            Alert.alert(t(multipleKey, { value }), undefined, searchButtons);
             return;
         }
 
@@ -260,8 +269,14 @@ export default function Home() {
         Alert.alert(
             scannedData,
             t('general.generic_model_not_found', { model: t('general.asset') }),
-            okButton
+            searchButtons
         );
+    };
+
+    const searchAssetsFor = (value) => {
+        setScanningPaused(true);
+        setBarcodes([]);
+        router.replace(`/(authenticated)/(tabs)/(assets)?search=${encodeURIComponent(value)}`);
     };
 
     const clearBarcodes = () => {

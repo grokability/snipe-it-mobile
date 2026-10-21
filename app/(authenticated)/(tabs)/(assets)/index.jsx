@@ -7,7 +7,7 @@ import { makeRequest } from "@/helpers/axiosConfig";
 import { assetKeys } from "@/helpers/queryKeys";
 import { useRefreshOnFocus } from "@/hooks/useRefreshOnFocus";
 import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
-import { router, useNavigation } from "expo-router";
+import { router, useLocalSearchParams, useNavigation } from "expo-router";
 import { useColors } from "@/hooks/useThemeColors";
 import { Spacing, BorderRadius, Typography, FontWeight } from "@/constants/sizes";
 import { decode } from "html-entities";
@@ -57,6 +57,33 @@ export default function AssetsScreen() {
     const { denied: createDenied } = usePermission(PERMISSIONS.ASSETS_CREATE);
 
     const [debouncedSearch, setDebouncedSearch] = useState('');
+    // A scan that found nothing opens the list searching for the scanned value. The header's search
+    // bar may not exist yet when the param arrives. iOS's takes text as soon as it does, so it's
+    // filled when it attaches. Android's is created later, collapsed to an icon, and only takes text
+    // once expanded, so it's filled when it gets focus: autoFocus on creation, or the effect below
+    // once it exists. The param is then cleared, so scanning the same value again searches again.
+    const { search: searchParam } = useLocalSearchParams();
+    const searchBarRef = useRef(null);
+
+    const fillSearchBarFromParam = useCallback(() => {
+        const searchBar = searchBarRef.current;
+
+        if (!searchParam || !searchBar) {
+            return;
+        }
+
+        searchBar.setText(searchParam);
+        searchBar.blur();
+        router.setParams({ search: undefined });
+    }, [searchParam]);
+
+    const attachSearchBar = useCallback((searchBar) => {
+        searchBarRef.current = searchBar;
+
+        if (Platform.OS === 'ios') {
+            fillSearchBarFromParam();
+        }
+    }, [fillSearchBarFromParam]);
 
     const [filters, setFilters] = useState(EMPTY_FILTERS);
     const filterSheetRef = useRef(null);
@@ -95,6 +122,13 @@ export default function AssetsScreen() {
                 </View>
             ),
             headerSearchBarOptions: {
+                ref: attachSearchBar,
+                autoFocus: Boolean(searchParam),
+                onFocus: () => {
+                    if (Platform.OS === 'android') {
+                        fillSearchBarFromParam();
+                    }
+                },
                 placeholder: t('general.search'),
                 hideWhenScrolling: false,
                 tintColor: colors.primary,
@@ -108,7 +142,20 @@ export default function AssetsScreen() {
                 },
             },
         });
-    }, [navigation, colors.text, colors.primary, t, debouncedSetSearch, activeFilterCount, styles, createDenied]);
+    }, [navigation, colors.text, colors.primary, t, debouncedSetSearch, activeFilterCount, styles, createDenied, attachSearchBar, fillSearchBarFromParam]);
+
+    useEffect(() => {
+        if (!searchParam) {
+            return;
+        }
+
+        debouncedSetSearch.cancel();
+        setDebouncedSearch(searchParam);
+
+        if (Platform.OS === 'android') {
+            searchBarRef.current?.focus();
+        }
+    }, [searchParam, debouncedSetSearch]);
 
     // cancel any pending debounce on unmount so we don't update state after user navigates away
     useEffect(() => () => debouncedSetSearch.cancel(), [debouncedSetSearch]);

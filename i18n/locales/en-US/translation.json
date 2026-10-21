@@ -129,6 +129,7 @@
     "scan_audit_assets_only": "Only assets can be audited.",
     "scan_multiple_serial": "More than one asset has the serial {{value}}.",
     "scan_multiple_tag": "More than one asset has the tag {{value}}.",
+    "scan_search_assets": "Search Assets",
     "serial_number_display": "SN: {{serial}}",
     "serial_number_empty": "SN: N/A",
     "asset_title": "Asset #{{id}}",
