@@ -12,15 +12,28 @@ import {
     TouchableOpacity
 } from "react-native";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useQueries, useQueryClient } from "@tanstack/react-query";
 import * as Haptics from 'expo-haptics';
 import * as SecureStore from 'expo-secure-store';
 import BarcodeOverlay from "@/components/camera/BarcodeOverlay";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
-import { extractIdFromScannedData, isScannedUrlForCurrentInstance, fetchAssetTagForBarcode } from "@/helpers/scannerUtils";
+import {
+    classifyBarcodeSymbology,
+    resolveScannedAsset,
+    scannedItemHref,
+    scannedItemQueryOptions,
+} from "@/helpers/scannerUtils";
+import { assetKeys, scanKeys } from "@/helpers/queryKeys";
 
 const BARCODE_STALE_MS = 800; // Drop the overlay if its barcode hasn't been re-detected within this window
 const BOUNDS_SMOOTHING_ALPHA = 0.35; // Lower = smoother/more lag, higher = snappier/more jitter
+
+// expo-camera uses only the wide-angle lens on iOS, so it never switches to macro up close, and on
+// Pro iPhones a small label held near the lens stays out of focus. About 1.3-1.7x zoom (iOS maps
+// zoom as maxZoom ^ zoom) lets people hold the phone back far enough to focus. Android maps zoom
+// linearly to each phone's maximum (8x to 100x), so no fixed value is safe there.
+const SCANNER_ZOOM = Platform.OS === 'ios' ? 0.1 : 0;
 
 // Detected bounds are noisy frame-to-frame (autofocus, hand tremor, detector variance);
 // blend toward the new position instead of snapping to it to keep the highlight box steady.
@@ -35,6 +48,16 @@ const smoothBounds = (prevBounds, nextBounds) => ({
     },
 });
 
+// The overlay names what a code opens: an asset's tag, or an accessory's or consumable's name.
+// An item that isn't found comes back as { status: 'error' }, which has no name.
+const overlayLabel = (scanResolution) => {
+    if (scanResolution?.outcome === 'found') {
+        return scanResolution.asset.asset_tag;
+    }
+
+    return scanResolution?.item?.name;
+};
+
 export default function Home() {
     const { mode } = useLocalSearchParams();
     const { t } = useTranslation();
@@ -45,19 +68,47 @@ export default function Home() {
 
     const [barcodes, setBarcodes] = useState([]);
     const [scanningPaused, setScanningPaused] = useState(false);
-    const [assetTags, setAssetTags] = useState({});
     const appState = useRef(AppState.currentState);
     const insets = useSafeAreaInsets();
     const cameraRef = useRef(null);
     const isSelectingRef = useRef(false);
-    const domainRef = useRef(null);
-    const fetchingAssetTagsRef = useRef(new Set());
+    const [domain, setDomain] = useState(null);
+    const queryClient = useQueryClient();
 
     useEffect(() => {
-        SecureStore.getItemAsync('domain').then(domain => {
-            domainRef.current = domain;
-        });
+        SecureStore.getItemAsync('domain').then((storedDomain) => setDomain(storedDomain));
     }, []);
+
+    // Resolves a barcode, and fills the cache the found asset's (and its deleted matches') or item's
+    // detail screen reads, so opening it after a scan needs no second request. storedDomain decides
+    // whether a scanned URL belongs to this Snipe-IT instance.
+    const scanQueryOptions = (barcode, storedDomain) => {
+        const symbology = classifyBarcodeSymbology(barcode.type);
+
+        return {
+            queryKey: scanKeys.resolution(symbology, barcode.data),
+            queryFn: async () => {
+                const scanResolution = await resolveScannedAsset(barcode.data, symbology, storedDomain);
+
+                if (scanResolution.outcome === 'found') {
+                    [scanResolution.asset, ...scanResolution.deletedMatches].forEach((asset) => {
+                        queryClient.setQueryData(assetKeys.detail(String(asset.id)), asset);
+                    });
+                }
+
+                const itemQuery = scannedItemQueryOptions(scanResolution);
+                // Without the view permission the item goes unnamed; the scan itself still resolved
+                const item = itemQuery ? await queryClient.fetchQuery(itemQuery).catch(() => null) : null;
+
+                return { ...scanResolution, item };
+            },
+        };
+    };
+
+    // Resolves each barcode in frame so BarcodeOverlay can label it, once the stored domain is known
+    const scanQueries = useQueries({
+        queries: barcodes.map((barcode) => ({ ...scanQueryOptions(barcode, domain), enabled: domain !== null })),
+    });
 
     useEffect(() => {
         const subscription = AppState.addEventListener("change", (nextAppState) => {
@@ -103,23 +154,6 @@ export default function Home() {
         };
     }, [scanningPaused]);
 
-    // Looks up the asset_tag for a newly-detected barcode so BarcodeOverlay can label it.
-    // Caches by scanned data and dedupes in-flight lookups so rapid re-detection of the
-    // same barcode doesn't spam the API.
-    const fetchAssetTag = useCallback((data) => {
-        if (fetchingAssetTagsRef.current.has(data) || assetTags[data] !== undefined) return;
-
-        fetchingAssetTagsRef.current.add(data);
-        fetchAssetTagForBarcode(data, domainRef.current)
-            .then(assetTag => {
-                if (assetTag) {
-                    setAssetTags(prev => ({ ...prev, [data]: assetTag }));
-                }
-            })
-            .catch(() => {})
-            .finally(() => fetchingAssetTagsRef.current.delete(data));
-    }, [assetTags]);
-
     const handleBarcodeScan = useCallback((barcode) => {
         // pdf417/code39/codabar are decoded by the ZXing fallback provider, which only
         // reports { type, data } — no bounds — so they can't be placed as a highlight box
@@ -132,22 +166,21 @@ export default function Home() {
             const existing = prevBarcodes.find(prevBarcode => prevBarcode.data === barcode.data);
             if (!existing) {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                fetchAssetTag(barcode.data);
             }
             const bounds = existing ? smoothBounds(existing.bounds, barcode.bounds) : barcode.bounds;
             const otherBarcodes = prevBarcodes.filter(prevBarcode => prevBarcode.data !== barcode.data);
             return [...otherBarcodes, { ...barcode, bounds, lastSeenAt }];
         });
-    }, [scanningPaused, fetchAssetTag]);
+    }, [scanningPaused]);
 
-    const handleBarcodeSelect = async (data) => {
-        if (!data) {
+    const handleBarcodeSelect = async (barcode) => {
+        if (!barcode?.data) {
             clearBarcodes();
             return;
         }
 
         // Guard against a second tap (on another still-visible box) firing while this
-        // selection is still awaiting the domain check / navigating
+        // selection is still being resolved / navigating
         if (isSelectingRef.current) return;
         isSelectingRef.current = true;
 
@@ -155,10 +188,18 @@ export default function Home() {
         setScanningPaused(true);
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
 
-        const { id, url } = extractIdFromScannedData(data);
-        const storedDomain = await SecureStore.getItemAsync('domain');
+        // Reuses the overlay's lookup: cached if it landed, awaited if it's still in flight
+        let scanResolution;
 
-        if (!isScannedUrlForCurrentInstance(url, storedDomain)) {
+        try {
+            const storedDomain = await SecureStore.getItemAsync('domain');
+            scanResolution = await queryClient.fetchQuery(scanQueryOptions(barcode, storedDomain));
+        } catch {
+            clearBarcodes();
+            return;
+        }
+
+        if (scanResolution.outcome === 'otherInstance') {
             clearBarcodes();
             Alert.alert(
                 t('mobile.scan_domain_mismatch_title'),
@@ -168,16 +209,78 @@ export default function Home() {
             return;
         }
 
+        const href = scannedItemHref(scanResolution, isAuditMode);
+
+        if (!href) {
+            clearBarcodes();
+            alertScanNotOpened(scanResolution, barcode.data);
+            return;
+        }
+
         setBarcodes([]);
 
         if (isAuditMode) {
-            router.replace(`/(authenticated)/audit/confirm?asset_id=${encodeURIComponent(id)}&from_scanner=true`);
+            router.replace(href);
             return;
         }
 
         setTimeout(async () => {
-            await router.replace(`/(authenticated)/(tabs)/(assets)/${id}`, { withAnchor: true });
+            await router.replace(href, { withAnchor: true });
         }, 300);
+    };
+
+    // Says why a scan didn't open anything. Scanning has already resumed underneath. Outside audit
+    // mode, a tag or plain value that found nothing or several assets can be searched for in the
+    // asset list, whose search also matches model, manufacturer, location and serial.
+    const alertScanNotOpened = (scanResolution, scannedData) => {
+        const { outcome, asset, kind, value, matchedBy, onlyDeleted } = scanResolution;
+        const okButton = [{ text: t('mobile.ok') }];
+        const canSearchAssets = !isAuditMode && (kind === 'assetTag' || kind === 'ambiguous');
+        const searchButtons = canSearchAssets
+            ? [
+                { text: t('general.cancel'), style: 'cancel' },
+                { text: t('mobile.scan_search_assets'), onPress: () => searchAssetsFor(value, onlyDeleted) },
+            ]
+            : okButton;
+
+        if (outcome === 'found' && asset.deleted_at) {
+            Alert.alert(t('admin.hardware.general.deleted'), undefined, okButton);
+            return;
+        }
+
+        if (outcome === 'notAsset' && (kind === 'accessoryId' || kind === 'consumableId')) {
+            Alert.alert(t('mobile.scan_audit_assets_only'), undefined, okButton);
+            return;
+        }
+
+        if (outcome === 'notAsset') {
+            Alert.alert(t('mobile.scan_not_an_asset'), undefined, okButton);
+            return;
+        }
+
+        if (outcome === 'multiple') {
+            const multipleKey = matchedBy === 'serial' ? 'mobile.scan_multiple_serial' : 'mobile.scan_multiple_tag';
+            Alert.alert(t(multipleKey, { value }), undefined, searchButtons);
+            return;
+        }
+
+        // The scanned value is the title, so people can see what the app read. Android cuts titles
+        // off after two lines, too short for the not-found string.
+        Alert.alert(
+            scannedData,
+            t('general.generic_model_not_found', { model: t('general.asset') }),
+            searchButtons
+        );
+    };
+
+    // Several matches that are all deleted are searched for among deleted assets, since the asset
+    // list otherwise leaves them out
+    const searchAssetsFor = (value, onlyDeleted) => {
+        const statusParam = onlyDeleted ? '&status=Deleted' : '';
+
+        setScanningPaused(true);
+        setBarcodes([]);
+        router.replace(`/(authenticated)/(tabs)/(assets)?search=${encodeURIComponent(value)}${statusParam}`);
     };
 
     const clearBarcodes = () => {
@@ -223,6 +326,7 @@ export default function Home() {
                 }}
                 style={styles.camera}
                 facing="back"
+                zoom={SCANNER_ZOOM}
                 onBarcodeScanned={handleBarcodeScan}
                 onCameraReady={() => {}}
             />
@@ -244,8 +348,8 @@ export default function Home() {
 
             {/* Barcode Mask Overlay */}
             <BarcodeOverlay
-                barcodes={barcodes.map(barcode => ({ ...barcode, assetTag: assetTags[barcode.data] }))}
-                onBarcodeSelect={handleBarcodeSelect}
+                barcodes={barcodes.map((barcode, index) => ({ ...barcode, label: overlayLabel(scanQueries[index].data) }))}
+                onBarcodeSelect={(barcode) => handleBarcodeSelect(barcode)}
             />
 
             {!scanningPaused && barcodes.length === 0 && (

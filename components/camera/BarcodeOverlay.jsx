@@ -23,15 +23,15 @@ const BarcodeOverlay = ({ barcodes, onBarcodeSelect }) => {
                     height: barcode.bounds.size.height,
                 }
             ]}
-            onPress={() => onBarcodeSelect(barcode.data)}
+            onPress={() => onBarcodeSelect(barcode)}
         >
-            {barcode.assetTag && (
+            {barcode.label ? (
                 <View style={styles.tagLabel}>
                     <Text style={styles.tagLabelText} numberOfLines={1} ellipsizeMode="tail">
-                        {barcode.assetTag}
+                        {barcode.label}
                     </Text>
                 </View>
-            )}
+            ) : null}
             <View style={styles.tapBadge}>
                 <Ionicons name="arrow-forward" size={16} color="#ffffff" />
             </View>

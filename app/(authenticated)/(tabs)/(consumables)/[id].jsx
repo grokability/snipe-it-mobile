@@ -71,7 +71,7 @@ export default function ConsumableScreen() {
             <View style={styles.container}>
                 <EmptyState
                     icon="alert-circle-outline"
-                    title={t('general.item_not_found', { item_type: t('general.consumable'), id })}
+                    title={t('general.generic_model_not_found', { model: t('general.consumable') })}
                     message={null}
                 />
             </View>

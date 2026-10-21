@@ -3,40 +3,46 @@
 A React Native mobile app for [Snipe-IT](https://snipeitapp.com), built with Expo.
 
 ## Plans
-The goal for this mobile app is to be a fully-featured version of the web app. We are fairly early days though 
+
+The goal for this mobile app is to be a fully-featured version of the web app. We are fairly early days though
 and are actively working on adding features, so please be patient. If you'd like to give some input on what features
-would be most useful and should be higher priorities, please open up a feature request _discussion_ - not an Issue. 
+would be most useful and should be higher priorities, please open up a feature request _discussion_ - not an Issue
 
 ## Roadmap
+
 [Snipe-IT Mobile Roadmap](https://github.com/orgs/grokability/projects/30/views/1)
 
 The roadmap will be updated as we go and priorities evolve.  
 
 ## Deployments
+
 [Snipe-IT Mobile Deployments](https://gist.github.com/spencerrlongg/04a4aef25f4763d3a9b7771be6385e32) lists the newest build on each test channel and which update it runs. It is rewritten after every build or update.
 
 ## Current Features
-- Login via OAuth or Bearer token 
+
+- Login via OAuth or Bearer token
 - QR/barcode scanner from the home tab, resolves directly to an asset
 - Assets: browse, search, filter, view, create, edit, check out, check in
 - Accessories: browse, view, check out, check in
 - Consumables: browse, view, edit, check out
-- Components: browse and view 
-- Licenses: browse and view 
+- Components: browse and view
+- Licenses: browse and view
 - Audit workflow: session-based scan-and-confirm flow with a home screen dashboard card
 - Activity report with details on items
 - Recent actions feed card on the home screen (superusers only)
 - OTA update checking and install from the home screen
 
 ## Reporting Issues
+
 If you think you've found a bug or an issue with the app, please open an [Issue Triage Discussion](https://github.com/grokability/snipe-it-mobile/discussions/categories/issue-triage).
 
 ## Contributing
-Contributions are welcome! BUT, we'll be using a system called [Vouch](https://github.com/mitchellh/vouch) by Mitchell Hashimoto to manage contributions. 
 
-This means that contributors should default to opening Discussions instead of Issues or PRs, and then a team member will open the issue if need be. 
+Contributions are welcome! BUT, we'll be using a system called [Vouch](https://github.com/mitchellh/vouch) by Mitchell Hashimoto to manage contributions
 
-[Contribution Guidelines](CONTRIBUTING.md) 
+This means that contributors should default to opening Discussions instead of Issues or PRs, and then a team member will open the issue if need be
+
+[Contribution Guidelines](CONTRIBUTING.md)
 
 Also make sure you check out our [AI Policy](AI_POLICY.md) if you're thinking about contributing.
 
@@ -57,7 +63,8 @@ npx expo login
 ```
 
 ## Running the App
-**Note:** This is an Expo Dev Build, **not** compatible with Expo Go. 
+
+**Note:** This is an Expo Dev Build, **not** compatible with Expo Go
 
 ### Emulator
 
@@ -66,7 +73,7 @@ npx expo run:ios    # iOS simulator
 npx expo run:android  # Android emulator
 ```
 
-The `--device` flag will sometimes detect a connected physical device, but it's unreliable. But, usually run with the flag anyway to get all of my emulators. 
+The `--device` flag will sometimes detect a connected physical device, but it's unreliable. But, usually run with the flag anyway to get all of my emulators
 
 ### Physical Device (iOS)
 
@@ -80,9 +87,10 @@ The `--device` flag will sometimes detect a connected physical device, but it's 
 Once the dev server is running you can leave it up — a new native build is only needed when a native module is added.
 
 ## Enabling OAuth on Your Snipe-IT Instance
+
 As of Snipe IT v8.5, OAuth will automatically work with the mobile application - otherwise you can log in [using an API key](https://snipe-it.readme.io/reference/generating-api-tokens).
 
-If you'd like to use OAuth with an older version of Snipe IT, you can create an OAuth client manually and input the Client ID into the app. 
+If you'd like to use OAuth with an older version of Snipe IT, you can create an OAuth client manually and input the Client ID into the app
 
 Run the following command to generate a new client:
 ```

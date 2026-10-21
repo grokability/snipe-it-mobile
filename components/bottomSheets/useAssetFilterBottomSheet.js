@@ -8,6 +8,7 @@ const EMPTY_FILTERS = {
     location: null,
     company: null,
     model: null,
+    deleted: null,
 };
 
 // Shared filter-state logic behind AssetFilterBottomSheet's platform-specific chrome.

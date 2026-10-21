@@ -10,6 +10,7 @@ import {assetKeys, customFieldKeys} from "@/helpers/queryKeys";
 import {useRefreshOnFocus} from "@/hooks/useRefreshOnFocus";
 import {AssetDetailSkeleton} from "@/components/ui/Skeleton";
 import EmptyState from "@/components/ui/EmptyState";
+import Callout from "@/components/ui/Callout";
 import {decode} from "html-entities";
 import {SafeAreaProvider, useSafeAreaInsets} from "react-native-safe-area-context";
 import {useColors} from "@/hooks/useThemeColors";
@@ -53,7 +54,10 @@ export default function AssetScreen() {
     const { denied: createDenied } = usePermission(PERMISSIONS.ASSETS_CREATE);
     const { denied: editDenied } = usePermission(PERMISSIONS.ASSETS_EDIT);
 
-    const { id } = useLocalSearchParams();
+    // deleted_matches and matched_by come from a scan whose live asset shares its tag or serial
+    // with deleted ones (scannedItemHref)
+    const { id, deleted_matches, matched_by } = useLocalSearchParams();
+    const deletedMatchIds = deleted_matches ? deleted_matches.split(',') : [];
     const navigation = useNavigation();
 
     const assetQuery = useQuery({
@@ -84,6 +88,8 @@ export default function AssetScreen() {
 
     // Snipe-IT answers a missing asset with HTTP 200 and { status: 'error' }, not a 404
     const assetNotFound = assetQuery.data?.status === 'error';
+    // A soft-deleted asset can't be checked out, checked in, audited or edited until it's restored
+    const assetDeleted = Boolean(assetQuery.data?.deleted_at);
 
     useLayoutEffect(() => {
         navigation.setOptions({
@@ -94,7 +100,7 @@ export default function AssetScreen() {
                             <Ionicons name="add" size={26} color={colors.text} />
                         </Pressable>
                     )}
-                    {!editDenied && !assetNotFound && (
+                    {!editDenied && !assetNotFound && !assetDeleted && (
                         <Pressable onPress={() => router.push(`/(tabs)/(assets)/edit/${id}`)} hitSlop={4}>
                             <Ionicons name="pencil" size={22} color={colors.text} />
                         </Pressable>
@@ -102,7 +108,7 @@ export default function AssetScreen() {
                 </View>
             ),
         });
-    }, [navigation, id, colors.text, createDenied, editDenied, assetNotFound]);
+    }, [navigation, id, colors.text, createDenied, editDenied, assetNotFound, assetDeleted]);
 
     const na = t('mobile.na');
     const displayValue = (value) => value ? decode(String(value)) : na;
@@ -115,7 +121,7 @@ export default function AssetScreen() {
             <View style={styles.container}>
                 <EmptyState
                     icon="alert-circle-outline"
-                    title={t('general.item_not_found', { item_type: t('general.asset'), id })}
+                    title={t('general.generic_model_not_found', { model: t('general.asset') })}
                     message={null}
                 />
             </View>
@@ -143,6 +149,21 @@ export default function AssetScreen() {
                 contentContainerStyle={[styles.contentContainer, {paddingTop: Platform.OS === 'android' ? insets.top + 56 : 0}]}
                 refreshControl={<RefreshControl refreshing={isManualRefreshing} onRefresh={onManualRefresh} />}
             >
+                {assetDeleted && (
+                    <Callout type="warning">{t('general.asset_deleted_warning')}</Callout>
+                )}
+
+                {deletedMatchIds.length > 0 && (
+                    <Callout
+                        type="info"
+                        onPress={deletedMatchIds.length === 1
+                            ? () => router.push(`/(tabs)/(assets)/${deletedMatchIds[0]}`)
+                            : undefined}
+                    >
+                        {t(matched_by === 'serial' ? 'mobile.scan_deleted_serial_match' : 'mobile.scan_deleted_tag_match', { count: deletedMatchIds.length })}
+                    </Callout>
+                )}
+
                 {/* Image */}
                 {asset.image && (
                     <View style={styles.imageContainer}>
@@ -174,79 +195,81 @@ export default function AssetScreen() {
                 </View>
 
                 {/* Actions */}
-                <View>
-                    <SectionHeader title={t('mobile.section_actions')} />
-                    <View style={styles.assignmentContainer}>
-                        {asset.assigned_to ? (
-                            <>
-                                <Text style={styles.assignedText}>
-                                    {t('general.assigned_to')}<Text selectable style={styles.userName}>{asset.assigned_to.name}</Text>
-                                </Text>
-                                <PermissionGate permission={PERMISSIONS.ASSETS_CHECKIN}>
-                                    <Pressable
-                                        style={({pressed}) => [styles.button, styles.checkinButton, pressed && styles.buttonPressed]}
-                                        onPress={() => router.push({
-                                        pathname: `/(tabs)/(assets)/checkin/${id}`,
-                                        params: {
-                                            assetName: asset.name ?? '',
-                                            assetTag: asset.asset_tag ?? '',
-                                            assignedToName: asset.assigned_to?.name ?? '',
-                                            statusId: asset.status_label?.id ?? '',
-                                            statusName: asset.status_label?.name ?? '',
-                                        },
-                                    })}
-                                    >
-                                        <Text style={styles.buttonText}>{t('mobile.check_in_button')}</Text>
-                                    </Pressable>
-                                </PermissionGate>
-                            </>
-                        ) : (
-                            <>
-                                <PermissionGate permission={PERMISSIONS.ASSETS_CHECKOUT}>
-                                    <>
+                {!assetDeleted && (
+                    <View>
+                        <SectionHeader title={t('mobile.section_actions')} />
+                        <View style={styles.assignmentContainer}>
+                            {asset.assigned_to ? (
+                                <>
+                                    <Text style={styles.assignedText}>
+                                        {t('general.assigned_to')}<Text selectable style={styles.userName}>{asset.assigned_to.name}</Text>
+                                    </Text>
+                                    <PermissionGate permission={PERMISSIONS.ASSETS_CHECKIN}>
                                         <Pressable
-                                            disabled={cannotCheckout}
-                                            style={({pressed}) => [
-                                                styles.button,
-                                                styles.checkoutButton,
-                                                pressed && !cannotCheckout && styles.buttonPressed,
-                                                cannotCheckout && styles.buttonDisabled,
-                                            ]}
-                                            onPress={cannotCheckout ? undefined : () => router.push({
-                                                pathname: `/(tabs)/(assets)/checkout/${id}`,
-                                                params: {
-                                                    assetName: asset.name ?? '',
-                                                    assetTag: asset.asset_tag ?? '',
-                                                    statusId: asset.status_label?.id ?? '',
-                                                    statusName: asset.status_label?.name ?? '',
-                                                    statusType: asset.status_label?.status_type ?? '',
-                                                },
-                                            })}
+                                            style={({pressed}) => [styles.button, styles.checkinButton, pressed && styles.buttonPressed]}
+                                            onPress={() => router.push({
+                                            pathname: `/(tabs)/(assets)/checkin/${id}`,
+                                            params: {
+                                                assetName: asset.name ?? '',
+                                                assetTag: asset.asset_tag ?? '',
+                                                assignedToName: asset.assigned_to?.name ?? '',
+                                                statusId: asset.status_label?.id ?? '',
+                                                statusName: asset.status_label?.name ?? '',
+                                            },
+                                        })}
                                         >
-                                            <Text style={styles.buttonText}>{t('mobile.check_out_button')}</Text>
+                                            <Text style={styles.buttonText}>{t('mobile.check_in_button')}</Text>
                                         </Pressable>
-                                        {cannotCheckout && (
-                                            <Text style={styles.undeployableMessage}>
-                                                {t('mobile.undeployable_checkout_message')}
-                                            </Text>
-                                        )}
-                                    </>
-                                </PermissionGate>
-                            </>
-                        )}
-                        <PermissionGate permission={PERMISSIONS.ASSETS_AUDIT}>
-                            <Pressable
-                                style={({pressed}) => [styles.buttonSmall, styles.auditButton, pressed && styles.buttonPressed]}
-                                onPress={() => router.push({
-                                    pathname: '/(authenticated)/audit/confirm',
-                                    params: { asset_id: id },
-                                })}
-                            >
-                                <Text style={styles.buttonSmallText}>{t('general.audit')}</Text>
-                            </Pressable>
-                        </PermissionGate>
+                                    </PermissionGate>
+                                </>
+                            ) : (
+                                <>
+                                    <PermissionGate permission={PERMISSIONS.ASSETS_CHECKOUT}>
+                                        <>
+                                            <Pressable
+                                                disabled={cannotCheckout}
+                                                style={({pressed}) => [
+                                                    styles.button,
+                                                    styles.checkoutButton,
+                                                    pressed && !cannotCheckout && styles.buttonPressed,
+                                                    cannotCheckout && styles.buttonDisabled,
+                                                ]}
+                                                onPress={cannotCheckout ? undefined : () => router.push({
+                                                    pathname: `/(tabs)/(assets)/checkout/${id}`,
+                                                    params: {
+                                                        assetName: asset.name ?? '',
+                                                        assetTag: asset.asset_tag ?? '',
+                                                        statusId: asset.status_label?.id ?? '',
+                                                        statusName: asset.status_label?.name ?? '',
+                                                        statusType: asset.status_label?.status_type ?? '',
+                                                    },
+                                                })}
+                                            >
+                                                <Text style={styles.buttonText}>{t('mobile.check_out_button')}</Text>
+                                            </Pressable>
+                                            {cannotCheckout && (
+                                                <Text style={styles.undeployableMessage}>
+                                                    {t('mobile.undeployable_checkout_message')}
+                                                </Text>
+                                            )}
+                                        </>
+                                    </PermissionGate>
+                                </>
+                            )}
+                            <PermissionGate permission={PERMISSIONS.ASSETS_AUDIT}>
+                                <Pressable
+                                    style={({pressed}) => [styles.buttonSmall, styles.auditButton, pressed && styles.buttonPressed]}
+                                    onPress={() => router.push({
+                                        pathname: '/(authenticated)/audit/confirm',
+                                        params: { asset_id: id },
+                                    })}
+                                >
+                                    <Text style={styles.buttonSmallText}>{t('general.audit')}</Text>
+                                </Pressable>
+                            </PermissionGate>
+                        </View>
                     </View>
-                </View>
+                )}
 
                 {/* Details */}
                 <Section title={t('mobile.section_details')}>

@@ -86,7 +86,17 @@
     "asset": "Asset",
     "accessory": "Accessory",
     "consumable": "Consumable",
-    "item_not_found": "{{item_type}} ID {{id}} does not exist or has been deleted"
+    "generic_model_not_found": "That {{model}} was not found or you do not have permission to access it",
+    "asset_deleted_warning": "This asset has been deleted. You must restore it before you can assign it to someone.",
+    "deleted": "Deleted",
+    "only_deleted": "Only Deleted Assets"
+  },
+  "admin": {
+    "hardware": {
+      "general": {
+        "deleted": "This asset has been deleted."
+      }
+    }
   },
   "table": {
     "load_error_title": "Could not load results"
@@ -113,6 +123,15 @@
     "scan_domain_mismatch_title": "Different Instance",
     "scan_domain_mismatch_message": "This QR code belongs to a different Snipe-IT instance than the one you're signed into.",
     "scan_hint": "Point your camera at a barcode, then tap it to scan",
+    "scan_deleted_tag_match_one": "There is also a deleted asset with this tag.",
+    "scan_deleted_tag_match_other": "There are also {{count}} deleted assets with this tag.",
+    "scan_deleted_serial_match_one": "There is also a deleted asset with this serial.",
+    "scan_deleted_serial_match_other": "There are also {{count}} deleted assets with this serial.",
+    "scan_not_an_asset": "This code isn't an asset, accessory or consumable.",
+    "scan_audit_assets_only": "Only assets can be audited.",
+    "scan_multiple_serial": "More than one asset has the serial {{value}}.",
+    "scan_multiple_tag": "More than one asset has the tag {{value}}.",
+    "scan_search_assets": "Search Assets",
     "serial_number_display": "SN: {{serial}}",
     "serial_number_empty": "SN: N/A",
     "asset_title": "Asset #{{id}}",

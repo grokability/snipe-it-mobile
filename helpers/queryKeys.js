@@ -39,6 +39,13 @@ export const componentKeys = {
     list: (params) => [...componentKeys.lists(), params],
 };
 
+// What a scanned code resolves to. The symbology is part of the key because a 1D barcode and a
+// 2D code holding the same text are looked up differently.
+export const scanKeys = {
+    all: ['scans'],
+    resolution: (symbology, data) => [...scanKeys.all, 'resolution', symbology, data],
+};
+
 // /reports/activity — the Snipe-IT action log
 export const actionLogKeys = {
     all: ['actionLogs'],

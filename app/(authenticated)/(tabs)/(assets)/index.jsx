@@ -7,7 +7,7 @@ import { makeRequest } from "@/helpers/axiosConfig";
 import { assetKeys } from "@/helpers/queryKeys";
 import { useRefreshOnFocus } from "@/hooks/useRefreshOnFocus";
 import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
-import { router, useNavigation } from "expo-router";
+import { router, useLocalSearchParams, useNavigation } from "expo-router";
 import { useColors } from "@/hooks/useThemeColors";
 import { Spacing, BorderRadius, Typography, FontWeight } from "@/constants/sizes";
 import { decode } from "html-entities";
@@ -29,6 +29,8 @@ const EMPTY_FILTERS = {
     location: null,
     company: null,
     model: null,
+    // Not in the filter sheet: set from a scan whose matches are all deleted, shown as a chip
+    deleted: null,
 };
 
 const PAGE_SIZE = 25;
@@ -43,6 +45,7 @@ const buildQuery = ({ offset = 0, search = '', filters = EMPTY_FILTERS }) => {
     if (filters.location) query += `&location_id=${filters.location.id}`;
     if (filters.company) query += `&company_id=${filters.company.id}`;
     if (filters.model) query += `&model_id=${filters.model.id}`;
+    if (filters.deleted) query += '&status=Deleted';
     return query;
 };
 
@@ -57,6 +60,34 @@ export default function AssetsScreen() {
     const { denied: createDenied } = usePermission(PERMISSIONS.ASSETS_CREATE);
 
     const [debouncedSearch, setDebouncedSearch] = useState('');
+    // A scan that found nothing opens the list searching for the scanned value. The header's search
+    // bar may not exist yet when the param arrives. iOS's takes text as soon as it does, so it's
+    // filled when it attaches. Android's is created later, collapsed to an icon, and only takes text
+    // once expanded, so it's filled when it gets focus: autoFocus on creation, or the effect below
+    // once it exists. The params are then cleared, so scanning the same value again searches again.
+    // status=Deleted (as in Snipe-IT's own URL) limits the search to deleted assets.
+    const { search: searchParam, status: statusParam } = useLocalSearchParams();
+    const searchBarRef = useRef(null);
+
+    const fillSearchBarFromParam = useCallback(() => {
+        const searchBar = searchBarRef.current;
+
+        if (!searchParam || !searchBar) {
+            return;
+        }
+
+        searchBar.setText(searchParam);
+        searchBar.blur();
+        router.setParams({ search: undefined, status: undefined });
+    }, [searchParam]);
+
+    const attachSearchBar = useCallback((searchBar) => {
+        searchBarRef.current = searchBar;
+
+        if (Platform.OS === 'ios') {
+            fillSearchBarFromParam();
+        }
+    }, [fillSearchBarFromParam]);
 
     const [filters, setFilters] = useState(EMPTY_FILTERS);
     const filterSheetRef = useRef(null);
@@ -95,6 +126,13 @@ export default function AssetsScreen() {
                 </View>
             ),
             headerSearchBarOptions: {
+                ref: attachSearchBar,
+                autoFocus: Boolean(searchParam),
+                onFocus: () => {
+                    if (Platform.OS === 'android') {
+                        fillSearchBarFromParam();
+                    }
+                },
                 placeholder: t('general.search'),
                 hideWhenScrolling: false,
                 tintColor: colors.primary,
@@ -108,7 +146,21 @@ export default function AssetsScreen() {
                 },
             },
         });
-    }, [navigation, colors.text, colors.primary, t, debouncedSetSearch, activeFilterCount, styles, createDenied]);
+    }, [navigation, colors.text, colors.primary, t, debouncedSetSearch, activeFilterCount, styles, createDenied, attachSearchBar, fillSearchBarFromParam]);
+
+    useEffect(() => {
+        if (!searchParam) {
+            return;
+        }
+
+        debouncedSetSearch.cancel();
+        setDebouncedSearch(searchParam);
+        setFilters((previousFilters) => ({ ...previousFilters, deleted: statusParam === 'Deleted' ? true : null }));
+
+        if (Platform.OS === 'android') {
+            searchBarRef.current?.focus();
+        }
+    }, [searchParam, statusParam, debouncedSetSearch]);
 
     // cancel any pending debounce on unmount so we don't update state after user navigates away
     useEffect(() => () => debouncedSetSearch.cancel(), [debouncedSetSearch]);
@@ -165,16 +217,16 @@ export default function AssetsScreen() {
                     value != null ? (
                         <FilterChip
                             key={key}
-                            label={value.name}
+                            label={key === 'deleted' ? t('general.only_deleted') : value.name}
                             onRemove={() => removeFilter(key)}
                         />
                     ) : null
                 )}
             </ScrollView>
         );
-    }, [filters, activeFilterCount, removeFilter, styles.chipRow]);
+    }, [filters, activeFilterCount, removeFilter, styles.chipRow, t]);
 
-    const Item = ({ id, asset_tag, name, serial, image, checkedOut, status }) => {
+    const Item = ({ id, asset_tag, name, serial, image, checkedOut, status, deleted }) => {
         const [isImageLoading, setIsImageLoading] = useState(true);
 
         return (
@@ -208,6 +260,11 @@ export default function AssetsScreen() {
                 <View style={styles.contentContainer}>
                     <Text style={styles.assetTag}>#{asset_tag}</Text>
                     <Text style={styles.assetName}>{decode(name)}</Text>
+                    {deleted && (
+                        <View style={styles.deletedBadge}>
+                            <Text style={styles.deletedBadgeText}>{t('general.deleted')}</Text>
+                        </View>
+                    )}
                     {checkedOut && (
                         <Text style={styles.checkedOutText}>
                             {t('general.checked_out_to')}<Text style={styles.userName}>{checkedOut.name}</Text>
@@ -251,6 +308,7 @@ export default function AssetsScreen() {
                     onRetry={() => {
                         debouncedSetSearch.cancel();
                         setDebouncedSearch('');
+                        searchBarRef.current?.clearText();
                     }}
                     retryLabel={t('mobile.clear_search')}
                 />
@@ -303,6 +361,7 @@ export default function AssetsScreen() {
                     image={item.image}
                     checkedOut={item.assigned_to}
                     status={item.status_label}
+                    deleted={Boolean(item.deleted_at)}
                 />
                 }
                 keyExtractor={item => item.id}
@@ -405,6 +464,18 @@ const createStyles = (colors) => StyleSheet.create({
     notAvailableText: {
         color: colors.danger,
         fontWeight: FontWeight.medium,
+    },
+    deletedBadge: {
+        alignSelf: 'flex-start',
+        paddingHorizontal: Spacing.sm,
+        paddingVertical: 2,
+        borderRadius: BorderRadius.sm,
+        backgroundColor: colors.danger + '20',
+    },
+    deletedBadgeText: {
+        fontSize: Typography.caption,
+        color: colors.danger,
+        fontWeight: FontWeight.semibold,
     },
     serialText: {
         fontSize: Typography.caption,
