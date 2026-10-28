@@ -100,7 +100,8 @@
     }
   },
   "table": {
-    "load_error_title": "Could not load results"
+    "load_error_title": "Could not load results",
+    "no_matching_records": "No matching records found"
   },
   "mobile": {
     "ok": "OK",

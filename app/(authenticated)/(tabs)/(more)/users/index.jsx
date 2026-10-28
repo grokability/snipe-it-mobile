@@ -1,10 +1,12 @@
 import { Text, StyleSheet, RefreshControl, Platform } from 'react-native';
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useLayoutEffect, useRef, useEffect } from "react";
+import debounce from 'lodash/debounce';
 import { useInfiniteQuery, keepPreviousData } from '@tanstack/react-query';
 import { makeRequest } from "@/helpers/axiosConfig";
 import { userKeys } from "@/helpers/queryKeys";
 import { useRefreshOnFocus } from "@/hooks/useRefreshOnFocus";
 import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
+import { useNavigation } from "expo-router";
 import { useColors } from "@/hooks/useThemeColors";
 import { Spacing, BorderRadius, Typography, FontWeight } from "@/constants/sizes";
 import { decode } from "html-entities";
@@ -17,22 +19,61 @@ import { PERMISSIONS } from "@/permissions/PermissionKeys";
 
 const PAGE_SIZE = 25;
 
-const buildQuery = ({ offset = 0 }) => `limit=${PAGE_SIZE}&offset=${offset}&sort=first_name&order=asc`;
+const buildQuery = ({ offset = 0, search = '' }) => {
+    let query = `limit=${PAGE_SIZE}&offset=${offset}&sort=first_name&order=asc`;
+
+    if (search) {
+        query += `&search=${encodeURIComponent(search)}`;
+    }
+
+    return query;
+};
 
 export default function UsersScreen() {
     const colors = useColors();
     const insets = useSafeAreaInsets();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const { t } = useTranslation();
+    const navigation = useNavigation();
 
     useRedirectIfDenied(PERMISSIONS.USERS_VIEW);
 
-    const queryKey = userKeys.list({});
+    const [debouncedSearch, setDebouncedSearch] = useState('');
+    const searchBarRef = useRef(null);
+
+    const debouncedSetSearch = useMemo(
+        () => debounce((value) => setDebouncedSearch(value), 300),
+        []
+    );
+
+    useLayoutEffect(() => {
+        navigation.setOptions({
+            headerSearchBarOptions: {
+                ref: searchBarRef,
+                placeholder: t('general.search'),
+                hideWhenScrolling: false,
+                tintColor: colors.primary,
+                autoCapitalize: 'none',
+                onChangeText: (e) => {
+                    debouncedSetSearch(e.nativeEvent.text);
+                },
+                onCancelButtonPress: () => {
+                    debouncedSetSearch.cancel();
+                    setDebouncedSearch('');
+                },
+            },
+        });
+    }, [navigation, colors.primary, t, debouncedSetSearch]);
+
+    // cancel any pending debounce on unmount so we don't update state after user navigates away
+    useEffect(() => () => debouncedSetSearch.cancel(), [debouncedSetSearch]);
+
+    const queryKey = userKeys.list({ search: debouncedSearch });
 
     const usersQuery = useInfiniteQuery({
         queryKey,
         queryFn: ({ pageParam }) => makeRequest({
-            url: `/users?${buildQuery({ offset: pageParam })}`,
+            url: `/users?${buildQuery({ offset: pageParam, search: debouncedSearch })}`,
             method: 'get',
             permissionKey: PERMISSIONS.USERS_VIEW,
         }),
@@ -67,7 +108,7 @@ export default function UsersScreen() {
         return <UserListSkeleton />;
     }
 
-    if (data.length === 0) {
+    if (data.length === 0 && !debouncedSearch) {
         return (
             <SafeAreaProvider style={styles.container}>
                 <EmptyState
@@ -75,6 +116,23 @@ export default function UsersScreen() {
                     title={t('mobile.no_results')}
                     message={t('mobile.no_results_message')}
                     onRetry={() => usersQuery.refetch()}
+                />
+            </SafeAreaProvider>
+        );
+    }
+
+    if (data.length === 0) {
+        return (
+            <SafeAreaProvider style={styles.container}>
+                <EmptyState
+                    title={t('table.no_matching_records')}
+                    message={t('mobile.search_no_results_message')}
+                    onRetry={() => {
+                        debouncedSetSearch.cancel();
+                        setDebouncedSearch('');
+                        searchBarRef.current?.clearText();
+                    }}
+                    retryLabel={t('mobile.clear_search')}
                 />
             </SafeAreaProvider>
         );
