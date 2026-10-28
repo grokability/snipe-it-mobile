@@ -66,6 +66,14 @@ export default function MoreLayout() {
                 }}
             />
             <Stack.Screen
+                name="users/index"
+                options={{
+                    title: t('general.users'),
+                    headerTitle: t('general.users'),
+                    headerBackTitle: '',
+                }}
+            />
+            <Stack.Screen
                 name="settings"
                 options={{
                     title: t('general.settings'),

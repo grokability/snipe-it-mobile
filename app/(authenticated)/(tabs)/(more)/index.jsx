@@ -9,6 +9,7 @@ import {PermissionGate} from "@/permissions/PermissionGate";
 import {PERMISSIONS} from "@/permissions/PermissionKeys";
 
 const MENU_ITEMS = [
+    { key: 'users',      icon: 'user',        labelKey: 'general.users',      route: 'users',      permission: PERMISSIONS.USERS_VIEW },
     { key: 'components', icon: 'hdd-o',       labelKey: 'general.components', route: 'components', permission: PERMISSIONS.COMPONENTS_VIEW },
     { key: 'licenses',   icon: 'file-text-o', labelKey: 'general.licenses',   route: 'licenses',   permission: PERMISSIONS.LICENSES_VIEW },
     { key: 'reports',    icon: 'bar-chart',   labelKey: 'general.reports',     route: 'reports',    permission: PERMISSIONS.REPORTS_VIEW },

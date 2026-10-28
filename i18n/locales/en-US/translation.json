@@ -89,9 +89,20 @@
     "generic_model_not_found": "That {{model}} was not found or you do not have permission to access it",
     "asset_deleted_warning": "This asset has been deleted. You must restore it before you can assign it to someone.",
     "deleted": "Deleted",
-    "only_deleted": "Only Deleted Assets"
+    "only_deleted": "Only Deleted Assets",
+    "login_disabled": "Login Disabled",
+    "countable": {
+      "assets_one": "{{count}} Asset",
+      "assets_other": "{{count}} Assets"
+    },
+    "users": "Users"
   },
   "admin": {
+    "users": {
+      "general": {
+        "vip_label": "VIP user"
+      }
+    },
     "hardware": {
       "general": {
         "deleted": "This asset has been deleted."
@@ -99,7 +110,8 @@
     }
   },
   "table": {
-    "load_error_title": "Could not load results"
+    "load_error_title": "Could not load results",
+    "no_matching_records": "No matching records found"
   },
   "mobile": {
     "ok": "OK",

@@ -39,6 +39,12 @@ export const componentKeys = {
     list: (params) => [...componentKeys.lists(), params],
 };
 
+export const userKeys = {
+    all: ['users'],
+    lists: () => [...userKeys.all, 'list'],
+    list: (params) => [...userKeys.lists(), params],
+};
+
 // What a scanned code resolves to. The symbology is part of the key because a 1D barcode and a
 // 2D code holding the same text are looked up differently.
 export const scanKeys = {
