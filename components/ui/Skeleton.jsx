@@ -5,6 +5,8 @@ import {SafeAreaProvider, useSafeAreaInsets} from 'react-native-safe-area-contex
 import {useColors} from '@/hooks/useThemeColors';
 import {Spacing, BorderRadius} from '@/constants/sizes';
 
+const AVATAR_SIZE = 64;
+
 export function Skeleton({width = '100%', height = 16, borderRadius = BorderRadius.sm, style}) {
     const colors = useColors();
     const opacity = useSharedValue(0.3);
@@ -70,7 +72,8 @@ function DetailScreenSkeleton({showQtyBadge = false, subtitleWidth = 100, subtit
 
 // Shared geometry for the entity list screens: a column of cards, each an optional
 // thumbnail beside a stack of text lines. `lines` describes one card's text widths.
-function ListScreenSkeleton({rows = 6, showThumbnail = true, lines}) {
+// `thumbnailShape` is 'rectangle' (item images) or 'circle' (user avatars).
+function ListScreenSkeleton({rows = 6, showThumbnail = true, thumbnailShape = 'rectangle', lines}) {
     const colors = useColors();
     const insets = useSafeAreaInsets();
     const styles = useMemo(() => createStyles(colors), [colors]);
@@ -80,8 +83,11 @@ function ListScreenSkeleton({rows = 6, showThumbnail = true, lines}) {
             <View style={{paddingTop: Platform.OS === 'android' ? insets.top + 56 : 0}}>
                 {Array.from({length: rows}).map((_, rowIndex) => (
                     <View key={rowIndex} style={styles.listCard}>
-                        {showThumbnail && (
+                        {showThumbnail && thumbnailShape === 'rectangle' && (
                             <Skeleton width="25%" height={100} borderRadius={BorderRadius.sm} />
+                        )}
+                        {showThumbnail && thumbnailShape === 'circle' && (
+                            <Skeleton width={AVATAR_SIZE} height={AVATAR_SIZE} borderRadius={AVATAR_SIZE / 2} />
                         )}
                         <View style={styles.listCardContent}>
                             {lines.map((line, lineIndex) => (
@@ -103,6 +109,20 @@ export function AssetListSkeleton() {
                 {width: '75%', height: 20},
                 {width: '55%', height: 14},
                 {width: 90, height: 14},
+            ]}
+        />
+    );
+}
+
+export function UserListSkeleton() {
+    return (
+        <ListScreenSkeleton
+            thumbnailShape="circle"
+            lines={[
+                {width: '60%', height: 20},
+                {width: '45%', height: 14},
+                {width: '55%', height: 14},
+                {width: '70%', height: 12},
             ]}
         />
     );
