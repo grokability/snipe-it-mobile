@@ -89,7 +89,8 @@
     "generic_model_not_found": "That {{model}} was not found or you do not have permission to access it",
     "asset_deleted_warning": "This asset has been deleted. You must restore it before you can assign it to someone.",
     "deleted": "Deleted",
-    "only_deleted": "Only Deleted Assets"
+    "only_deleted": "Only Deleted Assets",
+    "users": "Users"
   },
   "admin": {
     "hardware": {
