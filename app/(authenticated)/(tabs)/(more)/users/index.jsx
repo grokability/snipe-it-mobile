@@ -1,4 +1,5 @@
-import { Text, StyleSheet, RefreshControl, Platform } from 'react-native';
+import { View, Text, StyleSheet, RefreshControl, Platform } from 'react-native';
+import { Image } from 'expo-image';
 import { useState, useCallback, useMemo, useLayoutEffect, useRef, useEffect } from "react";
 import debounce from 'lodash/debounce';
 import { useInfiniteQuery, keepPreviousData } from '@tanstack/react-query';
@@ -12,12 +13,14 @@ import { Spacing, BorderRadius, Typography, FontWeight } from "@/constants/sizes
 import { decode } from "html-entities";
 import { FlashList } from "@shopify/flash-list";
 import { useTranslation } from "react-i18next";
+import { Ionicons } from '@expo/vector-icons';
 import EmptyState from "@/components/ui/EmptyState";
 import { UserListSkeleton } from "@/components/ui/Skeleton";
 import { useRedirectIfDenied } from "@/permissions/PermissionContext";
 import { PERMISSIONS } from "@/permissions/PermissionKeys";
 
 const PAGE_SIZE = 25;
+const AVATAR_SIZE = 64;
 
 const buildQuery = ({ offset = 0, search = '' }) => {
     let query = `limit=${PAGE_SIZE}&offset=${offset}&sort=first_name&order=asc`;
@@ -104,6 +107,54 @@ export default function UsersScreen() {
         }
     }, [usersQuery]);
 
+    const Item = ({ user }) => {
+        const placeDetails = [user.department?.name, user.location?.name]
+            .filter((placeName) => Boolean(placeName))
+            .map((placeName) => decode(placeName))
+            .join(' · ');
+
+        return (
+            <View style={styles.itemContainer}>
+                {user.avatar
+                    ? (
+                        <Image
+                            style={styles.avatar}
+                            source={{ uri: user.avatar }}
+                            transition={200}
+                            cachePolicy="memory-disk"
+                        />
+                    )
+                    : <Ionicons name="person-circle-outline" size={AVATAR_SIZE} color={colors.textSecondary} />
+                }
+                <View style={styles.contentContainer}>
+                    <Text style={styles.userName}>{decode(user.name)}</Text>
+                    {Boolean(user.jobtitle) && (
+                        <Text style={styles.jobTitle}>{decode(user.jobtitle)}</Text>
+                    )}
+                    {Boolean(user.username || user.email) && (
+                        <Text style={styles.metaText}>{decode(user.username || user.email)}</Text>
+                    )}
+                    {placeDetails !== '' && (
+                        <Text style={styles.metaText}>{placeDetails}</Text>
+                    )}
+                    <View style={styles.footer}>
+                        <Text style={styles.assetsCount}>{t('general.countable.assets', { count: user.assets_count })}</Text>
+                        {user.vip && (
+                            <View style={[styles.badge, styles.vipBadge]}>
+                                <Text style={[styles.badgeText, styles.vipBadgeText]}>{t('admin.users.general.vip_label')}</Text>
+                            </View>
+                        )}
+                        {!user.activated && (
+                            <View style={[styles.badge, styles.loginDisabledBadge]}>
+                                <Text style={[styles.badgeText, styles.loginDisabledBadgeText]}>{t('general.login_disabled')}</Text>
+                            </View>
+                        )}
+                    </View>
+                </View>
+            </View>
+        );
+    };
+
     if (usersQuery.isPending) {
         return <UserListSkeleton />;
     }
@@ -150,7 +201,7 @@ export default function UsersScreen() {
                 }}
                 style={styles.flatlist}
                 data={data}
-                renderItem={({ item }) => <Text style={styles.itemContainer}>{decode(item.name)}</Text>}
+                renderItem={({ item }) => <Item user={item} />}
                 keyExtractor={item => item.id}
                 refreshControl={<RefreshControl refreshing={isManualRefreshing} onRefresh={onManualRefresh} />}
             />
@@ -174,9 +225,69 @@ const createStyles = (colors) => StyleSheet.create({
         marginVertical: Spacing.sm,
         backgroundColor: colors.backgroundTertiary,
         borderRadius: BorderRadius.md,
-        overflow: 'hidden',
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: Spacing.lg,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+        elevation: 3,
+    },
+    avatar: {
+        width: AVATAR_SIZE,
+        height: AVATAR_SIZE,
+        borderRadius: AVATAR_SIZE / 2,
+        backgroundColor: colors.backgroundSecondary,
+    },
+    contentContainer: {
+        flex: 1,
+        gap: 4,
+    },
+    userName: {
         fontSize: Typography.bodyLarge,
         fontWeight: FontWeight.semibold,
         color: colors.text,
+    },
+    jobTitle: {
+        fontSize: Typography.body,
+        color: colors.textSecondary,
+    },
+    metaText: {
+        fontSize: Typography.caption,
+        color: colors.textSecondary,
+    },
+    footer: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        alignItems: 'center',
+        gap: Spacing.sm,
+        marginTop: 2,
+    },
+    assetsCount: {
+        fontSize: Typography.caption,
+        color: colors.primary,
+        fontWeight: FontWeight.medium,
+    },
+    badge: {
+        paddingHorizontal: Spacing.sm,
+        paddingVertical: 2,
+        borderRadius: BorderRadius.sm,
+    },
+    badgeText: {
+        fontSize: Typography.caption,
+        fontWeight: FontWeight.semibold,
+    },
+    vipBadge: {
+        backgroundColor: colors.primary + '20',
+    },
+    vipBadgeText: {
+        color: colors.primary,
+    },
+    loginDisabledBadge: {
+        backgroundColor: colors.danger + '20',
+    },
+    loginDisabledBadgeText: {
+        color: colors.danger,
     },
 });

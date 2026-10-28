@@ -90,9 +90,19 @@
     "asset_deleted_warning": "This asset has been deleted. You must restore it before you can assign it to someone.",
     "deleted": "Deleted",
     "only_deleted": "Only Deleted Assets",
+    "login_disabled": "Login Disabled",
+    "countable": {
+      "assets_one": "{{count}} Asset",
+      "assets_other": "{{count}} Assets"
+    },
     "users": "Users"
   },
   "admin": {
+    "users": {
+      "general": {
+        "vip_label": "VIP user"
+      }
+    },
     "hardware": {
       "general": {
         "deleted": "This asset has been deleted."
