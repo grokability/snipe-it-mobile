@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, RefreshControl, Platform } from 'react-native';
+import { View, Text, StyleSheet, RefreshControl, Platform, Pressable } from 'react-native';
 import { Image } from 'expo-image';
 import { useState, useCallback, useMemo, useLayoutEffect, useRef, useEffect } from "react";
 import debounce from 'lodash/debounce';
@@ -7,7 +7,7 @@ import { makeRequest } from "@/helpers/axiosConfig";
 import { userKeys } from "@/helpers/queryKeys";
 import { useRefreshOnFocus } from "@/hooks/useRefreshOnFocus";
 import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
-import { useNavigation } from "expo-router";
+import { router, useNavigation } from "expo-router";
 import { useColors } from "@/hooks/useThemeColors";
 import { Spacing, BorderRadius, Typography, FontWeight } from "@/constants/sizes";
 import { decode } from "html-entities";
@@ -114,7 +114,13 @@ export default function UsersScreen() {
             .join(' · ');
 
         return (
-            <View style={styles.itemContainer}>
+            <Pressable
+                onPress={() => router.push(`/(more)/users/${user.id}`)}
+                style={({ pressed }) => [
+                    styles.itemContainer,
+                    pressed && styles.itemPressed
+                ]}
+            >
                 {user.avatar
                     ? (
                         <Image
@@ -151,7 +157,7 @@ export default function UsersScreen() {
                         )}
                     </View>
                 </View>
-            </View>
+            </Pressable>
         );
     };
 
@@ -233,6 +239,10 @@ const createStyles = (colors) => StyleSheet.create({
         shadowOpacity: 0.1,
         shadowRadius: 8,
         elevation: 3,
+    },
+    itemPressed: {
+        backgroundColor: colors.backgroundSecondary,
+        transform: [{ scale: 0.995 }],
     },
     avatar: {
         width: AVATAR_SIZE,
