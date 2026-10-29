@@ -6,6 +6,7 @@ import {useColors} from '@/hooks/useThemeColors';
 import {Spacing, BorderRadius} from '@/constants/sizes';
 
 const AVATAR_SIZE = 64;
+const DETAIL_AVATAR_SIZE = 120;
 
 export function Skeleton({width = '100%', height = 16, borderRadius = BorderRadius.sm, style}) {
     const colors = useColors();
@@ -44,7 +45,8 @@ function SkeletonSection({titleWidth = 120, rows}) {
 
 // Shared geometry for the entity detail screens: image, title block, then one
 // SkeletonSection per Section the real screen renders.
-function DetailScreenSkeleton({showQtyBadge = false, subtitleWidth = 100, subtitleHeight = 16, sections}) {
+// `imageShape` is 'rectangle' (item images) or 'circle' (user avatars).
+function DetailScreenSkeleton({imageShape = 'rectangle', showQtyBadge = false, subtitleWidth = 100, subtitleHeight = 16, sections}) {
     const colors = useColors();
     const insets = useSafeAreaInsets();
     const styles = useMemo(() => createStyles(colors), [colors]);
@@ -52,9 +54,16 @@ function DetailScreenSkeleton({showQtyBadge = false, subtitleWidth = 100, subtit
     return (
         <SafeAreaProvider>
             <View style={[styles.container, {paddingTop: insets.top + 44}]}>
-                <View style={styles.imageContainer}>
-                    <Skeleton width={250} height={250} borderRadius={BorderRadius.md} />
-                </View>
+                {imageShape === 'rectangle' && (
+                    <View style={styles.imageContainer}>
+                        <Skeleton width={250} height={250} borderRadius={BorderRadius.md} />
+                    </View>
+                )}
+                {imageShape === 'circle' && (
+                    <View style={styles.avatarContainer}>
+                        <Skeleton width={DETAIL_AVATAR_SIZE} height={DETAIL_AVATAR_SIZE} borderRadius={DETAIL_AVATAR_SIZE / 2} />
+                    </View>
+                )}
 
                 <View style={styles.headerContainer}>
                     <Skeleton width={180} height={24} />
@@ -155,6 +164,20 @@ export function AccessoryDetailSkeleton() {
     );
 }
 
+export function UserDetailSkeleton() {
+    return (
+        <DetailScreenSkeleton
+            imageShape="circle"
+            subtitleWidth={120}
+            sections={[
+                {titleWidth: 90, rows: 3},
+                {titleWidth: 80, rows: 5},
+                {titleWidth: 110, rows: 4},
+            ]}
+        />
+    );
+}
+
 export function ConsumableDetailSkeleton() {
     return (
         <DetailScreenSkeleton
@@ -182,6 +205,9 @@ const createStyles = (colors) => StyleSheet.create({
         backgroundColor: colors.backgroundSecondary,
         borderRadius: BorderRadius.md,
         padding: Spacing.lg,
+    },
+    avatarContainer: {
+        alignItems: 'center',
     },
     headerContainer: {
         alignItems: 'center',
