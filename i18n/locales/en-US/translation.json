@@ -124,6 +124,9 @@
         "display_name": "Display Name",
         "employee_num": "Employee No.",
         "manager": "Manager"
+      },
+      "message": {
+        "user_has_no_assets_assigned": "No assets currently assigned to user."
       }
     },
     "hardware": {

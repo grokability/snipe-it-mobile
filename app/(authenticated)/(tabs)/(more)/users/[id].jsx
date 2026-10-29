@@ -2,7 +2,7 @@ import { View, Text, StyleSheet, ScrollView, RefreshControl, Platform } from 're
 import { Image } from 'expo-image';
 import { useState, useMemo } from "react";
 import { useLocalSearchParams } from "expo-router";
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { makeRequest } from "@/helpers/axiosConfig";
 import { userKeys } from "@/helpers/queryKeys";
 import { useRefreshOnFocus } from "@/hooks/useRefreshOnFocus";
@@ -17,8 +17,10 @@ import EmptyState from "@/components/ui/EmptyState";
 import UserBadge from "@/components/users/UserBadge";
 import { Section } from "@/components/ui/Section";
 import { DetailRow } from "@/components/ui/DetailRow";
+import { SegmentedPicker } from "@/components/ui/SegmentedPicker";
+import UserAssets from "@/components/users/UserAssets";
 import { UserDetailSkeleton } from "@/components/ui/Skeleton";
-import { useRedirectIfDenied } from "@/permissions/PermissionContext";
+import { usePermission, useRedirectIfDenied } from "@/permissions/PermissionContext";
 import { PERMISSIONS } from "@/permissions/PermissionKeys";
 
 const AVATAR_SIZE = 120;
@@ -93,6 +95,13 @@ export default function UserScreen() {
 
     useRedirectIfDenied(PERMISSIONS.USERS_VIEW);
 
+    const queryClient = useQueryClient();
+    const { denied: assetsDenied } = usePermission(PERMISSIONS.ASSETS_VIEW);
+    const { denied: licensesDenied } = usePermission(PERMISSIONS.LICENSES_VIEW);
+    const { denied: accessoriesDenied } = usePermission(PERMISSIONS.ACCESSORIES_VIEW);
+    const { denied: consumablesDenied } = usePermission(PERMISSIONS.CONSUMABLES_VIEW);
+    const [selectedItemType, setSelectedItemType] = useState(null);
+
     const userQuery = useQuery({
         queryKey: userKeys.detail(id),
         queryFn: () => makeRequest({ url: `/users/${id}`, method: 'get', permissionKey: PERMISSIONS.USERS_VIEW }),
@@ -103,7 +112,8 @@ export default function UserScreen() {
     const [isManualRefreshing, setIsManualRefreshing] = useState(false);
     const onManualRefresh = async () => {
         setIsManualRefreshing(true);
-        await userQuery.refetch();
+        // Prefix match: also refetches the assigned-item lists keyed under this user
+        await queryClient.refetchQueries({ queryKey: userKeys.detail(id), type: 'active' });
         setIsManualRefreshing(false);
     };
 
@@ -141,6 +151,19 @@ export default function UserScreen() {
     const companyNames = hasManyCompanies
         ? user.companies.map((company) => decode(company.name)).join(', ')
         : nestedName(user.company);
+
+    // One segment per item type the caller may view, as the web user page's tabs
+    const itemTypeOptions = [
+        { value: 'assets', denied: assetsDenied, label: t('general.assets'), count: user.assets_count },
+        { value: 'licenses', denied: licensesDenied, label: t('general.licenses'), count: user.licenses_count },
+        { value: 'accessories', denied: accessoriesDenied, label: t('general.accessories'), count: user.accessories_count },
+        { value: 'consumables', denied: consumablesDenied, label: t('general.consumables'), count: user.consumables_count },
+    ]
+        .filter((itemType) => !itemType.denied)
+        .map((itemType) => ({ value: itemType.value, label: `${itemType.label} (${itemType.count ?? 0})` }));
+    const activeItemType = itemTypeOptions.some((option) => option.value === selectedItemType)
+        ? selectedItemType
+        : itemTypeOptions[0]?.value;
 
     const address = formatAddress(user);
     const hasContactDetails = Boolean(user.email || user.phone || user.mobile || user.website) || address !== '';
@@ -214,6 +237,18 @@ export default function UserScreen() {
                             />
                         )}
                     </Section>
+                )}
+
+                {/* Assigned items */}
+                {itemTypeOptions.length > 0 && (
+                    <View style={styles.assignedItems}>
+                        <SegmentedPicker
+                            options={itemTypeOptions}
+                            selectedValue={activeItemType}
+                            onValueChange={setSelectedItemType}
+                        />
+                        {activeItemType === 'assets' && <UserAssets userId={id} />}
+                    </View>
                 )}
 
                 {/* Details */}
@@ -290,6 +325,9 @@ const createStyles = (colors) => StyleSheet.create({
         fontSize: Typography.body,
         color: colors.textSecondary,
         textAlign: 'center',
+    },
+    assignedItems: {
+        gap: Spacing.sm,
     },
     pastEndDate: {
         color: colors.danger,
