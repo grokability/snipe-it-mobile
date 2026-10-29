@@ -161,7 +161,7 @@ export default function EditAccessoryScreen() {
             });
             queryClient.invalidateQueries({ queryKey: accessoryKeys.detail(id) }).catch(() => {});
             queryClient.invalidateQueries({ queryKey: accessoryKeys.lists() }).catch(() => {});
-            router.dismissTo(`/(tabs)/(accessories)/${id}`);
+            router.dismissTo(`/accessories/${id}`);
         },
         onError: (error) => {
             if (error instanceof PermissionDeniedError) return;

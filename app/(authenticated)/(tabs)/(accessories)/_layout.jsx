@@ -27,28 +27,28 @@ export default function AccessoriesLayout() {
                 }}
             />
             <Stack.Screen
-                name="[id]"
+                name="accessories/[id]"
                 options={{
                     title: t('mobile.screen_accessory_details'),
                     headerBackTitle: '',
                 }}
             />
             <Stack.Screen
-                name="checkout/[id]"
+                name="accessories/checkout/[id]"
                 options={{
                     title: t('mobile.screen_checkout'),
                     headerBackTitle: '',
                 }}
             />
             <Stack.Screen
-                name="checkin/[id]"
+                name="accessories/checkin/[id]"
                 options={{
                     title: t('mobile.screen_checkin'),
                     headerBackTitle: '',
                 }}
             />
             <Stack.Screen
-                name="edit/[id]"
+                name="accessories/edit/[id]"
                 options={{
                     title: t('mobile.screen_edit_accessory'),
                     headerBackTitle: '',

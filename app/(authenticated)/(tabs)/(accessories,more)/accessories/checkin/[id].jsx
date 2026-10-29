@@ -63,7 +63,7 @@ export default function AccessoryCheckinScreen() {
             });
             queryClient.invalidateQueries({ queryKey: accessoryKeys.detail(id) }).catch(() => {});
             queryClient.invalidateQueries({ queryKey: accessoryKeys.lists() }).catch(() => {});
-            router.dismissTo(`/(tabs)/(accessories)/${id}`);
+            router.dismissTo(`/accessories/${id}`);
         },
         onError: (err) => {
             console.error(err);

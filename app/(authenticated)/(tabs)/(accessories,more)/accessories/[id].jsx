@@ -59,7 +59,7 @@ export default function AccessoryScreen() {
             headerRight: () => (
                 <View style={styles.headerButtonGroup}>
                     {!editDenied && !accessoryNotFound && (
-                        <Pressable onPress={() => router.push(`/(tabs)/(accessories)/edit/${id}`)} hitSlop={4}>
+                        <Pressable onPress={() => router.push(`/accessories/edit/${id}`)} hitSlop={4}>
                             <Ionicons name="pencil" size={22} color={colors.text} />
                         </Pressable>
                     )}
@@ -128,7 +128,7 @@ export default function AccessoryScreen() {
                     {item.user_can_checkout && (
                         <Pressable
                             style={({pressed}) => [styles.checkoutButton, pressed && styles.buttonPressed]}
-                            onPress={() => router.push(`/(tabs)/(accessories)/checkout/${id}`)}
+                            onPress={() => router.push(`/accessories/checkout/${id}`)}
                         >
                             <Text style={styles.checkoutButtonText}>{t('mobile.check_out_button')}</Text>
                         </Pressable>
@@ -152,7 +152,7 @@ export default function AccessoryScreen() {
                                     <Pressable
                                         style={({pressed}) => [styles.checkinButton, pressed && styles.buttonPressed]}
                                         onPress={() => router.push({
-                                            pathname: `/(tabs)/(accessories)/checkin/${id}`,
+                                            pathname: `/accessories/checkin/${id}`,
                                             params: {
                                                 checkoutRecordId: record.id,
                                                 assignedToName: record.assigned_to?.name ?? '',
