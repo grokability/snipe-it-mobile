@@ -299,8 +299,8 @@ export default function AssetList({ assignedUserId = null }) {
             <SafeAreaProvider style={styles.container}>
                 <EmptyState
                     icon="file-tray-outline"
-                    title={t('mobile.no_results')}
-                    message={t('mobile.no_results_message')}
+                    title={assignedUserId ? t('admin.users.message.user_has_no_assets_assigned') : t('mobile.no_results')}
+                    message={assignedUserId ? null : t('mobile.no_results_message')}
                     onRetry={() => assetsQuery.refetch()}
                 />
             </SafeAreaProvider>
