@@ -28,35 +28,35 @@ export default function AssetsLayout() {
                     }}
                 />
                 <Stack.Screen
-                    name="[id]"
+                    name="assets/[id]"
                     options={{
                         title: t('mobile.screen_asset_details'),
                         headerBackTitle: '',
                     }}
                 />
                 <Stack.Screen
-                    name="checkout/[id]"
+                    name="assets/checkout/[id]"
                     options={{
                         title: t('mobile.screen_checkout'),
                         headerBackTitle: '',
                     }}
                     />
                 <Stack.Screen
-                    name="checkin/[id]"
+                    name="assets/checkin/[id]"
                     options={{
                         title: t('mobile.screen_checkin'),
                         headerBackTitle: '',
                     }}
                     />
                 <Stack.Screen
-                    name="edit/[id]"
+                    name="assets/edit/[id]"
                     options={{
                         title: t('mobile.screen_edit_asset'),
                         headerBackTitle: '',
                     }}
                     />
                 <Stack.Screen
-                    name="create"
+                    name="assets/create"
                     options={{
                         title: t('mobile.screen_create_asset'),
                         headerBackTitle: '',

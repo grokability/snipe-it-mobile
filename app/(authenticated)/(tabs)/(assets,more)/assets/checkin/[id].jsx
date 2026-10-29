@@ -69,7 +69,7 @@ export default function CheckinScreen() {
             });
             queryClient.invalidateQueries({ queryKey: assetKeys.detail(id) }).catch(() => {});
             queryClient.invalidateQueries({ queryKey: assetKeys.lists() }).catch(() => {});
-            router.dismissTo(`/(tabs)/(assets)/${id}`);
+            router.dismissTo(`/assets/${id}`);
         },
         onError: (err) => {
             console.error(err);

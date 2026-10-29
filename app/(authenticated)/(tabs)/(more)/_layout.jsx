@@ -89,6 +89,42 @@ export default function MoreLayout() {
                     headerBackTitle: '',
                 }}
             />
+            {/* Shared with the Assets tab through (assets,more), so items opened from here stay in this stack */}
+            <Stack.Screen
+                name="assets/[id]"
+                options={{
+                    title: t('mobile.screen_asset_details'),
+                    headerBackTitle: '',
+                }}
+            />
+            <Stack.Screen
+                name="assets/checkout/[id]"
+                options={{
+                    title: t('mobile.screen_checkout'),
+                    headerBackTitle: '',
+                }}
+            />
+            <Stack.Screen
+                name="assets/checkin/[id]"
+                options={{
+                    title: t('mobile.screen_checkin'),
+                    headerBackTitle: '',
+                }}
+            />
+            <Stack.Screen
+                name="assets/edit/[id]"
+                options={{
+                    title: t('mobile.screen_edit_asset'),
+                    headerBackTitle: '',
+                }}
+            />
+            <Stack.Screen
+                name="assets/create"
+                options={{
+                    title: t('mobile.screen_create_asset'),
+                    headerBackTitle: '',
+                }}
+            />
             <Stack.Screen
                 name="settings"
                 options={{

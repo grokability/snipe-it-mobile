@@ -1,5 +1,4 @@
-import React, {useContext, useEffect, useState, useMemo, useRef} from 'react';
-import {decode} from "html-entities";
+import React, {useContext, useState, useEffect, useMemo, useRef} from 'react';
 import {
     ActivityIndicator,
     KeyboardAvoidingView,
@@ -10,12 +9,10 @@ import {
     Text,
     View,
 } from 'react-native';
-import {router, useLocalSearchParams} from "expo-router";
-import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
+import {router} from "expo-router";
 import {makeRequest} from "@/helpers/axiosConfig";
 import {PermissionDeniedError} from "@/helpers/errors";
 import {PERMISSIONS} from "@/permissions/PermissionKeys";
-import {assetKeys, customFieldKeys} from "@/helpers/queryKeys";
 import {PermissionGate} from '@/permissions/PermissionGate';
 import {AuthContext} from "@/context/AuthProvider";
 import {SafeAreaProvider, useSafeAreaInsets} from "react-native-safe-area-context";
@@ -23,6 +20,7 @@ import {useColors} from "@/hooks/useThemeColors";
 import {Spacing, BorderRadius, Typography, FontWeight} from "@/constants/sizes";
 import {useTranslation} from "react-i18next";
 import * as Burnt from 'burnt';
+import {decode} from 'html-entities';
 import SelectStatusBottomSheet from "@/components/bottomSheets/SelectStatusBottomSheet";
 import SelectModelBottomSheet from "@/components/bottomSheets/SelectModelBottomSheet";
 import SelectCompanyBottomSheet from "@/components/bottomSheets/SelectCompanyBottomSheet";
@@ -38,24 +36,15 @@ import {FormTextInput} from "@/components/forms/FormTextInput";
 import {SelectorButton} from "@/components/forms/SelectorButton";
 import ImagePicker from "@/components/forms/ImagePicker";
 
-// Parse "YYYY-MM-DD" as local date to avoid UTC timezone shift
-// (dates without times were shifting before this)
-function parseLocalDate(dateStr) {
-    const parts = String(dateStr).split('-');
-    if (parts.length === 3) {
-        return new Date(parts[0], parts[1] - 1, parts[2]);
-    }
-    return new Date(dateStr);
-}
-
-export default function EditAssetScreen() {
+export default function CreateAssetScreen() {
     const colors = useColors();
     const insets = useSafeAreaInsets();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const { t } = useTranslation();
 
-    const { id } = useLocalSearchParams();
-    const queryClient = useQueryClient();
+    const [loadingFields, setLoadingFields] = useState(false);
+    const [submitting, setSubmitting] = useState(false);
+    const { user } = useContext(AuthContext);
 
     // Text fields
     const [name, setName] = useState('');
@@ -95,88 +84,49 @@ export default function EditAssetScreen() {
     const supplierRef = useRef(null);
     const rtdLocationRef = useRef(null);
 
-    const assetQuery = useQuery({
-        queryKey: assetKeys.detail(id),
-        queryFn: () => makeRequest({ url: `/hardware/${id}`, method: 'get', permissionKey: PERMISSIONS.ASSETS_VIEW }),
-    });
-
-    const fieldsQuery = useQuery({
-        queryKey: customFieldKeys.all,
-        queryFn: () => makeRequest({ url: '/fields', method: 'get', permissionKey: PERMISSIONS.CUSTOMFIELDS_VIEW }),
-        staleTime: Infinity,
-    });
-
-    const populatedForIdRef = useRef(null);
-
-    const populateFields = (asset, fieldDefs = {}) => {
-        setName(asset.name ? decode(asset.name) : '');
-        setAssetTag(asset.asset_tag ? decode(asset.asset_tag) : '');
-        setSerial(asset.serial ? decode(asset.serial) : '');
-        setOrderNumber(asset.order_number ? decode(asset.order_number) : '');
-        setPurchaseCost(asset.purchase_cost || '');
-        setWarrantyMonths(asset.warranty_months ? String(asset.warranty_months) : '');
-        setNotes(asset.notes ? decode(asset.notes) : '');
-
-        if (asset.status_label) {
-            setSelectedStatus({ id: asset.status_label.id, name: decode(asset.status_label.name), value: asset.status_label.id });
-        }
-        if (asset.model) {
-            setSelectedModel({ id: asset.model.id, name: decode(asset.model.name) });
-        }
-        if (asset.company) {
-            setSelectedCompany({ id: asset.company.id, name: decode(asset.company.name) });
-        }
-        if (asset.supplier) {
-            setSelectedSupplier({ id: asset.supplier.id, name: decode(asset.supplier.name) });
-        }
-        if (asset.rtd_location) {
-            setSelectedRtdLocation({ id: asset.rtd_location.id, name: decode(asset.rtd_location.name) });
-        }
-
-        if (asset.purchase_date?.date) {
-            setPurchaseDate(parseLocalDate(asset.purchase_date.date));
-        }
-        if (asset.next_audit_date?.date) {
-            setNextAuditDate(parseLocalDate(asset.next_audit_date.date));
-        }
-        if (asset.expected_checkin?.date) {
-            setExpectedCheckin(parseLocalDate(asset.expected_checkin.date));
-        }
-
-        setRequestable(!!asset.requestable);
-        setByod(!!asset.byod);
-
-        // Custom fields
-        if (asset.custom_fields) {
-            const initialCustomFieldValues = {};
-            Object.entries(asset.custom_fields).forEach(([key, field]) => {
-                const options = fieldDefs[field.field] || null;
-                initialCustomFieldValues[key] = {
-                    value: field.value ? decode(field.value) : '',
-                    field_format: field.field_format,
-                    element: field.element,
-                    field_values: options,
-                    db_column: field.field,
-                    name: key,
-                };
-            });
-            setCustomFieldValues(initialCustomFieldValues);
-        }
-    };
-
     useEffect(() => {
-        if (!assetQuery.data || !fieldsQuery.isFetched) return;
-        if (populatedForIdRef.current === id) return;
-        populatedForIdRef.current = id;
-
-        const fieldDefs = {};
-        if (fieldsQuery.data?.rows) {
-            fieldsQuery.data.rows.forEach(fieldDefinition => {
-                fieldDefs[fieldDefinition.db_column_name] = fieldDefinition.field_values_array;
-            });
+        if (!selectedModel) {
+            setCustomFieldValues({});
+            return;
         }
-        populateFields(assetQuery.data, fieldDefs);
-    }, [assetQuery.data, fieldsQuery.data, fieldsQuery.isFetched, id]);
+
+        const fieldsetId = selectedModel.fieldset?.id;
+        if (!fieldsetId) {
+            setCustomFieldValues({});
+            return;
+        }
+
+        setLoadingFields(true);
+        console.log(`Fetching custom fields for fieldset ID: ${fieldsetId}`);
+        makeRequest({ url: `/fieldsets/${fieldsetId}/fields`, method: 'POST', permissionKey: PERMISSIONS.CUSTOMFIELDS_VIEW })
+            .then((response) => {
+                const rows = response?.rows;
+                if (rows) {
+                    const mapped = {};
+                    rows.forEach(field => {
+                        const key = field.name;
+                        mapped[key] = {
+                            value: '',
+                            field_format: field.format,
+                            element: field.element,
+                            field_values: field.field_values_array || null,
+                            db_column: field.db_column_name,
+                            name: key,
+                        };
+                    });
+                    setCustomFieldValues(mapped);
+                } else {
+                    setCustomFieldValues({});
+                }
+            })
+            .catch(error => {
+                console.error(error);
+                setCustomFieldValues({});
+            })
+            .finally(() => {
+                setLoadingFields(false);
+            });
+    }, [selectedModel]);
 
     const formatDateForApi = (date) => {
         if (!date) return undefined;
@@ -186,62 +136,35 @@ export default function EditAssetScreen() {
         return `${year}-${month}-${day}`;
     };
 
-    const editMutation = useMutation({
-        mutationFn: (data) => makeRequest({
-            url: `/hardware/${id}`,
-            method: 'PUT',
-            data,
-            permissionKey: PERMISSIONS.ASSETS_EDIT,
-        }),
-        onSuccess: (response) => {
-            if (response.status === 'error') {
-                Burnt.alert({
-                    title: t('general.error'),
-                    preset: "error",
-                    message: response.messages ? Object.values(response.messages).flat().join('\n') : t('mobile.edit_failed'),
-                    duration: 4,
-                });
-                return;
-            }
-            Burnt.alert({
-                title: t('general.notification_success'),
-                preset: "heart",
-                message: t('mobile.edit_success'),
-                duration: 2,
-            });
-            queryClient.invalidateQueries({ queryKey: assetKeys.detail(id) }).catch(() => {});
-            queryClient.invalidateQueries({ queryKey: assetKeys.lists() }).catch(() => {});
-            router.dismissTo(`/(tabs)/(assets)/${id}`);
-        },
-        onError: (error) => {
-            if (error instanceof PermissionDeniedError) return;
-            console.error(error);
-            Burnt.alert({
-                title: t('general.error'),
-                preset: "error",
-                message: t('mobile.edit_failed'),
-                duration: 4,
-            });
-        },
-    });
-
     const handleSubmit = () => {
-        if (!assetTag.trim()) {
+        if (!selectedStatus) {
             Burnt.alert({
                 title: t('general.error'),
                 preset: "error",
-                message: t('mobile.asset_tag_required'),
+                message: t('mobile.status_required'),
                 duration: 2,
             });
             return;
         }
 
-        const data = {
+        if (!selectedModel) {
+            Burnt.alert({
+                title: t('general.error'),
+                preset: "error",
+                message: t('mobile.model_required'),
+                duration: 2,
+            });
+            return;
+        }
+
+        setSubmitting(true);
+
+        const fields = {
             name: name || null,
-            asset_tag: assetTag,
+            asset_tag: assetTag || null,
             serial: serial || null,
             order_number: orderNumber || null,
-            purchase_cost: purchaseCost.replace(/,/g, '') || null,
+            purchase_cost: purchaseCost || null,
             warranty_months: warrantyMonths ? parseInt(warrantyMonths, 10) : null,
             notes: notes || null,
             status_id: selectedStatus?.id || selectedStatus?.value,
@@ -256,18 +179,54 @@ export default function EditAssetScreen() {
             byod: byod ? 1 : 0,
         };
 
-        if (image?.dataUri) {
-            data.image = image.dataUri;
-        }
-
         // Custom fields
         Object.values(customFieldValues).forEach((customField) => {
             if (customField.db_column) {
-                data[customField.db_column] = customField.value;
+                fields[customField.db_column] = customField.value;
             }
         });
 
-        editMutation.mutate(data);
+        if (image?.dataUri) {
+            fields.image = image.dataUri;
+        }
+
+        makeRequest({
+            url: '/hardware',
+            method: 'POST',
+            data: fields,
+            permissionKey: PERMISSIONS.ASSETS_CREATE,
+        })
+            .then(response => {
+                if (response.status === 'error') {
+                    Burnt.alert({
+                        title: t('general.error'),
+                        preset: "error",
+                        message: response.messages ? Object.values(response.messages).flat().join('\n') : t('mobile.create_failed'),
+                        duration: 4,
+                    });
+                    return;
+                }
+                Burnt.alert({
+                    title: t('general.notification_success'),
+                    preset: "heart",
+                    message: t('mobile.create_success'),
+                    duration: 2,
+                });
+                router.dismissTo(`/assets/${response.payload.id}`);
+            })
+            .catch(error => {
+                if (error instanceof PermissionDeniedError) return;
+                console.error(error);
+                Burnt.alert({
+                    title: t('general.error'),
+                    preset: "error",
+                    message: t('mobile.create_failed'),
+                    duration: 4,
+                });
+            })
+            .finally(() => {
+                setSubmitting(false);
+            });
     };
 
     const selectPlaceholder = t('general.select');
@@ -423,14 +382,6 @@ export default function EditAssetScreen() {
         );
     };
 
-    if (!assetQuery.data || !fieldsQuery.isFetched) {
-        return (
-            <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color={colors.primary}/>
-            </View>
-        );
-    }
-
     return (
         <SafeAreaProvider>
             <KeyboardAvoidingView
@@ -439,157 +390,162 @@ export default function EditAssetScreen() {
             >
             <ScrollView
                 style={styles.container}
-                contentInsetAdjustmentBehavior="automatic"
-                contentContainerStyle={[styles.contentContainer, {paddingTop: Platform.OS === 'android' ? insets.top + 56 : 0}]}
+                contentContainerStyle={styles.contentContainer}
                 keyboardShouldPersistTaps="handled"
             >
-                    {/* Image Upload */}
-                    <Section title={t('general.image')}>
-                        <ImagePicker
-                            image={image}
-                            onImageSelected={setImage}
-                            onImageRemoved={() => setImage(null)}
+                {/* Image Upload */}
+                <Section title={t('general.image')}>
+                    <ImagePicker
+                        image={image}
+                        onImageSelected={setImage}
+                        onImageRemoved={() => setImage(null)}
+                    />
+                </Section>
+
+                {/* Required / Core Info — matches web UI top section */}
+                <Section title={t('mobile.section_details')}>
+                    <SelectorButton
+                        placeholder={selectPlaceholder}
+                        label={t('general.company')}
+                        value={selectedCompany?.name}
+                        onPress={() => companyRef.current?.present()}
+                    />
+                    <FormTextInput
+                        label={t('general.asset_tag')}
+                        value={assetTag}
+                        onChangeText={setAssetTag}
+                        placeholder={t('general.asset_tag')}
+                        helperText={t('mobile.asset_tag_hint')}
+                    />
+                    <FormTextInput
+                        label={t('general.serial')}
+                        value={serial}
+                        onChangeText={setSerial}
+                        placeholder={t('general.serial')}
+                    />
+                    <SelectorButton
+                        placeholder={selectPlaceholder}
+                        label={t('general.model')}
+                        value={selectedModel?.name ? decode(selectedModel.name) : undefined}
+                        onPress={() => modelRef.current?.present()}
+                    />
+                    <SelectorButton
+                        placeholder={selectPlaceholder}
+                        label={t('general.status_label')}
+                        value={selectedStatus?.name}
+                        onPress={() => statusRef.current?.present()}
+                    />
+                    <FormTextInput
+                        label={t('general.notes')}
+                        value={notes}
+                        onChangeText={setNotes}
+                        placeholder={t('general.notes')}
+                        multiline
+                    />
+                    <SelectorButton
+                        placeholder={selectPlaceholder}
+                        label={t('general.rtd_location')}
+                        value={selectedRtdLocation?.name}
+                        onPress={() => rtdLocationRef.current?.present()}
+                    />
+                    <FormRow label={t('general.requestable')} horizontal>
+                        <Switch value={requestable} onValueChange={setRequestable} />
+                    </FormRow>
+                </Section>
+
+                {/* Optional Information — collapsible */}
+                <Section title={t('mobile.section_optional')} collapsible>
+                    <FormTextInput
+                        label={t('general.asset_name')}
+                        value={name}
+                        onChangeText={setName}
+                        placeholder={t('general.asset_name')}
+                    />
+                    <FormTextInput
+                        label={t('general.warranty_months')}
+                        value={warrantyMonths}
+                        onChangeText={setWarrantyMonths}
+                        placeholder="0"
+                        keyboardType="number-pad"
+                    />
+                    <FormRow label={t('general.expected_checkin')}>
+                        <OptionalDatepicker
+                            initialDate={expectedCheckin}
+                            onDateChange={(event, date) => setExpectedCheckin(date)}
                         />
+                    </FormRow>
+                    <FormRow label={t('general.next_audit_date')}>
+                        <OptionalDatepicker
+                            initialDate={nextAuditDate}
+                            onDateChange={(event, date) => setNextAuditDate(date)}
+                        />
+                    </FormRow>
+                    <FormRow label={t('general.byod')} horizontal>
+                        <Switch value={byod} onValueChange={setByod} />
+                    </FormRow>
+                </Section>
+
+                {/* Order Related Information — collapsible */}
+                <Section title={t('mobile.section_order')} collapsible>
+                    <FormTextInput
+                        label={t('general.order_number')}
+                        value={orderNumber}
+                        onChangeText={setOrderNumber}
+                        placeholder={t('general.order_number')}
+                    />
+                    <FormRow label={t('general.purchase_date')}>
+                        <OptionalDatepicker
+                            initialDate={purchaseDate}
+                            onDateChange={(event, date) => setPurchaseDate(date)}
+                        />
+                    </FormRow>
+                    <SelectorButton
+                        placeholder={selectPlaceholder}
+                        label={t('general.supplier')}
+                        value={selectedSupplier?.name}
+                        onPress={() => supplierRef.current?.present()}
+                    />
+                    <FormTextInput
+                        label={t('general.purchase_cost')}
+                        value={purchaseCost}
+                        onChangeText={setPurchaseCost}
+                        placeholder="0.00"
+                        keyboardType="decimal-pad"
+                    />
+                </Section>
+
+                {/* Custom Fields */}
+                {loadingFields && (
+                    <Section title={t('mobile.section_custom_fields')}>
+                        <ActivityIndicator size="small" color={colors.primary} />
                     </Section>
-
-                    {/* Core Details — matches web UI top section */}
-                    <Section title={t('mobile.section_details')}>
-                        <SelectorButton
-                            placeholder={selectPlaceholder}
-                            label={t('general.company')}
-                            value={selectedCompany?.name}
-                            onPress={() => companyRef.current?.present()}
-                        />
-                        <FormTextInput
-                            label={t('general.asset_tag')}
-                            value={assetTag}
-                            onChangeText={setAssetTag}
-                            placeholder={t('general.asset_tag')}
-                        />
-                        <FormTextInput
-                            label={t('general.serial')}
-                            value={serial}
-                            onChangeText={setSerial}
-                            placeholder={t('general.serial')}
-                        />
-                        <SelectorButton
-                            placeholder={selectPlaceholder}
-                            label={t('general.model')}
-                            value={selectedModel?.name}
-                            onPress={() => modelRef.current?.present()}
-                        />
-                        <SelectorButton
-                            placeholder={selectPlaceholder}
-                            label={t('general.status_label')}
-                            value={selectedStatus?.name}
-                            onPress={() => statusRef.current?.present()}
-                        />
-                        <FormTextInput
-                            label={t('general.notes')}
-                            value={notes}
-                            onChangeText={setNotes}
-                            placeholder={t('general.notes')}
-                            multiline
-                        />
-                        <SelectorButton
-                            placeholder={selectPlaceholder}
-                            label={t('general.rtd_location')}
-                            value={selectedRtdLocation?.name}
-                            onPress={() => rtdLocationRef.current?.present()}
-                        />
-                        <FormRow label={t('general.requestable')} horizontal>
-                            <Switch value={requestable} onValueChange={setRequestable} />
-                        </FormRow>
+                )}
+                {!loadingFields && Object.keys(customFieldValues).length > 0 && (
+                    <Section title={t('mobile.section_custom_fields')}>
+                        {Object.entries(customFieldValues).map(([fieldName, field]) =>
+                            renderCustomField(fieldName, field)
+                        )}
                     </Section>
+                )}
 
-                    {/* Custom Fields */}
-                    {Object.keys(customFieldValues).length > 0 && (
-                        <Section title={t('mobile.section_custom_fields')}>
-                            {Object.entries(customFieldValues).map(([fieldName, field]) =>
-                                renderCustomField(fieldName, field)
-                            )}
-                        </Section>
-                    )}
-
-                    {/* Optional Information — collapsible */}
-                    <Section title={t('mobile.section_optional')} collapsible>
-                        <FormTextInput
-                            label={t('general.asset_name')}
-                            value={name}
-                            onChangeText={setName}
-                            placeholder={t('general.asset_name')}
-                        />
-                        <FormTextInput
-                            label={t('general.warranty_months')}
-                            value={warrantyMonths}
-                            onChangeText={setWarrantyMonths}
-                            placeholder="0"
-                            keyboardType="number-pad"
-                        />
-                        <FormRow label={t('general.expected_checkin')}>
-                            <OptionalDatepicker
-                                initialDate={expectedCheckin}
-                                onDateChange={(event, date) => setExpectedCheckin(date)}
-                            />
-                        </FormRow>
-                        <FormRow label={t('general.next_audit_date')}>
-                            <OptionalDatepicker
-                                initialDate={nextAuditDate}
-                                onDateChange={(event, date) => setNextAuditDate(date)}
-                            />
-                        </FormRow>
-                        <FormRow label={t('general.byod')} horizontal>
-                            <Switch value={byod} onValueChange={setByod} />
-                        </FormRow>
-                    </Section>
-
-                    {/* Order Related Information — collapsible */}
-                    <Section title={t('mobile.section_order')} collapsible>
-                        <FormTextInput
-                            label={t('general.order_number')}
-                            value={orderNumber}
-                            onChangeText={setOrderNumber}
-                            placeholder={t('general.order_number')}
-                        />
-                        <FormRow label={t('general.purchase_date')}>
-                            <OptionalDatepicker
-                                initialDate={purchaseDate}
-                                onDateChange={(event, date) => setPurchaseDate(date)}
-                            />
-                        </FormRow>
-                        <SelectorButton
-                            placeholder={selectPlaceholder}
-                            label={t('general.supplier')}
-                            value={selectedSupplier?.name}
-                            onPress={() => supplierRef.current?.present()}
-                        />
-                        <FormTextInput
-                            label={t('general.purchase_cost')}
-                            value={purchaseCost}
-                            onChangeText={setPurchaseCost}
-                            placeholder="0.00"
-                            keyboardType="decimal-pad"
-                        />
-                    </Section>
-
-                    {/* Submit */}
-                    <PermissionGate permission={PERMISSIONS.ASSETS_EDIT}>
-                        <Pressable
-                            onPress={handleSubmit}
-                            disabled={editMutation.isPending}
-                            style={({pressed}) => [
-                                styles.submitButton,
-                                pressed && styles.submitButtonPressed,
-                                editMutation.isPending && styles.submitButtonDisabled,
-                            ]}
-                        >
-                            {editMutation.isPending ? (
-                                <ActivityIndicator color="#fff" />
-                            ) : (
-                                <Text style={styles.submitButtonText}>{t('mobile.save_changes')}</Text>
-                            )}
-                        </Pressable>
-                    </PermissionGate>
+                {/* Submit */}
+                <PermissionGate permission={PERMISSIONS.ASSETS_CREATE}>
+                    <Pressable
+                        onPress={handleSubmit}
+                        disabled={submitting}
+                        style={({pressed}) => [
+                            styles.submitButton,
+                            pressed && styles.submitButtonPressed,
+                            submitting && styles.submitButtonDisabled,
+                        ]}
+                    >
+                        {submitting ? (
+                            <ActivityIndicator color="#fff" />
+                        ) : (
+                            <Text style={styles.submitButtonText}>{t('mobile.create_asset')}</Text>
+                        )}
+                    </Pressable>
+                </PermissionGate>
             </ScrollView>
             </KeyboardAvoidingView>
 
@@ -629,12 +585,6 @@ export default function EditAssetScreen() {
 }
 
 const createStyles = (colors) => StyleSheet.create({
-    loadingContainer: {
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-        backgroundColor: colors.background,
-    },
     flex: {
         flex: 1,
         backgroundColor: colors.background,

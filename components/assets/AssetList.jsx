@@ -126,7 +126,7 @@ export default function AssetList({ assignedUserId = null }) {
                             </View>
                         </Pressable>
                         {!createDenied && !assignedUserId && (
-                            <Pressable onPress={() => router.push('/(tabs)/(assets)/create')} hitSlop={4}>
+                            <Pressable onPress={() => router.push('/assets/create')} hitSlop={4}>
                                 <Ionicons name="add" size={26} color={colors.text} />
                             </Pressable>
                         )}
@@ -239,7 +239,7 @@ export default function AssetList({ assignedUserId = null }) {
 
         return (
             <Pressable
-                onPress={() => router.push(`/${id}`)}
+                onPress={() => router.push(`/assets/${id}`)}
                 style={({ pressed }) => [
                     styles.itemContainer,
                     pressed && styles.itemPressed
