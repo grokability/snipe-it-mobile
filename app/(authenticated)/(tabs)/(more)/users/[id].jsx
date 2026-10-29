@@ -154,13 +154,11 @@ export default function UserScreen() {
 
     // One segment per item type the caller may view, as the web user page's tabs
     const itemTypeOptions = [
-        { value: 'assets', denied: assetsDenied, label: t('general.assets'), count: user.assets_count },
-        { value: 'licenses', denied: licensesDenied, label: t('general.licenses'), count: user.licenses_count },
-        { value: 'accessories', denied: accessoriesDenied, label: t('general.accessories'), count: user.accessories_count },
-        { value: 'consumables', denied: consumablesDenied, label: t('general.consumables'), count: user.consumables_count },
-    ]
-        .filter((itemType) => !itemType.denied)
-        .map((itemType) => ({ value: itemType.value, label: `${itemType.label} (${itemType.count ?? 0})` }));
+        { value: 'assets', denied: assetsDenied, label: t('general.assets') },
+        { value: 'licenses', denied: licensesDenied, label: t('general.licenses') },
+        { value: 'accessories', denied: accessoriesDenied, label: t('general.accessories') },
+        { value: 'consumables', denied: consumablesDenied, label: t('general.consumables') },
+    ].filter((itemType) => !itemType.denied);
     const activeItemType = itemTypeOptions.some((option) => option.value === selectedItemType)
         ? selectedItemType
         : itemTypeOptions[0]?.value;
