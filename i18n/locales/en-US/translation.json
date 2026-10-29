@@ -98,12 +98,20 @@
     "superuser": "Superuser",
     "admin_user": "Admin User",
     "user": "User",
-    "users": "Users"
+    "users": "Users",
+    "contact": "Contact",
+    "email": "Email",
+    "phone": "Phone",
+    "website": "Website",
+    "address": "Address"
   },
   "admin": {
     "users": {
       "general": {
         "vip_label": "VIP user"
+      },
+      "table": {
+        "mobile": "Mobile"
       }
     },
     "hardware": {

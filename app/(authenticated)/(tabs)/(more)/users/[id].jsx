@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, ScrollView, RefreshControl, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, RefreshControl, Platform, Linking } from 'react-native';
 import { Image } from 'expo-image';
 import { useState, useMemo } from "react";
 import { useLocalSearchParams } from "expo-router";
@@ -14,11 +14,50 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from "react-i18next";
 import EmptyState from "@/components/ui/EmptyState";
 import UserBadge from "@/components/users/UserBadge";
+import { Section } from "@/components/ui/Section";
+import { DetailRow } from "@/components/ui/DetailRow";
 import { UserDetailSkeleton } from "@/components/ui/Skeleton";
 import { useRedirectIfDenied } from "@/permissions/PermissionContext";
 import { PERMISSIONS } from "@/permissions/PermissionKeys";
 
 const AVATAR_SIZE = 120;
+
+// Laid out as Snipe-IT's Presenter::displayAddress(): street, then "city, state zip country"
+const formatAddress = (user) => {
+    const cityLine = [user.city && `${user.city},`, user.state, user.zip, user.country]
+        .filter((addressPart) => Boolean(addressPart))
+        .join(' ');
+
+    return [user.address, cityLine]
+        .filter((addressLine) => Boolean(addressLine))
+        .map((addressLine) => decode(addressLine))
+        .join('\n');
+};
+
+// The platform's maps app, searched with the same query the web user page sends to Apple / Google Maps
+const buildMapsUrl = (user) => {
+    const query = encodeURIComponent(
+        [user.address, user.city, user.state, user.country, user.zip]
+            .filter((addressPart) => Boolean(addressPart))
+            .map((addressPart) => decode(addressPart))
+            .join(',')
+    );
+
+    if (Platform.OS === 'ios') {
+        return `https://maps.apple.com/?q=${query}`;
+    }
+
+    return `geo:0,0?q=${query}`;
+};
+
+// Websites are free text in Snipe-IT; "example.com" needs a scheme before Linking can open it
+const buildWebsiteUrl = (website) => {
+    if (/^[a-z][a-z\d+.-]*:/i.test(website)) {
+        return website;
+    }
+
+    return `https://${website}`;
+};
 
 export default function UserScreen() {
     const colors = useColors();
@@ -64,6 +103,9 @@ export default function UserScreen() {
         return <UserDetailSkeleton />;
     }
 
+    const address = formatAddress(user);
+    const hasContactDetails = Boolean(user.email || user.phone || user.mobile || user.website) || address !== '';
+
     return (
         <SafeAreaProvider>
             <ScrollView
@@ -93,6 +135,47 @@ export default function UserScreen() {
                         <UserBadge user={user} />
                     </View>
                 </View>
+
+                {/* Contact */}
+                {hasContactDetails && (
+                    <Section title={t('general.contact')}>
+                        {Boolean(user.email) && (
+                            <DetailRow
+                                label={t('general.email')}
+                                value={decode(user.email)}
+                                onPress={() => Linking.openURL(`mailto:${decode(user.email)}`)}
+                            />
+                        )}
+                        {Boolean(user.phone) && (
+                            <DetailRow
+                                label={t('general.phone')}
+                                value={decode(user.phone)}
+                                onPress={() => Linking.openURL(`tel:${decode(user.phone).replace(/[^\d+]/g, '')}`)}
+                            />
+                        )}
+                        {Boolean(user.mobile) && (
+                            <DetailRow
+                                label={t('admin.users.table.mobile')}
+                                value={decode(user.mobile)}
+                                onPress={() => Linking.openURL(`tel:${decode(user.mobile).replace(/[^\d+]/g, '')}`)}
+                            />
+                        )}
+                        {Boolean(user.website) && (
+                            <DetailRow
+                                label={t('general.website')}
+                                value={decode(user.website)}
+                                onPress={() => Linking.openURL(buildWebsiteUrl(decode(user.website)))}
+                            />
+                        )}
+                        {address !== '' && (
+                            <DetailRow
+                                label={t('general.address')}
+                                value={address}
+                                onPress={() => Linking.openURL(buildMapsUrl(user))}
+                            />
+                        )}
+                    </Section>
+                )}
             </ScrollView>
         </SafeAreaProvider>
     );
