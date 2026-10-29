@@ -15,6 +15,7 @@ import { FlashList } from "@shopify/flash-list";
 import { useTranslation } from "react-i18next";
 import { Ionicons } from '@expo/vector-icons';
 import EmptyState from "@/components/ui/EmptyState";
+import Badge from "@/components/ui/Badge";
 import { UserListSkeleton } from "@/components/ui/Skeleton";
 import { useRedirectIfDenied } from "@/permissions/PermissionContext";
 import { PERMISSIONS } from "@/permissions/PermissionKeys";
@@ -145,16 +146,8 @@ export default function UsersScreen() {
                     )}
                     <View style={styles.footer}>
                         <Text style={styles.assetsCount}>{t('general.countable.assets', { count: user.assets_count })}</Text>
-                        {user.vip && (
-                            <View style={[styles.badge, styles.vipBadge]}>
-                                <Text style={[styles.badgeText, styles.vipBadgeText]}>{t('admin.users.general.vip_label')}</Text>
-                            </View>
-                        )}
-                        {!user.activated && (
-                            <View style={[styles.badge, styles.loginDisabledBadge]}>
-                                <Text style={[styles.badgeText, styles.loginDisabledBadgeText]}>{t('general.login_disabled')}</Text>
-                            </View>
-                        )}
+                        {user.vip && <Badge type="primary">{t('admin.users.general.vip_label')}</Badge>}
+                        {!user.activated && <Badge type="danger">{t('general.login_disabled')}</Badge>}
                     </View>
                 </View>
             </Pressable>
@@ -278,26 +271,5 @@ const createStyles = (colors) => StyleSheet.create({
         fontSize: Typography.caption,
         color: colors.primary,
         fontWeight: FontWeight.medium,
-    },
-    badge: {
-        paddingHorizontal: Spacing.sm,
-        paddingVertical: 2,
-        borderRadius: BorderRadius.sm,
-    },
-    badgeText: {
-        fontSize: Typography.caption,
-        fontWeight: FontWeight.semibold,
-    },
-    vipBadge: {
-        backgroundColor: colors.primary + '20',
-    },
-    vipBadgeText: {
-        color: colors.primary,
-    },
-    loginDisabledBadge: {
-        backgroundColor: colors.danger + '20',
-    },
-    loginDisabledBadgeText: {
-        color: colors.danger,
     },
 });

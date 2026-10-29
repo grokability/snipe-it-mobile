@@ -8,11 +8,12 @@ import { userKeys } from "@/helpers/queryKeys";
 import { useRefreshOnFocus } from "@/hooks/useRefreshOnFocus";
 import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useColors } from "@/hooks/useThemeColors";
-import { Spacing, BorderRadius, Typography, FontWeight } from "@/constants/sizes";
+import { Spacing, Typography, FontWeight } from "@/constants/sizes";
 import { decode } from "html-entities";
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from "react-i18next";
 import EmptyState from "@/components/ui/EmptyState";
+import Badge from "@/components/ui/Badge";
 import { UserDetailSkeleton } from "@/components/ui/Skeleton";
 import { useRedirectIfDenied } from "@/permissions/PermissionContext";
 import { PERMISSIONS } from "@/permissions/PermissionKeys";
@@ -89,26 +90,10 @@ export default function UserScreen() {
                         <Text style={styles.subtitle}>{decode(user.jobtitle)}</Text>
                     )}
                     <View style={styles.badgeRow}>
-                        {user.role === 'superadmin' && (
-                            <View style={[styles.badge, styles.superuserBadge]}>
-                                <Text style={[styles.badgeText, styles.superuserBadgeText]}>{t('general.superuser')}</Text>
-                            </View>
-                        )}
-                        {user.role === 'admin' && (
-                            <View style={[styles.badge, styles.adminBadge]}>
-                                <Text style={[styles.badgeText, styles.adminBadgeText]}>{t('general.admin_user')}</Text>
-                            </View>
-                        )}
-                        {user.vip && (
-                            <View style={[styles.badge, styles.vipBadge]}>
-                                <Text style={[styles.badgeText, styles.vipBadgeText]}>{t('admin.users.general.vip_label')}</Text>
-                            </View>
-                        )}
-                        {!user.activated && (
-                            <View style={[styles.badge, styles.loginDisabledBadge]}>
-                                <Text style={[styles.badgeText, styles.loginDisabledBadgeText]}>{t('general.login_disabled')}</Text>
-                            </View>
-                        )}
+                        {user.role === 'superadmin' && <Badge type="danger">{t('general.superuser')}</Badge>}
+                        {user.role === 'admin' && <Badge type="warning">{t('general.admin_user')}</Badge>}
+                        {user.vip && <Badge type="primary">{t('admin.users.general.vip_label')}</Badge>}
+                        {!user.activated && <Badge type="danger">{t('general.login_disabled')}</Badge>}
                     </View>
                 </View>
             </ScrollView>
@@ -152,38 +137,5 @@ const createStyles = (colors) => StyleSheet.create({
         flexWrap: 'wrap',
         justifyContent: 'center',
         gap: Spacing.sm,
-    },
-    badge: {
-        paddingHorizontal: Spacing.sm,
-        paddingVertical: 2,
-        borderRadius: BorderRadius.sm,
-    },
-    badgeText: {
-        fontSize: Typography.caption,
-        fontWeight: FontWeight.semibold,
-    },
-    superuserBadge: {
-        backgroundColor: colors.danger + '20',
-    },
-    superuserBadgeText: {
-        color: colors.danger,
-    },
-    adminBadge: {
-        backgroundColor: colors.warning + '20',
-    },
-    adminBadgeText: {
-        color: colors.warning,
-    },
-    vipBadge: {
-        backgroundColor: colors.primary + '20',
-    },
-    vipBadgeText: {
-        color: colors.primary,
-    },
-    loginDisabledBadge: {
-        backgroundColor: colors.danger + '20',
-    },
-    loginDisabledBadgeText: {
-        color: colors.danger,
     },
 });
