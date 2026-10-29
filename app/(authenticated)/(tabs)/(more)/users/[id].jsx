@@ -51,6 +51,29 @@ const buildMapsUrl = (user) => {
     return `geo:0,0?q=${query}`;
 };
 
+// End dates turn red on the web user page once the day has started (end_date < now)
+const isPastEndDate = (endDate) => {
+    if (!endDate?.date) {
+        return false;
+    }
+
+    const now = new Date();
+    const today = [
+        now.getFullYear(),
+        String(now.getMonth() + 1).padStart(2, '0'),
+        String(now.getDate()).padStart(2, '0'),
+    ].join('-');
+
+    return endDate.date <= today;
+};
+
+// Notes arrive as inline Markdown rendered to HTML; show them as plain text
+const formatNotes = (notes) => decode(
+    notes
+        .replace(/<br\s*\/?>/gi, '\n')
+        .replace(/<[^>]*>/g, '')
+);
+
 // Websites are free text in Snipe-IT; "example.com" needs a scheme before Linking can open it
 const buildWebsiteUrl = (website) => {
     if (/^[a-z][a-z\d+.-]*:/i.test(website)) {
@@ -104,6 +127,20 @@ export default function UserScreen() {
     if (!user) {
         return <UserDetailSkeleton />;
     }
+
+    const na = t('mobile.na');
+    const displayValue = (value) => value ? decode(String(value)) : na;
+    const nestedName = (object) => object?.name ? decode(object.name) : na;
+    const formatDate = (dateObject) => dateObject?.formatted ?? na;
+    const formatBool = (value) => value ? t('mobile.yes') : t('mobile.no');
+
+    const groupNames = (user.groups?.rows ?? [])
+        .map((group) => decode(group.name))
+        .join(', ');
+    const hasManyCompanies = (user.companies?.length ?? 0) > 1;
+    const companyNames = hasManyCompanies
+        ? user.companies.map((company) => decode(company.name)).join(', ')
+        : nestedName(user.company);
 
     const address = formatAddress(user);
     const hasContactDetails = Boolean(user.email || user.phone || user.mobile || user.website) || address !== '';
@@ -178,6 +215,46 @@ export default function UserScreen() {
                         )}
                     </Section>
                 )}
+
+                {/* Details */}
+                <Section title={t('mobile.section_details')}>
+                    <DetailRow label={t('general.username')} value={displayValue(user.username)} />
+                    {Boolean(user.display_name) && (
+                        <DetailRow label={t('admin.users.table.display_name')} value={decode(user.display_name)} />
+                    )}
+                    <DetailRow label={t('admin.users.table.employee_num')} value={displayValue(user.employee_num)} />
+                    <DetailRow label={t('general.groups')} value={groupNames || na} />
+                    <DetailRow label={t('admin.users.general.remote')} value={formatBool(user.remote)} />
+                    <DetailRow label={t('admin.settings.general.ldap_enabled')} value={formatBool(user.ldap_import)} />
+                    <DetailRow label={t('admin.users.general.two_factor_enrolled')} value={formatBool(user.two_factor_enrolled)} />
+                </Section>
+
+                {/* Organization */}
+                <Section title={t('mobile.section_organization')}>
+                    <DetailRow label={hasManyCompanies ? t('general.companies') : t('general.company')} value={companyNames} />
+                    <DetailRow label={t('general.department')} value={nestedName(user.department)} />
+                    <DetailRow label={t('general.location')} value={nestedName(user.location)} />
+                    <DetailRow label={t('admin.users.table.manager')} value={nestedName(user.manager)} />
+                </Section>
+
+                {/* Dates */}
+                <Section title={t('mobile.section_dates')}>
+                    <DetailRow label={t('general.last_login')} value={formatDate(user.last_login)} />
+                    <DetailRow label={t('general.start_date')} value={formatDate(user.start_date)} />
+                    <DetailRow
+                        label={t('general.end_date')}
+                        value={formatDate(user.end_date)}
+                        valueStyle={isPastEndDate(user.end_date) && styles.pastEndDate}
+                    />
+                    <DetailRow label={t('general.created_at')} value={formatDate(user.created_at)} />
+                </Section>
+
+                {/* Notes */}
+                {Boolean(user.notes) && (
+                    <Section title={t('mobile.section_notes')}>
+                        <Text selectable style={styles.notesText}>{formatNotes(user.notes)}</Text>
+                    </Section>
+                )}
             </ScrollView>
         </SafeAreaProvider>
     );
@@ -213,6 +290,14 @@ const createStyles = (colors) => StyleSheet.create({
         fontSize: Typography.body,
         color: colors.textSecondary,
         textAlign: 'center',
+    },
+    pastEndDate: {
+        color: colors.danger,
+    },
+    notesText: {
+        fontSize: Typography.bodyLarge,
+        color: colors.text,
+        lineHeight: Typography.bodyLarge * 1.5,
     },
     badgeRow: {
         flexDirection: 'row',

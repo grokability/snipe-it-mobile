@@ -103,20 +103,37 @@
     "email": "Email",
     "phone": "Phone",
     "website": "Website",
-    "address": "Address"
+    "address": "Address",
+    "username": "Username",
+    "groups": "Groups",
+    "companies": "Companies",
+    "department": "Department",
+    "last_login": "Last Login",
+    "start_date": "Start Date",
+    "end_date": "End Date"
   },
   "admin": {
     "users": {
       "general": {
-        "vip_label": "VIP user"
+        "vip_label": "VIP user",
+        "remote": "Remote",
+        "two_factor_enrolled": "2FA Device Enrolled "
       },
       "table": {
-        "mobile": "Mobile"
+        "mobile": "Mobile",
+        "display_name": "Display Name",
+        "employee_num": "Employee No.",
+        "manager": "Manager"
       }
     },
     "hardware": {
       "general": {
         "deleted": "This asset has been deleted."
+      }
+    },
+    "settings": {
+      "general": {
+        "ldap_enabled": "LDAP enabled"
       }
     }
   },
@@ -180,6 +197,7 @@
     "screen_checkin": "Checkin Screen",
     "section_details": "Details",
     "section_location": "Location",
+    "section_organization": "Organization",
     "section_purchase": "Purchase Information",
     "section_actions": "Actions",
     "section_assignment": "Assignment",
