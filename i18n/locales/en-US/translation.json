@@ -95,6 +95,8 @@
       "assets_one": "{{count}} Asset",
       "assets_other": "{{count}} Assets"
     },
+    "superuser": "Superuser",
+    "admin_user": "Admin User",
     "user": "User",
     "users": "Users"
   },
