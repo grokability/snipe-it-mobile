@@ -206,7 +206,7 @@ export function scannedItemHref(scanResolution, isAuditMode) {
     }
 
     if (outcome === 'notAsset' && kind === 'consumableId') {
-        return `/(authenticated)/(tabs)/(consumables)/${value}`;
+        return `/(authenticated)/(tabs)/(consumables)/consumables/${value}`;
     }
 
     return null;

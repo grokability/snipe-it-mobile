@@ -154,6 +154,27 @@ export default function MoreLayout() {
                 }}
             />
             <Stack.Screen
+                name="consumables/[id]"
+                options={{
+                    title: t('mobile.screen_consumable_details'),
+                    headerBackTitle: '',
+                }}
+            />
+            <Stack.Screen
+                name="consumables/checkout/[id]"
+                options={{
+                    title: t('mobile.screen_checkout'),
+                    headerBackTitle: '',
+                }}
+            />
+            <Stack.Screen
+                name="consumables/edit/[id]"
+                options={{
+                    title: t('mobile.screen_edit_consumable'),
+                    headerBackTitle: '',
+                }}
+            />
+            <Stack.Screen
                 name="settings"
                 options={{
                     title: t('general.settings'),

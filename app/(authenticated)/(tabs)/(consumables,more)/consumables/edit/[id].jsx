@@ -152,7 +152,7 @@ export default function EditConsumableScreen() {
             });
             queryClient.invalidateQueries({ queryKey: consumableKeys.detail(id) }).catch(() => {});
             queryClient.invalidateQueries({ queryKey: consumableKeys.lists() }).catch(() => {});
-            router.dismissTo(`/(tabs)/(consumables)/${id}`);
+            router.dismissTo(`/consumables/${id}`);
         },
         onError: (err) => {
             console.error(err);

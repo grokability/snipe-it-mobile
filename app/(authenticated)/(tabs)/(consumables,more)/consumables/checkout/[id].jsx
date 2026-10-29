@@ -79,7 +79,7 @@ export default function ConsumableCheckoutScreen() {
             });
             queryClient.invalidateQueries({ queryKey: consumableKeys.detail(id) }).catch(() => {});
             queryClient.invalidateQueries({ queryKey: consumableKeys.lists() }).catch(() => {});
-            router.dismissTo(`/(tabs)/(consumables)/${id}`);
+            router.dismissTo(`/consumables/${id}`);
         },
         onError: (err) => {
             if (err instanceof PermissionDeniedError) return;
