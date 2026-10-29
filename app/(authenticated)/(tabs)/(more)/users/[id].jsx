@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, ScrollView, RefreshControl, Platform, Linking } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, RefreshControl, Platform } from 'react-native';
 import { Image } from 'expo-image';
 import { useState, useMemo } from "react";
 import { useLocalSearchParams } from "expo-router";
@@ -6,6 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { makeRequest } from "@/helpers/axiosConfig";
 import { userKeys } from "@/helpers/queryKeys";
 import { useRefreshOnFocus } from "@/hooks/useRefreshOnFocus";
+import { useOpenExternalUrl } from "@/hooks/useOpenExternalUrl";
 import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useColors } from "@/hooks/useThemeColors";
 import { Spacing, Typography, FontWeight } from "@/constants/sizes";
@@ -65,6 +66,7 @@ export default function UserScreen() {
     const styles = useMemo(() => createStyles(colors), [colors]);
     const { t } = useTranslation();
     const { id } = useLocalSearchParams();
+    const openUrl = useOpenExternalUrl();
 
     useRedirectIfDenied(PERMISSIONS.USERS_VIEW);
 
@@ -143,35 +145,35 @@ export default function UserScreen() {
                             <DetailRow
                                 label={t('general.email')}
                                 value={decode(user.email)}
-                                onPress={() => Linking.openURL(`mailto:${decode(user.email)}`)}
+                                onPress={() => openUrl(`mailto:${decode(user.email)}`)}
                             />
                         )}
                         {Boolean(user.phone) && (
                             <DetailRow
                                 label={t('general.phone')}
                                 value={decode(user.phone)}
-                                onPress={() => Linking.openURL(`tel:${decode(user.phone).replace(/[^\d+]/g, '')}`)}
+                                onPress={() => openUrl(`tel:${decode(user.phone).replace(/[^\d+]/g, '')}`)}
                             />
                         )}
                         {Boolean(user.mobile) && (
                             <DetailRow
                                 label={t('admin.users.table.mobile')}
                                 value={decode(user.mobile)}
-                                onPress={() => Linking.openURL(`tel:${decode(user.mobile).replace(/[^\d+]/g, '')}`)}
+                                onPress={() => openUrl(`tel:${decode(user.mobile).replace(/[^\d+]/g, '')}`)}
                             />
                         )}
                         {Boolean(user.website) && (
                             <DetailRow
                                 label={t('general.website')}
                                 value={decode(user.website)}
-                                onPress={() => Linking.openURL(buildWebsiteUrl(decode(user.website)))}
+                                onPress={() => openUrl(buildWebsiteUrl(decode(user.website)))}
                             />
                         )}
                         {address !== '' && (
                             <DetailRow
                                 label={t('general.address')}
                                 value={address}
-                                onPress={() => Linking.openURL(buildMapsUrl(user))}
+                                onPress={() => openUrl(buildMapsUrl(user))}
                             />
                         )}
                     </Section>
