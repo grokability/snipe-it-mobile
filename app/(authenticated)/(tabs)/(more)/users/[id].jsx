@@ -1,24 +1,23 @@
-import { View, Text, StyleSheet, ScrollView, RefreshControl, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, RefreshControl, Platform, Pressable } from 'react-native';
 import { Image } from 'expo-image';
 import { useState, useMemo } from "react";
 import { useLocalSearchParams } from "expo-router";
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { makeRequest } from "@/helpers/axiosConfig";
 import { userKeys } from "@/helpers/queryKeys";
 import { useRefreshOnFocus } from "@/hooks/useRefreshOnFocus";
 import { useOpenExternalUrl } from "@/hooks/useOpenExternalUrl";
 import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useColors } from "@/hooks/useThemeColors";
-import { Spacing, Typography, FontWeight } from "@/constants/sizes";
+import { Spacing, BorderRadius, Typography, FontWeight } from "@/constants/sizes";
 import { decode } from "html-entities";
 import { Ionicons } from '@expo/vector-icons';
+import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useTranslation } from "react-i18next";
 import EmptyState from "@/components/ui/EmptyState";
 import UserBadge from "@/components/users/UserBadge";
 import { Section } from "@/components/ui/Section";
 import { DetailRow } from "@/components/ui/DetailRow";
-import { SegmentedPicker } from "@/components/ui/SegmentedPicker";
-import UserAssets from "@/components/users/UserAssets";
 import { UserDetailSkeleton } from "@/components/ui/Skeleton";
 import { usePermission, useRedirectIfDenied } from "@/permissions/PermissionContext";
 import { PERMISSIONS } from "@/permissions/PermissionKeys";
@@ -95,12 +94,11 @@ export default function UserScreen() {
 
     useRedirectIfDenied(PERMISSIONS.USERS_VIEW);
 
-    const queryClient = useQueryClient();
     const { denied: assetsDenied } = usePermission(PERMISSIONS.ASSETS_VIEW);
     const { denied: licensesDenied } = usePermission(PERMISSIONS.LICENSES_VIEW);
     const { denied: accessoriesDenied } = usePermission(PERMISSIONS.ACCESSORIES_VIEW);
     const { denied: consumablesDenied } = usePermission(PERMISSIONS.CONSUMABLES_VIEW);
-    const [selectedItemType, setSelectedItemType] = useState(null);
+    const { denied: reportsDenied } = usePermission(PERMISSIONS.REPORTS_VIEW);
 
     const userQuery = useQuery({
         queryKey: userKeys.detail(id),
@@ -112,8 +110,7 @@ export default function UserScreen() {
     const [isManualRefreshing, setIsManualRefreshing] = useState(false);
     const onManualRefresh = async () => {
         setIsManualRefreshing(true);
-        // Prefix match: also refetches the assigned-item lists keyed under this user
-        await queryClient.refetchQueries({ queryKey: userKeys.detail(id), type: 'active' });
+        await userQuery.refetch();
         setIsManualRefreshing(false);
     };
 
@@ -152,16 +149,14 @@ export default function UserScreen() {
         ? user.companies.map((company) => decode(company.name)).join(', ')
         : nestedName(user.company);
 
-    // One segment per item type the caller may view, as the web user page's tabs
-    const itemTypeOptions = [
-        { value: 'assets', denied: assetsDenied, label: t('general.assets') },
-        { value: 'licenses', denied: licensesDenied, label: t('general.licenses') },
-        { value: 'accessories', denied: accessoriesDenied, label: t('general.accessories') },
-        { value: 'consumables', denied: consumablesDenied, label: t('general.consumables') },
-    ].filter((itemType) => !itemType.denied);
-    const activeItemType = itemTypeOptions.some((option) => option.value === selectedItemType)
-        ? selectedItemType
-        : itemTypeOptions[0]?.value;
+    // One row per list the caller may view, as the web user page's tabs. Icons match the tab bar and More menu
+    const drillInRows = [
+        { key: 'assets', icon: 'barcode', label: t('general.assets'), count: user.assets_count, denied: assetsDenied },
+        { key: 'licenses', icon: 'file-text-o', label: t('general.licenses'), count: user.licenses_count, denied: licensesDenied },
+        { key: 'accessories', icon: 'keyboard-o', label: t('general.accessories'), count: user.accessories_count, denied: accessoriesDenied },
+        { key: 'consumables', icon: 'tint', label: t('general.consumables'), count: user.consumables_count, denied: consumablesDenied },
+        { key: 'history', icon: 'history', label: t('general.history'), denied: reportsDenied },
+    ].filter((row) => !row.denied);
 
     const address = formatAddress(user);
     const hasContactDetails = Boolean(user.email || user.phone || user.mobile || user.website) || address !== '';
@@ -237,15 +232,26 @@ export default function UserScreen() {
                     </Section>
                 )}
 
-                {/* Assigned items */}
-                {itemTypeOptions.length > 0 && (
-                    <View style={styles.assignedItems}>
-                        <SegmentedPicker
-                            options={itemTypeOptions}
-                            selectedValue={activeItemType}
-                            onValueChange={setSelectedItemType}
-                        />
-                        {activeItemType === 'assets' && <UserAssets userId={id} />}
+                {/* Assigned items and history */}
+                {drillInRows.length > 0 && (
+                    <View style={styles.drillInCard}>
+                        {drillInRows.map((row, index) => (
+                            <Pressable
+                                key={row.key}
+                                style={({ pressed }) => [
+                                    styles.drillInRow,
+                                    index < drillInRows.length - 1 && styles.drillInRowDivider,
+                                    pressed && styles.drillInRowPressed,
+                                ]}
+                            >
+                                <FontAwesome name={row.icon} size={20} color={colors.text} style={styles.drillInIcon} />
+                                <Text style={styles.drillInLabel}>{row.label}</Text>
+                                {row.count !== undefined && (
+                                    <Text style={styles.drillInCount}>{row.count}</Text>
+                                )}
+                                <FontAwesome name="chevron-right" size={14} color={colors.textSecondary} />
+                            </Pressable>
+                        ))}
                     </View>
                 )}
 
@@ -324,8 +330,39 @@ const createStyles = (colors) => StyleSheet.create({
         color: colors.textSecondary,
         textAlign: 'center',
     },
-    assignedItems: {
-        gap: Spacing.sm,
+    drillInCard: {
+        backgroundColor: colors.backgroundSecondary,
+        borderRadius: BorderRadius.md,
+        overflow: 'hidden',
+    },
+    drillInRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: Spacing.md,
+        paddingHorizontal: Spacing.lg,
+    },
+    drillInRowDivider: {
+        borderBottomWidth: StyleSheet.hairlineWidth,
+        borderBottomColor: colors.border,
+    },
+    drillInRowPressed: {
+        backgroundColor: colors.backgroundTertiary,
+    },
+    drillInIcon: {
+        width: 24,
+        textAlign: 'center',
+        marginRight: Spacing.md,
+    },
+    drillInLabel: {
+        flex: 1,
+        fontSize: Typography.body,
+        fontWeight: FontWeight.medium,
+        color: colors.text,
+    },
+    drillInCount: {
+        fontSize: Typography.body,
+        color: colors.textSecondary,
+        marginRight: Spacing.sm,
     },
     pastEndDate: {
         color: colors.danger,

@@ -110,7 +110,8 @@
     "department": "Department",
     "last_login": "Last Login",
     "start_date": "Start Date",
-    "end_date": "End Date"
+    "end_date": "End Date",
+    "history": "History"
   },
   "admin": {
     "users": {

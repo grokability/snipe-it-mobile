@@ -45,7 +45,6 @@ export const userKeys = {
     list: (params) => [...userKeys.lists(), params],
     details: () => [...userKeys.all, 'detail'],
     detail: (id) => [...userKeys.details(), id],
-    assets: (id) => [...userKeys.detail(id), 'assets'],
 };
 
 // What a scanned code resolves to. The symbology is part of the key because a 1D barcode and a
