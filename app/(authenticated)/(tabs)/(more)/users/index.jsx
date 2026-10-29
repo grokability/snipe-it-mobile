@@ -15,7 +15,7 @@ import { FlashList } from "@shopify/flash-list";
 import { useTranslation } from "react-i18next";
 import { Ionicons } from '@expo/vector-icons';
 import EmptyState from "@/components/ui/EmptyState";
-import Badge from "@/components/ui/Badge";
+import UserBadge from "@/components/users/UserBadge";
 import { UserListSkeleton } from "@/components/ui/Skeleton";
 import { useRedirectIfDenied } from "@/permissions/PermissionContext";
 import { PERMISSIONS } from "@/permissions/PermissionKeys";
@@ -146,8 +146,7 @@ export default function UsersScreen() {
                     )}
                     <View style={styles.footer}>
                         <Text style={styles.assetsCount}>{t('general.countable.assets', { count: user.assets_count })}</Text>
-                        {user.vip && <Badge type="primary">{t('admin.users.general.vip_label')}</Badge>}
-                        {!user.activated && <Badge type="danger">{t('general.login_disabled')}</Badge>}
+                        <UserBadge user={user} />
                     </View>
                 </View>
             </Pressable>

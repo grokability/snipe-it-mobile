@@ -13,7 +13,7 @@ import { decode } from "html-entities";
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from "react-i18next";
 import EmptyState from "@/components/ui/EmptyState";
-import Badge from "@/components/ui/Badge";
+import UserBadge from "@/components/users/UserBadge";
 import { UserDetailSkeleton } from "@/components/ui/Skeleton";
 import { useRedirectIfDenied } from "@/permissions/PermissionContext";
 import { PERMISSIONS } from "@/permissions/PermissionKeys";
@@ -90,10 +90,7 @@ export default function UserScreen() {
                         <Text style={styles.subtitle}>{decode(user.jobtitle)}</Text>
                     )}
                     <View style={styles.badgeRow}>
-                        {user.role === 'superadmin' && <Badge type="danger">{t('general.superuser')}</Badge>}
-                        {user.role === 'admin' && <Badge type="warning">{t('general.admin_user')}</Badge>}
-                        {user.vip && <Badge type="primary">{t('admin.users.general.vip_label')}</Badge>}
-                        {!user.activated && <Badge type="danger">{t('general.login_disabled')}</Badge>}
+                        <UserBadge user={user} />
                     </View>
                 </View>
             </ScrollView>
