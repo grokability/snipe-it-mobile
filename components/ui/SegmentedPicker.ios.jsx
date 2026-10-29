@@ -5,7 +5,7 @@ import {StyleSheet, View} from "react-native";
 export function SegmentedPicker({options, selectedValue, onValueChange}) {
     return (
         <View style={styles.container}>
-            <Host matchContents>
+            <Host style={styles.host}>
                 <Picker
                     selection={selectedValue}
                     onSelectionChange={onValueChange}
@@ -26,6 +26,11 @@ export function SegmentedPicker({options, selectedValue, onValueChange}) {
 const styles = StyleSheet.create({
     container: {
         paddingVertical: 4,
+    },
+    // Full row width, as on Android: sized to its labels, a picker with many segments runs off screen
+    host: {
+        width: "100%",
+        height: 40,
     },
     picker: {
         alignSelf: "center",
