@@ -10,8 +10,9 @@ const useDetailRowStyles = () => {
     return {colors, styles};
 };
 
-// With onPress the value is drawn as a link (mailto:, tel:, a URL…).
-export const DetailRow = ({label, value, onPress}) => {
+// With onPress the value is drawn as a link (mailto:, tel:, a URL…). valueStyle overrides the
+// value's text style, e.g. a warning colour.
+export const DetailRow = ({label, value, onPress, valueStyle}) => {
     const {styles} = useDetailRowStyles();
     return (
         <View style={styles.detailRow}>
@@ -20,7 +21,7 @@ export const DetailRow = ({label, value, onPress}) => {
                 selectable
                 onPress={onPress}
                 accessibilityRole={onPress ? 'link' : undefined}
-                style={[styles.detailValue, onPress && styles.detailValueLink]}
+                style={[styles.detailValue, onPress && styles.detailValueLink, valueStyle]}
             >
                 {value}
             </Text>
