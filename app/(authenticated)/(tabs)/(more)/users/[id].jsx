@@ -1,7 +1,7 @@
 import { View, Text, StyleSheet, ScrollView, RefreshControl, Platform, Pressable } from 'react-native';
 import { Image } from 'expo-image';
 import { useState, useMemo } from "react";
-import { useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { useQuery } from '@tanstack/react-query';
 import { makeRequest } from "@/helpers/axiosConfig";
 import { userKeys } from "@/helpers/queryKeys";
@@ -151,7 +151,7 @@ export default function UserScreen() {
 
     // One row per list the caller may view, as the web user page's tabs. Icons match the tab bar and More menu
     const drillInRows = [
-        { key: 'assets', icon: 'barcode', label: t('general.assets'), count: user.assets_count, denied: assetsDenied },
+        { key: 'assets', icon: 'barcode', label: t('general.assets'), count: user.assets_count, denied: assetsDenied, route: `/(more)/users/${id}/assets` },
         { key: 'licenses', icon: 'file-text-o', label: t('general.licenses'), count: user.licenses_count, denied: licensesDenied },
         { key: 'accessories', icon: 'keyboard-o', label: t('general.accessories'), count: user.accessories_count, denied: accessoriesDenied },
         { key: 'consumables', icon: 'tint', label: t('general.consumables'), count: user.consumables_count, denied: consumablesDenied },
@@ -238,6 +238,7 @@ export default function UserScreen() {
                         {drillInRows.map((row, index) => (
                             <Pressable
                                 key={row.key}
+                                onPress={row.route ? () => router.push(row.route) : undefined}
                                 style={({ pressed }) => [
                                     styles.drillInRow,
                                     index < drillInRows.length - 1 && styles.drillInRowDivider,

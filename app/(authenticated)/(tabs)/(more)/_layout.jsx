@@ -82,6 +82,14 @@ export default function MoreLayout() {
                 }}
             />
             <Stack.Screen
+                name="users/[id]/assets"
+                options={{
+                    title: t('general.assets'),
+                    headerTitle: t('general.assets'),
+                    headerBackTitle: '',
+                }}
+            />
+            <Stack.Screen
                 name="settings"
                 options={{
                     title: t('general.settings'),

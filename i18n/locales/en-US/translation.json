@@ -376,6 +376,7 @@
     "open_link_failed_title": "Couldn't open the link",
     "open_link_failed_message": "Your device would not open this link. Copy it and paste it into a browser.",
     "open_link_copy": "Copy Link",
-    "open_link_copied": "Link copied"
+    "open_link_copied": "Link copied",
+    "user_assets": "{{firstName}}'s Assets"
   }
 }
