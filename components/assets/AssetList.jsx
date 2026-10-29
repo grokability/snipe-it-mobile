@@ -35,7 +35,7 @@ const EMPTY_FILTERS = {
 
 const PAGE_SIZE = 25;
 
-const buildQuery = ({ offset = 0, search = '', filters = EMPTY_FILTERS }) => {
+const buildQuery = ({ offset = 0, search = '', filters = EMPTY_FILTERS, assignedUserId = null }) => {
     let query = `limit=${PAGE_SIZE}&offset=${offset}&sort=created_at&order=asc`;
     if (search) query += `&search=${encodeURIComponent(search)}`;
     if (filters.status) query += `&status_id=${filters.status.id}`;
@@ -46,10 +46,18 @@ const buildQuery = ({ offset = 0, search = '', filters = EMPTY_FILTERS }) => {
     if (filters.company) query += `&company_id=${filters.company.id}`;
     if (filters.model) query += `&model_id=${filters.model.id}`;
     if (filters.deleted) query += '&status=Deleted';
+
+    // assigned_type is the class name Snipe-IT stores on the asset
+    if (assignedUserId) {
+        query += `&assigned_to=${assignedUserId}&assigned_type=${encodeURIComponent('App\\Models\\User')}`;
+    }
+
     return query;
 };
 
-export default function AssetList() {
+// The Assets tab's list. With assignedUserId it lists only the assets checked out to that user; search and
+// filters then narrow within them.
+export default function AssetList({ assignedUserId = null }) {
     const colors = useColors();
     const insets = useSafeAreaInsets();
     const styles = useMemo(() => createStyles(colors), [colors]);
@@ -117,7 +125,7 @@ export default function AssetList() {
                                 )}
                             </View>
                         </Pressable>
-                        {!createDenied && (
+                        {!createDenied && !assignedUserId && (
                             <Pressable onPress={() => router.push('/(tabs)/(assets)/create')} hitSlop={4}>
                                 <Ionicons name="add" size={26} color={colors.text} />
                             </Pressable>
@@ -146,7 +154,7 @@ export default function AssetList() {
                 },
             },
         });
-    }, [navigation, colors.text, colors.primary, t, debouncedSetSearch, activeFilterCount, styles, createDenied, attachSearchBar, fillSearchBarFromParam]);
+    }, [navigation, colors.text, colors.primary, t, debouncedSetSearch, activeFilterCount, styles, createDenied, assignedUserId, attachSearchBar, fillSearchBarFromParam]);
 
     useEffect(() => {
         if (!searchParam) {
@@ -165,12 +173,12 @@ export default function AssetList() {
     // cancel any pending debounce on unmount so we don't update state after user navigates away
     useEffect(() => () => debouncedSetSearch.cancel(), [debouncedSetSearch]);
 
-    const queryKey = assetKeys.list({ search: debouncedSearch, filters });
+    const queryKey = assetKeys.list({ search: debouncedSearch, filters, assignedUserId });
 
     const assetsQuery = useInfiniteQuery({
         queryKey,
         queryFn: ({ pageParam }) => makeRequest({
-            url: `/hardware?${buildQuery({ offset: pageParam, search: debouncedSearch, filters })}`,
+            url: `/hardware?${buildQuery({ offset: pageParam, search: debouncedSearch, filters, assignedUserId })}`,
             method: 'get',
             permissionKey: PERMISSIONS.ASSETS_VIEW,
         }),
@@ -359,7 +367,8 @@ export default function AssetList() {
                     name={item.model.name}
                     serial={item.serial}
                     image={item.image}
-                    checkedOut={item.assigned_to}
+                    // In a user's list every asset is checked out to that user
+                    checkedOut={assignedUserId ? null : item.assigned_to}
                     status={item.status_label}
                     deleted={Boolean(item.deleted_at)}
                 />
