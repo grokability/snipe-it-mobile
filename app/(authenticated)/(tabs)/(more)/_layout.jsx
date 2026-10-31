@@ -89,6 +89,30 @@ export default function MoreLayout() {
                     headerBackTitle: '',
                 }}
             />
+            <Stack.Screen
+                name="users/[id]/licenses"
+                options={{
+                    title: t('general.licenses'),
+                    headerTitle: t('general.licenses'),
+                    headerBackTitle: '',
+                }}
+            />
+            <Stack.Screen
+                name="users/[id]/accessories"
+                options={{
+                    title: t('general.accessories'),
+                    headerTitle: t('general.accessories'),
+                    headerBackTitle: '',
+                }}
+            />
+            <Stack.Screen
+                name="users/[id]/consumables"
+                options={{
+                    title: t('general.consumables'),
+                    headerTitle: t('general.consumables'),
+                    headerBackTitle: '',
+                }}
+            />
             {/* Shared with the Assets tab through (assets,more), so items opened from here stay in this stack */}
             <Stack.Screen
                 name="assets/[id]"
