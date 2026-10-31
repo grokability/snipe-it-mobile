@@ -43,6 +43,10 @@ export const userKeys = {
     all: ['users'],
     lists: () => [...userKeys.all, 'list'],
     list: (params) => [...userKeys.lists(), params],
+    details: () => [...userKeys.all, 'detail'],
+    detail: (id) => [...userKeys.details(), id],
+    // /users/{id}/accessories, /consumables or /licenses: what's checked out to the user
+    items: (id, itemType) => [...userKeys.detail(id), itemType],
 };
 
 // What a scanned code resolves to. The symbology is part of the key because a 1D barcode and a

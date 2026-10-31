@@ -10,12 +10,21 @@ const useDetailRowStyles = () => {
     return {colors, styles};
 };
 
-export const DetailRow = ({label, value}) => {
+// With onPress the value is drawn as a link (mailto:, tel:, a URL…). valueStyle overrides the
+// value's text style, e.g. a warning colour.
+export const DetailRow = ({label, value, onPress, valueStyle}) => {
     const {styles} = useDetailRowStyles();
     return (
         <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>{label}</Text>
-            <Text selectable style={styles.detailValue}>{value}</Text>
+            <Text
+                selectable
+                onPress={onPress}
+                accessibilityRole={onPress ? 'link' : undefined}
+                style={[styles.detailValue, onPress && styles.detailValueLink, valueStyle]}
+            >
+                {value}
+            </Text>
         </View>
     );
 };
@@ -60,5 +69,8 @@ const createStyles = (colors) => StyleSheet.create({
         fontWeight: FontWeight.semibold,
         flex: 1,
         textAlign: 'right',
+    },
+    detailValueLink: {
+        color: colors.primary,
     },
 });

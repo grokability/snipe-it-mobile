@@ -49,7 +49,7 @@ export default function ConsumableScreen() {
             headerRight: () => (
                 <View style={styles.headerButtonGroup}>
                     {!consumableNotFound && (
-                        <Pressable onPress={() => router.push(`/(tabs)/(consumables)/edit/${id}`)} hitSlop={4}>
+                        <Pressable onPress={() => router.push(`/consumables/edit/${id}`)} hitSlop={4}>
                             <Ionicons name="pencil" size={22} color={colors.text} />
                         </Pressable>
                     )}
@@ -118,7 +118,7 @@ export default function ConsumableScreen() {
                     {consumable.user_can_checkout && (
                         <Pressable
                             style={({pressed}) => [styles.checkoutButton, pressed && styles.buttonPressed]}
-                            onPress={() => router.push(`/(tabs)/(consumables)/checkout/${id}`)}
+                            onPress={() => router.push(`/consumables/checkout/${id}`)}
                         >
                             <Text style={styles.checkoutButtonText}>{t('mobile.check_out_button')}</Text>
                         </Pressable>

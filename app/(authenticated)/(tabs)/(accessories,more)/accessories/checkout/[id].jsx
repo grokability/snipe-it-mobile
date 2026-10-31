@@ -1,4 +1,4 @@
-import React, {useMemo, useRef, useState} from 'react';
+import React, {useContext, useMemo, useRef, useState} from 'react';
 import {
     ActivityIndicator,
     KeyboardAvoidingView,
@@ -12,22 +12,26 @@ import {
 import {router, useLocalSearchParams} from 'expo-router';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {makeRequest} from '@/helpers/axiosConfig';
-import {consumableKeys} from '@/helpers/queryKeys';
-import {PermissionDeniedError} from '@/helpers/errors';
+import {accessoryKeys} from '@/helpers/queryKeys';
 import {PERMISSIONS} from '@/permissions/PermissionKeys';
 import {PermissionGate} from '@/permissions/PermissionGate';
+import {AuthContext} from '@/context/AuthProvider';
 import {SafeAreaProvider, useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useColors} from '@/hooks/useThemeColors';
 import {Spacing, BorderRadius, Typography, FontWeight} from '@/constants/sizes';
 import {useTranslation} from 'react-i18next';
 import * as Burnt from 'burnt';
 import {decode} from 'html-entities';
+import {CheckoutPicker} from '@/components/misc/CheckoutPicker';
 import SelectUserBottomSheet from '@/components/bottomSheets/SelectUserBottomSheet';
+import SelectLocationBottomSheet from '@/components/bottomSheets/SelectLocationBottomSheet';
+import SelectAssetBottomSheet from '@/components/bottomSheets/SelectAssetBottomSheet';
 import {Section} from '@/components/ui/Section';
+import {FormRow} from '@/components/forms/FormRow';
 import {FormTextInput} from '@/components/forms/FormTextInput';
 import {SelectorButton} from '@/components/forms/SelectorButton';
 
-export default function ConsumableCheckoutScreen() {
+export default function AccessoryCheckoutScreen() {
     const colors = useColors();
     const insets = useSafeAreaInsets();
     const styles = useMemo(() => createStyles(colors), [colors]);
@@ -36,37 +40,39 @@ export default function ConsumableCheckoutScreen() {
 
     const queryClient = useQueryClient();
 
+    const [checkoutTo, setCheckoutTo] = useState('user');
     const [selectedUser, setSelectedUser] = useState(null);
+    const [selectedLocation, setSelectedLocation] = useState(null);
+    const [selectedAsset, setSelectedAsset] = useState(null);
     const [qty, setQty] = useState('1');
     const [note, setNote] = useState('');
 
     const userRef = useRef(null);
+    const locationRef = useRef(null);
+    const assetRef = useRef(null);
 
-    const consumableQuery = useQuery({
-        queryKey: consumableKeys.detail(id),
-        queryFn: () => makeRequest({url: `/consumables/${id}`, method: 'get', permissionKey: PERMISSIONS.CONSUMABLES_VIEW}),
+    const accessoryQuery = useQuery({
+        queryKey: accessoryKeys.detail(id),
+        queryFn: () => makeRequest({url: `/accessories/${id}`, method: 'get', permissionKey: PERMISSIONS.ACCESSORIES_VIEW}),
     });
 
-    const consumable = consumableQuery.data;
+    const accessory = accessoryQuery.data;
 
     const checkoutMutation = useMutation({
         mutationFn: (data) => makeRequest({
-            url: `/consumables/${id}/checkout`,
+            url: `/accessories/${id}/checkout`,
             method: 'POST',
             data,
-            permissionKey: PERMISSIONS.CONSUMABLES_CHECKOUT,
+            permissionKey: PERMISSIONS.ACCESSORIES_CHECKOUT,
         }),
         onSuccess: (res) => {
             if (res.status === 'error') {
-                const errMsg = typeof res.messages === 'string'
-                    ? res.messages
-                    : res.messages
-                        ? Object.values(res.messages).flat().join('\n')
-                        : t('mobile.consumable_checkout_failed');
                 Burnt.alert({
                     title: t('general.error'),
                     preset: 'error',
-                    message: errMsg,
+                    message: res.messages
+                        ? Object.values(res.messages).flat().join('\n')
+                        : t('mobile.accessory_checkout_failed'),
                     duration: 4,
                 });
                 return;
@@ -74,56 +80,65 @@ export default function ConsumableCheckoutScreen() {
             Burnt.alert({
                 title: t('general.notification_success'),
                 preset: 'heart',
-                message: t('mobile.consumable_checkout_success'),
+                message: t('mobile.accessory_checkout_success'),
                 duration: 2,
             });
-            queryClient.invalidateQueries({ queryKey: consumableKeys.detail(id) }).catch(() => {});
-            queryClient.invalidateQueries({ queryKey: consumableKeys.lists() }).catch(() => {});
-            router.dismissTo(`/(tabs)/(consumables)/${id}`);
+            queryClient.invalidateQueries({ queryKey: accessoryKeys.detail(id) }).catch(() => {});
+            queryClient.invalidateQueries({ queryKey: accessoryKeys.lists() }).catch(() => {});
+            router.dismissTo(`/accessories/${id}`);
         },
         onError: (err) => {
-            if (err instanceof PermissionDeniedError) return;
             console.error(err);
             Burnt.alert({
                 title: t('general.error'),
                 preset: 'error',
-                message: t('mobile.consumable_checkout_failed'),
+                message: t('mobile.accessory_checkout_failed'),
                 duration: 4,
             });
         },
     });
 
+    const getTarget = () => {
+        if (checkoutTo === 'user') return selectedUser;
+        if (checkoutTo === 'location') return selectedLocation;
+        return selectedAsset;
+    };
+
     const handleSubmit = () => {
-        if (!selectedUser) {
+        const target = getTarget();
+        if (!target) {
             Burnt.alert({
                 title: t('general.error'),
                 preset: 'error',
-                message: t('mobile.consumable_user_required'),
+                message: t('mobile.status_and_target_required'),
                 duration: 2,
             });
             return;
         }
 
         const parsedQty = parseInt(qty);
-        const maxQty = consumable?.remaining ?? 1;
+        const maxQty = accessory?.remaining_qty ?? 1;
         if (!parsedQty || parsedQty < 1 || parsedQty > maxQty) {
             Burnt.alert({
                 title: t('general.error'),
                 preset: 'error',
-                message: t('mobile.consumable_qty_required'),
+                message: t('mobile.accessory_qty_required'),
                 duration: 2,
             });
             return;
         }
 
         checkoutMutation.mutate({
-            assigned_to: selectedUser.id,
+            checkout_to_type: checkoutTo,
+            ...(checkoutTo === 'user' && {assigned_user: selectedUser.id}),
+            ...(checkoutTo === 'location' && {assigned_location: selectedLocation.id}),
+            ...(checkoutTo === 'asset' && {assigned_asset: selectedAsset.id}),
             checkout_qty: parsedQty,
             note: note || null,
         });
     };
 
-    if (!consumable) {
+    if (!accessory) {
         return (
             <View style={styles.loadingContainer}>
                 <ActivityIndicator size="large" color={colors.primary} />
@@ -131,8 +146,8 @@ export default function ConsumableCheckoutScreen() {
         );
     }
 
-    const remaining = consumable.remaining ?? 0;
-    const total = consumable.qty ?? 0;
+    const remaining = accessory.remaining_qty ?? 0;
+    const total = accessory.qty ?? 0;
 
     return (
         <SafeAreaProvider>
@@ -146,22 +161,50 @@ export default function ConsumableCheckoutScreen() {
                 contentContainerStyle={[styles.contentContainer, {paddingTop: Platform.OS === 'android' ? insets.top + 56 : 0}]}
                 keyboardShouldPersistTaps="handled"
             >
-                {/* Consumable info header */}
+                {/* Accessory info header */}
                 <View style={styles.infoCard}>
-                    <Text style={styles.infoName}>{decode(consumable.name ?? '')}</Text>
+                    <Text style={styles.infoName}>{decode(accessory.name ?? '')}</Text>
                     <Text style={styles.infoQty}>
                         {t('mobile.remaining_qty_display', {remaining, total})}
                     </Text>
                 </View>
 
-                {/* Assign to user */}
+                {/* Checkout to */}
                 <Section title={t('mobile.checkout_to')}>
-                    <SelectorButton
-                        label={t('general.select_user')}
-                        value={selectedUser ? decode(selectedUser.name) : undefined}
-                        placeholder={t('general.select')}
-                        onPress={() => userRef.current?.present()}
+                    <CheckoutPicker
+                        selectedCheckoutTo={checkoutTo}
+                        setSelectedCheckoutTo={(val) => {
+                            setCheckoutTo(val);
+                            setSelectedUser(null);
+                            setSelectedLocation(null);
+                            setSelectedAsset(null);
+                        }}
                     />
+
+                    {checkoutTo === 'user' && (
+                        <SelectorButton
+                            label={t('general.select_user')}
+                            value={selectedUser ? decode(selectedUser.name) : undefined}
+                            placeholder={t('general.select')}
+                            onPress={() => userRef.current?.present()}
+                        />
+                    )}
+                    {checkoutTo === 'location' && (
+                        <SelectorButton
+                            label={t('general.select_location')}
+                            value={selectedLocation ? decode(selectedLocation.name) : undefined}
+                            placeholder={t('general.select')}
+                            onPress={() => locationRef.current?.present()}
+                        />
+                    )}
+                    {checkoutTo === 'asset' && (
+                        <SelectorButton
+                            label={t('general.select_asset')}
+                            value={selectedAsset ? decode(selectedAsset.name) : undefined}
+                            placeholder={t('general.select')}
+                            onPress={() => assetRef.current?.present()}
+                        />
+                    )}
                 </Section>
 
                 {/* Quantity */}
@@ -189,7 +232,7 @@ export default function ConsumableCheckoutScreen() {
                 </Section>
 
                 {/* Submit */}
-                <PermissionGate permission={PERMISSIONS.CONSUMABLES_CHECKOUT}>
+                <PermissionGate permission={PERMISSIONS.ACCESSORIES_CHECKOUT}>
                     <Pressable
                         onPress={handleSubmit}
                         disabled={checkoutMutation.isPending}
@@ -214,6 +257,18 @@ export default function ConsumableCheckoutScreen() {
                 ref={userRef}
                 selectedUser={selectedUser}
                 setSelectedUser={setSelectedUser}
+            />
+            <SelectLocationBottomSheet
+                title={t('general.select_location')}
+                ref={locationRef}
+                selectedLocation={selectedLocation}
+                setSelectedLocation={setSelectedLocation}
+            />
+            <SelectAssetBottomSheet
+                title={t('general.select_asset')}
+                ref={assetRef}
+                selectedAsset={selectedAsset}
+                setSelectedAsset={setSelectedAsset}
             />
         </SafeAreaProvider>
     );

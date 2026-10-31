@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, RefreshControl, Platform } from 'react-native';
+import { View, Text, StyleSheet, RefreshControl, Platform, Pressable } from 'react-native';
 import { Image } from 'expo-image';
 import { useState, useCallback, useMemo, useLayoutEffect, useRef, useEffect } from "react";
 import debounce from 'lodash/debounce';
@@ -7,7 +7,7 @@ import { makeRequest } from "@/helpers/axiosConfig";
 import { userKeys } from "@/helpers/queryKeys";
 import { useRefreshOnFocus } from "@/hooks/useRefreshOnFocus";
 import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
-import { useNavigation } from "expo-router";
+import { router, useNavigation } from "expo-router";
 import { useColors } from "@/hooks/useThemeColors";
 import { Spacing, BorderRadius, Typography, FontWeight } from "@/constants/sizes";
 import { decode } from "html-entities";
@@ -15,6 +15,7 @@ import { FlashList } from "@shopify/flash-list";
 import { useTranslation } from "react-i18next";
 import { Ionicons } from '@expo/vector-icons';
 import EmptyState from "@/components/ui/EmptyState";
+import UserBadge from "@/components/users/UserBadge";
 import { UserListSkeleton } from "@/components/ui/Skeleton";
 import { useRedirectIfDenied } from "@/permissions/PermissionContext";
 import { PERMISSIONS } from "@/permissions/PermissionKeys";
@@ -114,7 +115,13 @@ export default function UsersScreen() {
             .join(' · ');
 
         return (
-            <View style={styles.itemContainer}>
+            <Pressable
+                onPress={() => router.push(`/(more)/users/${user.id}`)}
+                style={({ pressed }) => [
+                    styles.itemContainer,
+                    pressed && styles.itemPressed
+                ]}
+            >
                 {user.avatar
                     ? (
                         <Image
@@ -139,19 +146,10 @@ export default function UsersScreen() {
                     )}
                     <View style={styles.footer}>
                         <Text style={styles.assetsCount}>{t('general.countable.assets', { count: user.assets_count })}</Text>
-                        {user.vip && (
-                            <View style={[styles.badge, styles.vipBadge]}>
-                                <Text style={[styles.badgeText, styles.vipBadgeText]}>{t('admin.users.general.vip_label')}</Text>
-                            </View>
-                        )}
-                        {!user.activated && (
-                            <View style={[styles.badge, styles.loginDisabledBadge]}>
-                                <Text style={[styles.badgeText, styles.loginDisabledBadgeText]}>{t('general.login_disabled')}</Text>
-                            </View>
-                        )}
+                        <UserBadge user={user} />
                     </View>
                 </View>
-            </View>
+            </Pressable>
         );
     };
 
@@ -234,6 +232,10 @@ const createStyles = (colors) => StyleSheet.create({
         shadowRadius: 8,
         elevation: 3,
     },
+    itemPressed: {
+        backgroundColor: colors.backgroundSecondary,
+        transform: [{ scale: 0.995 }],
+    },
     avatar: {
         width: AVATAR_SIZE,
         height: AVATAR_SIZE,
@@ -268,26 +270,5 @@ const createStyles = (colors) => StyleSheet.create({
         fontSize: Typography.caption,
         color: colors.primary,
         fontWeight: FontWeight.medium,
-    },
-    badge: {
-        paddingHorizontal: Spacing.sm,
-        paddingVertical: 2,
-        borderRadius: BorderRadius.sm,
-    },
-    badgeText: {
-        fontSize: Typography.caption,
-        fontWeight: FontWeight.semibold,
-    },
-    vipBadge: {
-        backgroundColor: colors.primary + '20',
-    },
-    vipBadgeText: {
-        color: colors.primary,
-    },
-    loginDisabledBadge: {
-        backgroundColor: colors.danger + '20',
-    },
-    loginDisabledBadgeText: {
-        color: colors.danger,
     },
 });

@@ -1,4 +1,4 @@
-import React, {useMemo, useRef, useState} from 'react';
+import React, {useMemo, useState} from 'react';
 import {
     ActivityIndicator,
     KeyboardAvoidingView,
@@ -9,11 +9,10 @@ import {
     Text,
     View,
 } from 'react-native';
-import {decode} from 'html-entities';
 import {router, useLocalSearchParams} from 'expo-router';
 import {useMutation, useQueryClient} from '@tanstack/react-query';
 import {makeRequest} from '@/helpers/axiosConfig';
-import {assetKeys} from '@/helpers/queryKeys';
+import {accessoryKeys} from '@/helpers/queryKeys';
 import {PERMISSIONS} from '@/permissions/PermissionKeys';
 import {PermissionGate} from '@/permissions/PermissionGate';
 import {SafeAreaProvider, useSafeAreaInsets} from 'react-native-safe-area-context';
@@ -21,31 +20,26 @@ import {useColors} from '@/hooks/useThemeColors';
 import {Spacing, BorderRadius, Typography, FontWeight} from '@/constants/sizes';
 import {useTranslation} from 'react-i18next';
 import * as Burnt from 'burnt';
+import {decode} from 'html-entities';
 import {Section} from '@/components/ui/Section';
 import {FormTextInput} from '@/components/forms/FormTextInput';
-import SelectStatusBottomSheet from '@/components/bottomSheets/SelectStatusBottomSheet';
-import {SelectorButton} from '@/components/forms/SelectorButton';
 
-export default function CheckinScreen() {
+export default function AccessoryCheckinScreen() {
     const colors = useColors();
     const insets = useSafeAreaInsets();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const {t} = useTranslation();
-    const {id, assetName, assetTag, assignedToName, statusId, statusName} = useLocalSearchParams();
-    const queryClient = useQueryClient();
 
-    const statusBottomSheetRef = useRef(null);
-    const [selectedStatus, setSelectedStatus] = useState(
-        statusId ? { id: parseInt(statusId), name: statusName, value: parseInt(statusId) } : null
-    );
+    const {id, checkoutRecordId, assignedToName, assignedDate} = useLocalSearchParams();
+    const queryClient = useQueryClient();
     const [note, setNote] = useState('');
 
     const checkinMutation = useMutation({
         mutationFn: (data) => makeRequest({
-            url: `/hardware/${id}/checkin`,
+            url: `/accessories/${checkoutRecordId}/checkin`,
             method: 'POST',
-            permissionKey: PERMISSIONS.ASSETS_CHECKIN,
             data,
+            permissionKey: PERMISSIONS.ACCESSORIES_CHECKIN,
         }),
         onSuccess: (res) => {
             if (res.status === 'error') {
@@ -67,9 +61,9 @@ export default function CheckinScreen() {
                 preset: 'heart',
                 duration: 2,
             });
-            queryClient.invalidateQueries({ queryKey: assetKeys.detail(id) }).catch(() => {});
-            queryClient.invalidateQueries({ queryKey: assetKeys.lists() }).catch(() => {});
-            router.dismissTo(`/(tabs)/(assets)/${id}`);
+            queryClient.invalidateQueries({ queryKey: accessoryKeys.detail(id) }).catch(() => {});
+            queryClient.invalidateQueries({ queryKey: accessoryKeys.lists() }).catch(() => {});
+            router.dismissTo(`/accessories/${id}`);
         },
         onError: (err) => {
             console.error(err);
@@ -82,10 +76,7 @@ export default function CheckinScreen() {
     });
 
     const handleSubmit = () => {
-        checkinMutation.mutate({
-            status_id: selectedStatus?.id ?? (parseInt(statusId) || 1),
-            note: note || null,
-        });
+        checkinMutation.mutate({note: note || null});
     };
 
     return (
@@ -100,27 +91,20 @@ export default function CheckinScreen() {
                 contentContainerStyle={[styles.contentContainer, {paddingTop: Platform.OS === 'android' ? insets.top + 56 : 0}]}
                 keyboardShouldPersistTaps="handled"
             >
-                {/* Asset info */}
+                {/* Record info */}
                 <View style={styles.infoCard}>
-                    {assetName ? <Text style={styles.infoName}>{decode(assetName)}</Text> : null}
-                    {assetTag ? <Text style={styles.infoTag}>{assetTag}</Text> : null}
                     {assignedToName ? (
                         <>
                             <Text style={styles.infoLabel}>{t('general.assigned_to')}</Text>
-                            <Text style={styles.infoAssigned}>{decode(assignedToName)}</Text>
+                            <Text style={styles.infoName}>{decode(assignedToName)}</Text>
                         </>
+                    ) : null}
+                    {assignedDate ? (
+                        <Text style={styles.infoDate}>{assignedDate}</Text>
                     ) : null}
                 </View>
 
-                <Section title={t('general.select_statuslabel')}>
-                    <SelectorButton
-                        label={t('general.select_statuslabel')}
-                        value={selectedStatus ? decode(selectedStatus.name) : undefined}
-                        placeholder={t('mobile.optional_default_deployable')}
-                        onPress={() => statusBottomSheetRef.current?.present()}
-                    />
-                </Section>
-
+                {/* Note */}
                 <Section title={t('general.notes')}>
                     <FormTextInput
                         value={note}
@@ -130,7 +114,8 @@ export default function CheckinScreen() {
                     />
                 </Section>
 
-                <PermissionGate permission={PERMISSIONS.ASSETS_CHECKIN}>
+                {/* Submit */}
+                <PermissionGate permission={PERMISSIONS.ACCESSORIES_CHECKIN}>
                     <Pressable
                         onPress={handleSubmit}
                         disabled={checkinMutation.isPending}
@@ -149,13 +134,6 @@ export default function CheckinScreen() {
                 </PermissionGate>
             </ScrollView>
             </KeyboardAvoidingView>
-
-            <SelectStatusBottomSheet
-                title={t('general.select_statuslabel')}
-                ref={statusBottomSheetRef}
-                selectedStatus={selectedStatus}
-                setSelectedStatus={setSelectedStatus}
-            />
         </SafeAreaProvider>
     );
 }
@@ -180,26 +158,20 @@ const createStyles = (colors) => StyleSheet.create({
         padding: Spacing.lg,
         gap: Spacing.sm,
     },
-    infoName: {
-        fontSize: Typography.titleLarge,
-        fontWeight: FontWeight.bold,
-        color: colors.text,
-    },
-    infoTag: {
-        fontSize: Typography.body,
-        color: colors.textSecondary,
-    },
     infoLabel: {
         fontSize: Typography.caption,
         color: colors.textSecondary,
         textTransform: 'uppercase',
         letterSpacing: 0.5,
-        marginTop: Spacing.sm,
     },
-    infoAssigned: {
-        fontSize: Typography.body,
-        fontWeight: FontWeight.medium,
+    infoName: {
+        fontSize: Typography.titleLarge,
+        fontWeight: FontWeight.bold,
         color: colors.text,
+    },
+    infoDate: {
+        fontSize: Typography.body,
+        color: colors.textSecondary,
     },
     submitButton: {
         backgroundColor: colors.danger,

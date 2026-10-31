@@ -95,17 +95,49 @@
       "assets_one": "{{count}} Asset",
       "assets_other": "{{count}} Assets"
     },
-    "users": "Users"
+    "superuser": "Superuser",
+    "admin_user": "Admin User",
+    "user": "User",
+    "users": "Users",
+    "contact": "Contact",
+    "email": "Email",
+    "phone": "Phone",
+    "website": "Website",
+    "address": "Address",
+    "username": "Username",
+    "groups": "Groups",
+    "companies": "Companies",
+    "department": "Department",
+    "last_login": "Last Login",
+    "start_date": "Start Date",
+    "end_date": "End Date",
+    "history": "History"
   },
   "admin": {
     "users": {
       "general": {
-        "vip_label": "VIP user"
+        "vip_label": "VIP user",
+        "remote": "Remote",
+        "two_factor_enrolled": "2FA Device Enrolled "
+      },
+      "table": {
+        "mobile": "Mobile",
+        "display_name": "Display Name",
+        "employee_num": "Employee No.",
+        "manager": "Manager"
+      },
+      "message": {
+        "user_has_no_assets_assigned": "No assets currently assigned to user."
       }
     },
     "hardware": {
       "general": {
         "deleted": "This asset has been deleted."
+      }
+    },
+    "settings": {
+      "general": {
+        "ldap_enabled": "LDAP enabled"
       }
     }
   },
@@ -169,6 +201,7 @@
     "screen_checkin": "Checkin Screen",
     "section_details": "Details",
     "section_location": "Location",
+    "section_organization": "Organization",
     "section_purchase": "Purchase Information",
     "section_actions": "Actions",
     "section_assignment": "Assignment",
@@ -343,6 +376,16 @@
     "open_link_failed_title": "Couldn't open the link",
     "open_link_failed_message": "Your device would not open this link. Copy it and paste it into a browser.",
     "open_link_copy": "Copy Link",
-    "open_link_copied": "Link copied"
+    "open_link_copied": "Link copied",
+    "user_assets": "{{firstName}}'s Assets",
+    "user_accessories": "{{firstName}}'s Accessories",
+    "user_consumables": "{{firstName}}'s Consumables",
+    "user_licenses": "{{firstName}}'s Licenses",
+    "user_history": "{{firstName}}'s History",
+    "user_has_no_accessories_assigned": "No accessories currently assigned to user.",
+    "user_has_no_consumables_assigned": "No consumables currently assigned to user.",
+    "user_consumables_unsupported": "This Snipe-IT server can't list a user's consumables.",
+    "contact_your_administrator": "Please contact your administrator.",
+    "user_has_no_licenses_assigned": "No licenses currently assigned to user."
   }
 }

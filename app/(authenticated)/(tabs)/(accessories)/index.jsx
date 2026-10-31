@@ -52,7 +52,7 @@ export default function AccessoriesScreen() {
         const available = remaining_qty > 0;
         return (
             <Pressable
-                onPress={() => router.push(`/(accessories)/${id}`)}
+                onPress={() => router.push(`/accessories/${id}`)}
                 style={({pressed}) => [
                     styles.itemContainer,
                     pressed && styles.itemPressed
