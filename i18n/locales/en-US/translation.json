@@ -383,6 +383,8 @@
     "user_licenses": "{{firstName}}'s Licenses",
     "user_has_no_accessories_assigned": "No accessories currently assigned to user.",
     "user_has_no_consumables_assigned": "No consumables currently assigned to user.",
+    "user_consumables_unsupported": "This Snipe-IT server can't list a user's consumables.",
+    "contact_your_administrator": "Please contact your administrator.",
     "user_has_no_licenses_assigned": "No licenses currently assigned to user."
   }
 }

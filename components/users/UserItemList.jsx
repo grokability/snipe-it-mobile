@@ -39,6 +39,8 @@ const ITEM_TYPES = {
         label: 'general.consumables',
         title: 'mobile.user_consumables',
         empty: 'mobile.user_has_no_consumables_assigned',
+        // /users/{id}/consumables arrived in v8.8.0; older servers answer 404
+        unsupported: 'mobile.user_consumables_unsupported',
         route: (itemId) => `/consumables/${itemId}`,
     },
     // No license screen yet, so license rows don't open anything
@@ -157,6 +159,14 @@ export default function UserItemList({ userId, itemType }) {
 
     if (itemsQuery.isPending) {
         return <AssetListSkeleton />;
+    }
+
+    if (itemsQuery.isError && config.unsupported && itemsQuery.error?.response?.status === 404) {
+        return (
+            <SafeAreaProvider style={styles.container}>
+                <EmptyState icon="file-tray-outline" title={t(config.unsupported)} message={t('mobile.contact_your_administrator')} />
+            </SafeAreaProvider>
+        );
     }
 
     if (itemsQuery.isError) {
