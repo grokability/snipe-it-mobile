@@ -113,6 +113,14 @@ export default function MoreLayout() {
                     headerBackTitle: '',
                 }}
             />
+            <Stack.Screen
+                name="users/[id]/history"
+                options={{
+                    title: t('general.history'),
+                    headerTitle: t('general.history'),
+                    headerBackTitle: '',
+                }}
+            />
             {/* Shared with the Assets tab through (assets,more), so items opened from here stay in this stack */}
             <Stack.Screen
                 name="assets/[id]"

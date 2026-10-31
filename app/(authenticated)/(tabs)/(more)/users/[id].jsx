@@ -155,7 +155,7 @@ export default function UserScreen() {
         { key: 'licenses', icon: 'file-text-o', label: t('general.licenses'), count: user.licenses_count, denied: licensesDenied, route: `/(more)/users/${id}/licenses` },
         { key: 'accessories', icon: 'keyboard-o', label: t('general.accessories'), count: user.accessories_count, denied: accessoriesDenied, route: `/(more)/users/${id}/accessories` },
         { key: 'consumables', icon: 'tint', label: t('general.consumables'), count: user.consumables_count, denied: consumablesDenied, route: `/(more)/users/${id}/consumables` },
-        { key: 'history', icon: 'history', label: t('general.history'), denied: reportsDenied },
+        { key: 'history', icon: 'history', label: t('general.history'), denied: reportsDenied, route: `/(more)/users/${id}/history` },
     ].filter((row) => !row.denied);
 
     const address = formatAddress(user);
