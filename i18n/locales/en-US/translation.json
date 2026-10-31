@@ -377,6 +377,12 @@
     "open_link_failed_message": "Your device would not open this link. Copy it and paste it into a browser.",
     "open_link_copy": "Copy Link",
     "open_link_copied": "Link copied",
-    "user_assets": "{{firstName}}'s Assets"
+    "user_assets": "{{firstName}}'s Assets",
+    "user_accessories": "{{firstName}}'s Accessories",
+    "user_consumables": "{{firstName}}'s Consumables",
+    "user_licenses": "{{firstName}}'s Licenses",
+    "user_has_no_accessories_assigned": "No accessories currently assigned to user.",
+    "user_has_no_consumables_assigned": "No consumables currently assigned to user.",
+    "user_has_no_licenses_assigned": "No licenses currently assigned to user."
   }
 }
