@@ -29,6 +29,7 @@ function createRepo(testContext) {
         GIT_COMMITTER_EMAIL: 'release-notes-test@example.com',
     };
     const git = (...args) => execFileSync('git', args, { cwd: repoDirectory, env, encoding: 'utf8' }).trim();
+    const runScript = (...args) => execFileSync('node', [releaseNotesScript, ...args], { cwd: repoDirectory, env, encoding: 'utf8' }).trim();
     execFileSync('git', ['init', '--quiet', '--initial-branch=develop', repoDirectory], { env });
 
     // Each commit adds its own file, so merging main back into develop never conflicts.
@@ -63,10 +64,13 @@ function createRepo(testContext) {
         releaseNotes: (revision = 'develop') => {
             git('checkout', '--quiet', revision);
 
-            return execFileSync('node', [releaseNotesScript, '1.0.99'], { cwd: repoDirectory, env, encoding: 'utf8' }).trim();
+            return runScript('1.0.99');
         },
+        mergeNotes: (revision = 'develop') => runScript('--merge', revision, '--format', 'slack'),
     };
 }
+
+const pullRequestLink = (number) => `<https://github.com/grokability/snipe-it-mobile/pull/${number}|#${number}>`;
 
 test('lists PRs merged into develop since the previous release, newest first', (testContext) => {
     const repo = createRepo(testContext);
@@ -186,4 +190,38 @@ test('a cut that would fall inside a group drops the whole group', (testContext)
         repo.releaseNotes(),
         [`• ${newerTitle} (#4)`, '…and 1 more: https://github.com/grokability/snipe-it-mobile/releases/tag/v1.0.99'].join('\n'),
     );
+});
+
+test('--merge lists a develop merge with its stacked PRs, as linked Slack mrkdwn', (testContext) => {
+    const repo = createRepo(testContext);
+    repo.pullRequestIntoDevelop(1, 'An earlier PR');
+    repo.startBranch('feature/users-view', 'develop');
+    repo.startBranch('feature/shared-routes', 'feature/users-view');
+    repo.mergePullRequest(2, 'Implements <Shared> Routes & more', 'feature/shared-routes', 'feature/users-view');
+    repo.mergePullRequest(3, 'Adds User Detail Screen', 'feature/users-view', 'develop');
+
+    assert.equal(
+        repo.mergeNotes(),
+        [`• Adds User Detail Screen (${pullRequestLink(3)})`, `  › Implements &lt;Shared&gt; Routes &amp; more (${pullRequestLink(2)})`].join('\n'),
+    );
+});
+
+test('--merge on a merge that is not a PR lists the PRs it brought in, tagged or not', (testContext) => {
+    const repo = createRepo(testContext);
+    repo.git('branch', 'main');
+    repo.startBranch('hotfix/crash', 'main');
+    repo.mergePullRequest(2, 'Hotfix crash', 'hotfix/crash', 'main');
+    repo.tag('v1.0.3');
+    repo.pullRequestIntoDevelop(3, 'Login fixes');
+    repo.git('merge', '--quiet', '--no-ff', '--message', 'Merge main into develop', 'main');
+
+    assert.equal(repo.mergeNotes(), `• Hotfix crash (${pullRequestLink(2)})`);
+});
+
+test('--merge on a commit that brought in no PR shows its escaped subject', (testContext) => {
+    const repo = createRepo(testContext);
+    repo.pullRequestIntoDevelop(1, 'An earlier PR');
+    repo.commit('Fix <Footer> & version');
+
+    assert.equal(repo.mergeNotes(), '• Fix &lt;Footer&gt; &amp; version');
 });

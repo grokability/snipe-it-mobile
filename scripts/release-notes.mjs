@@ -1,16 +1,23 @@
-// Prints the plain-text notes for a promotion: one line per PR merged since the previous release,
-// read from the merge commits. A PR merged into a feature branch first (a stacked PR) is listed
-// under the PR that brought it into develop. testflight.yml's release_info job runs it and passes
-// the result to TestFlight's "What to Test" and to the Slack message.
+// Prints the notes for a promotion: one line per PR merged since the previous release, read from
+// the merge commits. A PR merged into a feature branch first (a stacked PR) is listed under the
+// PR that brought it into develop. testflight.yml's release_info job runs it and passes the
+// result to TestFlight's "What to Test" and to the Slack message.
 //
-//   node scripts/release-notes.mjs <release number>
+//   node scripts/release-notes.mjs <release number>                  # since the previous release
+//   node scripts/release-notes.mjs --merge <commit> [--format slack]  # what one develop commit brought in
 //
-// It needs full history and tags (`git fetch --unshallow --tags`). The GitHub Release that
-// promote.mjs publishes afterwards has the categorized version of the same list; these notes
-// come from git so the run doesn't need a GitHub token.
+// --merge lists the commit's own PR with its stacked PRs, or the subject of a commit that brought
+// in no PR, for develop.yml's Slack message. --format slack writes Slack mrkdwn: &, < and >
+// escaped, and each PR number linked.
+//
+// It needs full history, and tags unless --merge is given (`git fetch --unshallow --tags`). The
+// GitHub Release that promote.mjs publishes afterwards has the categorized version of the same
+// list; these notes come from git so the run doesn't need a GitHub token.
 import { execFileSync } from 'node:child_process';
+import { parseArgs } from 'node:util';
 
 const RELEASES_URL = 'https://github.com/grokability/snipe-it-mobile/releases/tag/';
+const PULL_REQUEST_URL = 'https://github.com/grokability/snipe-it-mobile/pull/';
 // Slack rejects section text over 3,000 characters, and the message adds a heading and escapes
 // &, < and > as entities. TestFlight's limit is 4,000.
 const MAX_LENGTH = 2_500;
@@ -43,9 +50,8 @@ function shippedReleaseTags() {
     return listTags('--merged').filter((tag) => !tagsOnHead.has(tag));
 }
 
-// The commits on `include`'s first-parent line that none of `excludes` reach, newest first.
-function firstParentLine(include, excludes) {
-    const log = runGit(['log', '--first-parent', '--format=%H%x1f%P%x1f%s%x1f%b%x1e', include, '--not', ...excludes]);
+function logCommits(args) {
+    const log = runGit(['log', '--format=%H%x1f%P%x1f%s%x1f%b%x1e', ...args]);
 
     return log
         .split('\x1e')
@@ -56,6 +62,11 @@ function firstParentLine(include, excludes) {
 
             return { hash, parents: parents.split(' '), subject, body };
         });
+}
+
+// The commits on `include`'s first-parent line that none of `excludes` reach, newest first.
+function firstParentLine(include, excludes) {
+    return logCommits(['--first-parent', include, '--not', ...excludes]);
 }
 
 // The PRs along a first-parent line, newest first, each with the PRs its merge brought in: the
@@ -81,12 +92,23 @@ function pullRequestsAlong(commits, shippedTags) {
     });
 }
 
-// A PR's line, with its stacked PRs indented under it.
-function renderPullRequest(pullRequest, depth = 0) {
-    const bullet = depth === 0 ? '•' : `${'  '.repeat(depth)}›`;
-    const stackedLines = pullRequest.stacked.map((stackedPullRequest) => renderPullRequest(stackedPullRequest, depth + 1));
+function escapeMrkdwn(text) {
+    return text.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
+}
 
-    return [`${bullet} ${pullRequest.title} (#${pullRequest.number})`, ...stackedLines].join('\n');
+function bulletFor(depth) {
+    return depth === 0 ? '•' : `${'  '.repeat(depth)}›`;
+}
+
+// A PR's line, with its stacked PRs indented under it. Slack doesn't render nested lists, so a
+// stacked PR is a line of its own that starts with ›.
+function renderPullRequest(pullRequest, format, depth = 0) {
+    const line = format === 'slack'
+        ? `${escapeMrkdwn(pullRequest.title)} (<${PULL_REQUEST_URL}${pullRequest.number}|#${pullRequest.number}>)`
+        : `${pullRequest.title} (#${pullRequest.number})`;
+    const stackedLines = pullRequest.stacked.map((stackedPullRequest) => renderPullRequest(stackedPullRequest, format, depth + 1));
+
+    return [`${bulletFor(depth)} ${line}`, ...stackedLines].join('\n');
 }
 
 // Newest first, so a cut drops the oldest PRs, which the release page still lists. A group is a
@@ -113,18 +135,57 @@ function truncate(groups, releaseUrl) {
     return [...kept, moreLine(groups.length - kept.length)].join('\n');
 }
 
-const releaseNumber = process.argv[2];
-if (!releaseNumber) {
-    console.error('Usage: node scripts/release-notes.mjs <release number>');
+// The PRs since the previous release, cut to fit Slack and TestFlight.
+function releaseNotes(releaseNumber, format) {
+    const shippedTags = shippedReleaseTags();
+    const pullRequests = pullRequestsAlong(firstParentLine('HEAD', shippedTags), shippedTags);
+
+    if (pullRequests.length === 0) {
+        const previousTag = previousReleaseTag();
+
+        return previousTag ? `No pull requests merged since ${previousTag}.` : 'No pull requests merged yet.';
+    }
+    const groups = pullRequests.map((pullRequest) => renderPullRequest(pullRequest, format));
+
+    return truncate(groups, `${RELEASES_URL}v${releaseNumber}`);
+}
+
+// The PRs one commit brought in: its own PR with its stacked PRs, or, for a merge that isn't a
+// PR, the PRs on its second parent. A commit that brought in no PR, such as a commit straight on
+// develop, shows its subject.
+function mergeNotes(revision, format) {
+    const [commit] = logCommits(['-1', revision]);
+    const pullRequests = pullRequestsAlong([commit], []);
+
+    if (pullRequests.length === 0) {
+        return `• ${format === 'slack' ? escapeMrkdwn(commit.subject) : commit.subject}`;
+    }
+
+    return pullRequests.map((pullRequest) => renderPullRequest(pullRequest, format)).join('\n');
+}
+
+const USAGE = 'Usage: node scripts/release-notes.mjs <release number> | --merge <commit> [--format text|slack]';
+let options;
+let releaseNumber;
+try {
+    const parsedArgs = parseArgs({
+        options: { merge: { type: 'string' }, format: { type: 'string', default: 'text' } },
+        allowPositionals: true,
+    });
+    options = parsedArgs.values;
+    [releaseNumber] = parsedArgs.positionals;
+} catch (error) {
+    console.error(`${error.message}\n${USAGE}`);
     process.exit(2);
 }
 
-const shippedTags = shippedReleaseTags();
-const pullRequests = pullRequestsAlong(firstParentLine('HEAD', shippedTags), shippedTags);
-if (pullRequests.length === 0) {
-    const previousTag = previousReleaseTag();
-    console.log(previousTag ? `No pull requests merged since ${previousTag}.` : 'No pull requests merged yet.');
+if (!['text', 'slack'].includes(options.format) || (!options.merge && !releaseNumber)) {
+    console.error(USAGE);
+    process.exit(2);
+}
+
+if (options.merge) {
+    console.log(mergeNotes(options.merge, options.format));
 } else {
-    const groups = pullRequests.map((pullRequest) => renderPullRequest(pullRequest));
-    console.log(truncate(groups, `${RELEASES_URL}v${releaseNumber}`));
+    console.log(releaseNotes(releaseNumber, options.format));
 }
