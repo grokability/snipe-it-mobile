@@ -167,10 +167,6 @@
     "scan_domain_mismatch_title": "Different Instance",
     "scan_domain_mismatch_message": "This QR code belongs to a different Snipe-IT instance than the one you're signed into.",
     "scan_hint": "Point your camera at a barcode, then tap it to scan",
-    "scan_deleted_tag_match_one": "There is also a deleted asset with this tag.",
-    "scan_deleted_tag_match_other": "There are also {{count}} deleted assets with this tag.",
-    "scan_deleted_serial_match_one": "There is also a deleted asset with this serial.",
-    "scan_deleted_serial_match_other": "There are also {{count}} deleted assets with this serial.",
     "scan_not_an_asset": "This code isn't an asset, accessory or consumable.",
     "scan_audit_assets_only": "Only assets can be audited.",
     "scan_multiple_serial": "More than one asset has the serial {{value}}.",
@@ -346,8 +342,6 @@
     "help_join_discord": "Join Discord",
     "help_view_discussions": "View All Discussions",
     "help_view_issues": "View Open Issues",
-    "audit_session_count_one": "{{count}} audited this session",
-    "audit_session_count_other": "{{count}} audited this session",
     "share_error_report_title": "Share this error report?",
     "share_error_report_message": "Sending this helps us find and fix problems like this one. We remove your instance address and login details first, and you can see exactly what will be sent.",
     "share_error_report_show_payload": "See exactly what's sent",
@@ -386,6 +380,12 @@
     "user_has_no_consumables_assigned": "No consumables currently assigned to user.",
     "user_consumables_unsupported": "This Snipe-IT server can't list a user's consumables.",
     "contact_your_administrator": "Please contact your administrator.",
-    "user_has_no_licenses_assigned": "No licenses currently assigned to user."
+    "user_has_no_licenses_assigned": "No licenses currently assigned to user.",
+    "scan_deleted_tag_match_one": "There is also a deleted asset with this tag.",
+    "scan_deleted_tag_match_other": "There are also {{count}} deleted assets with this tag.",
+    "scan_deleted_serial_match_one": "There is also a deleted asset with this serial.",
+    "scan_deleted_serial_match_other": "There are also {{count}} deleted assets with this serial.",
+    "audit_session_count_one": "{{count}} audited this session",
+    "audit_session_count_other": "{{count}} audited this session"
   }
 }
