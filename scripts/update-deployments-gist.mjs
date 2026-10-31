@@ -9,7 +9,7 @@
 // and an eas-cli login (automatic inside EAS workflows). WORKFLOW_NAME is optional and only
 // shows up in the header.
 import { execFileSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { loadReleaseNumbers } from './release-number.mjs';
 
 const GIST_FILENAME = 'snipe-it-mobile-deployments.md';
 const PLATFORMS = ['ios', 'android'];
@@ -29,18 +29,15 @@ function runGit(args) {
     return execFileSync('git', args, { encoding: 'utf8' }).trim();
 }
 
-// The same number the release_info job computes: app.json's major.minor plus the commit's
-// position in the first-parent history. Only commits on that line get one; the testflight
-// merge commits from before promotion became a fast-forward return null.
-function loadReleaseNumbers() {
+// The same numbers the release_info job computes, each from its own commit's app.json. Only
+// commits on the first-parent line get one; the testflight merge commits from before promotion
+// became a fast-forward return null.
+function loadHistoryReleaseNumbers() {
     // eas/checkout clones with --depth 1, which would leave only the newest commit.
     if (runGit(['rev-parse', '--is-shallow-repository']) === 'true') {
         runGit(['fetch', '--unshallow', '--quiet']);
     }
-    const appVersion = JSON.parse(readFileSync(new URL('../app.json', import.meta.url), 'utf8')).expo.version;
-    const majorMinor = appVersion.split('.').slice(0, 2).join('.');
-    const commits = runGit(['rev-list', '--first-parent', '--reverse', 'HEAD']).split('\n');
-    return new Map(commits.map((commit, index) => [commit, `${majorMinor}.${index + 1}`]));
+    return loadReleaseNumbers();
 }
 
 function shortHash(hash) {
@@ -97,7 +94,7 @@ async function loadDeployments() {
         branchByChannel,
         newestUpdates,
         builds: [...newestBuildByKey.values()],
-        releaseNumbers: loadReleaseNumbers(),
+        releaseNumbers: loadHistoryReleaseNumbers(),
     };
 }
 
