@@ -194,19 +194,19 @@ export function scannedItemHref(scanResolution, isAuditMode) {
     if (outcome === 'found' && deletedMatches.length > 0) {
         const deletedMatchIds = deletedMatches.map((deletedMatch) => deletedMatch.id).join(',');
 
-        return `/(authenticated)/(tabs)/(assets)/${asset.id}?deleted_matches=${deletedMatchIds}&matched_by=${matchedBy}`;
+        return `/(authenticated)/(tabs)/(assets)/assets/${asset.id}?deleted_matches=${deletedMatchIds}&matched_by=${matchedBy}`;
     }
 
     if (outcome === 'found') {
-        return `/(authenticated)/(tabs)/(assets)/${asset.id}`;
+        return `/(authenticated)/(tabs)/(assets)/assets/${asset.id}`;
     }
 
     if (outcome === 'notAsset' && kind === 'accessoryId') {
-        return `/(authenticated)/(tabs)/(accessories)/${value}`;
+        return `/(authenticated)/(tabs)/(accessories)/accessories/${value}`;
     }
 
     if (outcome === 'notAsset' && kind === 'consumableId') {
-        return `/(authenticated)/(tabs)/(consumables)/${value}`;
+        return `/(authenticated)/(tabs)/(consumables)/consumables/${value}`;
     }
 
     return null;

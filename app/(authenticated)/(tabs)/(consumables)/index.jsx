@@ -52,7 +52,7 @@ export default function ConsumablesScreen() {
         const available = remaining > 0;
         return (
             <Pressable
-                onPress={() => router.push(`/(consumables)/${id}`)}
+                onPress={() => router.push(`/consumables/${id}`)}
                 style={({pressed}) => [
                     styles.itemContainer,
                     pressed && styles.itemPressed

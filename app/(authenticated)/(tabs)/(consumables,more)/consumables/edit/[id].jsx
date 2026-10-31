@@ -1,5 +1,5 @@
-import React, {useContext, useEffect, useState, useMemo, useRef} from 'react';
-import {decode} from "html-entities";
+import React, {useEffect, useState, useMemo, useRef} from 'react';
+import {decode} from 'html-entities';
 import {
     ActivityIndicator,
     KeyboardAvoidingView,
@@ -10,30 +10,28 @@ import {
     Text,
     View,
 } from 'react-native';
-import {router, useLocalSearchParams} from "expo-router";
+import {router, useLocalSearchParams} from 'expo-router';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
-import {makeRequest} from "@/helpers/axiosConfig";
-import {accessoryKeys} from "@/helpers/queryKeys";
-import {PermissionDeniedError} from "@/helpers/errors";
-import {PERMISSIONS} from "@/permissions/PermissionKeys";
+import {makeRequest} from '@/helpers/axiosConfig';
+import {consumableKeys} from '@/helpers/queryKeys';
+import {PERMISSIONS} from '@/permissions/PermissionKeys';
 import {PermissionGate} from '@/permissions/PermissionGate';
-import {AuthContext} from "@/context/AuthProvider";
-import {SafeAreaProvider, useSafeAreaInsets} from "react-native-safe-area-context";
-import {useColors} from "@/hooks/useThemeColors";
-import {Spacing, BorderRadius, Typography, FontWeight} from "@/constants/sizes";
-import {useTranslation} from "react-i18next";
+import {SafeAreaProvider, useSafeAreaInsets} from 'react-native-safe-area-context';
+import {useColors} from '@/hooks/useThemeColors';
+import {Spacing, BorderRadius, Typography, FontWeight} from '@/constants/sizes';
+import {useTranslation} from 'react-i18next';
 import * as Burnt from 'burnt';
-import SelectCategoryBottomSheet from "@/components/bottomSheets/SelectCategoryBottomSheet";
-import SelectManufacturerBottomSheet from "@/components/bottomSheets/SelectManufacturerBottomSheet";
-import SelectSupplierBottomSheet from "@/components/bottomSheets/SelectSupplierBottomSheet";
-import SelectCompanyBottomSheet from "@/components/bottomSheets/SelectCompanyBottomSheet";
-import SelectLocationBottomSheet from "@/components/bottomSheets/SelectLocationBottomSheet";
-import Datepicker from "@/components/forms/Datepicker";
-import Switch from "@/components/forms/Switch";
-import {Section} from "@/components/ui/Section";
-import {FormRow} from "@/components/forms/FormRow";
-import {FormTextInput} from "@/components/forms/FormTextInput";
-import {SelectorButton} from "@/components/forms/SelectorButton";
+import SelectCategoryBottomSheet from '@/components/bottomSheets/SelectCategoryBottomSheet';
+import SelectManufacturerBottomSheet from '@/components/bottomSheets/SelectManufacturerBottomSheet';
+import SelectSupplierBottomSheet from '@/components/bottomSheets/SelectSupplierBottomSheet';
+import SelectCompanyBottomSheet from '@/components/bottomSheets/SelectCompanyBottomSheet';
+import SelectLocationBottomSheet from '@/components/bottomSheets/SelectLocationBottomSheet';
+import Datepicker from '@/components/forms/Datepicker';
+import Switch from '@/components/forms/Switch';
+import {Section} from '@/components/ui/Section';
+import {FormRow} from '@/components/forms/FormRow';
+import {FormTextInput} from '@/components/forms/FormTextInput';
+import {SelectorButton} from '@/components/forms/SelectorButton';
 
 function parseLocalDate(dateStr) {
     const parts = String(dateStr).split('-');
@@ -43,18 +41,19 @@ function parseLocalDate(dateStr) {
     return new Date(dateStr);
 }
 
-export default function EditAccessoryScreen() {
+export default function EditConsumableScreen() {
     const colors = useColors();
     const insets = useSafeAreaInsets();
     const styles = useMemo(() => createStyles(colors), [colors]);
-    const { t } = useTranslation();
+    const {t} = useTranslation();
 
-    const { id } = useLocalSearchParams();
+    const {id} = useLocalSearchParams();
     const queryClient = useQueryClient();
 
     // Text fields
     const [name, setName] = useState('');
     const [qty, setQty] = useState('');
+    const [itemNo, setItemNo] = useState('');
     const [modelNumber, setModelNumber] = useState('');
     const [orderNumber, setOrderNumber] = useState('');
     const [purchaseCost, setPurchaseCost] = useState('');
@@ -81,74 +80,66 @@ export default function EditAccessoryScreen() {
     const companyRef = useRef(null);
     const locationRef = useRef(null);
 
-    const accessoryQuery = useQuery({
-        queryKey: accessoryKeys.detail(id),
-        queryFn: () => makeRequest({ url: `/accessories/${id}`, method: 'get', permissionKey: PERMISSIONS.ACCESSORIES_VIEW }),
+    const consumableQuery = useQuery({
+        queryKey: consumableKeys.detail(id),
+        queryFn: () => makeRequest({url: `/consumables/${id}`, method: 'get', permissionKey: PERMISSIONS.CONSUMABLES_VIEW}),
     });
 
     const populatedForIdRef = useRef(null);
 
-    const populateFields = (accessory) => {
-        setName(accessory.name ? decode(accessory.name) : '');
-        setQty(accessory.qty != null ? String(accessory.qty) : '');
-        setModelNumber(accessory.model_number ? decode(accessory.model_number) : '');
-        setOrderNumber(accessory.order_number ? decode(accessory.order_number) : '');
-        setPurchaseCost(accessory.purchase_cost || '');
-        setMinAmt(accessory.min_amt != null ? String(accessory.min_amt) : '');
-        setNotes(accessory.notes ? decode(accessory.notes) : '');
+    const populateFields = (consumable) => {
+        setName(consumable.name ? decode(consumable.name) : '');
+        setQty(consumable.qty != null ? String(consumable.qty) : '');
+        setItemNo(consumable.item_no ? decode(consumable.item_no) : '');
+        setModelNumber(consumable.model_number ? decode(consumable.model_number) : '');
+        setOrderNumber(consumable.order_number ? decode(consumable.order_number) : '');
+        setPurchaseCost(consumable.purchase_cost || '');
+        setMinAmt(consumable.min_amt != null ? String(consumable.min_amt) : '');
+        setNotes(consumable.notes ? decode(consumable.notes) : '');
 
-        if (accessory.category) {
-            setSelectedCategory({ id: accessory.category.id, name: decode(accessory.category.name) });
-        }
-        if (accessory.manufacturer) {
-            setSelectedManufacturer({ id: accessory.manufacturer.id, name: decode(accessory.manufacturer.name) });
-        }
-        if (accessory.supplier) {
-            setSelectedSupplier({ id: accessory.supplier.id, name: decode(accessory.supplier.name) });
-        }
-        if (accessory.company) {
-            setSelectedCompany({ id: accessory.company.id, name: decode(accessory.company.name) });
-        }
-        if (accessory.location) {
-            setSelectedLocation({ id: accessory.location.id, name: decode(accessory.location.name) });
-        }
-        if (accessory.purchase_date?.date) {
-            setPurchaseDate(parseLocalDate(accessory.purchase_date.date));
-        }
-        setRequestable(!!accessory.requestable);
+        if (consumable.category) setSelectedCategory({id: consumable.category.id, name: decode(consumable.category.name)});
+        if (consumable.manufacturer) setSelectedManufacturer({id: consumable.manufacturer.id, name: decode(consumable.manufacturer.name)});
+        if (consumable.supplier) setSelectedSupplier({id: consumable.supplier.id, name: decode(consumable.supplier.name)});
+        if (consumable.company) setSelectedCompany({id: consumable.company.id, name: decode(consumable.company.name)});
+        if (consumable.location) setSelectedLocation({id: consumable.location.id, name: decode(consumable.location.name)});
+        if (consumable.purchase_date?.date) setPurchaseDate(parseLocalDate(consumable.purchase_date.date));
+        setRequestable(!!consumable.requestable);
     };
 
     useEffect(() => {
-        if (!accessoryQuery.data) return;
+        if (!consumableQuery.data) return;
         if (populatedForIdRef.current === id) return;
         populatedForIdRef.current = id;
 
-        populateFields(accessoryQuery.data);
-    }, [accessoryQuery.data, id]);
+        populateFields(consumableQuery.data);
+    }, [consumableQuery.data, id]);
 
     const formatDateForApi = (date) => {
         if (!date) return undefined;
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
+        const y = date.getFullYear();
+        const m = String(date.getMonth() + 1).padStart(2, '0');
+        const d = String(date.getDate()).padStart(2, '0');
+        return `${y}-${m}-${d}`;
     };
 
     const editMutation = useMutation({
         mutationFn: (data) => makeRequest({
-            url: `/accessories/${id}`,
+            url: `/consumables/${id}`,
             method: 'PUT',
             data,
-            permissionKey: PERMISSIONS.ACCESSORIES_EDIT,
+            permissionKey: PERMISSIONS.CONSUMABLES_EDIT,
         }),
-        onSuccess: (response) => {
-            if (response.status === 'error') {
+        onSuccess: (res) => {
+            if (res.status === 'error') {
+                const errMsg = typeof res.messages === 'string'
+                    ? res.messages
+                    : res.messages
+                        ? Object.values(res.messages).flat().join('\n')
+                        : t('mobile.edit_consumable_failed');
                 Burnt.alert({
                     title: t('general.error'),
                     preset: 'error',
-                    message: response.messages
-                        ? Object.values(response.messages).flat().join('\n')
-                        : t('mobile.edit_accessory_failed'),
+                    message: errMsg,
                     duration: 4,
                 });
                 return;
@@ -156,20 +147,19 @@ export default function EditAccessoryScreen() {
             Burnt.alert({
                 title: t('general.notification_success'),
                 preset: 'heart',
-                message: t('mobile.edit_accessory_success'),
+                message: t('mobile.edit_consumable_success'),
                 duration: 2,
             });
-            queryClient.invalidateQueries({ queryKey: accessoryKeys.detail(id) }).catch(() => {});
-            queryClient.invalidateQueries({ queryKey: accessoryKeys.lists() }).catch(() => {});
-            router.dismissTo(`/(tabs)/(accessories)/${id}`);
+            queryClient.invalidateQueries({ queryKey: consumableKeys.detail(id) }).catch(() => {});
+            queryClient.invalidateQueries({ queryKey: consumableKeys.lists() }).catch(() => {});
+            router.dismissTo(`/consumables/${id}`);
         },
-        onError: (error) => {
-            if (error instanceof PermissionDeniedError) return;
-            console.error(error);
+        onError: (err) => {
+            console.error(err);
             Burnt.alert({
                 title: t('general.error'),
                 preset: 'error',
-                message: t('mobile.edit_accessory_failed'),
+                message: t('mobile.edit_consumable_failed'),
                 duration: 4,
             });
         },
@@ -180,7 +170,7 @@ export default function EditAccessoryScreen() {
             Burnt.alert({
                 title: t('general.error'),
                 preset: 'error',
-                message: t('mobile.accessory_name_required'),
+                message: t('mobile.consumable_name_required'),
                 duration: 2,
             });
             return;
@@ -189,25 +179,17 @@ export default function EditAccessoryScreen() {
             Burnt.alert({
                 title: t('general.error'),
                 preset: 'error',
-                message: t('mobile.accessory_qty_required'),
-                duration: 2,
-            });
-            return;
-        }
-        if (!selectedCategory) {
-            Burnt.alert({
-                title: t('general.error'),
-                preset: 'error',
-                message: t('general.category') + ' ' + t('mobile.accessory_name_required').toLowerCase(),
+                message: t('mobile.consumable_qty_required'),
                 duration: 2,
             });
             return;
         }
 
-        const data = {
-            name: name,
+        editMutation.mutate({
+            name,
             qty: parseInt(qty, 10),
-            category_id: selectedCategory.id,
+            item_no: itemNo || null,
+            category_id: selectedCategory?.id || null,
             manufacturer_id: selectedManufacturer?.id || null,
             supplier_id: selectedSupplier?.id || null,
             company_id: selectedCompany?.id || null,
@@ -219,12 +201,10 @@ export default function EditAccessoryScreen() {
             min_amt: minAmt ? parseInt(minAmt, 10) : null,
             requestable: requestable ? 1 : 0,
             notes: notes || null,
-        };
-
-        editMutation.mutate(data);
+        });
     };
 
-    if (!accessoryQuery.data) {
+    if (!consumableQuery.data) {
         return (
             <View style={styles.loadingContainer}>
                 <ActivityIndicator size="large" color={colors.primary} />
@@ -240,7 +220,8 @@ export default function EditAccessoryScreen() {
             >
             <ScrollView
                 style={styles.container}
-                contentContainerStyle={[styles.contentContainer, {paddingTop: insets.top}]}
+                contentInsetAdjustmentBehavior="automatic"
+                contentContainerStyle={[styles.contentContainer, {paddingTop: Platform.OS === 'android' ? insets.top + 56 : 0}]}
                 keyboardShouldPersistTaps="handled"
             >
                 {/* Details */}
@@ -269,6 +250,12 @@ export default function EditAccessoryScreen() {
                         value={selectedManufacturer?.name}
                         placeholder={t('general.select')}
                         onPress={() => manufacturerRef.current?.present()}
+                    />
+                    <FormTextInput
+                        label={t('mobile.item_number')}
+                        value={itemNo}
+                        onChangeText={setItemNo}
+                        placeholder={t('mobile.item_number')}
                     />
                     <FormTextInput
                         label={t('general.model_number')}
@@ -344,7 +331,7 @@ export default function EditAccessoryScreen() {
                 </Section>
 
                 {/* Submit */}
-                <PermissionGate permission={PERMISSIONS.ACCESSORIES_EDIT}>
+                <PermissionGate permission={PERMISSIONS.CONSUMABLES_EDIT}>
                     <Pressable
                         onPress={handleSubmit}
                         disabled={editMutation.isPending}
@@ -364,13 +351,12 @@ export default function EditAccessoryScreen() {
             </ScrollView>
             </KeyboardAvoidingView>
 
-            {/* Bottom Sheets */}
             <SelectCategoryBottomSheet
                 title={t('general.select_category')}
                 ref={categoryRef}
                 selectedCategory={selectedCategory}
                 setSelectedCategory={setSelectedCategory}
-                categoryType="accessory"
+                categoryType="consumable"
             />
             <SelectManufacturerBottomSheet
                 title={t('general.select_manufacturer')}

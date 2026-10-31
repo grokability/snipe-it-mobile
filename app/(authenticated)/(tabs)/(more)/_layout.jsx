@@ -89,6 +89,91 @@ export default function MoreLayout() {
                     headerBackTitle: '',
                 }}
             />
+            {/* Shared with the Assets tab through (assets,more), so items opened from here stay in this stack */}
+            <Stack.Screen
+                name="assets/[id]"
+                options={{
+                    title: t('mobile.screen_asset_details'),
+                    headerBackTitle: '',
+                }}
+            />
+            <Stack.Screen
+                name="assets/checkout/[id]"
+                options={{
+                    title: t('mobile.screen_checkout'),
+                    headerBackTitle: '',
+                }}
+            />
+            <Stack.Screen
+                name="assets/checkin/[id]"
+                options={{
+                    title: t('mobile.screen_checkin'),
+                    headerBackTitle: '',
+                }}
+            />
+            <Stack.Screen
+                name="assets/edit/[id]"
+                options={{
+                    title: t('mobile.screen_edit_asset'),
+                    headerBackTitle: '',
+                }}
+            />
+            <Stack.Screen
+                name="assets/create"
+                options={{
+                    title: t('mobile.screen_create_asset'),
+                    headerBackTitle: '',
+                }}
+            />
+            <Stack.Screen
+                name="accessories/[id]"
+                options={{
+                    title: t('mobile.screen_accessory_details'),
+                    headerBackTitle: '',
+                }}
+            />
+            <Stack.Screen
+                name="accessories/checkout/[id]"
+                options={{
+                    title: t('mobile.screen_checkout'),
+                    headerBackTitle: '',
+                }}
+            />
+            <Stack.Screen
+                name="accessories/checkin/[id]"
+                options={{
+                    title: t('mobile.screen_checkin'),
+                    headerBackTitle: '',
+                }}
+            />
+            <Stack.Screen
+                name="accessories/edit/[id]"
+                options={{
+                    title: t('mobile.screen_edit_accessory'),
+                    headerBackTitle: '',
+                }}
+            />
+            <Stack.Screen
+                name="consumables/[id]"
+                options={{
+                    title: t('mobile.screen_consumable_details'),
+                    headerBackTitle: '',
+                }}
+            />
+            <Stack.Screen
+                name="consumables/checkout/[id]"
+                options={{
+                    title: t('mobile.screen_checkout'),
+                    headerBackTitle: '',
+                }}
+            />
+            <Stack.Screen
+                name="consumables/edit/[id]"
+                options={{
+                    title: t('mobile.screen_edit_consumable'),
+                    headerBackTitle: '',
+                }}
+            />
             <Stack.Screen
                 name="settings"
                 options={{
