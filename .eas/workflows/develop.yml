@@ -10,31 +10,37 @@ jobs:
     name: Calculate Fingerprints
     type: fingerprint
 
-  # The release number is app.json's major.minor plus the count of first-parent commits on
-  # develop, so each merged PR adds one. testflight and main are fast-forwarded to develop
-  # commits, so the same commit gets the same number on every track. It is computed rather
-  # than written to app.json because `version` is part of the fingerprint.
+  # The release number is app.json's major.minor plus a count of first-parent commits on
+  # develop since the major.minor last changed, so each merged PR adds one. testflight and main
+  # are fast-forwarded to develop commits, so the same commit gets the same number on every
+  # track. scripts/release-number.mjs has the full rule.
   release_info:
     name: Compute Release Number
     runs_on: linux-medium
     outputs:
       release_number: ${{ steps.release.outputs.release_number }}
       commit: ${{ steps.release.outputs.commit }}
+      changes: ${{ steps.changes.outputs.changes }}
     steps:
       - uses: eas/checkout
       - id: release
         name: Count first-parent commits
         run: |
-          # eas/checkout clones with --depth 1, which would make the count 1.
+          # eas/checkout clones with --depth 1, which would make the count 1. The changes step
+          # also needs the merge's second parent.
           git fetch --unshallow --quiet
           if [ "$(git rev-parse --is-shallow-repository)" = "true" ]; then
             echo "Checkout is still shallow; the release number would be wrong." >&2
             exit 1
           fi
-          MAJOR_MINOR=$(node -p "require('./app.json').expo.version.split('.').slice(0, 2).join('.')")
-          COUNT=$(git rev-list --count --first-parent HEAD)
-          set-output release_number "$MAJOR_MINOR.$COUNT"
+          RELEASE_NUMBER=$(node scripts/release-number.mjs) || exit 1
+          set-output release_number "$RELEASE_NUMBER"
           set-output commit "$(git rev-parse --short HEAD)"
+      # The Slack lines for this commit: its PR with any stacked PRs under it, already escaped
+      # and linked. A failure here leaves the list empty rather than stopping the builds.
+      - id: changes
+        name: List the PRs this commit brought in
+        run: set-output changes "$(node scripts/release-notes.mjs --merge HEAD --format slack)"
 
   get_build_ios:
     name: Find Existing iOS Build
@@ -135,69 +141,53 @@ jobs:
   notify_native_success:
     name: ✅ Notify — Native Build Distributed
     runs_on: linux-medium
-    after: [submit_ios, submit_android, publish_ota]
+    after: [release_info, submit_ios, submit_android, publish_ota]
     if: ${{ after.submit_ios.status == 'success' && after.submit_android.status == 'success' }}
+    # PR titles reach the script through env, not ${{ }} in the script text, so a title
+    # containing shell syntax stays text. release_info already escaped and linked them.
+    env:
+      CHANGES: ${{ after.release_info.outputs.changes }}
     steps:
-      - uses: eas/checkout
       - name: Send Slack notification
         run: |
-          # Each develop commit is one PR merge. GitHub writes "Merge pull request #N from <branch>"
-          # as the subject and the PR title as the body, and the depth-1 checkout has both. Any
-          # other commit, such as merging main back into develop, is shown by its subject.
-          SUBJECT=$(git log -1 --format=%s)
-          PR_TITLE=$(git log -1 --format=%b | head -n 1)
-          PR_NUMBER=$(echo "$SUBJECT" | sed -n 's/^Merge pull request #\([0-9]*\) from .*/\1/p')
           curl -s -X POST "$SLACK_WEBHOOK_URL" \
             -H 'Content-type: application/json' \
             -d "$(jq -n \
-              --arg subject "$SUBJECT" \
-              --arg pr_title "$PR_TITLE" \
-              --arg pr_number "$PR_NUMBER" \
-              'def escape: gsub("&"; "&amp;") | gsub("<"; "&lt;") | gsub(">"; "&gt;");
-              (if $pr_number != "" and $pr_title != ""
-                then "• " + ($pr_title | escape) + " (<https://github.com/grokability/snipe-it-mobile/pull/" + $pr_number + "|#" + $pr_number + ">)"
-                else "• " + ($subject | escape) end) as $change |
+              --arg changes "$CHANGES" \
+              '(if ($changes | contains("\n")) then "📋 *Changes*" else "📋 *Change*" end) as $heading |
               {blocks: [
                 {type: "header", text: {type: "plain_text", text: "✅ Snipe IT Mobile — Internal Testing"}},
                 {type: "section", fields: [
                   {type: "mrkdwn", text: "🔨 *Type:* Native Build"},
                   {type: "mrkdwn", text: "🌿 *Branch:* develop"}
                 ]},
-                {type: "section", text: {type: "mrkdwn", text: ("📋 *Change*\n" + $change)}}
+                {type: "section", text: {type: "mrkdwn", text: ($heading + "\n" + $changes)}}
               ]}')"
 
   notify_ota_success:
     name: ✅ Notify — OTA Update Published
     runs_on: linux-medium
-    after: [submit_ios, submit_android, publish_ota]
+    after: [release_info, submit_ios, submit_android, publish_ota]
     if: ${{ after.publish_ota.status == 'success' && after.submit_ios.status != 'success' }}
+    # PR titles reach the script through env, not ${{ }} in the script text, so a title
+    # containing shell syntax stays text. release_info already escaped and linked them.
+    env:
+      CHANGES: ${{ after.release_info.outputs.changes }}
     steps:
-      - uses: eas/checkout
       - name: Send Slack notification
         run: |
-          # Each develop commit is one PR merge. GitHub writes "Merge pull request #N from <branch>"
-          # as the subject and the PR title as the body, and the depth-1 checkout has both. Any
-          # other commit, such as merging main back into develop, is shown by its subject.
-          SUBJECT=$(git log -1 --format=%s)
-          PR_TITLE=$(git log -1 --format=%b | head -n 1)
-          PR_NUMBER=$(echo "$SUBJECT" | sed -n 's/^Merge pull request #\([0-9]*\) from .*/\1/p')
           curl -s -X POST "$SLACK_WEBHOOK_URL" \
             -H 'Content-type: application/json' \
             -d "$(jq -n \
-              --arg subject "$SUBJECT" \
-              --arg pr_title "$PR_TITLE" \
-              --arg pr_number "$PR_NUMBER" \
-              'def escape: gsub("&"; "&amp;") | gsub("<"; "&lt;") | gsub(">"; "&gt;");
-              (if $pr_number != "" and $pr_title != ""
-                then "• " + ($pr_title | escape) + " (<https://github.com/grokability/snipe-it-mobile/pull/" + $pr_number + "|#" + $pr_number + ">)"
-                else "• " + ($subject | escape) end) as $change |
+              --arg changes "$CHANGES" \
+              '(if ($changes | contains("\n")) then "📋 *Changes*" else "📋 *Change*" end) as $heading |
               {blocks: [
                 {type: "header", text: {type: "plain_text", text: "✅ Snipe IT Mobile — Internal Testing"}},
                 {type: "section", fields: [
                   {type: "mrkdwn", text: "⚡ *Type:* OTA / JS Update"},
                   {type: "mrkdwn", text: "🌿 *Branch:* develop"}
                 ]},
-                {type: "section", text: {type: "mrkdwn", text: ("📋 *Change*\n" + $change)}}
+                {type: "section", text: {type: "mrkdwn", text: ($heading + "\n" + $changes)}}
               ]}')"
 
   notify_failure:

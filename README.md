@@ -118,11 +118,13 @@ Without a sha, the tip of the source branch is promoted. The script:
 
 1. Refuses unless the commit is on the source branch, the push is a fast-forward, the source track's EAS run for that commit succeeded (it waits while that run is going), and no other run is going on either track.
 2. Lists the commits the destination gains and asks before pushing.
-3. Pushes, waits for the destination's EAS run, and when that succeeds publishes the GitHub Release `v1.0.<n>`: a prerelease for beta, made the Latest release on production. The notes are generated from the titles of the PRs merged since the previous release, so PR titles should make sense to testers.
+3. Pushes, waits for the destination's EAS run, and when that succeeds publishes the GitHub Release `v<release number>`: a prerelease for beta, made the Latest release on production. The notes are generated from the titles of the PRs merged since the previous release, so PR titles should make sense to testers.
 
 Running it again after an interruption is safe: an already promoted commit is not pushed again, and an existing release is left alone.
 
 After changing the script, run `npm run test:promote`. To run only some scenarios, call node directly so the filter comes before the file: `node --test --test-name-pattern=<regex> scripts/promote-test/promote.test.mjs`. It runs the script against a throwaway origin with fake EAS and `gh` commands and checks, for each refusal, dry run, promotion and re-run, what was pushed and what was published. It needs no logins and touches nothing outside a temporary directory.
+
+`scripts/release-number.mjs` and `scripts/release-notes.mjs` have suites of the same kind: `node --test scripts/release-number-test/release-number.test.mjs` and `node --test scripts/release-notes-test/release-notes.test.mjs`.
 
 ### What you need
 
@@ -132,7 +134,9 @@ After changing the script, run `npm run test:promote`. To run only some scenario
 
 ### Release numbers
 
-`1.0.<n>` is app.json's major.minor plus the number of commits on develop's first-parent history, so each merged PR adds one, and the same commit has the same number on every track. It shows on the app footer's first line (tap to copy), in Sentry as `release` (`snipe-it-mobile@1.0.104`) with the binary in `dist` (`ios-43`), and in the Deployments gist. app.json's `version` is not bumped per release: it is part of the fingerprint, so a change forces native builds. Bump the minor only for store releases.
+The release number is app.json's major.minor plus a count of commits on develop's first-parent history since that major.minor was set. The merge that changes app.json's major.minor is `.0` (`1.1.0`), and each merged PR after it adds one. app.json's patch digit is ignored, and before the first major.minor change the count runs from the start of history, which is how every `1.0.<n>` was made. `scripts/release-number.mjs` computes it for the workflows, `promote.mjs` and the Deployments gist, so the same commit has the same number on every track. It shows on the app footer's first line (tap to copy), in Sentry as `release` (`snipe-it-mobile@1.0.104`) with the binary in `dist` (`ios-43`), and in the Deployments gist. app.json's `version` is not bumped per release: it is part of the fingerprint, so a change forces native builds. Bump the minor only for store releases, in the last PR of the release.
+
+PRs land as merge commits. The release number counts develop's first-parent commits, and the release notes and Slack messages read the `Merge pull request #N` commits, including those of PRs merged into a feature branch first. A squash merge has no such commit, and a rebase merge adds one release number per commit, so the repository allows merge commits only.
 
 ### Hotfixes
 

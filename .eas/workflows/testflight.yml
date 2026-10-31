@@ -11,7 +11,7 @@ jobs:
     type: fingerprint
 
   # Same computation as develop.yml. testflight only ever holds commits fast-forwarded from
-  # develop, so the first-parent count, and the release number, match develop's run.
+  # develop, so the first-parent history, and the release number, match develop's run.
   release_info:
     name: Compute Release Number
     runs_on: linux-medium
@@ -31,9 +31,8 @@ jobs:
             echo "Checkout is still shallow; the release number would be wrong." >&2
             exit 1
           fi
-          MAJOR_MINOR=$(node -p "require('./app.json').expo.version.split('.').slice(0, 2).join('.')")
-          COUNT=$(git rev-list --count --first-parent HEAD)
-          set-output release_number "$MAJOR_MINOR.$COUNT"
+          RELEASE_NUMBER=$(node scripts/release-number.mjs) || exit 1
+          set-output release_number "$RELEASE_NUMBER"
           set-output commit "$(git rev-parse --short HEAD)"
       - id: notes
         name: List the PRs since the previous release

@@ -24,6 +24,7 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createInterface } from 'node:readline/promises';
+import { loadReleaseNumbers } from './release-number.mjs';
 
 const TRACKS = {
     beta: { source: 'develop', sourceWorkflow: 'develop.yml', destination: 'testflight', destinationWorkflow: 'testflight.yml' },
@@ -107,13 +108,6 @@ async function waitForNewRun(workflowFile, commitHash, knownRunIds) {
         await sleep(POLL_INTERVAL_MS);
     }
     return null;
-}
-
-// The same number the release_info job computes, read from the promoted commit itself.
-function releaseNumberFor(commitHash) {
-    const appVersion = JSON.parse(runGit(['show', `${commitHash}:app.json`])).expo.version;
-    const majorMinor = appVersion.split('.').slice(0, 2).join('.');
-    return `${majorMinor}.${runGit(['rev-list', '--count', '--first-parent', commitHash])}`;
 }
 
 function releaseExists(tag) {
@@ -225,7 +219,8 @@ async function main() {
         fail(`${track.destination} is not an ancestor of ${shortHash}, so this would not be a fast-forward. See the hotfix path in the README.`);
     }
 
-    const releaseNumber = releaseNumberFor(commitHash);
+    // The same number the release_info job computes, read from the promoted commit itself.
+    const releaseNumber = loadReleaseNumbers(commitHash).get(commitHash);
     const tag = `v${releaseNumber}`;
     console.log(`Promoting ${shortHash} (${releaseNumber}) from ${track.source} to ${track.destination}.`);
 
