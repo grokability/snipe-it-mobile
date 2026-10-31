@@ -52,18 +52,22 @@ const ActionRow = ({actionLog, colors, styles}) => {
     );
 };
 
-export default function ActivityReportList() {
+// The Activity Report's list. With itemType and itemId it lists only that record's history: rows where it's the item
+// or the target, as on the record's History tab in the web app.
+export default function ActivityReportList({ itemType = null, itemId = null }) {
     const colors = useColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const {t} = useTranslation();
     const insets = useSafeAreaInsets();
 
-    const queryKey = actionLogKeys.list({});
+    const isFiltered = Boolean(itemType && itemId);
+    const queryKey = actionLogKeys.list({ itemType, itemId });
 
     const activityReportQuery = useInfiniteQuery({
         queryKey,
         queryFn: ({pageParam}) => makeRequest({
-            url: `/reports/activity?limit=${PAGE_SIZE}&offset=${pageParam}&sort=created_at&order=desc`,
+            url: `/reports/activity?limit=${PAGE_SIZE}&offset=${pageParam}&sort=created_at&order=desc`
+                + (isFiltered ? `&item_type=${itemType}&item_id=${itemId}` : ''),
             method: 'get',
             permissionKey: PERMISSIONS.REPORTS_VIEW,
         }),
@@ -99,7 +103,7 @@ export default function ActivityReportList() {
                 <EmptyState
                     icon="file-tray-outline"
                     title={t('mobile.no_results')}
-                    message={t('mobile.no_results_message')}
+                    message={isFiltered ? null : t('mobile.no_results_message')}
                     onRetry={() => activityReportQuery.refetch()}
                 />
             </SafeAreaProvider>
