@@ -156,6 +156,16 @@ describe('beta', () => {
         assert.equal(fixture.release('v1.0.3').isLatest, false);
     });
 
+    test('a commit that bumps the minor is released as .0', async (testContext) => {
+        const fixture = fixtureFor(testContext, { thirdVersion: '1.1.0' });
+        const result = await fixture.promote(['beta']);
+        assert.equal(result.exitCode, 0, result.output);
+        assert.match(result.stdout, /Promoting [0-9a-f]{7} \(1\.1\.0\) from develop to testflight/);
+        assert.deepEqual(fixture.releaseWrites(), [
+            ['release', 'create', 'v1.1.0', '--target', fixture.commits.third, '--prerelease', '--generate-notes'],
+        ]);
+    });
+
     test('promotes the requested commit, not the tip', async (testContext) => {
         const fixture = fixtureFor(testContext);
         const result = await fixture.promote(['beta', fixture.commits.second.slice(0, 7)]);

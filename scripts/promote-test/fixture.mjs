@@ -22,8 +22,9 @@ function writeExecutable(path, contents) {
 }
 
 // `shallow` clones the work copy with --depth 1: 'all-branches' as a CI checkout usually is, or
-// 'single-branch' as a plain `git clone --depth 1` is.
-export function createFixture({ shallow = null } = {}) {
+// 'single-branch' as a plain `git clone --depth 1` is. `thirdVersion` sets app.json's version in
+// third, the way the last PR of a release bumps it.
+export function createFixture({ shallow = null, thirdVersion = null } = {}) {
     const root = mkdtempSync(join(tmpdir(), 'promote-test-'));
     const originDirectory = join(root, 'origin.git');
     const seedDirectory = join(root, 'seed');
@@ -70,6 +71,9 @@ export function createFixture({ shallow = null } = {}) {
     git(seedDirectory, 'checkout', '--quiet', 'develop');
     git(seedDirectory, 'merge', '--quiet', '--no-ff', '--message', 'Second', 'pull-request');
     const second = git(seedDirectory, 'rev-parse', 'HEAD');
+    if (thirdVersion) {
+        writeFileSync(join(seedDirectory, 'app.json'), JSON.stringify({ expo: { version: thirdVersion } }));
+    }
     const third = commitInSeed('Third');
     git(seedDirectory, 'push', '--quiet', 'origin', 'HEAD:refs/heads/develop');
 
