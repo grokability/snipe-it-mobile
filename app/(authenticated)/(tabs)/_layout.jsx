@@ -1,12 +1,12 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import {DynamicColorIOS, Platform} from 'react-native';
-import {NativeTabs} from "expo-router/unstable-native-tabs";
+import {NativeTabs} from "expo-router/native-tabs";
 import {useTranslation} from "react-i18next";
 import {usePermission} from "@/permissions/PermissionContext";
 import {PERMISSIONS} from "@/permissions/PermissionKeys";
 
 export const unstable_settings = {
-    initialRouteName: "(home)",
+    anchor: "(home)",
 };
 
 export default function TabLayout() {
