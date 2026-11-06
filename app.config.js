@@ -9,6 +9,11 @@
 // update would silently never apply.
 const SENTRY_PLUGIN = '@sentry/react-native/expo';
 
+// R8 obfuscates Android release builds, so Java/Kotlin stack traces in Sentry are unreadable
+// without the ProGuard mapping. The Sentry Android Gradle Plugin uploads it at build time,
+// behind the same SENTRY_DISABLE_AUTO_UPLOAD switch as the source maps.
+const SENTRY_ANDROID_OPTIONS = { enableAndroidGradlePlugin: true };
+
 module.exports = ({ config }) => {
     const organization = process.env.SENTRY_ORG;
     const project = process.env.SENTRY_PROJECT;
@@ -25,7 +30,7 @@ module.exports = ({ config }) => {
         ...config,
         plugins: [
             ...(config.plugins ?? []),
-            ...(hasSentryConfig ? [[SENTRY_PLUGIN, { organization, project }]] : []),
+            ...(hasSentryConfig ? [[SENTRY_PLUGIN, { organization, project, experimental_android: SENTRY_ANDROID_OPTIONS }]] : []),
         ],
         extra: {
             ...config.extra,
