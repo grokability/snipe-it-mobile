@@ -35,6 +35,8 @@ const BOUNDS_SMOOTHING_ALPHA = 0.35; // Lower = smoother/more lag, higher = snap
 // linearly to each phone's maximum (8x to 100x), so no fixed value is safe there.
 const SCANNER_ZOOM = Platform.OS === 'ios' ? 0.1 : 0;
 
+const hasBounds = (barcode) => barcode.bounds?.size.width > 0 && barcode.bounds?.size.height > 0;
+
 // Detected bounds are noisy frame-to-frame (autofocus, hand tremor, detector variance);
 // blend toward the new position instead of snapping to it to keep the highlight box steady.
 const smoothBounds = (prevBounds, nextBounds) => ({
@@ -155,12 +157,13 @@ export default function Home() {
     }, [scanningPaused]);
 
     const handleBarcodeScan = useCallback((barcode) => {
-        // pdf417/code39/codabar are decoded by the ZXing fallback provider, which only
-        // reports { type, data } — no bounds — so they can't be placed as a highlight box
-        // just a weird limitation of a very old barcode, nevertheless while continuous scanning
-        // it'll pick up and think it's a possibility sometimes, so we need to include !barcode.bounds here.
-        // (including this note on the off chance it ever actually comes up)
-        if (scanningPaused || !barcode || !barcode.bounds) return;
+        // On iOS, pdf417/code39/codabar are decoded by expo-camera's ZXing fallback provider, which
+        // has no position for the code. Older versions left bounds out; SDK 58 reports a 0×0 box
+        // at the origin instead (expo/expo#47854). Neither can be placed as a highlight box.
+        if (scanningPaused || !barcode || !hasBounds(barcode)) {
+            return;
+        }
+
         const lastSeenAt = Date.now();
         setBarcodes(prevBarcodes => {
             const existing = prevBarcodes.find(prevBarcode => prevBarcode.data === barcode.data);
