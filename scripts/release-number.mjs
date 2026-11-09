@@ -3,8 +3,8 @@
 // after it adds one, so each merged PR adds one. Before any major.minor change, the patch is the
 // full first-parent count, which is how every 1.0 number was made. app.json's own patch digit is
 // ignored. testflight and main are fast-forwarded to develop commits, so the same commit gets the
-// same number on every track. It is computed rather than written to app.json because `version`
-// is part of the fingerprint.
+// same number on every track. app.json's `version` isn't part of the fingerprint (Expo's
+// `balanced` preset skips it), so changing major.minor doesn't by itself produce a native build.
 //
 //   node scripts/release-number.mjs [rev]     # prints rev's release number (default HEAD)
 //
