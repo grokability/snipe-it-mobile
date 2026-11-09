@@ -51,7 +51,7 @@
     "expo-web-browser": "~58.0.7",
     "html-entities": "^2.5.2",
     "i18next": "^25.6.3",
-    "lodash": "^4.17.21",
+    "lodash": "^4.18.1",
     "lottie-react-native": "~7.5.0",
     "react": "19.3.0",
     "react-dom": "19.3.0",
