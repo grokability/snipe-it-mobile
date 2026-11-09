@@ -1,5 +1,5 @@
 import React, {createContext, useState, useEffect, useContext} from "react";
-import {makeRequest} from "../helpers/axiosConfig";
+import {makeRequest, setSessionExpiredHandler} from "../helpers/axiosConfig";
 import * as SecureStore from 'expo-secure-store';
 import { PermissionManager } from '../permissions/PermissionManager';
 import { deviceName } from "expo-device";
@@ -13,6 +13,37 @@ export const AuthProvider = ({children}) => {
     const [user, setUser] = useState(null);
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
+
+    const logout = () => {
+        // Token is not invalidated on logout — see commented block below for full OAuth logout
+        // return makeRequest({
+        //     url: '/mobile/logout',
+        //     method: 'POST',
+        //     isAuth: true,
+        //     data: {
+        //         token_id: user.token_id,
+        //     },
+        //     headers: { 'Authorization': `Bearer ${user.token}` }
+        // }).then(response => {
+        //     console.log('logout response');
+            const currentDomain = PermissionManager.getCurrentDomain();
+            if (currentDomain) {
+                PermissionManager.reset(currentDomain);
+            }
+            SecureStore.deleteItemAsync('user');
+            setUser(null);
+            setIsAuthenticated(false);
+        //     console.log(response);
+        // }).catch(error => {
+        //     console.log('logout error');
+        //     console.error(error);
+        // });
+    };
+
+    useEffect(() => {
+        setSessionExpiredHandler(logout);
+        return () => setSessionExpiredHandler(null);
+    }, []);
 
     useEffect(() => {
         const loadUser = async () => {
@@ -42,31 +73,7 @@ export const AuthProvider = ({children}) => {
                 isAuthenticated,
                 isLoading,
                 setUser,
-                logout: () => {
-                    // Token is not invalidated on logout — see commented block below for full OAuth logout
-                    // return makeRequest({
-                    //     url: '/mobile/logout',
-                    //     method: 'POST',
-                    //     isAuth: true,
-                    //     data: {
-                    //         token_id: user.token_id,
-                    //     },
-                    //     headers: { 'Authorization': `Bearer ${user.token}` }
-                    // }).then(response => {
-                    //     console.log('logout response');
-                        const currentDomain = PermissionManager.getCurrentDomain();
-                        if (currentDomain) {
-                            PermissionManager.reset(currentDomain);
-                        }
-                        SecureStore.deleteItemAsync('user');
-                        setUser(null);
-                        setIsAuthenticated(false);
-                    //     console.log(response);
-                    // }).catch(error => {
-                    //     console.log('logout error');
-                    //     console.error(error);
-                    // });
-                },
+                logout,
                 // leaving this here for now, may serve as a backup login method
                 bearerLogin: (domain, token) => {
                     setIsLoading(true);
