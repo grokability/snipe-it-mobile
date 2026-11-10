@@ -1,9 +1,9 @@
-import { Stack, router } from 'expo-router';
+import { Stack } from 'expo-router';
 import { useAuth, AuthProvider } from "@/context/AuthProvider";
 import { AuditSessionProvider } from "@/context/AuditSessionProvider";
 import { PermissionProvider } from "@/permissions/PermissionContext";
 import { ActivityIndicator, AppState, View } from "react-native";
-import React, {useEffect} from "react";
+import React from "react";
 import {GestureHandlerRootView} from "react-native-gesture-handler";
 import {SafeAreaProvider} from "react-native-safe-area-context";
 import {QueryClientProvider, onlineManager, focusManager} from "@tanstack/react-query";
@@ -57,16 +57,6 @@ function RootLayout() {
     function AuthLayoutContent() {
         const {isAuthenticated, isLoading} = useAuth();
 
-        useEffect(() => {
-            if (!isLoading) {
-                if (isAuthenticated) {
-                    router.replace("/(authenticated)/");
-                } else {
-                    router.replace("/login");
-                }
-            }
-        }, [isAuthenticated, isLoading]);
-
         // Show a loading spinner until the authentication state is resolved
         if (isLoading) {
             return (
@@ -76,11 +66,14 @@ function RootLayout() {
             );
         }
 
+        // Without redirectTo, a failed guard falls back to the first unguarded route in sort
+        // order, which at the root can be an unrelated screen such as scanner.
         return (
             <Stack screenOptions={{ headerShown: false }}>
-                {isAuthenticated ? (
+                <Stack.Protected guard={isAuthenticated} redirectTo="/login">
                     <Stack.Screen name="(authenticated)" />
-                ) : (
+                </Stack.Protected>
+                <Stack.Protected guard={!isAuthenticated} redirectTo="/">
                     <Stack.Screen
                         name="login"
                         options={{
@@ -88,7 +81,7 @@ function RootLayout() {
                             headerTitle: "Login"
                         }}
                     />
-                )}
+                </Stack.Protected>
             </Stack>
         );
     }
