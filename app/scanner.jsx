@@ -23,6 +23,7 @@ import {
     resolveScannedAsset,
     scannedItemHref,
     scannedItemQueryOptions,
+    stripCodabarStartStop,
 } from "@/helpers/scannerUtils";
 import { assetKeys, scanKeys } from "@/helpers/queryKeys";
 
@@ -156,14 +157,15 @@ export default function Home() {
         };
     }, [scanningPaused]);
 
-    const handleBarcodeScan = useCallback((barcode) => {
+    const handleBarcodeScan = useCallback((scannedBarcode) => {
         // On iOS, pdf417/code39/codabar are decoded by expo-camera's ZXing fallback provider, which
         // has no position for the code. Older versions left bounds out; SDK 58 reports a 0×0 box
         // at the origin instead (expo/expo#47854). Neither can be placed as a highlight box.
-        if (scanningPaused || !barcode || !hasBounds(barcode)) {
+        if (scanningPaused || !scannedBarcode || !hasBounds(scannedBarcode)) {
             return;
         }
 
+        const barcode = stripCodabarStartStop(scannedBarcode);
         const lastSeenAt = Date.now();
         setBarcodes(prevBarcodes => {
             const existing = prevBarcodes.find(prevBarcode => prevBarcode.data === barcode.data);

@@ -30,6 +30,18 @@ export function classifyBarcodeSymbology(type) {
     return 'unknown';
 }
 
+const CODABAR_START_STOP = /^[A-D](.*)[A-D]$/;
+
+export function stripCodabarStartStop(barcode) {
+    if (barcode.type !== 'codabar') {
+        return barcode;
+    }
+
+    const match = barcode.data.match(CODABAR_START_STOP);
+
+    return match ? { ...barcode, data: match[1] } : barcode;
+}
+
 // Describes what a scanned code points at without looking anything up; the kind picks the lookup.
 // A 1D barcode is always an asset tag. A 2D code that isn't an http(s) URL is a plain value that
 // could be a tag or a serial ('ambiguous'). url is set for http(s) codes so the caller can check
