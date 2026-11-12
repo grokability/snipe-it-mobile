@@ -225,9 +225,12 @@ export function scannedItemHref(scanResolution, isAuditMode) {
 }
 
 export function isScannedUrlForCurrentInstance(url, storedDomain) {
-    if (!url || !storedDomain) return true;
+    if (!url || !storedDomain) {
+        return true;
+    }
+
     try {
-        return url.origin === new URL(storedDomain).origin;
+        return url.host === new URL(storedDomain).host;
     } catch {
         return true;
     }
