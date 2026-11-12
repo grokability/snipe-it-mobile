@@ -307,7 +307,7 @@ export default function Home() {
                 <TouchableOpacity style={styles.settingsButton} onPress={() => Linking.openSettings()}>
                     <Text style={styles.settingsButtonText}>{t('mobile.open_settings')}</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.closeButton} onPress={() => router.back()}>
+                <TouchableOpacity style={[styles.closeButton, { top: insets.top + 8 }]} onPress={() => router.back()}>
                     <Text style={styles.closeButtonText}>✕</Text>
                 </TouchableOpacity>
             </View>
