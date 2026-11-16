@@ -1,5 +1,5 @@
 import {Stack} from 'expo-router';
-import {useColors} from "@/hooks/useThemeColors";
+import {useStackHeaderOptions} from "@/hooks/useStackHeaderOptions";
 import {useTranslation} from "react-i18next";
 
 export const unstable_settings = {
@@ -7,19 +7,11 @@ export const unstable_settings = {
 };
 
 export default function ConsumablesLayout() {
-    const colors = useColors();
+    const stackHeaderOptions = useStackHeaderOptions();
     const { t } = useTranslation();
 
     return (
-        <Stack screenOptions={{
-            headerShown: true,
-            headerTransparent: true,
-            headerShadowVisible: false,
-            headerTitle: '',
-            headerTintColor: colors.text,
-            headerLeftContainerStyle: { paddingLeft: 16 },
-            headerRightContainerStyle: { paddingRight: 16 },
-        }}>
+        <Stack screenOptions={stackHeaderOptions}>
             <Stack.Screen
                 name="index"
                 options={{
