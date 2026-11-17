@@ -4,6 +4,7 @@ import { AuditSessionProvider } from "@/context/AuditSessionProvider";
 import { PermissionProvider } from "@/permissions/PermissionContext";
 import { ActivityIndicator, AppState, View } from "react-native";
 import React from "react";
+import {StatusBar} from "expo-status-bar";
 import {GestureHandlerRootView} from "react-native-gesture-handler";
 import {SafeAreaProvider} from "react-native-safe-area-context";
 import {QueryClientProvider, onlineManager, focusManager} from "@tanstack/react-query";
@@ -46,6 +47,7 @@ function RootLayout() {
                             <GestureHandlerRootView style={{ flex: 1 }}>
                                     <AuthLayoutContent/>
                                     <ErrorReportConsentPrompt/>
+                                    <StatusBar style="auto"/>
                             </GestureHandlerRootView>
                         </SafeAreaProvider>
                     </AuditSessionProvider>
