@@ -390,7 +390,8 @@ export default function CreateAssetScreen() {
             >
             <ScrollView
                 style={styles.container}
-                contentContainerStyle={styles.contentContainer}
+                contentInsetAdjustmentBehavior="automatic"
+                contentContainerStyle={[styles.contentContainer, {paddingTop: Platform.OS === 'android' ? insets.top + 56 : 0}]}
                 keyboardShouldPersistTaps="handled"
             >
                 {/* Image Upload */}
