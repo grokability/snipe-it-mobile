@@ -1,10 +1,8 @@
 import {Stack} from 'expo-router';
-import {useColors} from "@/hooks/useThemeColors";
 import {useStackHeaderOptions} from "@/hooks/useStackHeaderOptions";
 import {useTranslation} from "react-i18next";
 
 export default function MoreLayout() {
-    const colors = useColors();
     const stackHeaderOptions = useStackHeaderOptions();
     const { t } = useTranslation();
 
@@ -14,9 +12,6 @@ export default function MoreLayout() {
                 name="index"
                 options={{
                     title: t('mobile.more'),
-                    headerTransparent: false,
-                    headerShadowVisible: false,
-                    headerStyle: { backgroundColor: colors.background },
                 }}
             />
             <Stack.Screen
@@ -54,9 +49,6 @@ export default function MoreLayout() {
                 options={{
                     headerTitle: t('general.reports'),
                     headerBackTitle: '',
-                    headerTransparent: false,
-                    headerShadowVisible: false,
-                    headerStyle: { backgroundColor: colors.background },
                 }}
             />
             <Stack.Screen
