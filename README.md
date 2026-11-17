@@ -2,6 +2,13 @@
 
 A React Native mobile app for [Snipe-IT](https://snipeitapp.com), built with Expo.
 
+## Try the BETA!
+
+- iOS (TestFlight): https://testflight.apple.com/join/3B3YcWph
+- Android: https://play.google.com/store/apps/details?id=com.grokability.snipeitmobile
+
+If you run into issues or have feature requests, please use the [discussions tab](https://github.com/grokability/snipe-it-mobile/discussions).
+
 ## Plans
 
 The goal for this mobile app is to be a fully-featured version of the web app. We are fairly early days though
