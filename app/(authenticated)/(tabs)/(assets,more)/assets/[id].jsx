@@ -1,5 +1,5 @@
 import React, {useMemo, useLayoutEffect, useState} from 'react';
-import {ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View} from 'react-native';
+import {ActivityIndicator, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View} from 'react-native';
 import {Image} from 'expo-image';
 import {router, useLocalSearchParams, useNavigation} from "expo-router";
 import {useQuery} from '@tanstack/react-query';
@@ -12,7 +12,8 @@ import {AssetDetailSkeleton} from "@/components/ui/Skeleton";
 import EmptyState from "@/components/ui/EmptyState";
 import Callout from "@/components/ui/Callout";
 import {decode} from "html-entities";
-import {SafeAreaProvider} from "react-native-safe-area-context";
+import {SafeAreaProvider, useSafeAreaInsets} from "react-native-safe-area-context";
+import {StatusBarScrim, useFloatingButtonGroupStyle, useFloatingHeaderOptions} from "@/components/ui/FloatingHeader";
 import {useColors} from "@/hooks/useThemeColors";
 import {Spacing, BorderRadius, Typography, FontWeight} from "@/constants/sizes";
 import {useTranslation} from "react-i18next";
@@ -47,8 +48,11 @@ function mergeCustomFields(asset, fieldsRes) {
 
 export default function AssetScreen() {
     const colors = useColors();
+    const insets = useSafeAreaInsets();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const { t } = useTranslation();
+    const floatingHeaderOptions = useFloatingHeaderOptions();
+    const floatingButtonGroupStyle = useFloatingButtonGroupStyle();
 
     const { denied: createDenied } = usePermission(PERMISSIONS.ASSETS_CREATE);
     const { denied: editDenied } = usePermission(PERMISSIONS.ASSETS_EDIT);
@@ -92,8 +96,9 @@ export default function AssetScreen() {
 
     useLayoutEffect(() => {
         navigation.setOptions({
+            ...floatingHeaderOptions,
             headerRight: () => (
-                <View style={styles.headerButtonGroup}>
+                <View style={[styles.headerButtonGroup, floatingButtonGroupStyle]}>
                     {!createDenied && (
                         <Pressable onPress={() => router.push('/assets/create')} hitSlop={4}>
                             <Ionicons name="add" size={26} color={colors.text} />
@@ -107,7 +112,7 @@ export default function AssetScreen() {
                 </View>
             ),
         });
-    }, [navigation, id, colors.text, createDenied, editDenied, assetNotFound, assetDeleted]);
+    }, [navigation, id, colors.text, createDenied, editDenied, assetNotFound, assetDeleted, floatingHeaderOptions, floatingButtonGroupStyle]);
 
     const na = t('mobile.na');
     const displayValue = (value) => value ? decode(String(value)) : na;
@@ -145,7 +150,7 @@ export default function AssetScreen() {
             <ScrollView
                 style={styles.container}
                 contentInsetAdjustmentBehavior="automatic"
-                contentContainerStyle={styles.contentContainer}
+                contentContainerStyle={[styles.contentContainer, {paddingTop: Platform.OS === 'android' ? insets.top + 56 : 0}]}
                 refreshControl={<RefreshControl refreshing={isManualRefreshing} onRefresh={onManualRefresh} />}
             >
                 {assetDeleted && (
@@ -420,6 +425,7 @@ export default function AssetScreen() {
                     </Section>
                 )}
             </ScrollView>
+            <StatusBarScrim />
         </SafeAreaProvider>
     );
 }
