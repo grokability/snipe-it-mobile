@@ -13,7 +13,7 @@ export function useStackHeaderOptions() {
         headerStyle: Platform.OS === 'android' ? { backgroundColor: colors.background } : undefined,
         headerBlurEffect: isIosBeforeLiquidGlass ? 'systemChromeMaterial' : undefined,
         headerShadowVisible: false,
-        headerTitle: '',
+        ...(Platform.OS === 'ios' && { headerTitle: '' }),
         headerTintColor: colors.text,
         headerLeftContainerStyle: { paddingLeft: 16 },
         headerRightContainerStyle: { paddingRight: 16 },
