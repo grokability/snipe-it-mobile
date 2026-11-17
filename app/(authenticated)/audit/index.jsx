@@ -111,7 +111,7 @@ export default function AuditListScreen() {
 
     return (
         <View style={styles.container}>
-            <View style={[styles.header, {paddingTop: Platform.OS === 'android' ? insets.top + 56 : insets.top + 44}]}>
+            <View style={[styles.header, {paddingTop: Platform.OS === 'ios' ? insets.top + 44 : 0}]}>
                 <SegmentedPicker
                     options={segmentOptions}
                     selectedValue={tab}

@@ -1,7 +1,6 @@
-import {ScrollView, Text, Pressable, StyleSheet, Platform} from 'react-native';
+import {ScrollView, Text, Pressable, StyleSheet} from 'react-native';
 import {useMemo} from "react";
 import {useRouter} from 'expo-router';
-import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import {useColors} from "@/hooks/useThemeColors";
 import {Spacing, Typography, FontWeight, BorderRadius} from "@/constants/sizes";
@@ -23,13 +22,12 @@ export default function MoreScreen() {
     const styles = useMemo(() => createStyles(colors), [colors]);
     const { t } = useTranslation();
     const router = useRouter();
-    const insets = useSafeAreaInsets();
 
     return (
         <ScrollView
             style={styles.container}
             contentInsetAdjustmentBehavior="automatic"
-            contentContainerStyle={{paddingTop: Platform.OS === 'android' ? insets.top + 56 + Spacing.lg : Spacing.lg}}
+            contentContainerStyle={{paddingTop: Spacing.lg}}
         >
             {MENU_ITEMS.map((item) => (
                 <PermissionGate key={item.key} permission={item.permission}>

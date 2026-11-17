@@ -1,5 +1,5 @@
 import React, {useState, useMemo, useLayoutEffect} from 'react';
-import {Image, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View} from 'react-native';
+import {Image, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View} from 'react-native';
 import {router, useLocalSearchParams, useNavigation} from "expo-router";
 import {useQuery} from '@tanstack/react-query';
 import {Ionicons} from '@expo/vector-icons';
@@ -11,7 +11,7 @@ import EmptyState from "@/components/ui/EmptyState";
 import {PERMISSIONS} from "@/permissions/PermissionKeys";
 import {PermissionGate} from "@/permissions/PermissionGate";
 import {decode} from "html-entities";
-import {SafeAreaProvider, useSafeAreaInsets} from "react-native-safe-area-context";
+import {SafeAreaProvider} from "react-native-safe-area-context";
 import {useColors} from "@/hooks/useThemeColors";
 import {Spacing, BorderRadius, Typography, FontWeight} from "@/constants/sizes";
 import {useTranslation} from "react-i18next";
@@ -20,7 +20,6 @@ import {DetailRow} from "@/components/ui/DetailRow";
 
 export default function ConsumableScreen() {
     const colors = useColors();
-    const insets = useSafeAreaInsets();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const { t } = useTranslation();
 
@@ -89,7 +88,7 @@ export default function ConsumableScreen() {
             <ScrollView
                 style={styles.container}
                 contentInsetAdjustmentBehavior="automatic"
-                contentContainerStyle={[styles.contentContainer, {paddingTop: Platform.OS === 'android' ? insets.top + 56 : 0}]}
+                contentContainerStyle={styles.contentContainer}
                 refreshControl={<RefreshControl refreshing={isManualRefreshing} onRefresh={onManualRefresh} />}
             >
                 {/* Image */}
@@ -167,7 +166,7 @@ const createStyles = (colors) => StyleSheet.create({
         backgroundColor: colors.background,
     },
     contentContainer: {
-        padding: Spacing.lg,
+        paddingHorizontal: Spacing.lg,
         paddingBottom: 80,
         gap: Spacing.xxl,
     },

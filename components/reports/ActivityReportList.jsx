@@ -1,4 +1,4 @@
-import {View, Text, StyleSheet, RefreshControl, Platform, Pressable} from 'react-native';
+import {View, Text, StyleSheet, RefreshControl, Pressable} from 'react-native';
 import {useState, useCallback, useMemo} from 'react';
 import {router} from 'expo-router';
 import {useInfiniteQuery} from '@tanstack/react-query';
@@ -10,7 +10,6 @@ import {PERMISSIONS} from '@/permissions/PermissionKeys';
 import {useColors} from '@/hooks/useThemeColors';
 import {Spacing, BorderRadius, Typography, FontWeight} from '@/constants/sizes';
 import {useTranslation} from 'react-i18next';
-import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {FlashList} from '@shopify/flash-list';
 import {SafeAreaProvider} from 'react-native-safe-area-context';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
@@ -58,7 +57,6 @@ export default function ActivityReportList({ itemType = null, itemId = null }) {
     const colors = useColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const {t} = useTranslation();
-    const insets = useSafeAreaInsets();
 
     const isFiltered = Boolean(itemType && itemId);
     const queryKey = actionLogKeys.list({ itemType, itemId });
@@ -123,7 +121,6 @@ export default function ActivityReportList({ itemType = null, itemId = null }) {
                 onEndReachedThreshold={0.1}
                 contentInsetAdjustmentBehavior="automatic"
                 contentContainerStyle={{
-                    paddingTop: Platform.OS === 'android' ? insets.top + 56 : 0,
                     paddingBottom: 80,
                 }}
                 refreshControl={<RefreshControl refreshing={isManualRefreshing} onRefresh={onManualRefresh} />}

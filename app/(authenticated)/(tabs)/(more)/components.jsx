@@ -1,4 +1,4 @@
-import {View, Text, StyleSheet, RefreshControl, Platform, Image} from 'react-native';
+import {View, Text, StyleSheet, RefreshControl, Image} from 'react-native';
 import {useMemo, useState} from "react";
 import {useQuery} from '@tanstack/react-query';
 import {makeRequest} from "@/helpers/axiosConfig";
@@ -6,7 +6,7 @@ import {componentKeys} from "@/helpers/queryKeys";
 import {useRefreshOnFocus} from "@/hooks/useRefreshOnFocus";
 import {PERMISSIONS} from "@/permissions/PermissionKeys";
 import {useRedirectIfDenied} from "@/permissions/PermissionContext";
-import {SafeAreaProvider, useSafeAreaInsets} from "react-native-safe-area-context";
+import {SafeAreaProvider} from "react-native-safe-area-context";
 import {useColors} from "@/hooks/useThemeColors";
 import {Spacing, BorderRadius, Typography, FontWeight} from "@/constants/sizes";
 import {FlashList} from "@shopify/flash-list";
@@ -17,7 +17,6 @@ import EmptyState from "@/components/ui/EmptyState";
 
 export default function ComponentsScreen() {
     const colors = useColors();
-    const insets = useSafeAreaInsets();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const {t} = useTranslation();
 
@@ -96,7 +95,6 @@ export default function ComponentsScreen() {
             <FlashList
                 contentInsetAdjustmentBehavior="automatic"
                 contentContainerStyle={{
-                    paddingTop: Platform.OS === 'android' ? insets.top + 56 : 0,
                     paddingBottom: 80,
                 }}
                 style={styles.flatlist}

@@ -1,4 +1,4 @@
-import {View, Text, StyleSheet, Pressable, ScrollView} from 'react-native';
+import {View, Text, StyleSheet, Pressable, ScrollView, Platform} from 'react-native';
 import {router} from "expo-router";
 import React, {useMemo} from "react";
 import {useSafeAreaInsets} from "react-native-safe-area-context";
@@ -23,7 +23,7 @@ export default function HomeScreen() {
         <View style={styles.container}>
             <ScrollView
                 style={styles.scrollView}
-                contentContainerStyle={[styles.scrollContent, {paddingTop: insets.top + Spacing.lg, paddingBottom: insets.bottom + 100}]}
+                contentContainerStyle={[styles.scrollContent, {paddingTop: Platform.OS === 'ios' ? insets.top + Spacing.lg : Spacing.lg, paddingBottom: insets.bottom + 100}]}
                 showsVerticalScrollIndicator={false}
             >
                 <PermissionGate permission={PERMISSIONS.SUPERUSER}>

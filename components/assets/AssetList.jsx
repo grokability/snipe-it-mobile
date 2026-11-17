@@ -6,7 +6,7 @@ import { useInfiniteQuery, keepPreviousData } from '@tanstack/react-query';
 import { makeRequest } from "@/helpers/axiosConfig";
 import { assetKeys } from "@/helpers/queryKeys";
 import { useRefreshOnFocus } from "@/hooks/useRefreshOnFocus";
-import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
+import {SafeAreaProvider} from "react-native-safe-area-context";
 import { router, useLocalSearchParams, useNavigation } from "expo-router";
 import { useColors } from "@/hooks/useThemeColors";
 import { Spacing, BorderRadius, Typography, FontWeight } from "@/constants/sizes";
@@ -59,7 +59,6 @@ const buildQuery = ({ offset = 0, search = '', filters = EMPTY_FILTERS, assigned
 // filters then narrow within them.
 export default function AssetList({ assignedUserId = null }) {
     const colors = useColors();
-    const insets = useSafeAreaInsets();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const { t } = useTranslation();
     const navigation = useNavigation();
@@ -355,7 +354,6 @@ export default function AssetList({ assignedUserId = null }) {
                 onEndReachedThreshold={0.1}
                 contentInsetAdjustmentBehavior="automatic"
                 contentContainerStyle={{
-                    paddingTop: Platform.OS === 'android' ? insets.top + 56 : 0,
                     paddingBottom: 80
                 }}
                 style={styles.flatlist}

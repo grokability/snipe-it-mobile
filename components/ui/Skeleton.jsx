@@ -1,7 +1,7 @@
 import React, {useEffect, useMemo} from 'react';
-import {Platform, ScrollView, StyleSheet, View} from 'react-native';
+import {ScrollView, StyleSheet, View} from 'react-native';
 import Animated, {useAnimatedStyle, useSharedValue, withRepeat, withTiming} from 'react-native-reanimated';
-import {SafeAreaProvider, useSafeAreaInsets} from 'react-native-safe-area-context';
+import {SafeAreaProvider} from 'react-native-safe-area-context';
 import {useColors} from '@/hooks/useThemeColors';
 import {Spacing, BorderRadius} from '@/constants/sizes';
 
@@ -48,7 +48,6 @@ function SkeletonSection({titleWidth = 120, rows}) {
 // `imageShape` is 'rectangle' (item images) or 'circle' (user avatars).
 function DetailScreenSkeleton({imageShape = 'rectangle', showQtyBadge = false, subtitleWidth = 100, subtitleHeight = 16, sections}) {
     const colors = useColors();
-    const insets = useSafeAreaInsets();
     const styles = useMemo(() => createStyles(colors), [colors]);
 
     return (
@@ -56,7 +55,7 @@ function DetailScreenSkeleton({imageShape = 'rectangle', showQtyBadge = false, s
             <ScrollView
                 style={styles.container}
                 contentInsetAdjustmentBehavior="automatic"
-                contentContainerStyle={[styles.contentContainer, {paddingTop: Platform.OS === 'android' ? insets.top + 56 : 0}]}
+                contentContainerStyle={styles.contentContainer}
             >
                 {imageShape === 'rectangle' && (
                     <View style={styles.imageContainer}>
@@ -88,14 +87,12 @@ function DetailScreenSkeleton({imageShape = 'rectangle', showQtyBadge = false, s
 // `thumbnailShape` is 'rectangle' (item images) or 'circle' (user avatars).
 function ListScreenSkeleton({rows = 6, showThumbnail = true, thumbnailShape = 'rectangle', lines}) {
     const colors = useColors();
-    const insets = useSafeAreaInsets();
     const styles = useMemo(() => createStyles(colors), [colors]);
 
     return (
         <SafeAreaProvider style={styles.listContainer}>
             <ScrollView
                 contentInsetAdjustmentBehavior="automatic"
-                contentContainerStyle={{paddingTop: Platform.OS === 'android' ? insets.top + 56 : 0}}
             >
                 {Array.from({length: rows}).map((_, rowIndex) => (
                     <View key={rowIndex} style={styles.listCard}>
@@ -206,7 +203,7 @@ const createStyles = (colors) => StyleSheet.create({
         backgroundColor: colors.background,
     },
     contentContainer: {
-        padding: Spacing.lg,
+        paddingHorizontal: Spacing.lg,
         paddingBottom: 80,
         gap: Spacing.xxl,
     },

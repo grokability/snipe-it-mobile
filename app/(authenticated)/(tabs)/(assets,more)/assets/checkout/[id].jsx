@@ -1,9 +1,9 @@
 import React, {useContext, useMemo, useRef, useState} from 'react';
-import {ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, Text, View} from 'react-native';
+import {ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View} from 'react-native';
 import {KeyboardAvoidingForm} from "@/components/ui/KeyboardAvoidingForm";
 import {router, useLocalSearchParams} from 'expo-router';
 import {useMutation, useQueryClient} from '@tanstack/react-query';
-import {SafeAreaProvider, useSafeAreaInsets} from 'react-native-safe-area-context';
+import {SafeAreaProvider} from 'react-native-safe-area-context';
 import {makeRequest} from '@/helpers/axiosConfig';
 import {assetKeys} from '@/helpers/queryKeys';
 import {PERMISSIONS} from '@/permissions/PermissionKeys';
@@ -27,7 +27,6 @@ import {SelectorButton} from '@/components/forms/SelectorButton';
 
 export default function CheckoutScreen() {
     const colors = useColors();
-    const insets = useSafeAreaInsets();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const {t} = useTranslation();
     const {id, assetName: initialAssetName, assetTag, statusId, statusName, statusType} = useLocalSearchParams();
@@ -140,7 +139,7 @@ export default function CheckoutScreen() {
                 automaticallyAdjustKeyboardInsets
                 style={styles.container}
                 contentInsetAdjustmentBehavior="automatic"
-                contentContainerStyle={[styles.contentContainer, {paddingTop: Platform.OS === 'android' ? insets.top + 56 : 0}]}
+                contentContainerStyle={styles.contentContainer}
                 keyboardShouldPersistTaps="handled"
             >
                 {/* Asset info */}
@@ -288,7 +287,7 @@ const createStyles = (colors) => StyleSheet.create({
         backgroundColor: colors.background,
     },
     contentContainer: {
-        padding: Spacing.lg,
+        paddingHorizontal: Spacing.lg,
         paddingBottom: 100,
         gap: Spacing.xxl,
     },

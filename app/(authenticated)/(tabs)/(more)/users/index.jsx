@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, RefreshControl, Platform, Pressable } from 'react-native';
+import { View, Text, StyleSheet, RefreshControl, Pressable } from 'react-native';
 import { Image } from 'expo-image';
 import { useState, useCallback, useMemo, useLayoutEffect, useRef, useEffect } from "react";
 import debounce from 'lodash/debounce';
@@ -6,7 +6,7 @@ import { useInfiniteQuery, keepPreviousData } from '@tanstack/react-query';
 import { makeRequest } from "@/helpers/axiosConfig";
 import { userKeys } from "@/helpers/queryKeys";
 import { useRefreshOnFocus } from "@/hooks/useRefreshOnFocus";
-import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
+import {SafeAreaProvider} from "react-native-safe-area-context";
 import { router, useNavigation } from "expo-router";
 import { useColors } from "@/hooks/useThemeColors";
 import { Spacing, BorderRadius, Typography, FontWeight } from "@/constants/sizes";
@@ -35,7 +35,6 @@ const buildQuery = ({ offset = 0, search = '' }) => {
 
 export default function UsersScreen() {
     const colors = useColors();
-    const insets = useSafeAreaInsets();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const { t } = useTranslation();
     const navigation = useNavigation();
@@ -194,7 +193,6 @@ export default function UsersScreen() {
                 onEndReachedThreshold={0.1}
                 contentInsetAdjustmentBehavior="automatic"
                 contentContainerStyle={{
-                    paddingTop: Platform.OS === 'android' ? insets.top + 56 : 0,
                     paddingBottom: 80
                 }}
                 style={styles.flatlist}

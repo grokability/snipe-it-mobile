@@ -1,7 +1,6 @@
 import React, {useContext, useState, useEffect, useMemo, useRef} from 'react';
 import {
     ActivityIndicator,
-    Platform,
     Pressable,
     ScrollView,
     StyleSheet,
@@ -15,7 +14,7 @@ import {PermissionDeniedError} from "@/helpers/errors";
 import {PERMISSIONS} from "@/permissions/PermissionKeys";
 import {PermissionGate} from '@/permissions/PermissionGate';
 import {AuthContext} from "@/context/AuthProvider";
-import {SafeAreaProvider, useSafeAreaInsets} from "react-native-safe-area-context";
+import {SafeAreaProvider} from "react-native-safe-area-context";
 import {useColors} from "@/hooks/useThemeColors";
 import {Spacing, BorderRadius, Typography, FontWeight} from "@/constants/sizes";
 import {useTranslation} from "react-i18next";
@@ -38,7 +37,6 @@ import ImagePicker from "@/components/forms/ImagePicker";
 
 export default function CreateAssetScreen() {
     const colors = useColors();
-    const insets = useSafeAreaInsets();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const { t } = useTranslation();
 
@@ -389,7 +387,7 @@ export default function CreateAssetScreen() {
                 automaticallyAdjustKeyboardInsets
                 style={styles.container}
                 contentInsetAdjustmentBehavior="automatic"
-                contentContainerStyle={[styles.contentContainer, {paddingTop: Platform.OS === 'android' ? insets.top + 56 : 0}]}
+                contentContainerStyle={styles.contentContainer}
                 keyboardShouldPersistTaps="handled"
             >
                 {/* Image Upload */}
@@ -589,7 +587,7 @@ const createStyles = (colors) => StyleSheet.create({
         backgroundColor: colors.background,
     },
     contentContainer: {
-        padding: Spacing.lg,
+        paddingHorizontal: Spacing.lg,
         paddingBottom: 100,
         gap: Spacing.xxl,
     },
