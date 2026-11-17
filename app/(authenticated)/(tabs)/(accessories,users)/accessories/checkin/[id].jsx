@@ -1,6 +1,7 @@
 import React, {useMemo, useState} from 'react';
 import {
     ActivityIndicator,
+    Platform,
     Pressable,
     ScrollView,
     StyleSheet,
@@ -14,7 +15,7 @@ import {makeRequest} from '@/helpers/axiosConfig';
 import {accessoryKeys} from '@/helpers/queryKeys';
 import {PERMISSIONS} from '@/permissions/PermissionKeys';
 import {PermissionGate} from '@/permissions/PermissionGate';
-import {SafeAreaProvider} from 'react-native-safe-area-context';
+import {SafeAreaProvider, useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useColors} from '@/hooks/useThemeColors';
 import {Spacing, BorderRadius, Typography, FontWeight} from '@/constants/sizes';
 import {useTranslation} from 'react-i18next';
@@ -25,6 +26,7 @@ import {FormTextInput} from '@/components/forms/FormTextInput';
 
 export default function AccessoryCheckinScreen() {
     const colors = useColors();
+    const insets = useSafeAreaInsets();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const {t} = useTranslation();
 
@@ -84,7 +86,7 @@ export default function AccessoryCheckinScreen() {
                 automaticallyAdjustKeyboardInsets
                 style={styles.container}
                 contentInsetAdjustmentBehavior="automatic"
-                contentContainerStyle={styles.contentContainer}
+                contentContainerStyle={[styles.contentContainer, {paddingTop: Platform.OS === 'android' ? insets.top + 56 : 0}]}
                 keyboardShouldPersistTaps="handled"
             >
                 {/* Record info */}
@@ -140,7 +142,7 @@ const createStyles = (colors) => StyleSheet.create({
         backgroundColor: colors.background,
     },
     contentContainer: {
-        paddingHorizontal: Spacing.lg,
+        padding: Spacing.lg,
         paddingBottom: 100,
         gap: Spacing.xxl,
     },

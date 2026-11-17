@@ -1,4 +1,5 @@
-import {View, ScrollView, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator} from 'react-native';
+import {View, ScrollView, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator, Platform} from 'react-native';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {AuthContext} from "@/context/AuthProvider";
 import {useContext, useMemo, useState} from "react";
 import * as SecureStore from 'expo-secure-store';
@@ -19,6 +20,7 @@ export default function SettingsScreen() {
     const { logout, user } = useContext(AuthContext);
     const { t } = useTranslation();
     const queryClient = useQueryClient();
+    const insets = useSafeAreaInsets();
     const [refreshing, setRefreshing] = useState(false);
     const [clearingCaches, setClearingCaches] = useState(false);
     const [errorReporting, setErrorReporting] = useState(getErrorReportingConsent);
@@ -101,7 +103,7 @@ export default function SettingsScreen() {
         <ScrollView
             style={styles.container}
             contentInsetAdjustmentBehavior="automatic"
-            contentContainerStyle={styles.contentContainer}
+            contentContainerStyle={[styles.contentContainer, {paddingTop: Platform.OS === 'android' ? insets.top + 56 : 0}]}
         >
             <Text style={styles.text}>{t('mobile.domain_message', { domain: SecureStore.getItem('domain') })}</Text>
             <Text style={[styles.text, {paddingBottom: Spacing.lg}]}>{t('general.settings')}</Text>

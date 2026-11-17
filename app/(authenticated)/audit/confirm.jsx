@@ -2,6 +2,7 @@ import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {
     ActivityIndicator,
     Image,
+    Platform,
     Pressable,
     ScrollView,
     StyleSheet,
@@ -15,6 +16,7 @@ import {router, useLocalSearchParams} from 'expo-router';
 import {makeRequest} from '@/helpers/axiosConfig';
 import {PERMISSIONS} from '@/permissions/PermissionKeys';
 import {PermissionGate} from '@/permissions/PermissionGate';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useColors} from '@/hooks/useThemeColors';
 import {Spacing, BorderRadius, Typography, FontWeight} from '@/constants/sizes';
 import {useTranslation} from 'react-i18next';
@@ -45,6 +47,7 @@ function calculateNextAuditDate(auditInterval) {
 
 export default function AuditConfirmScreen() {
     const colors = useColors();
+    const insets = useSafeAreaInsets();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const {t} = useTranslation();
     const {asset_id, from_scanner} = useLocalSearchParams();
@@ -154,7 +157,7 @@ export default function AuditConfirmScreen() {
                 automaticallyAdjustKeyboardInsets
                 style={styles.container}
                 contentInsetAdjustmentBehavior="automatic"
-                contentContainerStyle={styles.contentContainer}
+                contentContainerStyle={[styles.contentContainer, {paddingTop: Platform.OS === 'android' ? insets.top + 56 : 0}]}
                 keyboardShouldPersistTaps="handled"
             >
                 {/* Asset info card */}
@@ -260,7 +263,7 @@ const createStyles = (colors) => StyleSheet.create({
         backgroundColor: colors.background,
     },
     contentContainer: {
-        paddingHorizontal: Spacing.lg,
+        padding: Spacing.lg,
         paddingBottom: 100,
         gap: Spacing.xxl,
     },

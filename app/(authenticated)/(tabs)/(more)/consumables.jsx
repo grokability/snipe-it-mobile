@@ -1,4 +1,4 @@
-import {View, Text, StyleSheet, RefreshControl, Pressable} from 'react-native';
+import {View, Text, StyleSheet, RefreshControl, Pressable, Platform} from 'react-native';
 import {useContext, useState, useMemo} from "react";
 import {useQuery} from '@tanstack/react-query';
 import {AuthContext} from "@/context/AuthProvider";
@@ -7,7 +7,7 @@ import {consumableKeys} from "@/helpers/queryKeys";
 import {useRefreshOnFocus} from "@/hooks/useRefreshOnFocus";
 import {PERMISSIONS} from "@/permissions/PermissionKeys";
 import {useRedirectIfDenied} from "@/permissions/PermissionContext";
-import {SafeAreaProvider} from "react-native-safe-area-context";
+import {SafeAreaProvider, useSafeAreaInsets} from "react-native-safe-area-context";
 import {router} from "expo-router";
 import {useColors} from "@/hooks/useThemeColors";
 import {Spacing, BorderRadius, Typography, FontWeight} from "@/constants/sizes";
@@ -20,6 +20,7 @@ import EmptyState from "@/components/ui/EmptyState";
 
 export default function ConsumablesScreen() {
     const colors = useColors();
+    const insets = useSafeAreaInsets();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const { t } = useTranslation();
 
@@ -105,6 +106,7 @@ export default function ConsumablesScreen() {
             <FlashList
                 contentInsetAdjustmentBehavior="automatic"
                 contentContainerStyle={{
+                    paddingTop: Platform.OS === 'android' ? insets.top + 56 : 0,
                     paddingBottom: 80
                 }}
                 style={styles.flatlist}

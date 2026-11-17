@@ -7,7 +7,7 @@ import { makeRequest } from "@/helpers/axiosConfig";
 import { assetKeys } from "@/helpers/queryKeys";
 import { useRefreshOnFocus } from "@/hooks/useRefreshOnFocus";
 import {SafeAreaProvider, useSafeAreaInsets} from "react-native-safe-area-context";
-import {StatusBarScrim, useFloatingButtonGroupStyle, useFloatingHeaderOptions} from "@/components/ui/FloatingHeader";
+import {useFloatingButtonGroupStyle} from "@/components/ui/FloatingHeader";
 import { router, useLocalSearchParams, useNavigation } from "expo-router";
 import { useColors } from "@/hooks/useThemeColors";
 import { Spacing, BorderRadius, Typography, FontWeight } from "@/constants/sizes";
@@ -64,7 +64,6 @@ export default function AssetList({ assignedUserId = null }) {
     const styles = useMemo(() => createStyles(colors), [colors]);
     const { t } = useTranslation();
     const navigation = useNavigation();
-    const floatingHeaderOptions = useFloatingHeaderOptions();
     const floatingButtonGroupStyle = useFloatingButtonGroupStyle();
 
     useRedirectIfDenied(PERMISSIONS.ASSETS_VIEW);
@@ -115,7 +114,6 @@ export default function AssetList({ assignedUserId = null }) {
 
     useLayoutEffect(() => {
         navigation.setOptions({
-            ...floatingHeaderOptions,
             headerRight: () => (
                 <View style={[styles.headerButtonGroup, {marginRight: 8}, floatingButtonGroupStyle]}>
                     <Pressable onPress={() => filterSheetRef.current?.present()} hitSlop={4}>
@@ -156,7 +154,7 @@ export default function AssetList({ assignedUserId = null }) {
                 },
             },
         });
-    }, [navigation, colors.text, colors.primary, t, debouncedSetSearch, activeFilterCount, styles, createDenied, assignedUserId, attachSearchBar, fillSearchBarFromParam, floatingHeaderOptions, floatingButtonGroupStyle]);
+    }, [navigation, colors.text, colors.primary, t, debouncedSetSearch, activeFilterCount, styles, createDenied, assignedUserId, attachSearchBar, fillSearchBarFromParam, floatingButtonGroupStyle]);
 
     useEffect(() => {
         if (!searchParam) {
@@ -383,7 +381,6 @@ export default function AssetList({ assignedUserId = null }) {
                 filters={filters}
                 onApply={(newFilters) => setFilters(newFilters)}
             />
-            <StatusBarScrim />
         </SafeAreaProvider>
     );
 }

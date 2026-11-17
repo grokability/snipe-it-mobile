@@ -1,6 +1,7 @@
-import {View, Text, Pressable, StyleSheet, ScrollView} from 'react-native';
+import {View, Text, Pressable, StyleSheet, ScrollView, Platform} from 'react-native';
 import {useCallback, useMemo, useState} from 'react';
 import {useFocusEffect} from 'expo-router';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import {useColors} from '@/hooks/useThemeColors';
 import {Spacing, Typography, FontWeight, BorderRadius} from '@/constants/sizes';
@@ -57,6 +58,7 @@ export default function HelpScreen() {
     const colors = useColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const {t} = useTranslation();
+    const insets = useSafeAreaInsets();
     const [reference, setReference] = useState(null);
     const copyReference = useCopyErrorReportReference();
     const openUrl = useOpenExternalUrl();
@@ -75,7 +77,7 @@ export default function HelpScreen() {
         <ScrollView
             style={styles.container}
             contentInsetAdjustmentBehavior="automatic"
-            contentContainerStyle={styles.content}
+            contentContainerStyle={[styles.content, {paddingTop: Platform.OS === 'android' ? insets.top + 56 : 0}]}
         >
             <View style={styles.infoCard}>
                 <Text style={styles.infoText}>{t('mobile.help_triage_intro')}</Text>

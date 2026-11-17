@@ -1,5 +1,5 @@
 import React, {useState, useMemo, useLayoutEffect} from 'react';
-import {Image, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View} from 'react-native';
+import {Image, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View} from 'react-native';
 import {router, useLocalSearchParams, useNavigation} from "expo-router";
 import {useQuery} from '@tanstack/react-query';
 import {Ionicons} from '@expo/vector-icons';
@@ -9,7 +9,7 @@ import {useRefreshOnFocus} from "@/hooks/useRefreshOnFocus";
 import {AccessoryDetailSkeleton} from "@/components/ui/Skeleton";
 import EmptyState from "@/components/ui/EmptyState";
 import {decode} from "html-entities";
-import {SafeAreaProvider} from "react-native-safe-area-context";
+import {SafeAreaProvider, useSafeAreaInsets} from "react-native-safe-area-context";
 import {useColors} from "@/hooks/useThemeColors";
 import {Spacing, BorderRadius, Typography, FontWeight} from "@/constants/sizes";
 import {useTranslation} from "react-i18next";
@@ -18,10 +18,12 @@ import {DetailRow} from "@/components/ui/DetailRow";
 import {usePermission} from "@/permissions/PermissionContext";
 import {PermissionGate} from "@/permissions/PermissionGate";
 import {PERMISSIONS} from "@/permissions/PermissionKeys";
+import {useFloatingButtonGroupStyle} from "@/components/ui/FloatingHeader";
 
 
 export default function AccessoryScreen() {
     const colors = useColors();
+    const insets = useSafeAreaInsets();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const { t } = useTranslation();
 
@@ -29,6 +31,7 @@ export default function AccessoryScreen() {
 
     const { id } = useLocalSearchParams();
     const navigation = useNavigation();
+    const floatingButtonGroupStyle = useFloatingButtonGroupStyle();
 
     const accessoryQuery = useQuery({
         queryKey: accessoryKeys.detail(id),
@@ -56,7 +59,7 @@ export default function AccessoryScreen() {
     useLayoutEffect(() => {
         navigation.setOptions({
             headerRight: () => (
-                <View style={styles.headerButtonGroup}>
+                <View style={[styles.headerButtonGroup, floatingButtonGroupStyle]}>
                     {!editDenied && !accessoryNotFound && (
                         <Pressable onPress={() => router.push(`/accessories/edit/${id}`)} hitSlop={4}>
                             <Ionicons name="pencil" size={22} color={colors.text} />
@@ -65,7 +68,7 @@ export default function AccessoryScreen() {
                 </View>
             ),
         });
-    }, [navigation, id, colors.text, editDenied, accessoryNotFound]);
+    }, [navigation, id, colors.text, editDenied, accessoryNotFound, floatingButtonGroupStyle]);
 
     const na = t('mobile.na');
     const displayValue = (value) => value ? decode(String(value)) : na;
@@ -99,7 +102,7 @@ export default function AccessoryScreen() {
             <ScrollView
                 style={styles.container}
                 contentInsetAdjustmentBehavior="automatic"
-                contentContainerStyle={styles.contentContainer}
+                contentContainerStyle={[styles.contentContainer, {paddingTop: Platform.OS === 'android' ? insets.top + 56 : 0}]}
                 refreshControl={<RefreshControl refreshing={isManualRefreshing} onRefresh={onManualRefresh} />}
             >
                 {/* Image */}
@@ -208,7 +211,7 @@ const createStyles = (colors) => StyleSheet.create({
         backgroundColor: colors.background,
     },
     contentContainer: {
-        paddingHorizontal: Spacing.lg,
+        padding: Spacing.lg,
         paddingBottom: 80,
         gap: Spacing.xxl,
     },

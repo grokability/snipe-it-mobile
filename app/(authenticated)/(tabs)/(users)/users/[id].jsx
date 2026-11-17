@@ -7,7 +7,7 @@ import { makeRequest } from "@/helpers/axiosConfig";
 import { userKeys } from "@/helpers/queryKeys";
 import { useRefreshOnFocus } from "@/hooks/useRefreshOnFocus";
 import { useOpenExternalUrl } from "@/hooks/useOpenExternalUrl";
-import {SafeAreaProvider} from "react-native-safe-area-context";
+import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useColors } from "@/hooks/useThemeColors";
 import { Spacing, BorderRadius, Typography, FontWeight } from "@/constants/sizes";
 import { decode } from "html-entities";
@@ -86,6 +86,7 @@ const buildWebsiteUrl = (website) => {
 
 export default function UserScreen() {
     const colors = useColors();
+    const insets = useSafeAreaInsets();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const { t } = useTranslation();
     const { id } = useLocalSearchParams();
@@ -165,7 +166,7 @@ export default function UserScreen() {
             <ScrollView
                 style={styles.container}
                 contentInsetAdjustmentBehavior="automatic"
-                contentContainerStyle={styles.contentContainer}
+                contentContainerStyle={[styles.contentContainer, { paddingTop: Platform.OS === 'android' ? insets.top + 56 : 0 }]}
                 refreshControl={<RefreshControl refreshing={isManualRefreshing} onRefresh={onManualRefresh} />}
             >
                 {/* Header */}
@@ -305,7 +306,7 @@ const createStyles = (colors) => StyleSheet.create({
         backgroundColor: colors.background,
     },
     contentContainer: {
-        paddingHorizontal: Spacing.lg,
+        padding: Spacing.lg,
         paddingBottom: 80,
         gap: Spacing.xxl,
     },

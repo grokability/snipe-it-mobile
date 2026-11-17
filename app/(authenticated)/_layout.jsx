@@ -1,18 +1,21 @@
 import {Stack} from "expo-router";
 import {useStackHeaderOptions} from "@/hooks/useStackHeaderOptions";
 import {useTranslation} from "react-i18next";
+import {View} from "react-native";
+import {StatusBarScrim} from "@/components/ui/FloatingHeader";
 
 export default function AuthenticatedLayout() {
     const stackHeaderOptions = useStackHeaderOptions();
     const { t } = useTranslation();
 
     return (
-        <Stack
-            screenOptions={{
-                ...stackHeaderOptions,
-                headerShown: false,
-            }}
-        >
+        <View style={{flex: 1}}>
+            <Stack
+                screenOptions={{
+                    ...stackHeaderOptions,
+                    headerShown: false,
+                }}
+            >
                 <Stack.Screen
                     name="(tabs)"
                     options={{
@@ -26,6 +29,8 @@ export default function AuthenticatedLayout() {
                         drawerItemStyle: { display: 'none' },
                     }}
                 />
-        </Stack>
+            </Stack>
+            <StatusBarScrim />
+        </View>
     );
 }

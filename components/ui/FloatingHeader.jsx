@@ -4,6 +4,7 @@ import {router} from 'expo-router';
 import {Ionicons} from '@expo/vector-icons';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useColors} from '@/hooks/useThemeColors';
+import {Spacing} from '@/constants/sizes';
 
 const BUTTON_SIZE = 40;
 
@@ -24,9 +25,7 @@ function FloatingBackButton() {
 
 export function useFloatingHeaderOptions() {
     return useMemo(() => ({
-        headerTransparent: true,
         headerStyle: {backgroundColor: 'transparent'},
-        headerTitle: '',
         headerBackVisible: false,
         headerLeft: (props) => (props.canGoBack ? <FloatingBackButton /> : null),
     }), []);
@@ -61,6 +60,7 @@ const styles = StyleSheet.create({
         width: BUTTON_SIZE,
         height: BUTTON_SIZE,
         borderRadius: BUTTON_SIZE / 2,
+        marginRight: Spacing.lg,
         alignItems: 'center',
         justifyContent: 'center',
     },

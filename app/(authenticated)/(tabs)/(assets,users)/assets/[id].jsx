@@ -13,7 +13,7 @@ import EmptyState from "@/components/ui/EmptyState";
 import Callout from "@/components/ui/Callout";
 import {decode} from "html-entities";
 import {SafeAreaProvider, useSafeAreaInsets} from "react-native-safe-area-context";
-import {StatusBarScrim, useFloatingButtonGroupStyle, useFloatingHeaderOptions} from "@/components/ui/FloatingHeader";
+import {useFloatingButtonGroupStyle} from "@/components/ui/FloatingHeader";
 import {useColors} from "@/hooks/useThemeColors";
 import {Spacing, BorderRadius, Typography, FontWeight} from "@/constants/sizes";
 import {useTranslation} from "react-i18next";
@@ -51,7 +51,6 @@ export default function AssetScreen() {
     const insets = useSafeAreaInsets();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const { t } = useTranslation();
-    const floatingHeaderOptions = useFloatingHeaderOptions();
     const floatingButtonGroupStyle = useFloatingButtonGroupStyle();
 
     const { denied: createDenied } = usePermission(PERMISSIONS.ASSETS_CREATE);
@@ -96,7 +95,6 @@ export default function AssetScreen() {
 
     useLayoutEffect(() => {
         navigation.setOptions({
-            ...floatingHeaderOptions,
             headerRight: () => (
                 <View style={[styles.headerButtonGroup, floatingButtonGroupStyle]}>
                     {!createDenied && (
@@ -112,7 +110,7 @@ export default function AssetScreen() {
                 </View>
             ),
         });
-    }, [navigation, id, colors.text, createDenied, editDenied, assetNotFound, assetDeleted, floatingHeaderOptions, floatingButtonGroupStyle]);
+    }, [navigation, id, colors.text, createDenied, editDenied, assetNotFound, assetDeleted, floatingButtonGroupStyle]);
 
     const na = t('mobile.na');
     const displayValue = (value) => value ? decode(String(value)) : na;
@@ -425,7 +423,6 @@ export default function AssetScreen() {
                     </Section>
                 )}
             </ScrollView>
-            <StatusBarScrim />
         </SafeAreaProvider>
     );
 }

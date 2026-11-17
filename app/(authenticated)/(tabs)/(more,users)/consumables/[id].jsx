@@ -1,5 +1,5 @@
 import React, {useState, useMemo, useLayoutEffect} from 'react';
-import {Image, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View} from 'react-native';
+import {Image, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View} from 'react-native';
 import {router, useLocalSearchParams, useNavigation} from "expo-router";
 import {useQuery} from '@tanstack/react-query';
 import {Ionicons} from '@expo/vector-icons';
@@ -11,20 +11,23 @@ import EmptyState from "@/components/ui/EmptyState";
 import {PERMISSIONS} from "@/permissions/PermissionKeys";
 import {PermissionGate} from "@/permissions/PermissionGate";
 import {decode} from "html-entities";
-import {SafeAreaProvider} from "react-native-safe-area-context";
+import {SafeAreaProvider, useSafeAreaInsets} from "react-native-safe-area-context";
 import {useColors} from "@/hooks/useThemeColors";
 import {Spacing, BorderRadius, Typography, FontWeight} from "@/constants/sizes";
 import {useTranslation} from "react-i18next";
 import {Section} from "@/components/ui/Section";
 import {DetailRow} from "@/components/ui/DetailRow";
+import {useFloatingButtonGroupStyle} from "@/components/ui/FloatingHeader";
 
 export default function ConsumableScreen() {
     const colors = useColors();
+    const insets = useSafeAreaInsets();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const { t } = useTranslation();
 
     const { id } = useLocalSearchParams();
     const navigation = useNavigation();
+    const floatingButtonGroupStyle = useFloatingButtonGroupStyle();
 
     const consumableQuery = useQuery({
         queryKey: consumableKeys.detail(id),
@@ -46,7 +49,7 @@ export default function ConsumableScreen() {
     useLayoutEffect(() => {
         navigation.setOptions({
             headerRight: () => (
-                <View style={styles.headerButtonGroup}>
+                <View style={[styles.headerButtonGroup, floatingButtonGroupStyle]}>
                     {!consumableNotFound && (
                         <Pressable onPress={() => router.push(`/consumables/edit/${id}`)} hitSlop={4}>
                             <Ionicons name="pencil" size={22} color={colors.text} />
@@ -55,7 +58,7 @@ export default function ConsumableScreen() {
                 </View>
             ),
         });
-    }, [navigation, id, colors.text, consumableNotFound]);
+    }, [navigation, id, colors.text, consumableNotFound, floatingButtonGroupStyle]);
 
     const na = t('mobile.na');
     const displayValue = (value) => value ? decode(String(value)) : na;
@@ -88,7 +91,7 @@ export default function ConsumableScreen() {
             <ScrollView
                 style={styles.container}
                 contentInsetAdjustmentBehavior="automatic"
-                contentContainerStyle={styles.contentContainer}
+                contentContainerStyle={[styles.contentContainer, {paddingTop: Platform.OS === 'android' ? insets.top + 56 : 0}]}
                 refreshControl={<RefreshControl refreshing={isManualRefreshing} onRefresh={onManualRefresh} />}
             >
                 {/* Image */}
@@ -166,7 +169,7 @@ const createStyles = (colors) => StyleSheet.create({
         backgroundColor: colors.background,
     },
     contentContainer: {
-        paddingHorizontal: Spacing.lg,
+        padding: Spacing.lg,
         paddingBottom: 80,
         gap: Spacing.xxl,
     },

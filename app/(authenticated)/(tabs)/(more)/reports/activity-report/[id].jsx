@@ -1,8 +1,8 @@
-import {ScrollView, StyleSheet, Text, View} from 'react-native';
+import {Platform, ScrollView, StyleSheet, Text, View} from 'react-native';
 import {decode} from 'html-entities';
 import {useLocalSearchParams, useNavigation} from 'expo-router';
 import {useLayoutEffect, useMemo} from 'react';
-import {SafeAreaProvider} from 'react-native-safe-area-context';
+import {SafeAreaProvider, useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useColors} from '@/hooks/useThemeColors';
 import {useTranslation} from 'react-i18next';
 import {Section} from '@/components/ui/Section';
@@ -15,6 +15,7 @@ export default function ActionLogDetailScreen() {
     const styles = useMemo(() => createStyles(colors), [colors]);
     const {t} = useTranslation();
     const navigation = useNavigation();
+    const insets = useSafeAreaInsets();
     const {data: dataParam} = useLocalSearchParams();
 
     const actionLog = useMemo(() => {
@@ -38,7 +39,10 @@ export default function ActionLogDetailScreen() {
         <SafeAreaProvider>
             <ScrollView
                 style={styles.container}
-                contentContainerStyle={styles.content}
+                contentContainerStyle={[
+                    styles.content,
+                    {paddingTop: Platform.OS === 'android' ? insets.top + 56 : 0},
+                ]}
                 contentInsetAdjustmentBehavior="automatic"
             >
                 <View style={styles.headerRow}>
@@ -96,7 +100,7 @@ const createStyles = (colors) => StyleSheet.create({
         backgroundColor: colors.background,
     },
     content: {
-        paddingHorizontal: Spacing.md,
+        padding: Spacing.md,
         paddingBottom: Spacing.xl * 2,
         gap: Spacing.lg,
     },
