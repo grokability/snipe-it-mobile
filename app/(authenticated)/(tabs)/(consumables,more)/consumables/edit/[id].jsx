@@ -7,9 +7,9 @@ import {
     ScrollView,
     StyleSheet,
     Text,
-    View,
 } from 'react-native';
 import {KeyboardAvoidingForm} from "@/components/ui/KeyboardAvoidingForm";
+import {LoadingScreen} from "@/components/ui/LoadingScreen";
 import {router, useLocalSearchParams} from 'expo-router';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {makeRequest} from '@/helpers/axiosConfig';
@@ -206,9 +206,7 @@ export default function EditConsumableScreen() {
 
     if (!consumableQuery.data) {
         return (
-            <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color={colors.primary} />
-            </View>
+            <LoadingScreen />
         );
     }
 
@@ -385,12 +383,6 @@ export default function EditConsumableScreen() {
 }
 
 const createStyles = (colors) => StyleSheet.create({
-    loadingContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: colors.background,
-    },
     container: {
         flex: 1,
         backgroundColor: colors.background,

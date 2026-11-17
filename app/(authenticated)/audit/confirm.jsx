@@ -10,6 +10,7 @@ import {
     View,
 } from 'react-native';
 import {KeyboardAvoidingForm} from "@/components/ui/KeyboardAvoidingForm";
+import {LoadingScreen} from "@/components/ui/LoadingScreen";
 import {decode} from 'html-entities';
 import {router, useLocalSearchParams} from 'expo-router';
 import {makeRequest} from '@/helpers/axiosConfig';
@@ -137,9 +138,7 @@ export default function AuditConfirmScreen() {
 
     if (loading) {
         return (
-            <View style={[styles.container, {justifyContent: 'center', alignItems: 'center'}]}>
-                <ActivityIndicator size="large" color={colors.primary} />
-            </View>
+            <LoadingScreen />
         );
     }
 
