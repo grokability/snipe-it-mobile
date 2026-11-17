@@ -115,7 +115,7 @@ export default function UsersScreen() {
 
         return (
             <Pressable
-                onPress={() => router.push(`/(more)/users/${user.id}`)}
+                onPress={() => router.push(`/(users)/users/${user.id}`)}
                 style={({ pressed }) => [
                     styles.itemContainer,
                     pressed && styles.itemPressed

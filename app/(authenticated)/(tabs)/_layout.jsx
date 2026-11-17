@@ -13,7 +13,7 @@ export default function TabLayout() {
     const { t } = useTranslation();
     const { denied: assetsViewDenied } = usePermission(PERMISSIONS.ASSETS_VIEW);
     const { denied: accessoriesViewDenied } = usePermission(PERMISSIONS.ACCESSORIES_VIEW);
-    const { denied: consumablesViewDenied } = usePermission(PERMISSIONS.CONSUMABLES_VIEW);
+    const { denied: usersViewDenied } = usePermission(PERMISSIONS.USERS_VIEW);
     return (
             <NativeTabs
                 labelStyle={{
@@ -50,14 +50,14 @@ export default function TabLayout() {
                     <NativeTabs.Trigger.Icon src={<NativeTabs.Trigger.VectorIcon family={FontAwesome} name="barcode" />} />
                 </NativeTabs.Trigger>
 
+                <NativeTabs.Trigger name="(users)" hidden={usersViewDenied}>
+                    <NativeTabs.Trigger.Label>{t('general.users')}</NativeTabs.Trigger.Label>
+                    <NativeTabs.Trigger.Icon src={<NativeTabs.Trigger.VectorIcon family={FontAwesome} name="user" />} />
+                </NativeTabs.Trigger>
+
                 <NativeTabs.Trigger name="(accessories)" hidden={accessoriesViewDenied}>
                     <NativeTabs.Trigger.Label>{t('general.accessories')}</NativeTabs.Trigger.Label>
                     <NativeTabs.Trigger.Icon src={<NativeTabs.Trigger.VectorIcon family={FontAwesome} name="keyboard-o" />} />
-                </NativeTabs.Trigger>
-
-                <NativeTabs.Trigger name="(consumables)" hidden={consumablesViewDenied}>
-                    <NativeTabs.Trigger.Label>{t('general.consumables')}</NativeTabs.Trigger.Label>
-                    <NativeTabs.Trigger.Icon src={<NativeTabs.Trigger.VectorIcon family={FontAwesome} name="tint" />} />
                 </NativeTabs.Trigger>
 
                 <NativeTabs.Trigger name="(more)">
