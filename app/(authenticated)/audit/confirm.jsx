@@ -2,7 +2,6 @@ import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {
     ActivityIndicator,
     Image,
-    KeyboardAvoidingView,
     Platform,
     Pressable,
     ScrollView,
@@ -10,6 +9,7 @@ import {
     Text,
     View,
 } from 'react-native';
+import {KeyboardAvoidingForm} from "@/components/ui/KeyboardAvoidingForm";
 import {decode} from 'html-entities';
 import {router, useLocalSearchParams} from 'expo-router';
 import {makeRequest} from '@/helpers/axiosConfig';
@@ -153,11 +153,9 @@ export default function AuditConfirmScreen() {
 
     return (
         <View style={styles.container}>
-            <KeyboardAvoidingView
-                style={styles.flex}
-                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            >
+            <KeyboardAvoidingForm>
             <ScrollView
+                automaticallyAdjustKeyboardInsets
                 style={styles.container}
                 contentInsetAdjustmentBehavior="automatic"
                 contentContainerStyle={[styles.contentContainer, {paddingTop: Platform.OS === 'android' ? insets.top + 56 : 0}]}
@@ -248,7 +246,7 @@ export default function AuditConfirmScreen() {
                     </Pressable>
                 </PermissionGate>
             </ScrollView>
-            </KeyboardAvoidingView>
+            </KeyboardAvoidingForm>
 
             <SelectLocationBottomSheet
                 title={t('general.select_location')}
@@ -261,10 +259,6 @@ export default function AuditConfirmScreen() {
 }
 
 const createStyles = (colors) => StyleSheet.create({
-    flex: {
-        flex: 1,
-        backgroundColor: colors.background,
-    },
     container: {
         flex: 1,
         backgroundColor: colors.background,

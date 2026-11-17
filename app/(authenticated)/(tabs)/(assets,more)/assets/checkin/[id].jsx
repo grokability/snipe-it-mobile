@@ -1,7 +1,6 @@
 import React, {useMemo, useRef, useState} from 'react';
 import {
     ActivityIndicator,
-    KeyboardAvoidingView,
     Platform,
     Pressable,
     ScrollView,
@@ -9,6 +8,7 @@ import {
     Text,
     View,
 } from 'react-native';
+import {KeyboardAvoidingForm} from "@/components/ui/KeyboardAvoidingForm";
 import {decode} from 'html-entities';
 import {router, useLocalSearchParams} from 'expo-router';
 import {useMutation, useQueryClient} from '@tanstack/react-query';
@@ -90,11 +90,9 @@ export default function CheckinScreen() {
 
     return (
         <SafeAreaProvider>
-            <KeyboardAvoidingView
-                style={styles.flex}
-                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            >
+            <KeyboardAvoidingForm>
             <ScrollView
+                automaticallyAdjustKeyboardInsets
                 style={styles.container}
                 contentInsetAdjustmentBehavior="automatic"
                 contentContainerStyle={[styles.contentContainer, {paddingTop: Platform.OS === 'android' ? insets.top + 56 : 0}]}
@@ -148,7 +146,7 @@ export default function CheckinScreen() {
                     </Pressable>
                 </PermissionGate>
             </ScrollView>
-            </KeyboardAvoidingView>
+            </KeyboardAvoidingForm>
 
             <SelectStatusBottomSheet
                 title={t('general.select_statuslabel')}
@@ -161,10 +159,6 @@ export default function CheckinScreen() {
 }
 
 const createStyles = (colors) => StyleSheet.create({
-    flex: {
-        flex: 1,
-        backgroundColor: colors.background,
-    },
     container: {
         flex: 1,
         backgroundColor: colors.background,

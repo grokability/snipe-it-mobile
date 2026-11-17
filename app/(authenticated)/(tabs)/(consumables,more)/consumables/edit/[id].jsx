@@ -2,7 +2,6 @@ import React, {useEffect, useState, useMemo, useRef} from 'react';
 import {decode} from 'html-entities';
 import {
     ActivityIndicator,
-    KeyboardAvoidingView,
     Platform,
     Pressable,
     ScrollView,
@@ -10,6 +9,7 @@ import {
     Text,
     View,
 } from 'react-native';
+import {KeyboardAvoidingForm} from "@/components/ui/KeyboardAvoidingForm";
 import {router, useLocalSearchParams} from 'expo-router';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {makeRequest} from '@/helpers/axiosConfig';
@@ -214,11 +214,9 @@ export default function EditConsumableScreen() {
 
     return (
         <SafeAreaProvider>
-            <KeyboardAvoidingView
-                style={styles.flex}
-                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            >
+            <KeyboardAvoidingForm>
             <ScrollView
+                automaticallyAdjustKeyboardInsets
                 style={styles.container}
                 contentInsetAdjustmentBehavior="automatic"
                 contentContainerStyle={[styles.contentContainer, {paddingTop: Platform.OS === 'android' ? insets.top + 56 : 0}]}
@@ -349,7 +347,7 @@ export default function EditConsumableScreen() {
                     </Pressable>
                 </PermissionGate>
             </ScrollView>
-            </KeyboardAvoidingView>
+            </KeyboardAvoidingForm>
 
             <SelectCategoryBottomSheet
                 title={t('general.select_category')}
@@ -391,10 +389,6 @@ const createStyles = (colors) => StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: colors.background,
-    },
-    flex: {
-        flex: 1,
         backgroundColor: colors.background,
     },
     container: {

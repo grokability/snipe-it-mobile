@@ -1,5 +1,6 @@
 import React, {useContext, useMemo, useRef, useState} from 'react';
-import {ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View} from 'react-native';
+import {ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, Text, View} from 'react-native';
+import {KeyboardAvoidingForm} from "@/components/ui/KeyboardAvoidingForm";
 import {router, useLocalSearchParams} from 'expo-router';
 import {useMutation, useQueryClient} from '@tanstack/react-query';
 import {SafeAreaProvider, useSafeAreaInsets} from 'react-native-safe-area-context';
@@ -134,11 +135,9 @@ export default function CheckoutScreen() {
 
     return (
         <SafeAreaProvider>
-            <KeyboardAvoidingView
-                style={styles.flex}
-                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            >
+            <KeyboardAvoidingForm>
             <ScrollView
+                automaticallyAdjustKeyboardInsets
                 style={styles.container}
                 contentInsetAdjustmentBehavior="automatic"
                 contentContainerStyle={[styles.contentContainer, {paddingTop: Platform.OS === 'android' ? insets.top + 56 : 0}]}
@@ -253,7 +252,7 @@ export default function CheckoutScreen() {
                     </Pressable>
                 </PermissionGate>
             </ScrollView>
-            </KeyboardAvoidingView>
+            </KeyboardAvoidingForm>
 
             <SelectStatusBottomSheet
                 title={t('general.select_statuslabel')}
@@ -284,10 +283,6 @@ export default function CheckoutScreen() {
 }
 
 const createStyles = (colors) => StyleSheet.create({
-    flex: {
-        flex: 1,
-        backgroundColor: colors.background,
-    },
     container: {
         flex: 1,
         backgroundColor: colors.background,

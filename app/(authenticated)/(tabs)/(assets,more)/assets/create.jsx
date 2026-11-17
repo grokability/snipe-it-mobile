@@ -1,7 +1,6 @@
 import React, {useContext, useState, useEffect, useMemo, useRef} from 'react';
 import {
     ActivityIndicator,
-    KeyboardAvoidingView,
     Platform,
     Pressable,
     ScrollView,
@@ -9,6 +8,7 @@ import {
     Text,
     View,
 } from 'react-native';
+import {KeyboardAvoidingForm} from "@/components/ui/KeyboardAvoidingForm";
 import {router} from "expo-router";
 import {makeRequest} from "@/helpers/axiosConfig";
 import {PermissionDeniedError} from "@/helpers/errors";
@@ -384,11 +384,9 @@ export default function CreateAssetScreen() {
 
     return (
         <SafeAreaProvider>
-            <KeyboardAvoidingView
-                style={styles.flex}
-                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            >
+            <KeyboardAvoidingForm>
             <ScrollView
+                automaticallyAdjustKeyboardInsets
                 style={styles.container}
                 contentInsetAdjustmentBehavior="automatic"
                 contentContainerStyle={[styles.contentContainer, {paddingTop: Platform.OS === 'android' ? insets.top + 56 : 0}]}
@@ -548,7 +546,7 @@ export default function CreateAssetScreen() {
                     </Pressable>
                 </PermissionGate>
             </ScrollView>
-            </KeyboardAvoidingView>
+            </KeyboardAvoidingForm>
 
             {/* Bottom Sheets */}
             <SelectStatusBottomSheet
@@ -586,10 +584,6 @@ export default function CreateAssetScreen() {
 }
 
 const createStyles = (colors) => StyleSheet.create({
-    flex: {
-        flex: 1,
-        backgroundColor: colors.background,
-    },
     container: {
         flex: 1,
         backgroundColor: colors.background,
