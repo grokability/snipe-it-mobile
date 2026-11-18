@@ -12,7 +12,6 @@ export const unstable_settings = {
 export default function TabLayout() {
     const { t } = useTranslation();
     const { denied: assetsViewDenied } = usePermission(PERMISSIONS.ASSETS_VIEW);
-    const { denied: accessoriesViewDenied } = usePermission(PERMISSIONS.ACCESSORIES_VIEW);
     const { denied: usersViewDenied } = usePermission(PERMISSIONS.USERS_VIEW);
     return (
             <NativeTabs
@@ -53,11 +52,6 @@ export default function TabLayout() {
                 <NativeTabs.Trigger name="(users)" hidden={usersViewDenied}>
                     <NativeTabs.Trigger.Label>{t('general.users')}</NativeTabs.Trigger.Label>
                     <NativeTabs.Trigger.Icon src={<NativeTabs.Trigger.VectorIcon family={FontAwesome} name="user" />} />
-                </NativeTabs.Trigger>
-
-                <NativeTabs.Trigger name="(accessories)" hidden={accessoriesViewDenied}>
-                    <NativeTabs.Trigger.Label>{t('general.accessories')}</NativeTabs.Trigger.Label>
-                    <NativeTabs.Trigger.Icon src={<NativeTabs.Trigger.VectorIcon family={FontAwesome} name="keyboard-o" />} />
                 </NativeTabs.Trigger>
 
                 <NativeTabs.Trigger name="(more)">

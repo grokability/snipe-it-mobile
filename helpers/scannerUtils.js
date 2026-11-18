@@ -214,7 +214,7 @@ export function scannedItemHref(scanResolution, isAuditMode) {
     }
 
     if (outcome === 'notAsset' && kind === 'accessoryId') {
-        return `/(authenticated)/(tabs)/(accessories)/accessories/${value}`;
+        return `/(authenticated)/(tabs)/(more)/accessories/${value}`;
     }
 
     if (outcome === 'notAsset' && kind === 'consumableId') {
