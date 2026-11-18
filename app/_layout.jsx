@@ -74,6 +74,14 @@ function RootLayout() {
             <Stack screenOptions={{ headerShown: false }}>
                 <Stack.Protected guard={isAuthenticated} redirectTo="/login">
                     <Stack.Screen name="(authenticated)" />
+                    <Stack.Screen
+                        name="scanner"
+                        options={{
+                            presentation: 'formSheet',
+                            sheetAllowedDetents: [0.5, 1.0],
+                            sheetGrabberVisible: true,
+                        }}
+                    />
                 </Stack.Protected>
                 <Stack.Protected guard={!isAuthenticated} redirectTo="/">
                     <Stack.Screen

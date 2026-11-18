@@ -1,6 +1,7 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import {DynamicColorIOS, Platform} from 'react-native';
 import {NativeTabs} from "expo-router/native-tabs";
+import {router} from "expo-router";
 import {useTranslation} from "react-i18next";
 import {usePermission} from "@/permissions/PermissionContext";
 import {PERMISSIONS} from "@/permissions/PermissionKeys";
@@ -59,6 +60,20 @@ export default function TabLayout() {
                     <NativeTabs.Trigger.Icon sf="ellipsis" md="more_horiz" />
                 </NativeTabs.Trigger>
 
+                <NativeTabs.Trigger
+                    name="scan"
+                    role="search"
+                    disabled
+                    accessibilityLabel={t('mobile.open_scanner')}
+                    listeners={{
+                        tabPress: () => {
+                            router.push('/scanner');
+                        },
+                    }}
+                >
+                    <NativeTabs.Trigger.Label>{t('mobile.scan')}</NativeTabs.Trigger.Label>
+                    <NativeTabs.Trigger.Icon sf="barcode.viewfinder" md="qr_code_scanner" />
+                </NativeTabs.Trigger>
             </NativeTabs>
     );
 }
