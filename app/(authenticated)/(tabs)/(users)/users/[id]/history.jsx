@@ -3,6 +3,7 @@ import { useLocalSearchParams, useNavigation } from "expo-router";
 import { useQuery } from '@tanstack/react-query';
 import { decode } from "html-entities";
 import { useTranslation } from "react-i18next";
+import { floatingHeaderTitle } from "@/components/ui/FloatingHeader";
 import { makeRequest } from "@/helpers/axiosConfig";
 import { userKeys } from "@/helpers/queryKeys";
 import ActivityReportList from "@/components/reports/ActivityReportList";
@@ -24,7 +25,7 @@ export default function UserHistoryScreen() {
 
     useLayoutEffect(() => {
         navigation.setOptions({
-            headerTitle: firstName ? t('mobile.user_history', { firstName: decode(firstName) }) : t('general.history'),
+            headerTitle: floatingHeaderTitle(firstName ? t('mobile.user_history', { firstName: decode(firstName) }) : t('general.history')),
         });
     }, [navigation, firstName, t]);
 

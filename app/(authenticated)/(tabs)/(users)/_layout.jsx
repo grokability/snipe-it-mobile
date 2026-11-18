@@ -1,6 +1,7 @@
 import {Stack} from 'expo-router';
 import {useStackHeaderOptions} from "@/hooks/useStackHeaderOptions";
 import {useTranslation} from "react-i18next";
+import {floatingHeaderTitle} from "@/components/ui/FloatingHeader";
 
 export const unstable_settings = {
     anchor: 'index',
@@ -22,7 +23,7 @@ export default function UsersLayout() {
                 name="users/[id]"
                 options={{
                     title: t('general.user'),
-                    headerTitle: t('general.user'),
+                    headerTitle: floatingHeaderTitle(t('general.user')),
                     headerBackTitle: '',
                 }}
             />
@@ -30,7 +31,7 @@ export default function UsersLayout() {
                 name="users/[id]/assets"
                 options={{
                     title: t('general.assets'),
-                    headerTitle: t('general.assets'),
+                    headerTitle: floatingHeaderTitle(t('general.assets')),
                     headerBackTitle: '',
                 }}
             />
@@ -38,7 +39,7 @@ export default function UsersLayout() {
                 name="users/[id]/licenses"
                 options={{
                     title: t('general.licenses'),
-                    headerTitle: t('general.licenses'),
+                    headerTitle: floatingHeaderTitle(t('general.licenses')),
                     headerBackTitle: '',
                 }}
             />
@@ -46,7 +47,7 @@ export default function UsersLayout() {
                 name="users/[id]/accessories"
                 options={{
                     title: t('general.accessories'),
-                    headerTitle: t('general.accessories'),
+                    headerTitle: floatingHeaderTitle(t('general.accessories')),
                     headerBackTitle: '',
                 }}
             />
@@ -54,7 +55,7 @@ export default function UsersLayout() {
                 name="users/[id]/consumables"
                 options={{
                     title: t('general.consumables'),
-                    headerTitle: t('general.consumables'),
+                    headerTitle: floatingHeaderTitle(t('general.consumables')),
                     headerBackTitle: '',
                 }}
             />
@@ -62,7 +63,7 @@ export default function UsersLayout() {
                 name="users/[id]/history"
                 options={{
                     title: t('general.history'),
-                    headerTitle: t('general.history'),
+                    headerTitle: floatingHeaderTitle(t('general.history')),
                     headerBackTitle: '',
                 }}
             />

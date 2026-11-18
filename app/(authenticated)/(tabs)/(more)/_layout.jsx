@@ -1,6 +1,7 @@
 import {Stack} from 'expo-router';
 import {useStackHeaderOptions} from "@/hooks/useStackHeaderOptions";
 import {useTranslation} from "react-i18next";
+import {floatingHeaderTitle} from "@/components/ui/FloatingHeader";
 
 export default function MoreLayout() {
     const stackHeaderOptions = useStackHeaderOptions();
@@ -18,7 +19,7 @@ export default function MoreLayout() {
                 name="components"
                 options={{
                     title: t('general.components'),
-                    headerTitle: t('general.components'),
+                    headerTitle: floatingHeaderTitle(t('general.components')),
                     headerBackTitle: '',
                 }}
             />
@@ -26,14 +27,14 @@ export default function MoreLayout() {
                 name="licenses"
                 options={{
                     title: t('general.licenses'),
-                    headerTitle: t('general.licenses'),
+                    headerTitle: floatingHeaderTitle(t('general.licenses')),
                     headerBackTitle: '',
                 }}
             />
             <Stack.Screen
                 name="reports/activity-report/index"
                 options={{
-                    headerTitle: t('general.activity_report'),
+                    headerTitle: floatingHeaderTitle(t('general.activity_report')),
                     headerBackTitle: '',
                 }}
             />
@@ -47,7 +48,7 @@ export default function MoreLayout() {
             <Stack.Screen
                 name="reports/index"
                 options={{
-                    headerTitle: t('general.reports'),
+                    headerTitle: floatingHeaderTitle(t('general.reports')),
                     headerBackTitle: '',
                 }}
             />
@@ -55,7 +56,7 @@ export default function MoreLayout() {
                 name="consumables"
                 options={{
                     title: t('general.consumables'),
-                    headerTitle: t('general.consumables'),
+                    headerTitle: floatingHeaderTitle(t('general.consumables')),
                     headerBackTitle: '',
                 }}
             />

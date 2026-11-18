@@ -3,6 +3,7 @@ import { useLocalSearchParams, useNavigation } from "expo-router";
 import { useQuery } from '@tanstack/react-query';
 import { decode } from "html-entities";
 import { useTranslation } from "react-i18next";
+import { floatingHeaderTitle } from "@/components/ui/FloatingHeader";
 import { makeRequest } from "@/helpers/axiosConfig";
 import { userKeys } from "@/helpers/queryKeys";
 import AssetList from "@/components/assets/AssetList";
@@ -24,7 +25,7 @@ export default function UserAssetsScreen() {
 
     useLayoutEffect(() => {
         navigation.setOptions({
-            headerTitle: firstName ? t('mobile.user_assets', { firstName: decode(firstName) }) : t('general.assets'),
+            headerTitle: floatingHeaderTitle(firstName ? t('mobile.user_assets', { firstName: decode(firstName) }) : t('general.assets')),
         });
     }, [navigation, firstName, t]);
 

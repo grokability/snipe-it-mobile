@@ -1,10 +1,10 @@
 import {useMemo} from 'react';
-import {Pressable, StyleSheet, View} from 'react-native';
+import {Pressable, StyleSheet, Text, View} from 'react-native';
 import {router} from 'expo-router';
 import {Ionicons} from '@expo/vector-icons';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useColors} from '@/hooks/useThemeColors';
-import {Spacing} from '@/constants/sizes';
+import {FontWeight, Spacing, Typography} from '@/constants/sizes';
 
 const BUTTON_SIZE = 40;
 
@@ -21,6 +21,28 @@ function FloatingBackButton() {
             <Ionicons name="arrow-back" size={22} color={colors.text} />
         </Pressable>
     );
+}
+
+function FloatingTitle({children}) {
+    const colors = useColors();
+
+    return (
+        <View style={styles.titleRow}>
+            <View style={[styles.titlePill, {backgroundColor: colors.headerButtonBackground}]}>
+                <Text
+                    numberOfLines={1}
+                    accessibilityRole="header"
+                    style={[styles.titleText, {color: colors.text}]}
+                >
+                    {children}
+                </Text>
+            </View>
+        </View>
+    );
+}
+
+export function floatingHeaderTitle(title) {
+    return () => <FloatingTitle>{title}</FloatingTitle>;
 }
 
 export function useFloatingHeaderOptions() {
@@ -63,6 +85,21 @@ const styles = StyleSheet.create({
         marginRight: Spacing.lg,
         alignItems: 'center',
         justifyContent: 'center',
+    },
+    titleRow: {
+        flexDirection: 'row',
+    },
+    titlePill: {
+        flexShrink: 1,
+        height: BUTTON_SIZE,
+        borderRadius: BUTTON_SIZE / 2,
+        paddingHorizontal: Spacing.lg,
+        justifyContent: 'center',
+        overflow: 'hidden',
+    },
+    titleText: {
+        fontSize: Typography.subtitle,
+        fontWeight: FontWeight.semibold,
     },
     scrim: {
         position: 'absolute',
