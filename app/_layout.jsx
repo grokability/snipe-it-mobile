@@ -1,4 +1,5 @@
 import { Stack } from 'expo-router';
+import { getFocusedRouteNameFromRoute } from 'expo-router/react-navigation';
 import { useAuth, AuthProvider } from "@/context/AuthProvider";
 import { AuditSessionProvider } from "@/context/AuditSessionProvider";
 import { PermissionProvider } from "@/permissions/PermissionContext";
@@ -34,6 +35,16 @@ onlineManager.setEventListener((setOnline) => {
 AppState.addEventListener('change', (status) => {
     focusManager.setFocused(status === 'active');
 });
+
+// The camera can sit at half or full height. An item opened inside the sheet (iOS) gets full height
+// only. react-native-screens names detents by position, so the full-height detent of [1.0] and
+// the half-height one of [0.5, 1.0] share an identifier, and going back to the camera returns
+// the sheet to half height.
+function scannerSheetDetents(route) {
+    const focusedScreen = getFocusedRouteNameFromRoute(route) ?? 'index';
+
+    return focusedScreen === 'index' ? [0.5, 1.0] : [1.0];
+}
 
 function RootLayout() {
     useReactQueryDevTools(queryClient);
@@ -76,11 +87,11 @@ function RootLayout() {
                     <Stack.Screen name="(authenticated)" />
                     <Stack.Screen
                         name="scanner"
-                        options={{
+                        options={({ route }) => ({
                             presentation: 'formSheet',
-                            sheetAllowedDetents: [0.5, 1.0],
+                            sheetAllowedDetents: scannerSheetDetents(route),
                             sheetGrabberVisible: true,
-                        }}
+                        })}
                     />
                 </Stack.Protected>
                 <Stack.Protected guard={!isAuthenticated} redirectTo="/">
