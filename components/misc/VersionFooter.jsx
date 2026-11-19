@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import ExpoApplication from 'expo-application/src/ExpoApplication';
+import * as Application from 'expo-application';
 import * as Clipboard from 'expo-clipboard';
 import * as Burnt from 'burnt';
 import { useUpdates, reloadAsync, checkForUpdateAsync, fetchUpdateAsync } from 'expo-updates';
@@ -27,9 +27,9 @@ export default function VersionFooter({ style }) {
     // build number, and the channel. The release number is inlined by the EAS workflow, into
     // both OTA updates and embedded bundles; local and dev builds fall back to app.json's version.
     // It holds no words to translate, and the copied text should be identical in every locale.
-    const release = process.env.EXPO_PUBLIC_RELEASE_NUMBER ?? ExpoApplication.nativeApplicationVersion;
+    const release = process.env.EXPO_PUBLIC_RELEASE_NUMBER ?? Application.nativeApplicationVersion;
     const channel = currentlyRunning.channel || (__DEV__ ? 'development' : 'unknown');
-    const releaseText = `${release} (${ExpoApplication.nativeBuildVersion}) · ${channel}`;
+    const releaseText = `${release} (${Application.nativeBuildVersion}) · ${channel}`;
     const otaText = currentlyRunning.isEmbeddedLaunch
         ? t('mobile.update_embedded')
         : t('mobile.update_date', { date: currentlyRunning.createdAt?.toLocaleString() });

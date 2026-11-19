@@ -94,6 +94,7 @@ export default function ComponentsScreen() {
     return (
         <SafeAreaProvider style={styles.container}>
             <FlashList
+                contentInsetAdjustmentBehavior="automatic"
                 contentContainerStyle={{
                     paddingTop: Platform.OS === 'android' ? insets.top + 56 : 0,
                     paddingBottom: 80,

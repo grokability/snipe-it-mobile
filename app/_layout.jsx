@@ -1,9 +1,11 @@
-import { Stack, router } from 'expo-router';
+import { Stack } from 'expo-router';
+import { getFocusedRouteNameFromRoute } from 'expo-router/react-navigation';
 import { useAuth, AuthProvider } from "@/context/AuthProvider";
 import { AuditSessionProvider } from "@/context/AuditSessionProvider";
 import { PermissionProvider } from "@/permissions/PermissionContext";
 import { ActivityIndicator, AppState, View } from "react-native";
-import React, {useEffect} from "react";
+import React from "react";
+import {StatusBar} from "expo-status-bar";
 import {GestureHandlerRootView} from "react-native-gesture-handler";
 import {SafeAreaProvider} from "react-native-safe-area-context";
 import {QueryClientProvider, onlineManager, focusManager} from "@tanstack/react-query";
@@ -14,6 +16,7 @@ import i18n from "@/i18n"; //this says unused but it's just providing for the en
 import * as Sentry from "@sentry/react-native";
 import {initSentry} from "@/helpers/sentry";
 import ErrorReportConsentPrompt from "@/components/errorReporting/ErrorReportConsentPrompt";
+import {SCANNER_CAMERA_DETENTS} from "@/helpers/scannerUtils";
 
 // Runs at module scope so the global error handler is installed before any provider mounts.
 initSentry();
@@ -34,6 +37,16 @@ AppState.addEventListener('change', (status) => {
     focusManager.setFocused(status === 'active');
 });
 
+// The camera can sit at half or full height. An item opened inside the sheet (iOS) gets full height
+// only. react-native-screens names detents by position, so the full-height detent of [1.0] and
+// the half-height one of [0.5, 1.0] share an identifier, and going back to the camera returns
+// the sheet to half height.
+function scannerSheetDetents(route) {
+    const focusedScreen = getFocusedRouteNameFromRoute(route) ?? 'index';
+
+    return focusedScreen === 'index' ? SCANNER_CAMERA_DETENTS : [1.0];
+}
+
 function RootLayout() {
     useReactQueryDevTools(queryClient);
 
@@ -46,6 +59,7 @@ function RootLayout() {
                             <GestureHandlerRootView style={{ flex: 1 }}>
                                     <AuthLayoutContent/>
                                     <ErrorReportConsentPrompt/>
+                                    <StatusBar style="auto"/>
                             </GestureHandlerRootView>
                         </SafeAreaProvider>
                     </AuditSessionProvider>
@@ -57,16 +71,6 @@ function RootLayout() {
     function AuthLayoutContent() {
         const {isAuthenticated, isLoading} = useAuth();
 
-        useEffect(() => {
-            if (!isLoading) {
-                if (isAuthenticated) {
-                    router.replace("/(authenticated)/");
-                } else {
-                    router.replace("/login");
-                }
-            }
-        }, [isAuthenticated, isLoading]);
-
         // Show a loading spinner until the authentication state is resolved
         if (isLoading) {
             return (
@@ -76,11 +80,23 @@ function RootLayout() {
             );
         }
 
+        // Without redirectTo, a failed guard falls back to the first unguarded route in sort
+        // order, which at the root can be an unrelated screen such as scanner.
         return (
             <Stack screenOptions={{ headerShown: false }}>
-                {isAuthenticated ? (
+                <Stack.Protected guard={isAuthenticated} redirectTo="/login">
                     <Stack.Screen name="(authenticated)" />
-                ) : (
+                    <Stack.Screen
+                        name="scanner"
+                        options={({ route }) => ({
+                            presentation: 'formSheet',
+                            sheetAllowedDetents: scannerSheetDetents(route),
+                            sheetGrabberVisible: true,
+                            contentStyle: { backgroundColor: 'black' },
+                        })}
+                    />
+                </Stack.Protected>
+                <Stack.Protected guard={!isAuthenticated} redirectTo="/">
                     <Stack.Screen
                         name="login"
                         options={{
@@ -88,7 +104,7 @@ function RootLayout() {
                             headerTitle: "Login"
                         }}
                     />
-                )}
+                </Stack.Protected>
             </Stack>
         );
     }

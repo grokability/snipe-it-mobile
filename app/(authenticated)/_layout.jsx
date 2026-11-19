@@ -1,33 +1,21 @@
-import { StyleSheet } from "react-native";
-import {Redirect, Stack} from "expo-router";
-import {useColors} from "@/hooks/useThemeColors";
-import {useMemo, useContext} from "react";
+import {Stack} from "expo-router";
+import {useStackHeaderOptions} from "@/hooks/useStackHeaderOptions";
 import {useTranslation} from "react-i18next";
-import {AuthContext} from "@/context/AuthProvider";
+import {View} from "react-native";
+import {StatusBarScrim} from "@/components/ui/FloatingHeader";
 
 export default function AuthenticatedLayout() {
-    const colors = useColors();
-    const styles = useMemo(() => createStyles(colors), [colors]);
+    const stackHeaderOptions = useStackHeaderOptions();
     const { t } = useTranslation();
-    const { isAuthenticated, isLoading } = useContext(AuthContext);
-
-    if (!isLoading && !isAuthenticated) {
-        return <Redirect href="/login" />;
-    }
 
     return (
-        <Stack
-            screenOptions={{
-                headerShown: false,
-                headerTransparent: true,
-                headerShadowVisible: false,
-                headerTitle: '',
-                headerStyle: styles.header,
-                headerTintColor: colors.text,
-                headerLeftContainerStyle: { paddingLeft: 16 },
-                headerRightContainerStyle: { paddingRight: 16 },
-            }}
-        >
+        <View style={{flex: 1}}>
+            <Stack
+                screenOptions={{
+                    ...stackHeaderOptions,
+                    headerShown: false,
+                }}
+            >
                 <Stack.Screen
                     name="(tabs)"
                     options={{
@@ -41,17 +29,8 @@ export default function AuthenticatedLayout() {
                         drawerItemStyle: { display: 'none' },
                     }}
                 />
-        </Stack>
+            </Stack>
+            <StatusBarScrim />
+        </View>
     );
 }
-
-const createStyles = (colors) => StyleSheet.create({
-    header: {
-        backgroundColor: colors.background,
-        elevation: 4,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.2,
-        shadowRadius: 2,
-    },
-});
