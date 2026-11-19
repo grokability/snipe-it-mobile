@@ -917,6 +917,11 @@
     anser "^1.4.9"
     stacktrace-parser "^0.1.10"
 
+"@expo/material-symbols@^0.1.1":
+  version "0.1.1"
+  resolved "https://registry.yarnpkg.com/@expo/material-symbols/-/material-symbols-0.1.1.tgz#ee86c79e5eebed9c0eccaf7341ba61791b9e6ebd"
+  integrity sha512-ruA6hZATOPKxo1qSd1NE3HI9FrmEDwcMDhsvzTAdMkP9AapdHfJ/0tKmBMWFJir85voxs1twYxLVrGW9OLGaOg==
+
 "@expo/mcp-tunnel@~0.2.3":
   version "0.2.3"
   resolved "https://registry.npmjs.org/@expo/mcp-tunnel/-/mcp-tunnel-0.2.3.tgz"
@@ -2612,6 +2617,11 @@ expo-asset@~58.0.21:
   dependencies:
     "@expo/image-utils" "^0.12.7"
     expo-constants "~58.0.16"
+
+expo-audio@~58.0.12:
+  version "58.0.12"
+  resolved "https://registry.yarnpkg.com/expo-audio/-/expo-audio-58.0.12.tgz#6f0f192eacce31b900d4358b39fac880d8613914"
+  integrity sha512-PNVqGyxZET+hSQ/JfX29VPzdj+W5qo7zRSQabN4T/0+EmnnMvyPf5u6FbaGWQuerXKMvKIy7RwSc13ldaye1RA==
 
 expo-auth-session@~58.0.19:
   version "58.0.19"

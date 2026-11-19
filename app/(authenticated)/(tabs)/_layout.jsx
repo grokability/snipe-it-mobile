@@ -1,6 +1,7 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import {DynamicColorIOS, Platform} from 'react-native';
 import {NativeTabs} from "expo-router/native-tabs";
+import {router} from "expo-router";
 import {useTranslation} from "react-i18next";
 import {usePermission} from "@/permissions/PermissionContext";
 import {PERMISSIONS} from "@/permissions/PermissionKeys";
@@ -12,7 +13,6 @@ export const unstable_settings = {
 export default function TabLayout() {
     const { t } = useTranslation();
     const { denied: assetsViewDenied } = usePermission(PERMISSIONS.ASSETS_VIEW);
-    const { denied: accessoriesViewDenied } = usePermission(PERMISSIONS.ACCESSORIES_VIEW);
     const { denied: usersViewDenied } = usePermission(PERMISSIONS.USERS_VIEW);
     return (
             <NativeTabs
@@ -55,16 +55,25 @@ export default function TabLayout() {
                     <NativeTabs.Trigger.Icon src={<NativeTabs.Trigger.VectorIcon family={FontAwesome} name="user" />} />
                 </NativeTabs.Trigger>
 
-                <NativeTabs.Trigger name="(accessories)" hidden={accessoriesViewDenied}>
-                    <NativeTabs.Trigger.Label>{t('general.accessories')}</NativeTabs.Trigger.Label>
-                    <NativeTabs.Trigger.Icon src={<NativeTabs.Trigger.VectorIcon family={FontAwesome} name="keyboard-o" />} />
-                </NativeTabs.Trigger>
-
                 <NativeTabs.Trigger name="(more)">
                     <NativeTabs.Trigger.Label>{t('mobile.more')}</NativeTabs.Trigger.Label>
                     <NativeTabs.Trigger.Icon sf="ellipsis" md="more_horiz" />
                 </NativeTabs.Trigger>
 
+                <NativeTabs.Trigger
+                    name="scan"
+                    role="search"
+                    disabled
+                    accessibilityLabel={t('mobile.open_scanner')}
+                    listeners={{
+                        tabPress: () => {
+                            router.push('/scanner');
+                        },
+                    }}
+                >
+                    <NativeTabs.Trigger.Label>{t('mobile.scan')}</NativeTabs.Trigger.Label>
+                    <NativeTabs.Trigger.Icon sf="barcode.viewfinder" md="qr_code_scanner" />
+                </NativeTabs.Trigger>
             </NativeTabs>
     );
 }

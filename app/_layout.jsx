@@ -1,4 +1,5 @@
 import { Stack } from 'expo-router';
+import { getFocusedRouteNameFromRoute } from 'expo-router/react-navigation';
 import { useAuth, AuthProvider } from "@/context/AuthProvider";
 import { AuditSessionProvider } from "@/context/AuditSessionProvider";
 import { PermissionProvider } from "@/permissions/PermissionContext";
@@ -15,6 +16,7 @@ import i18n from "@/i18n"; //this says unused but it's just providing for the en
 import * as Sentry from "@sentry/react-native";
 import {initSentry} from "@/helpers/sentry";
 import ErrorReportConsentPrompt from "@/components/errorReporting/ErrorReportConsentPrompt";
+import {SCANNER_CAMERA_DETENTS} from "@/helpers/scannerUtils";
 
 // Runs at module scope so the global error handler is installed before any provider mounts.
 initSentry();
@@ -34,6 +36,16 @@ onlineManager.setEventListener((setOnline) => {
 AppState.addEventListener('change', (status) => {
     focusManager.setFocused(status === 'active');
 });
+
+// The camera can sit at half or full height. An item opened inside the sheet (iOS) gets full height
+// only. react-native-screens names detents by position, so the full-height detent of [1.0] and
+// the half-height one of [0.5, 1.0] share an identifier, and going back to the camera returns
+// the sheet to half height.
+function scannerSheetDetents(route) {
+    const focusedScreen = getFocusedRouteNameFromRoute(route) ?? 'index';
+
+    return focusedScreen === 'index' ? SCANNER_CAMERA_DETENTS : [1.0];
+}
 
 function RootLayout() {
     useReactQueryDevTools(queryClient);
@@ -74,6 +86,15 @@ function RootLayout() {
             <Stack screenOptions={{ headerShown: false }}>
                 <Stack.Protected guard={isAuthenticated} redirectTo="/login">
                     <Stack.Screen name="(authenticated)" />
+                    <Stack.Screen
+                        name="scanner"
+                        options={({ route }) => ({
+                            presentation: 'formSheet',
+                            sheetAllowedDetents: scannerSheetDetents(route),
+                            sheetGrabberVisible: true,
+                            contentStyle: { backgroundColor: 'black' },
+                        })}
+                    />
                 </Stack.Protected>
                 <Stack.Protected guard={!isAuthenticated} redirectTo="/">
                     <Stack.Screen

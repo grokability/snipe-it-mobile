@@ -27,6 +27,24 @@ const expireSession = () => {
     sessionExpiredHandler?.();
 };
 
+const SERVER_ERROR_ALERT_INTERVAL_MS = 30_000;
+let lastServerErrorAlertAt = 0;
+
+const showServerErrorAlert = (status) => {
+    const now = Date.now();
+
+    if (now - lastServerErrorAlertAt < SERVER_ERROR_ALERT_INTERVAL_MS) {
+        return;
+    }
+
+    lastServerErrorAlertAt = now;
+    Alert.alert(
+        i18n.t('general.error'),
+        i18n.t('mobile.server_error_message', { status }),
+        [{ text: i18n.t('mobile.ok') }]
+    );
+};
+
 // Add request interceptor for automatic token injection
 apiInstance.interceptors.request.use(
     async (config) => {
@@ -83,6 +101,8 @@ apiInstance.interceptors.response.use(
             } else if (__DEV__) {
                 console.warn('[permissions] 403 received but no permissionKey was set on this request.');
             }
+        } else if (error.response?.status >= 500 && !error.config?.silent) {
+            showServerErrorAlert(error.response.status);
         }
         return Promise.reject(error);
     }

@@ -1,6 +1,7 @@
 import React, {useState, useMemo, useLayoutEffect} from 'react';
 import {Image, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View} from 'react-native';
 import {router, useLocalSearchParams, useNavigation} from "expo-router";
+import {useItemRoutePrefix} from "@/hooks/useItemRoutePrefix";
 import {useQuery} from '@tanstack/react-query';
 import {Ionicons} from '@expo/vector-icons';
 import {makeRequest} from "@/helpers/axiosConfig";
@@ -24,6 +25,7 @@ export default function ConsumableScreen() {
     const insets = useSafeAreaInsets();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const { t } = useTranslation();
+    const itemRoutePrefix = useItemRoutePrefix();
 
     const { id } = useLocalSearchParams();
     const navigation = useNavigation();
@@ -51,14 +53,14 @@ export default function ConsumableScreen() {
             headerRight: () => (
                 <View style={[styles.headerButtonGroup, floatingButtonGroupStyle]}>
                     {!consumableNotFound && (
-                        <Pressable onPress={() => router.push(`/consumables/edit/${id}`)} hitSlop={4}>
+                        <Pressable onPress={() => router.push(`${itemRoutePrefix}/consumables/edit/${id}`)} hitSlop={4}>
                             <Ionicons name="pencil" size={22} color={colors.text} />
                         </Pressable>
                     )}
                 </View>
             ),
         });
-    }, [navigation, id, colors.text, consumableNotFound, floatingButtonGroupStyle]);
+    }, [navigation, id, colors.text, consumableNotFound, floatingButtonGroupStyle, itemRoutePrefix]);
 
     const na = t('mobile.na');
     const displayValue = (value) => value ? decode(String(value)) : na;
@@ -120,7 +122,7 @@ export default function ConsumableScreen() {
                     {consumable.user_can_checkout && (
                         <Pressable
                             style={({pressed}) => [styles.checkoutButton, pressed && styles.buttonPressed]}
-                            onPress={() => router.push(`/consumables/checkout/${id}`)}
+                            onPress={() => router.push(`${itemRoutePrefix}/consumables/checkout/${id}`)}
                         >
                             <Text style={styles.checkoutButtonText}>{t('mobile.check_out_button')}</Text>
                         </Pressable>
