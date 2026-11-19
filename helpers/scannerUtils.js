@@ -191,8 +191,8 @@ export function scannedItemQueryOptions({ kind, value }) {
 // asset, accessory or consumable, a lookup that found nothing or several assets, or, in audit mode,
 // anything but a live asset, since Snipe-IT audits only assets and can't audit a deleted one.
 // A found asset's deletedMatches go along as deleted_matches IDs, with matched_by, so its screen
-// can note the deleted assets that share its tag or serial. With inScannerSheet (iOS) the item opens
-// in the scanner sheet's own stack instead of its tab.
+// can note the deleted assets that share its tag or serial. With inScannerSheet (iOS) the item, or
+// audit confirm, opens in the scanner sheet's own stack instead of its tab.
 export function scannedItemHref(scanResolution, isAuditMode, inScannerSheet = false) {
     const { outcome, asset, deletedMatches, matchedBy, kind, value } = scanResolution;
     const assetsRoute = inScannerSheet ? '/scanner' : '/(authenticated)/(tabs)/(assets)';
@@ -203,7 +203,9 @@ export function scannedItemHref(scanResolution, isAuditMode, inScannerSheet = fa
             return null;
         }
 
-        return `/(authenticated)/audit/confirm?asset_id=${encodeURIComponent(asset.id)}&from_scanner=true`;
+        const auditRoute = inScannerSheet ? '/scanner' : '/(authenticated)';
+
+        return `${auditRoute}/audit/confirm?asset_id=${encodeURIComponent(asset.id)}&from_scanner=true`;
     }
 
     if (outcome === 'found' && deletedMatches.length > 0) {

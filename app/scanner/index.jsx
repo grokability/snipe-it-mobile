@@ -36,7 +36,7 @@ const BOUNDS_SMOOTHING_ALPHA = 0.35; // Lower = smoother/more lag, higher = snap
 // linearly to each phone's maximum (8x to 100x), so no fixed value is safe there.
 const SCANNER_ZOOM = Platform.OS === 'ios' ? 0.1 : 0;
 
-// On iOS a scanned item opens inside the sheet, on top of the camera. Android's formSheet can't
+// On iOS a scanned item, or audit confirm in audit mode, opens inside the sheet, on top of the camera. Android's formSheet can't
 // hold a nested stack (react-native-screens 4.30), so there the sheet closes and the item opens
 // in its tab.
 const OPENS_ITEMS_IN_SHEET = Platform.OS === 'ios';
@@ -236,13 +236,13 @@ export default function Home() {
 
         setBarcodes([]);
 
-        if (isAuditMode) {
-            router.replace(href);
+        if (OPENS_ITEMS_IN_SHEET) {
+            router.push(href);
             return;
         }
 
-        if (OPENS_ITEMS_IN_SHEET) {
-            router.push(href);
+        if (isAuditMode) {
+            router.replace(href);
             return;
         }
 

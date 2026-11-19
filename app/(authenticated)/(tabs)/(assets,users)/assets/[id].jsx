@@ -274,7 +274,7 @@ export default function AssetScreen() {
                                 <Pressable
                                     style={({pressed}) => [styles.buttonSmall, styles.auditButton, pressed && styles.buttonPressed]}
                                     onPress={() => router.push({
-                                        pathname: '/(authenticated)/audit/confirm',
+                                        pathname: `${itemRoutePrefix}/audit/confirm`,
                                         params: { asset_id: id },
                                     })}
                                 >

@@ -18,6 +18,7 @@ export default function ScannerSheetLayout() {
         {name: 'consumables/[id]', title: t('mobile.screen_consumable_details')},
         {name: 'consumables/edit/[id]', title: t('mobile.screen_edit_consumable')},
         {name: 'consumables/checkout/[id]', title: t('mobile.screen_checkout')},
+        {name: 'audit/confirm', title: t('mobile.screen_audit_confirm')},
     ];
 
     return (
