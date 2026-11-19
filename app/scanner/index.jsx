@@ -1,6 +1,7 @@
 import { CameraView, useCameraPermissions } from "expo-camera";
 import { router, Stack, useFocusEffect, useIsFocused, useLocalSearchParams } from "expo-router";
 import {
+    ActivityIndicator,
     Alert,
     AppState,
     Linking,
@@ -30,6 +31,7 @@ import {
     stripCodabarStartStop,
 } from "@/helpers/scannerUtils";
 import { assetKeys, scanKeys } from "@/helpers/queryKeys";
+import { playScanSuccessSound } from "@/helpers/scanSound";
 
 const BARCODE_STALE_MS = 800; // Drop the overlay if its barcode hasn't been re-detected within this window
 const BOUNDS_SMOOTHING_ALPHA = 0.35; // Lower = smoother/more lag, higher = snappier/more jitter
@@ -45,6 +47,7 @@ const SCANNER_ZOOM = Platform.OS === 'ios' ? 0.1 : 0;
 // in its tab.
 const OPENS_ITEMS_IN_SHEET = Platform.OS === 'ios';
 
+const OPENING_INDICATOR_SIZE = 72;
 const QUICK_SCAN_STORAGE_KEY = 'quick_scan';
 const TORCH_ICONS = {
     ios: { off: 'flashlight.off.fill', on: 'flashlight.on.fill' },
@@ -107,6 +110,7 @@ export default function Home() {
 
     const [barcodes, setBarcodes] = useState([]);
     const [scanningPaused, setScanningPaused] = useState(false);
+    const [openingBarcode, setOpeningBarcode] = useState(null);
     const appState = useRef(AppState.currentState);
     const insets = useSafeAreaInsets();
     const cameraRef = useRef(null);
@@ -249,6 +253,7 @@ export default function Home() {
 
         // Pause scanning immediately so the confirmed code isn't re-detected mid-navigation
         setScanningPaused(true);
+        setOpeningBarcode(barcode);
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
 
         // Reuses the overlay's lookup: cached if it landed, awaited if it's still in flight
@@ -386,6 +391,7 @@ export default function Home() {
                 : nearest
         ));
 
+        playScanSuccessSound();
         handleBarcodeSelect(nearestBarcode);
     }, [barcodes, scanQueries, quickScanEnabled, scanningPaused, isAuditMode]);
 
@@ -395,8 +401,15 @@ export default function Home() {
         Haptics.selectionAsync();
     };
 
+    // A spinner sits on each code from the moment it's tapped, or quick scan sees it, until its item
+    // opens or it turns out to match nothing. It goes on the code rather than the middle of the
+    // screen because on Android a half-height sheet shows only the top of the scanner.
+    const lookingUpBarcodes = quickScanEnabled ? barcodes.filter((barcode, index) => scanQueries[index]?.isFetching) : [];
+    const spinnerBarcodes = openingBarcode ? [openingBarcode] : lookingUpBarcodes;
+
     const clearBarcodes = () => {
         setBarcodes([]);
+        setOpeningBarcode(null);
         setScanningPaused(false);
         isSelectingRef.current = false;
     };
@@ -472,6 +485,22 @@ export default function Home() {
                     onBarcodeSelect={(barcode) => handleBarcodeSelect(barcode)}
                 />
             )}
+
+            {spinnerBarcodes.map((barcode) => (
+                <View
+                    key={barcode.data}
+                    pointerEvents="none"
+                    style={[
+                        styles.openingIndicator,
+                        {
+                            left: barcode.bounds.origin.x + barcode.bounds.size.width / 2 - OPENING_INDICATOR_SIZE / 2,
+                            top: barcode.bounds.origin.y + barcode.bounds.size.height / 2 - OPENING_INDICATOR_SIZE / 2,
+                        },
+                    ]}
+                >
+                    <ActivityIndicator size="large" color="white" />
+                </View>
+            ))}
 
             {!scanningPaused && barcodes.length === 0 && (
                 <View style={[styles.hintContainer, { bottom: insets.bottom + 76 }]}>
@@ -571,6 +600,16 @@ const styles = StyleSheet.create({
     cornerButton: {
         position: 'absolute',
         zIndex: 20,
+    },
+    openingIndicator: {
+        position: 'absolute',
+        width: OPENING_INDICATOR_SIZE,
+        height: OPENING_INDICATOR_SIZE,
+        borderRadius: 16,
+        backgroundColor: 'rgba(0, 0, 0, 0.6)',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 30,
     },
     torchButton: {
         left: 16,
