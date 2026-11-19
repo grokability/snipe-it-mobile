@@ -1,6 +1,7 @@
-import {View, Text, Pressable, StyleSheet} from 'react-native';
+import {ScrollView, Text, Pressable, StyleSheet, Platform} from 'react-native';
 import {useMemo} from 'react';
 import {useRouter} from 'expo-router';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import {useColors} from '@/hooks/useThemeColors';
 import {Spacing, Typography, FontWeight, BorderRadius} from '@/constants/sizes';
@@ -17,10 +18,15 @@ export default function ReportsScreen() {
     const styles = useMemo(() => createStyles(colors), [colors]);
     const { t } = useTranslation();
     const router = useRouter();
+    const insets = useSafeAreaInsets();
     useRedirectIfDenied(PERMISSIONS.REPORTS_VIEW);
 
     return (
-        <View style={styles.container}>
+        <ScrollView
+            style={styles.container}
+            contentInsetAdjustmentBehavior="automatic"
+            contentContainerStyle={{paddingTop: Platform.OS === 'android' ? insets.top + 56 + Spacing.lg : Spacing.lg}}
+        >
             {REPORT_ITEMS.map((item) => (
                 <Pressable
                     key={item.key}
@@ -32,7 +38,7 @@ export default function ReportsScreen() {
                     <FontAwesome name="chevron-right" size={14} color={colors.textSecondary} />
                 </Pressable>
             ))}
-        </View>
+        </ScrollView>
     );
 }
 
@@ -40,7 +46,6 @@ const createStyles = (colors) => StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: colors.background,
-        paddingTop: Spacing.lg,
     },
     row: {
         flexDirection: 'row',

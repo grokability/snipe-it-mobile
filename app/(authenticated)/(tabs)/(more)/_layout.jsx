@@ -1,35 +1,25 @@
 import {Stack} from 'expo-router';
-import {useColors} from "@/hooks/useThemeColors";
+import {useStackHeaderOptions} from "@/hooks/useStackHeaderOptions";
 import {useTranslation} from "react-i18next";
+import {floatingHeaderTitle} from "@/components/ui/FloatingHeader";
 
 export default function MoreLayout() {
-    const colors = useColors();
+    const stackHeaderOptions = useStackHeaderOptions();
     const { t } = useTranslation();
 
     return (
-        <Stack screenOptions={{
-            headerShown: true,
-            headerTransparent: true,
-            headerShadowVisible: false,
-            headerTitle: '',
-            headerTintColor: colors.text,
-            headerLeftContainerStyle: { paddingLeft: 16 },
-            headerRightContainerStyle: { paddingRight: 16 },
-        }}>
+        <Stack screenOptions={stackHeaderOptions}>
             <Stack.Screen
                 name="index"
                 options={{
                     title: t('mobile.more'),
-                    headerTransparent: false,
-                    headerShadowVisible: false,
-                    headerStyle: { backgroundColor: colors.background },
                 }}
             />
             <Stack.Screen
                 name="components"
                 options={{
                     title: t('general.components'),
-                    headerTitle: t('general.components'),
+                    headerTitle: floatingHeaderTitle(t('general.components')),
                     headerBackTitle: '',
                 }}
             />
@@ -37,14 +27,14 @@ export default function MoreLayout() {
                 name="licenses"
                 options={{
                     title: t('general.licenses'),
-                    headerTitle: t('general.licenses'),
+                    headerTitle: floatingHeaderTitle(t('general.licenses')),
                     headerBackTitle: '',
                 }}
             />
             <Stack.Screen
                 name="reports/activity-report/index"
                 options={{
-                    headerTitle: t('general.activity_report'),
+                    headerTitle: floatingHeaderTitle(t('general.activity_report')),
                     headerBackTitle: '',
                 }}
             />
@@ -58,102 +48,15 @@ export default function MoreLayout() {
             <Stack.Screen
                 name="reports/index"
                 options={{
-                    headerTitle: t('general.reports'),
-                    headerBackTitle: '',
-                    headerTransparent: false,
-                    headerShadowVisible: false,
-                    headerStyle: { backgroundColor: colors.background },
-                }}
-            />
-            <Stack.Screen
-                name="users/index"
-                options={{
-                    title: t('general.users'),
-                    headerTitle: t('general.users'),
+                    headerTitle: floatingHeaderTitle(t('general.reports')),
                     headerBackTitle: '',
                 }}
             />
             <Stack.Screen
-                name="users/[id]"
-                options={{
-                    title: t('general.user'),
-                    headerTitle: t('general.user'),
-                    headerBackTitle: '',
-                }}
-            />
-            <Stack.Screen
-                name="users/[id]/assets"
-                options={{
-                    title: t('general.assets'),
-                    headerTitle: t('general.assets'),
-                    headerBackTitle: '',
-                }}
-            />
-            <Stack.Screen
-                name="users/[id]/licenses"
-                options={{
-                    title: t('general.licenses'),
-                    headerTitle: t('general.licenses'),
-                    headerBackTitle: '',
-                }}
-            />
-            <Stack.Screen
-                name="users/[id]/accessories"
+                name="accessories"
                 options={{
                     title: t('general.accessories'),
-                    headerTitle: t('general.accessories'),
-                    headerBackTitle: '',
-                }}
-            />
-            <Stack.Screen
-                name="users/[id]/consumables"
-                options={{
-                    title: t('general.consumables'),
-                    headerTitle: t('general.consumables'),
-                    headerBackTitle: '',
-                }}
-            />
-            <Stack.Screen
-                name="users/[id]/history"
-                options={{
-                    title: t('general.history'),
-                    headerTitle: t('general.history'),
-                    headerBackTitle: '',
-                }}
-            />
-            {/* Shared with the Assets tab through (assets,more), so items opened from here stay in this stack */}
-            <Stack.Screen
-                name="assets/[id]"
-                options={{
-                    title: t('mobile.screen_asset_details'),
-                    headerBackTitle: '',
-                }}
-            />
-            <Stack.Screen
-                name="assets/checkout/[id]"
-                options={{
-                    title: t('mobile.screen_checkout'),
-                    headerBackTitle: '',
-                }}
-            />
-            <Stack.Screen
-                name="assets/checkin/[id]"
-                options={{
-                    title: t('mobile.screen_checkin'),
-                    headerBackTitle: '',
-                }}
-            />
-            <Stack.Screen
-                name="assets/edit/[id]"
-                options={{
-                    title: t('mobile.screen_edit_asset'),
-                    headerBackTitle: '',
-                }}
-            />
-            <Stack.Screen
-                name="assets/create"
-                options={{
-                    title: t('mobile.screen_create_asset'),
+                    headerTitle: floatingHeaderTitle(t('general.accessories')),
                     headerBackTitle: '',
                 }}
             />
@@ -182,6 +85,14 @@ export default function MoreLayout() {
                 name="accessories/edit/[id]"
                 options={{
                     title: t('mobile.screen_edit_accessory'),
+                    headerBackTitle: '',
+                }}
+            />
+            <Stack.Screen
+                name="consumables"
+                options={{
+                    title: t('general.consumables'),
+                    headerTitle: floatingHeaderTitle(t('general.consumables')),
                     headerBackTitle: '',
                 }}
             />

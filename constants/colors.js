@@ -4,6 +4,8 @@ export const Colors = {
         background: '#ffffff',
         backgroundSecondary: '#f8f4ff',    // Light purple tint
         backgroundTertiary: '#F1F3F5',      // Gray for inputs
+        headerButtonBackground: '#E8DEF8',
+        statusBarScrim: 'rgba(255, 255, 255, 0.9)',
 
         // Text
         text: '#1a1a1a',
@@ -33,6 +35,8 @@ export const Colors = {
         background: '#151718',
         backgroundSecondary: '#1e1e2e',
         backgroundTertiary: '#2a2a3a',
+        headerButtonBackground: '#4A4458',
+        statusBarScrim: 'rgba(21, 23, 24, 0.9)',
 
         // Text
         text: '#ECEDEE',

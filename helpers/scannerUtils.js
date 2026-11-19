@@ -12,6 +12,9 @@ const SCANNED_URL_PATTERNS = [
     { kind: 'location', pattern: /\/locations\/(\d+)(?:\/|$)/ },
 ];
 
+// The scanner sheet's heights while the camera shows: half and full
+export const SCANNER_CAMERA_DETENTS = [0.5, 1.0];
+
 // Partitions expo-camera's BarcodeType union. Snipe-IT always encodes the asset tag in a 1D
 // barcode, while a 2D code can hold a URL or a plain value, so the two are looked up differently.
 // A type missing from both lists (e.g. one added in a future SDK) is 'unknown' rather than guessed.
@@ -191,34 +194,39 @@ export function scannedItemQueryOptions({ kind, value }) {
 // asset, accessory or consumable, a lookup that found nothing or several assets, or, in audit mode,
 // anything but a live asset, since Snipe-IT audits only assets and can't audit a deleted one.
 // A found asset's deletedMatches go along as deleted_matches IDs, with matched_by, so its screen
-// can note the deleted assets that share its tag or serial.
-export function scannedItemHref(scanResolution, isAuditMode) {
+// can note the deleted assets that share its tag or serial. With inScannerSheet (iOS) the item, or
+// audit confirm, opens in the scanner sheet's own stack instead of its tab.
+export function scannedItemHref(scanResolution, isAuditMode, inScannerSheet = false) {
     const { outcome, asset, deletedMatches, matchedBy, kind, value } = scanResolution;
+    const assetsRoute = inScannerSheet ? '/scanner' : '/(authenticated)/(tabs)/(assets)';
+    const moreRoute = inScannerSheet ? '/scanner' : '/(authenticated)/(tabs)/(more)';
 
     if (isAuditMode) {
         if (outcome !== 'found' || asset.deleted_at) {
             return null;
         }
 
-        return `/(authenticated)/audit/confirm?asset_id=${encodeURIComponent(asset.id)}&from_scanner=true`;
+        const auditRoute = inScannerSheet ? '/scanner' : '/(authenticated)';
+
+        return `${auditRoute}/audit/confirm?asset_id=${encodeURIComponent(asset.id)}&from_scanner=true`;
     }
 
     if (outcome === 'found' && deletedMatches.length > 0) {
         const deletedMatchIds = deletedMatches.map((deletedMatch) => deletedMatch.id).join(',');
 
-        return `/(authenticated)/(tabs)/(assets)/assets/${asset.id}?deleted_matches=${deletedMatchIds}&matched_by=${matchedBy}`;
+        return `${assetsRoute}/assets/${asset.id}?deleted_matches=${deletedMatchIds}&matched_by=${matchedBy}`;
     }
 
     if (outcome === 'found') {
-        return `/(authenticated)/(tabs)/(assets)/assets/${asset.id}`;
+        return `${assetsRoute}/assets/${asset.id}`;
     }
 
     if (outcome === 'notAsset' && kind === 'accessoryId') {
-        return `/(authenticated)/(tabs)/(accessories)/accessories/${value}`;
+        return `${moreRoute}/accessories/${value}`;
     }
 
     if (outcome === 'notAsset' && kind === 'consumableId') {
-        return `/(authenticated)/(tabs)/(consumables)/consumables/${value}`;
+        return `${moreRoute}/consumables/${value}`;
     }
 
     return null;

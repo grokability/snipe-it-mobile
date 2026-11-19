@@ -1,5 +1,5 @@
 import React, {useEffect, useMemo} from 'react';
-import {Platform, StyleSheet, View} from 'react-native';
+import {Platform, ScrollView, StyleSheet, View} from 'react-native';
 import Animated, {useAnimatedStyle, useSharedValue, withRepeat, withTiming} from 'react-native-reanimated';
 import {SafeAreaProvider, useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useColors} from '@/hooks/useThemeColors';
@@ -53,7 +53,11 @@ function DetailScreenSkeleton({imageShape = 'rectangle', showQtyBadge = false, s
 
     return (
         <SafeAreaProvider>
-            <View style={[styles.container, {paddingTop: insets.top + 44}]}>
+            <ScrollView
+                style={styles.container}
+                contentInsetAdjustmentBehavior="automatic"
+                contentContainerStyle={[styles.contentContainer, {paddingTop: Platform.OS === 'android' ? insets.top + 56 : 0}]}
+            >
                 {imageShape === 'rectangle' && (
                     <View style={styles.imageContainer}>
                         <Skeleton width={250} height={250} borderRadius={BorderRadius.md} />
@@ -74,7 +78,7 @@ function DetailScreenSkeleton({imageShape = 'rectangle', showQtyBadge = false, s
                 {sections.map((section, index) => (
                     <SkeletonSection key={index} titleWidth={section.titleWidth} rows={section.rows} />
                 ))}
-            </View>
+            </ScrollView>
         </SafeAreaProvider>
     );
 }
@@ -89,7 +93,10 @@ function ListScreenSkeleton({rows = 6, showThumbnail = true, thumbnailShape = 'r
 
     return (
         <SafeAreaProvider style={styles.listContainer}>
-            <View style={{paddingTop: Platform.OS === 'android' ? insets.top + 56 : 0}}>
+            <ScrollView
+                contentInsetAdjustmentBehavior="automatic"
+                contentContainerStyle={{paddingTop: Platform.OS === 'android' ? insets.top + 56 : 0}}
+            >
                 {Array.from({length: rows}).map((_, rowIndex) => (
                     <View key={rowIndex} style={styles.listCard}>
                         {showThumbnail && thumbnailShape === 'rectangle' && (
@@ -105,7 +112,7 @@ function ListScreenSkeleton({rows = 6, showThumbnail = true, thumbnailShape = 'r
                         </View>
                     </View>
                 ))}
-            </View>
+            </ScrollView>
         </SafeAreaProvider>
     );
 }
@@ -197,7 +204,10 @@ const createStyles = (colors) => StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: colors.background,
+    },
+    contentContainer: {
         padding: Spacing.lg,
+        paddingBottom: 80,
         gap: Spacing.xxl,
     },
     imageContainer: {

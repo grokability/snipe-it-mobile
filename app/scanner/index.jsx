@@ -1,0 +1,698 @@
+import { CameraView, useCameraPermissions } from "expo-camera";
+import { router, Stack, useFocusEffect, useIsFocused, useLocalSearchParams, useNavigation } from "expo-router";
+import {
+    ActivityIndicator,
+    Alert,
+    AppState,
+    Linking,
+    Platform,
+    StatusBar,
+    StyleSheet,
+    View,
+    Text,
+    TouchableOpacity
+} from "react-native";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useQueries, useQueryClient } from "@tanstack/react-query";
+import * as Haptics from 'expo-haptics';
+import * as SecureStore from 'expo-secure-store';
+import BarcodeOverlay from "@/components/camera/BarcodeOverlay";
+import CameraToggleButton from "@/components/camera/CameraToggleButton";
+import FastForward from "@expo/material-symbols/fast_forward.xml";
+import FlashlightOff from "@expo/material-symbols/flashlight_off.xml";
+import FlashlightOn from "@expo/material-symbols/flashlight_on.xml";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useTranslation } from "react-i18next";
+import {
+    classifyBarcodeSymbology,
+    resolveScannedAsset,
+    SCANNER_CAMERA_DETENTS,
+    scannedItemHref,
+    scannedItemQueryOptions,
+    stripCodabarStartStop,
+} from "@/helpers/scannerUtils";
+import { assetKeys, scanKeys } from "@/helpers/queryKeys";
+import { playScanSuccessSound } from "@/helpers/scanSound";
+
+const BARCODE_STALE_MS = 800; // Drop the overlay if its barcode hasn't been re-detected within this window
+const BOUNDS_SMOOTHING_ALPHA = 0.35; // Lower = smoother/more lag, higher = snappier/more jitter
+
+// expo-camera uses only the wide-angle lens on iOS, so it never switches to macro up close, and on
+// Pro iPhones a small label held near the lens stays out of focus. About 1.3-1.7x zoom (iOS maps
+// zoom as maxZoom ^ zoom) lets people hold the phone back far enough to focus. Android maps zoom
+// linearly to each phone's maximum (8x to 100x), so no fixed value is safe there.
+const SCANNER_ZOOM = Platform.OS === 'ios' ? 0.1 : 0;
+
+// On iOS a scanned item, or audit confirm in audit mode, opens inside the sheet, on top of the camera. Android's formSheet can't
+// hold a nested stack (react-native-screens 4.30), so there the sheet closes and the item opens
+// in its tab.
+const OPENS_ITEMS_IN_SHEET = Platform.OS === 'ios';
+
+const OPENING_INDICATOR_SIZE = 72;
+const QUICK_SCAN_STORAGE_KEY = 'quick_scan';
+const TORCH_ICONS = {
+    ios: { off: 'flashlight.off.fill', on: 'flashlight.on.fill' },
+    android: { off: FlashlightOff, on: FlashlightOn },
+};
+const QUICK_SCAN_ICONS = {
+    ios: { off: 'forward', on: 'forward.fill' },
+    android: { off: FastForward, on: FastForward },
+};
+
+// Quick scan stays on until it's turned off. SecureStore is read synchronously so the scanner
+// opens in the right mode.
+const getQuickScanEnabled = () => {
+    try {
+        return SecureStore.getItem(QUICK_SCAN_STORAGE_KEY) === 'on';
+    } catch {
+        return false;
+    }
+};
+
+const hasBounds = (barcode) => barcode.bounds?.size.width > 0 && barcode.bounds?.size.height > 0;
+
+// Detected bounds are noisy frame-to-frame (autofocus, hand tremor, detector variance);
+// blend toward the new position instead of snapping to it to keep the highlight box steady.
+const smoothBounds = (prevBounds, nextBounds) => ({
+    origin: {
+        x: prevBounds.origin.x + (nextBounds.origin.x - prevBounds.origin.x) * BOUNDS_SMOOTHING_ALPHA,
+        y: prevBounds.origin.y + (nextBounds.origin.y - prevBounds.origin.y) * BOUNDS_SMOOTHING_ALPHA,
+    },
+    size: {
+        width: prevBounds.size.width + (nextBounds.size.width - prevBounds.size.width) * BOUNDS_SMOOTHING_ALPHA,
+        height: prevBounds.size.height + (nextBounds.size.height - prevBounds.size.height) * BOUNDS_SMOOTHING_ALPHA,
+    },
+});
+
+const distanceFromCenter = (bounds, layout) => {
+    const centerX = bounds.origin.x + bounds.size.width / 2;
+    const centerY = bounds.origin.y + bounds.size.height / 2;
+
+    return Math.hypot(centerX - layout.width / 2, centerY - layout.height / 2);
+};
+
+// The overlay names what a code opens: an asset's tag, or an accessory's or consumable's name.
+// An item that isn't found comes back as { status: 'error' }, which has no name.
+const overlayLabel = (scanResolution) => {
+    if (scanResolution?.outcome === 'found') {
+        return scanResolution.asset.asset_tag;
+    }
+
+    return scanResolution?.item?.name;
+};
+
+export default function Home() {
+    const { mode } = useLocalSearchParams();
+    const { t } = useTranslation();
+    const isAuditMode = mode === 'audit';
+    // Ask on open: "Scan to Audit" and the audit confirm screen open the scanner without asking first,
+    // and iOS lists no Camera switch in Settings until the app has asked once
+    const [permission, , getPermission] = useCameraPermissions({ request: true });
+
+    const [barcodes, setBarcodes] = useState([]);
+    const [scanningPaused, setScanningPaused] = useState(false);
+    const [openingBarcode, setOpeningBarcode] = useState(null);
+    const appState = useRef(AppState.currentState);
+    const insets = useSafeAreaInsets();
+    const cameraRef = useRef(null);
+    const isSelectingRef = useRef(false);
+    const [domain, setDomain] = useState(null);
+    const queryClient = useQueryClient();
+    const isFocused = useIsFocused();
+    const navigation = useNavigation();
+    const [quickScanEnabled, setQuickScanEnabled] = useState(getQuickScanEnabled);
+    const [torchOn, setTorchOn] = useState(false);
+    // The code that last opened an item. Quick scan skips it until it has been out of view, so
+    // coming back to the camera with it still in frame doesn't open it again.
+    const quickScanSkipRef = useRef(null);
+    const cameraLayoutRef = useRef(null);
+    const sheetDetentIndexRef = useRef(0);
+    const footerHeightRef = useRef(0);
+
+    useEffect(() => {
+        SecureStore.getItemAsync('domain').then((storedDomain) => setDomain(storedDomain));
+    }, []);
+
+    // Resolves a barcode, and fills the cache the found asset's (and its deleted matches') or item's
+    // detail screen reads, so opening it after a scan needs no second request. storedDomain decides
+    // whether a scanned URL belongs to this Snipe-IT instance.
+    const scanQueryOptions = (barcode, storedDomain) => {
+        const symbology = classifyBarcodeSymbology(barcode.type);
+
+        return {
+            queryKey: scanKeys.resolution(symbology, barcode.data),
+            queryFn: async () => {
+                const scanResolution = await resolveScannedAsset(barcode.data, symbology, storedDomain);
+
+                if (scanResolution.outcome === 'found') {
+                    [scanResolution.asset, ...scanResolution.deletedMatches].forEach((asset) => {
+                        queryClient.setQueryData(assetKeys.detail(String(asset.id)), asset);
+                    });
+                }
+
+                const itemQuery = scannedItemQueryOptions(scanResolution);
+                // Without the view permission the item goes unnamed; the scan itself still resolved
+                const item = itemQuery ? await queryClient.fetchQuery(itemQuery).catch(() => null) : null;
+
+                return { ...scanResolution, item };
+            },
+        };
+    };
+
+    // Resolves each barcode in frame so BarcodeOverlay can label it, once the stored domain is known
+    const scanQueries = useQueries({
+        queries: barcodes.map((barcode) => ({ ...scanQueryOptions(barcode, domain), enabled: domain !== null })),
+    });
+
+    useEffect(() => {
+        const subscription = AppState.addEventListener("change", (nextAppState) => {
+            if (nextAppState === "background") {
+                setTorchOn(false);
+            }
+
+            if (
+                appState.current.match(/inactive|background/) &&
+                nextAppState === "active"
+            ) {
+                // Reset when app comes back to foreground
+                clearBarcodes();
+                // Pick up access granted in Settings. iOS restarts the app when it changes; Android doesn't
+                getPermission();
+            }
+            appState.current = nextAppState;
+        });
+
+        return () => {
+            subscription.remove();
+        };
+    }, [getPermission]);
+
+    // Coming back from an item opened in the sheet: the code that opened it is likely still in
+    // frame, so it starts over as a fresh detection that needs a tap
+    useFocusEffect(useCallback(() => {
+        clearBarcodes();
+    }, []));
+
+    // Drop highlight boxes for barcodes that are no longer visible in-frame
+    useEffect(() => {
+        if (scanningPaused) return;
+        const pruneInterval = setInterval(() => {
+            const cutoff = Date.now() - BARCODE_STALE_MS;
+            setBarcodes(prevBarcodes => prevBarcodes.filter(barcode => barcode.lastSeenAt >= cutoff));
+        }, 300);
+
+        return () => clearInterval(pruneInterval);
+    }, [scanningPaused]);
+
+    // Add a timer to clear barcodes and resume scanning when in paused state
+    useEffect(() => {
+        let rescanTimer;
+        if (scanningPaused) {
+            rescanTimer = setTimeout(() => {
+                clearBarcodes();
+            }, 5000); // 5 seconds timeout for automatic resume
+        }
+        
+        return () => {
+            if (rescanTimer) clearTimeout(rescanTimer);
+        };
+    }, [scanningPaused]);
+
+    const handleBarcodeScan = useCallback((scannedBarcode) => {
+        // On iOS, pdf417/code39/codabar are decoded by expo-camera's ZXing fallback provider, which
+        // has no position for the code. Older versions left bounds out; SDK 58 reports a 0×0 box
+        // at the origin instead (expo/expo#47854). Neither can be placed as a highlight box.
+        if (scanningPaused || !scannedBarcode || !hasBounds(scannedBarcode)) {
+            return;
+        }
+
+        const barcode = stripCodabarStartStop(scannedBarcode);
+        const lastSeenAt = Date.now();
+
+        if (quickScanSkipRef.current?.data === barcode.data) {
+            quickScanSkipRef.current.lastSeenAt = lastSeenAt;
+        }
+
+        setBarcodes(prevBarcodes => {
+            const existing = prevBarcodes.find(prevBarcode => prevBarcode.data === barcode.data);
+            if (!existing) {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            }
+            const bounds = existing ? smoothBounds(existing.bounds, barcode.bounds) : barcode.bounds;
+            const otherBarcodes = prevBarcodes.filter(prevBarcode => prevBarcode.data !== barcode.data);
+            return [...otherBarcodes, { ...barcode, bounds, lastSeenAt }];
+        });
+    }, [scanningPaused]);
+
+    const handleBarcodeSelect = async (barcode) => {
+        if (!barcode?.data) {
+            clearBarcodes();
+            return;
+        }
+
+        // Guard against a second tap (on another still-visible box) firing while this
+        // selection is still being resolved / navigating
+        if (isSelectingRef.current) return;
+        isSelectingRef.current = true;
+
+        // Pause scanning immediately so the confirmed code isn't re-detected mid-navigation
+        setScanningPaused(true);
+        setOpeningBarcode(barcode);
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+
+        // Reuses the overlay's lookup: cached if it landed, awaited if it's still in flight
+        let scanResolution;
+
+        try {
+            const storedDomain = await SecureStore.getItemAsync('domain');
+            scanResolution = await queryClient.fetchQuery(scanQueryOptions(barcode, storedDomain));
+        } catch {
+            clearBarcodes();
+            return;
+        }
+
+        if (scanResolution.outcome === 'otherInstance') {
+            clearBarcodes();
+            Alert.alert(
+                t('mobile.scan_domain_mismatch_title'),
+                t('mobile.scan_domain_mismatch_message'),
+                [{ text: t('mobile.ok') }]
+            );
+            return;
+        }
+
+        const href = scannedItemHref(scanResolution, isAuditMode, OPENS_ITEMS_IN_SHEET);
+
+        if (!href) {
+            clearBarcodes();
+            alertScanNotOpened(scanResolution, barcode.data);
+            return;
+        }
+
+        setBarcodes([]);
+        quickScanSkipRef.current = { data: barcode.data, lastSeenAt: null };
+
+        if (OPENS_ITEMS_IN_SHEET) {
+            router.push(href);
+            return;
+        }
+
+        if (isAuditMode) {
+            router.replace(href);
+            return;
+        }
+
+        setTimeout(async () => {
+            await router.replace(href, { withAnchor: true });
+        }, 300);
+    };
+
+    // Says why a scan didn't open anything. Scanning has already resumed underneath. Outside audit
+    // mode, a tag or plain value that found nothing or several assets can be searched for in the
+    // asset list, whose search also matches model, manufacturer, location and serial.
+    const alertScanNotOpened = (scanResolution, scannedData) => {
+        const { outcome, asset, kind, value, matchedBy, onlyDeleted } = scanResolution;
+        const okButton = [{ text: t('mobile.ok') }];
+        const canSearchAssets = !isAuditMode && (kind === 'assetTag' || kind === 'ambiguous');
+        const searchButtons = canSearchAssets
+            ? [
+                { text: t('general.cancel'), style: 'cancel' },
+                { text: t('mobile.scan_search_assets'), onPress: () => searchAssetsFor(value, onlyDeleted) },
+            ]
+            : okButton;
+
+        if (outcome === 'found' && asset.deleted_at) {
+            Alert.alert(t('admin.hardware.general.deleted'), undefined, okButton);
+            return;
+        }
+
+        if (outcome === 'notAsset' && (kind === 'accessoryId' || kind === 'consumableId')) {
+            Alert.alert(t('mobile.scan_audit_assets_only'), undefined, okButton);
+            return;
+        }
+
+        if (outcome === 'notAsset') {
+            Alert.alert(t('mobile.scan_not_an_asset'), undefined, okButton);
+            return;
+        }
+
+        if (outcome === 'multiple') {
+            const multipleKey = matchedBy === 'serial' ? 'mobile.scan_multiple_serial' : 'mobile.scan_multiple_tag';
+            Alert.alert(t(multipleKey, { value }), undefined, searchButtons);
+            return;
+        }
+
+        // The scanned value is the title, so people can see what the app read. Android cuts titles
+        // off after two lines, too short for the not-found string.
+        Alert.alert(
+            scannedData,
+            t('general.generic_model_not_found', { model: t('general.asset') }),
+            searchButtons
+        );
+    };
+
+    // Several matches that are all deleted are searched for among deleted assets, since the asset
+    // list otherwise leaves them out
+    const searchAssetsFor = (value, onlyDeleted) => {
+        const statusParam = onlyDeleted ? '&status=Deleted' : '';
+
+        setScanningPaused(true);
+        setBarcodes([]);
+        router.replace(`/(authenticated)/(tabs)/(assets)?search=${encodeURIComponent(value)}${statusParam}`);
+    };
+
+    useEffect(() => {
+        if (Platform.OS !== 'android') {
+            return;
+        }
+
+        return navigation.getParent()?.addListener('sheetDetentChange', (event) => {
+            sheetDetentIndexRef.current = event.data.index;
+        });
+    }, [navigation]);
+
+    // How much of the camera is on screen. Android lays the scanner out at full height and slides
+    // it down for the half-height detent, so the camera there sees codes below the screen's edge.
+    // The sheet is the camera plus the footer; at half height the camera shows through the footer.
+    const visibleCameraHeight = () => {
+        const cameraHeight = cameraLayoutRef.current.height;
+
+        if (Platform.OS !== 'android') {
+            return cameraHeight;
+        }
+
+        const sheetHeight = cameraHeight + footerHeightRef.current;
+
+        return Math.min(cameraHeight, SCANNER_CAMERA_DETENTS[sheetDetentIndexRef.current] * sheetHeight);
+    };
+
+    // Opens the code nearest the center of the visible camera among those that resolve to
+    // something a tap would open. Codes that match nothing, or are off screen, are ignored.
+    useEffect(() => {
+        if (!quickScanEnabled || scanningPaused || isSelectingRef.current || !cameraLayoutRef.current) {
+            return;
+        }
+
+        const now = Date.now();
+        const skipped = quickScanSkipRef.current;
+
+        if (skipped?.lastSeenAt && now - skipped.lastSeenAt > BARCODE_STALE_MS) {
+            quickScanSkipRef.current = null;
+        }
+
+        const visibleArea = { width: cameraLayoutRef.current.width, height: visibleCameraHeight() };
+        const openableBarcodes = barcodes.filter((barcode, index) => {
+            const scanResolution = scanQueries[index]?.data;
+            const centerY = barcode.bounds.origin.y + barcode.bounds.size.height / 2;
+
+            if (!scanResolution || barcode.data === quickScanSkipRef.current?.data || centerY > visibleArea.height) {
+                return false;
+            }
+
+            return scannedItemHref(scanResolution, isAuditMode) !== null;
+        });
+
+        if (openableBarcodes.length === 0) {
+            return;
+        }
+
+        const nearestBarcode = openableBarcodes.reduce((nearest, barcode) => (
+            distanceFromCenter(barcode.bounds, visibleArea) < distanceFromCenter(nearest.bounds, visibleArea)
+                ? barcode
+                : nearest
+        ));
+
+        playScanSuccessSound();
+        handleBarcodeSelect(nearestBarcode);
+    }, [barcodes, scanQueries, quickScanEnabled, scanningPaused, isAuditMode]);
+
+    const toggleQuickScan = (enabled) => {
+        setQuickScanEnabled(enabled);
+        SecureStore.setItem(QUICK_SCAN_STORAGE_KEY, enabled ? 'on' : 'off');
+        Haptics.selectionAsync();
+    };
+
+    // A spinner sits on each code from the moment it's tapped, or quick scan sees it, until its item
+    // opens or it turns out to match nothing. It goes on the code rather than the middle of the
+    // screen because on Android a half-height sheet shows only the top of the scanner.
+    const lookingUpBarcodes = quickScanEnabled ? barcodes.filter((barcode, index) => scanQueries[index]?.isFetching) : [];
+    const spinnerBarcodes = openingBarcode ? [openingBarcode] : lookingUpBarcodes;
+
+    const showsHint = !scanningPaused && barcodes.length === 0;
+    const bottomControls = (
+        <View
+            style={[styles.bottomControls, { paddingBottom: insets.bottom + 16 }]}
+            pointerEvents="box-none"
+            onLayout={(event) => {
+                footerHeightRef.current = event.nativeEvent.layout.height;
+            }}
+        >
+            {showsHint && (
+                <View style={styles.hintContainer}>
+                    <Text style={styles.hintText}>
+                        {quickScanEnabled ? t('mobile.scan_hint_quick') : t('mobile.scan_hint')}
+                    </Text>
+                </View>
+            )}
+            <View style={styles.cornerButtons} pointerEvents="box-none">
+                <CameraToggleButton
+                    label={t('mobile.flashlight')}
+                    isOn={torchOn}
+                    onToggle={(enabled) => setTorchOn(enabled)}
+                    iosSymbol={TORCH_ICONS.ios}
+                    androidIcon={TORCH_ICONS.android}
+                />
+                <CameraToggleButton
+                    label={t('mobile.quick_scan')}
+                    isOn={quickScanEnabled}
+                    onToggle={(enabled) => toggleQuickScan(enabled)}
+                    iosSymbol={QUICK_SCAN_ICONS.ios}
+                    androidIcon={QUICK_SCAN_ICONS.android}
+                />
+            </View>
+        </View>
+    );
+
+    // Android's form sheet keeps the scanner at full height and slides it down for the half-height
+    // detent, so anything drawn at the bottom of the scanner is off screen. The sheet's footer stays
+    // at the bottom of the part that shows, at either height.
+    useLayoutEffect(() => {
+        if (Platform.OS !== 'android') {
+            return;
+        }
+
+        navigation.getParent()?.setOptions({
+            unstable_sheetFooter: permission?.granted ? () => bottomControls : undefined,
+        });
+    }, [navigation, permission?.granted, torchOn, quickScanEnabled, showsHint, insets.bottom, t]);
+
+    const clearBarcodes = () => {
+        setBarcodes([]);
+        setOpeningBarcode(null);
+        setScanningPaused(false);
+        isSelectingRef.current = false;
+    };
+
+    if (!permission) {
+        return <View style={styles.container} />;
+    }
+
+    if (!permission.granted) {
+        return (
+            <View style={[styles.container, styles.permissionContainer]}>
+                <Stack.Screen options={{ headerShown: false }} />
+                <Text style={styles.permissionTitle}>{t('mobile.camera_permission_denied')}</Text>
+                <Text style={styles.permissionDetail}>{t('mobile.camera_permission_denied_detail')}</Text>
+                <TouchableOpacity style={styles.settingsButton} onPress={() => Linking.openSettings()}>
+                    <Text style={styles.settingsButtonText}>{t('mobile.open_settings')}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={[styles.closeButton, { top: insets.top + 8 }]} onPress={() => router.back()}>
+                    <Text style={styles.closeButtonText}>✕</Text>
+                </TouchableOpacity>
+            </View>
+        );
+    }
+
+    return (
+        <View
+            style={styles.container}
+            onLayout={(event) => {
+                cameraLayoutRef.current = event.nativeEvent.layout;
+            }}
+        >
+            <Stack.Screen
+                options={{
+                    title: "Overview",
+                    headerShown: false,
+                }}
+            />
+            {Platform.OS === "android" ? <StatusBar hidden /> : null}
+            <CameraView
+                ref={cameraRef}
+                barcodeScannerSettings={{
+                    barcodeTypes: ['aztec', 'ean13', 'ean8', 'qr', 'pdf417', 'upc_e', 'datamatrix', 'code39', 'code93', 'itf14', 'codabar', 'code128', 'upc_a'],
+                    isHighlightingEnabled: false,
+                }}
+                style={styles.camera}
+                facing="back"
+                active={isFocused}
+                enableTorch={torchOn}
+                zoom={SCANNER_ZOOM}
+                onBarcodeScanned={handleBarcodeScan}
+                onCameraReady={() => {}}
+            />
+
+            {/* Close button */}
+            <TouchableOpacity
+                style={[styles.closeButton, { top: insets.top + 8 }]}
+                onPress={() => router.back()}
+            >
+                <Text style={styles.closeButtonText}>✕</Text>
+            </TouchableOpacity>
+
+            {/* Audit mode banner */}
+            {isAuditMode && (
+                <View style={[styles.auditBanner, { top: insets.top }]}>
+                    <Text style={styles.auditBannerText}>{t('mobile.audit_mode')}</Text>
+                </View>
+            )}
+
+            {/* Barcode Mask Overlay. Quick scan opens codes on its own, so it draws no boxes to tap. */}
+            {!quickScanEnabled && (
+                <BarcodeOverlay
+                    barcodes={barcodes.map((barcode, index) => ({ ...barcode, label: overlayLabel(scanQueries[index].data) }))}
+                    onBarcodeSelect={(barcode) => handleBarcodeSelect(barcode)}
+                />
+            )}
+
+            {spinnerBarcodes.map((barcode) => (
+                <View
+                    key={barcode.data}
+                    pointerEvents="none"
+                    style={[
+                        styles.openingIndicator,
+                        {
+                            left: barcode.bounds.origin.x + barcode.bounds.size.width / 2 - OPENING_INDICATOR_SIZE / 2,
+                            top: barcode.bounds.origin.y + barcode.bounds.size.height / 2 - OPENING_INDICATOR_SIZE / 2,
+                        },
+                    ]}
+                >
+                    <ActivityIndicator size="large" color="white" />
+                </View>
+            ))}
+
+            {Platform.OS === 'ios' && (
+                <View style={styles.bottomControlsOverCamera} pointerEvents="box-none">
+                    {bottomControls}
+                </View>
+            )}
+        </View>
+    );
+}
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: 'black',
+    },
+    permissionContainer: {
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingHorizontal: 32,
+        gap: 16,
+    },
+    permissionTitle: {
+        color: 'white',
+        fontSize: 20,
+        fontWeight: 'bold',
+        textAlign: 'center',
+    },
+    permissionDetail: {
+        color: 'rgba(255,255,255,0.7)',
+        fontSize: 15,
+        textAlign: 'center',
+        lineHeight: 22,
+    },
+    settingsButton: {
+        marginTop: 8,
+        backgroundColor: 'white',
+        paddingHorizontal: 28,
+        paddingVertical: 12,
+        borderRadius: 24,
+    },
+    settingsButtonText: {
+        color: 'black',
+        fontSize: 16,
+        fontWeight: '600',
+    },
+    camera: {
+        flex: 1,
+    },
+    bottomControlsOverCamera: {
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        bottom: 0,
+        zIndex: 20,
+    },
+    bottomControls: {
+        paddingHorizontal: 16,
+        gap: 12,
+    },
+    cornerButtons: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+    },
+    hintContainer: {
+        alignSelf: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+        paddingHorizontal: 20,
+        paddingVertical: 10,
+        borderRadius: 20,
+    },
+    hintText: {
+        color: 'white',
+        fontSize: 14,
+    },
+    closeButton: {
+        position: 'absolute',
+        left: 16,
+        backgroundColor: 'rgba(0, 0, 0, 0.6)',
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 20,
+    },
+    closeButtonText: {
+        color: 'white',
+        fontSize: 16,
+        fontWeight: 'bold',
+    },
+    openingIndicator: {
+        position: 'absolute',
+        width: OPENING_INDICATOR_SIZE,
+        height: OPENING_INDICATOR_SIZE,
+        borderRadius: 16,
+        backgroundColor: 'rgba(0, 0, 0, 0.6)',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 30,
+    },
+    auditBanner: {
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        backgroundColor: '#6200ee',
+        paddingVertical: 8,
+        alignItems: 'center',
+        zIndex: 10,
+    },
+    auditBannerText: {
+        color: 'white',
+        fontSize: 16,
+        fontWeight: 'bold',
+        letterSpacing: 1,
+    },
+});
