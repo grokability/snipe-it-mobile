@@ -1,5 +1,5 @@
 import { CameraView, useCameraPermissions } from "expo-camera";
-import { router, Stack, useFocusEffect, useIsFocused, useLocalSearchParams } from "expo-router";
+import { router, Stack, useFocusEffect, useIsFocused, useLocalSearchParams, useNavigation } from "expo-router";
 import {
     ActivityIndicator,
     Alert,
@@ -12,7 +12,7 @@ import {
     Text,
     TouchableOpacity
 } from "react-native";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useQueries, useQueryClient } from "@tanstack/react-query";
 import * as Haptics from 'expo-haptics';
 import * as SecureStore from 'expo-secure-store';
@@ -118,6 +118,7 @@ export default function Home() {
     const [domain, setDomain] = useState(null);
     const queryClient = useQueryClient();
     const isFocused = useIsFocused();
+    const navigation = useNavigation();
     const [quickScanEnabled, setQuickScanEnabled] = useState(getQuickScanEnabled);
     const [torchOn, setTorchOn] = useState(false);
     // The code that last opened an item. Quick scan skips it until it has been out of view, so
@@ -407,6 +408,48 @@ export default function Home() {
     const lookingUpBarcodes = quickScanEnabled ? barcodes.filter((barcode, index) => scanQueries[index]?.isFetching) : [];
     const spinnerBarcodes = openingBarcode ? [openingBarcode] : lookingUpBarcodes;
 
+    const showsHint = !scanningPaused && barcodes.length === 0;
+    const bottomControls = (
+        <View style={[styles.bottomControls, { paddingBottom: insets.bottom + 16 }]} pointerEvents="box-none">
+            {showsHint && (
+                <View style={styles.hintContainer}>
+                    <Text style={styles.hintText}>
+                        {quickScanEnabled ? t('mobile.scan_hint_quick') : t('mobile.scan_hint')}
+                    </Text>
+                </View>
+            )}
+            <View style={styles.cornerButtons} pointerEvents="box-none">
+                <CameraToggleButton
+                    label={t('mobile.flashlight')}
+                    isOn={torchOn}
+                    onToggle={(enabled) => setTorchOn(enabled)}
+                    iosSymbol={TORCH_ICONS.ios}
+                    androidIcon={TORCH_ICONS.android}
+                />
+                <CameraToggleButton
+                    label={t('mobile.quick_scan')}
+                    isOn={quickScanEnabled}
+                    onToggle={(enabled) => toggleQuickScan(enabled)}
+                    iosSymbol={QUICK_SCAN_ICONS.ios}
+                    androidIcon={QUICK_SCAN_ICONS.android}
+                />
+            </View>
+        </View>
+    );
+
+    // Android's form sheet keeps the scanner at full height and slides it down for the half-height
+    // detent, so anything drawn at the bottom of the scanner is off screen. The sheet's footer stays
+    // at the bottom of the part that shows, at either height.
+    useLayoutEffect(() => {
+        if (Platform.OS !== 'android') {
+            return;
+        }
+
+        navigation.getParent()?.setOptions({
+            unstable_sheetFooter: permission?.granted ? () => bottomControls : undefined,
+        });
+    }, [navigation, permission?.granted, torchOn, quickScanEnabled, showsHint, insets.bottom, t]);
+
     const clearBarcodes = () => {
         setBarcodes([]);
         setOpeningBarcode(null);
@@ -502,31 +545,11 @@ export default function Home() {
                 </View>
             ))}
 
-            {!scanningPaused && barcodes.length === 0 && (
-                <View style={[styles.hintContainer, { bottom: insets.bottom + 76 }]}>
-                    <Text style={styles.hintText}>
-                        {quickScanEnabled ? t('mobile.scan_hint_quick') : t('mobile.scan_hint')}
-                    </Text>
+            {Platform.OS === 'ios' && (
+                <View style={styles.bottomControlsOverCamera} pointerEvents="box-none">
+                    {bottomControls}
                 </View>
             )}
-
-            <CameraToggleButton
-                label={t('mobile.flashlight')}
-                isOn={torchOn}
-                onToggle={(enabled) => setTorchOn(enabled)}
-                iosSymbol={TORCH_ICONS.ios}
-                androidIcon={TORCH_ICONS.android}
-                style={[styles.cornerButton, styles.torchButton, { bottom: insets.bottom + 16 }]}
-            />
-
-            <CameraToggleButton
-                label={t('mobile.quick_scan')}
-                isOn={quickScanEnabled}
-                onToggle={(enabled) => toggleQuickScan(enabled)}
-                iosSymbol={QUICK_SCAN_ICONS.ios}
-                androidIcon={QUICK_SCAN_ICONS.android}
-                style={[styles.cornerButton, styles.quickScanButton, { bottom: insets.bottom + 16 }]}
-            />
         </View>
     );
 }
@@ -569,8 +592,22 @@ const styles = StyleSheet.create({
     camera: {
         flex: 1,
     },
-    hintContainer: {
+    bottomControlsOverCamera: {
         position: 'absolute',
+        left: 0,
+        right: 0,
+        bottom: 0,
+        zIndex: 20,
+    },
+    bottomControls: {
+        paddingHorizontal: 16,
+        gap: 12,
+    },
+    cornerButtons: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+    },
+    hintContainer: {
         alignSelf: 'center',
         backgroundColor: 'rgba(0, 0, 0, 0.7)',
         paddingHorizontal: 20,
@@ -597,10 +634,6 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: 'bold',
     },
-    cornerButton: {
-        position: 'absolute',
-        zIndex: 20,
-    },
     openingIndicator: {
         position: 'absolute',
         width: OPENING_INDICATOR_SIZE,
@@ -610,12 +643,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         zIndex: 30,
-    },
-    torchButton: {
-        left: 16,
-    },
-    quickScanButton: {
-        right: 16,
     },
     auditBanner: {
         position: 'absolute',

@@ -91,6 +91,7 @@ function RootLayout() {
                             presentation: 'formSheet',
                             sheetAllowedDetents: scannerSheetDetents(route),
                             sheetGrabberVisible: true,
+                            contentStyle: { backgroundColor: 'black' },
                         })}
                     />
                 </Stack.Protected>
