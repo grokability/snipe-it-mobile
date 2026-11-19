@@ -1,4 +1,5 @@
-import {View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator} from 'react-native';
+import {View, ScrollView, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator, Platform} from 'react-native';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {AuthContext} from "@/context/AuthProvider";
 import {useContext, useMemo, useState} from "react";
 import * as SecureStore from 'expo-secure-store';
@@ -12,6 +13,8 @@ import {SegmentedPicker} from "@/components/ui/SegmentedPicker";
 import {ErrorReportingConsent, getErrorReportingConsent} from "@/helpers/errorReportingConsent";
 import {applyErrorReportingConsent} from "@/helpers/sentry";
 import * as Sentry from "@sentry/react-native";
+import Switch from "@/components/forms/Switch";
+import {getEnableSounds, setEnableSounds} from "@/helpers/scanSound";
 
 export default function SettingsScreen() {
     const colors = useColors();
@@ -19,9 +22,11 @@ export default function SettingsScreen() {
     const { logout, user } = useContext(AuthContext);
     const { t } = useTranslation();
     const queryClient = useQueryClient();
+    const insets = useSafeAreaInsets();
     const [refreshing, setRefreshing] = useState(false);
     const [clearingCaches, setClearingCaches] = useState(false);
     const [errorReporting, setErrorReporting] = useState(getErrorReportingConsent);
+    const [enableSounds, setEnableSoundsState] = useState(getEnableSounds);
 
     const errorReportingOptions = useMemo(() => [
         {value: ErrorReportingConsent.ALWAYS, label: t('mobile.error_reporting_always')},
@@ -66,6 +71,11 @@ export default function SettingsScreen() {
         await applyErrorReportingConsent(consent);
     };
 
+    const handleEnableSoundsChange = (enabled) => {
+        setEnableSoundsState(enabled);
+        setEnableSounds(enabled);
+    };
+
     const handleRefreshPermissions = async () => {
         setRefreshing(true);
         try {
@@ -98,7 +108,11 @@ export default function SettingsScreen() {
     };
 
     return (
-        <View style={styles.container}>
+        <ScrollView
+            style={styles.container}
+            contentInsetAdjustmentBehavior="automatic"
+            contentContainerStyle={[styles.contentContainer, {paddingTop: Platform.OS === 'android' ? insets.top + 56 : 0}]}
+        >
             <Text style={styles.text}>{t('mobile.domain_message', { domain: SecureStore.getItem('domain') })}</Text>
             <Text style={[styles.text, {paddingBottom: Spacing.lg}]}>{t('general.settings')}</Text>
             <TouchableOpacity onPress={handleRefreshPermissions} disabled={refreshing} style={styles.button}>
@@ -115,6 +129,13 @@ export default function SettingsScreen() {
                     onValueChange={(consent) => handleErrorReportingChange(consent)}
                 />
                 <Text style={styles.sectionDescription}>{errorReportingDescriptions[errorReporting]}</Text>
+            </View>
+            <View style={styles.section}>
+                <View style={styles.switchRow}>
+                    <Text style={styles.sectionTitle}>{t('account.general.enable_sounds')}</Text>
+                    <Switch value={enableSounds} onValueChange={(enabled) => handleEnableSoundsChange(enabled)} />
+                </View>
+                <Text style={styles.sectionDescription}>{t('mobile.enable_sounds_description')}</Text>
             </View>
             {__DEV__ && (
                 <View style={styles.section}>
@@ -138,16 +159,19 @@ export default function SettingsScreen() {
             <TouchableOpacity onPress={logout}>
                 <Text style={styles.text}>{t('general.logout')}</Text>
             </TouchableOpacity>
-        </View>
+        </ScrollView>
     );
 }
 
 const createStyles = (colors) => StyleSheet.create({
     container: {
         flex: 1,
+        backgroundColor: colors.background,
+    },
+    contentContainer: {
+        flexGrow: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: colors.background,
     },
     text: {
         color: colors.text,
@@ -163,6 +187,12 @@ const createStyles = (colors) => StyleSheet.create({
         fontSize: Typography.bodyLarge,
         fontWeight: FontWeight.semibold,
         color: colors.text,
+    },
+    switchRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: Spacing.md,
     },
     sectionDescription: {
         fontSize: Typography.caption,

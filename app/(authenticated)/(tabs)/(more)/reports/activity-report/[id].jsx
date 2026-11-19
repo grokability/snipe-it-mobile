@@ -5,6 +5,7 @@ import {useLayoutEffect, useMemo} from 'react';
 import {SafeAreaProvider, useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useColors} from '@/hooks/useThemeColors';
 import {useTranslation} from 'react-i18next';
+import {floatingHeaderTitle} from '@/components/ui/FloatingHeader';
 import {Section} from '@/components/ui/Section';
 import {DetailRow} from '@/components/ui/DetailRow';
 import {getActionBadgeColor, formatActionDate} from '@/helpers/utils';
@@ -29,7 +30,7 @@ export default function ActionLogDetailScreen() {
 
     useLayoutEffect(() => {
         if (actionLog?.action_type) {
-            navigation.setOptions({headerTitle: decode(actionLog.action_type)});
+            navigation.setOptions({headerTitle: floatingHeaderTitle(decode(actionLog.action_type))});
         }
     }, [navigation, actionLog]);
 

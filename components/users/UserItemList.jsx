@@ -12,6 +12,7 @@ import { Spacing, BorderRadius, Typography, FontWeight } from "@/constants/sizes
 import { decode } from "html-entities";
 import { FlashList } from "@shopify/flash-list";
 import { useTranslation } from "react-i18next";
+import { floatingHeaderTitle } from "@/components/ui/FloatingHeader";
 import { Ionicons } from '@expo/vector-icons';
 import EmptyState from "@/components/ui/EmptyState";
 import { AssetListSkeleton } from "@/components/ui/Skeleton";
@@ -76,7 +77,7 @@ export default function UserItemList({ userId, itemType }) {
 
     useLayoutEffect(() => {
         navigation.setOptions({
-            headerTitle: firstName ? t(config.title, { firstName: decode(firstName) }) : t(config.label),
+            headerTitle: floatingHeaderTitle(firstName ? t(config.title, { firstName: decode(firstName) }) : t(config.label)),
         });
     }, [navigation, firstName, config, t]);
 
