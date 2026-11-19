@@ -1,9 +1,8 @@
 import React, {createContext, useState, useEffect, useContext} from "react";
-import {makeRequest} from "../helpers/axiosConfig";
+import {makeRequest, setSessionExpiredHandler} from "../helpers/axiosConfig";
 import * as SecureStore from 'expo-secure-store';
 import { PermissionManager } from '../permissions/PermissionManager';
 import { deviceName } from "expo-device";
-import {useRouter} from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {makeRedirectUri} from "expo-auth-session";
 import {captureLoginException, addLoginBreadcrumb, axiosFailureCode} from "@/helpers/loginTelemetry";
@@ -11,10 +10,40 @@ import {captureLoginException, addLoginBreadcrumb, axiosFailureCode} from "@/hel
 export const AuthContext = createContext();
 
 export const AuthProvider = ({children}) => {
-    const router = useRouter();
     const [user, setUser] = useState(null);
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
+
+    const logout = () => {
+        // Token is not invalidated on logout — see commented block below for full OAuth logout
+        // return makeRequest({
+        //     url: '/mobile/logout',
+        //     method: 'POST',
+        //     isAuth: true,
+        //     data: {
+        //         token_id: user.token_id,
+        //     },
+        //     headers: { 'Authorization': `Bearer ${user.token}` }
+        // }).then(response => {
+        //     console.log('logout response');
+            const currentDomain = PermissionManager.getCurrentDomain();
+            if (currentDomain) {
+                PermissionManager.reset(currentDomain);
+            }
+            SecureStore.deleteItemAsync('user');
+            setUser(null);
+            setIsAuthenticated(false);
+        //     console.log(response);
+        // }).catch(error => {
+        //     console.log('logout error');
+        //     console.error(error);
+        // });
+    };
+
+    useEffect(() => {
+        setSessionExpiredHandler(logout);
+        return () => setSessionExpiredHandler(null);
+    }, []);
 
     useEffect(() => {
         const loadUser = async () => {
@@ -44,31 +73,7 @@ export const AuthProvider = ({children}) => {
                 isAuthenticated,
                 isLoading,
                 setUser,
-                logout: () => {
-                    // Token is not invalidated on logout — see commented block below for full OAuth logout
-                    // return makeRequest({
-                    //     url: '/mobile/logout',
-                    //     method: 'POST',
-                    //     isAuth: true,
-                    //     data: {
-                    //         token_id: user.token_id,
-                    //     },
-                    //     headers: { 'Authorization': `Bearer ${user.token}` }
-                    // }).then(response => {
-                    //     console.log('logout response');
-                        const currentDomain = PermissionManager.getCurrentDomain();
-                        if (currentDomain) {
-                            PermissionManager.reset(currentDomain);
-                        }
-                        SecureStore.deleteItemAsync('user');
-                        setUser(null);
-                        setIsAuthenticated(false);
-                    //     console.log(response);
-                    // }).catch(error => {
-                    //     console.log('logout error');
-                    //     console.error(error);
-                    // });
-                },
+                logout,
                 // leaving this here for now, may serve as a backup login method
                 bearerLogin: (domain, token) => {
                     setIsLoading(true);
@@ -186,9 +191,11 @@ export const AuthProvider = ({children}) => {
                        setUser(null);
                        setIsAuthenticated(false);
                    })
+                   // No navigation here: the root layout routes off isAuthenticated/isLoading,
+                   // so navigating unconditionally sent failed logins to /home and let the
+                   // layout bounce them straight back to /login.
                    .finally(() => {
                        setIsLoading(false);
-                       router.replace('/home');
                    });
                 }
             }}

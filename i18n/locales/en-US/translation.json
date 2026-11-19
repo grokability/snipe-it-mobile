@@ -159,14 +159,19 @@
     "cleartext_not_local_message": "http:// only works for a server on your local network. Use https://, or your server's private IP address, like http://192.168.1.10.",
     "login_failed": "Login Failed",
     "login_failed_message": "Please check your domain",
-    "welcome": "Welcome to Snipe-IT Mobile!",
+    "welcome": "Welcome to Snipe-IT Mobile BETA!",
     "open_scanner": "Open Scanner",
+    "scan": "Scan",
     "camera_permission_denied": "Camera Access Required",
     "camera_permission_denied_detail": "Please enable camera access in your device Settings to use the scanner.",
     "open_settings": "Open Settings",
     "scan_domain_mismatch_title": "Different Instance",
     "scan_domain_mismatch_message": "This QR code belongs to a different Snipe-IT instance than the one you're signed into.",
     "scan_hint": "Point your camera at a barcode, then tap it to scan",
+    "scan_hint_quick": "Point your camera at a barcode to open it",
+    "quick_scan": "Quick Scan",
+    "enable_sounds_description": "Plays a sound when Quick Scan opens a code.",
+    "flashlight": "Flashlight",
     "scan_deleted_tag_match_one": "There is also a deleted asset with this tag.",
     "scan_deleted_tag_match_other": "There are also {{count}} deleted assets with this tag.",
     "scan_deleted_serial_match_one": "There is also a deleted asset with this serial.",
@@ -387,5 +392,10 @@
     "user_consumables_unsupported": "This Snipe-IT server can't list a user's consumables.",
     "contact_your_administrator": "Please contact your administrator.",
     "user_has_no_licenses_assigned": "No licenses currently assigned to user."
+  },
+  "account": {
+    "general": {
+      "enable_sounds": "Enable sound effects"
+    }
   }
 }

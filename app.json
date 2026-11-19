@@ -187,6 +187,7 @@
           }
         }
       ],
+      "./plugins/withoutIosZXingBarcodeProvider",
       [
         "expo-camera",
         {

@@ -1,0 +1,271 @@
+import React, {useMemo, useRef, useState} from 'react';
+import {
+    ActivityIndicator,
+    Platform,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    View,
+} from 'react-native';
+import {KeyboardAvoidingForm} from "@/components/ui/KeyboardAvoidingForm";
+import {LoadingScreen} from "@/components/ui/LoadingScreen";
+import {router, useLocalSearchParams} from 'expo-router';
+import {useItemRoutePrefix} from '@/hooks/useItemRoutePrefix';
+import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
+import {makeRequest} from '@/helpers/axiosConfig';
+import {consumableKeys} from '@/helpers/queryKeys';
+import {PermissionDeniedError} from '@/helpers/errors';
+import {PERMISSIONS} from '@/permissions/PermissionKeys';
+import {PermissionGate} from '@/permissions/PermissionGate';
+import {SafeAreaProvider, useSafeAreaInsets} from 'react-native-safe-area-context';
+import {useColors} from '@/hooks/useThemeColors';
+import {Spacing, BorderRadius, Typography, FontWeight} from '@/constants/sizes';
+import {useTranslation} from 'react-i18next';
+import * as Burnt from 'burnt';
+import {decode} from 'html-entities';
+import SelectUserBottomSheet from '@/components/bottomSheets/SelectUserBottomSheet';
+import {Section} from '@/components/ui/Section';
+import {FormTextInput} from '@/components/forms/FormTextInput';
+import {SelectorButton} from '@/components/forms/SelectorButton';
+
+export default function ConsumableCheckoutScreen() {
+    const colors = useColors();
+    const insets = useSafeAreaInsets();
+    const styles = useMemo(() => createStyles(colors), [colors]);
+    const {t} = useTranslation();
+    const itemRoutePrefix = useItemRoutePrefix();
+    const {id} = useLocalSearchParams();
+
+    const queryClient = useQueryClient();
+
+    const [selectedUser, setSelectedUser] = useState(null);
+    const [qty, setQty] = useState('1');
+    const [note, setNote] = useState('');
+
+    const userRef = useRef(null);
+
+    const consumableQuery = useQuery({
+        queryKey: consumableKeys.detail(id),
+        queryFn: () => makeRequest({url: `/consumables/${id}`, method: 'get', permissionKey: PERMISSIONS.CONSUMABLES_VIEW}),
+    });
+
+    const consumable = consumableQuery.data;
+
+    const checkoutMutation = useMutation({
+        mutationFn: (data) => makeRequest({
+            url: `/consumables/${id}/checkout`,
+            method: 'POST',
+            data,
+            permissionKey: PERMISSIONS.CONSUMABLES_CHECKOUT,
+        }),
+        onSuccess: (res) => {
+            if (res.status === 'error') {
+                const errMsg = typeof res.messages === 'string'
+                    ? res.messages
+                    : res.messages
+                        ? Object.values(res.messages).flat().join('\n')
+                        : t('mobile.consumable_checkout_failed');
+                Burnt.alert({
+                    title: t('general.error'),
+                    preset: 'error',
+                    message: errMsg,
+                    duration: 4,
+                });
+                return;
+            }
+            Burnt.alert({
+                title: t('general.notification_success'),
+                preset: 'heart',
+                message: t('mobile.consumable_checkout_success'),
+                duration: 2,
+            });
+            queryClient.invalidateQueries({ queryKey: consumableKeys.detail(id) }).catch(() => {});
+            queryClient.invalidateQueries({ queryKey: consumableKeys.lists() }).catch(() => {});
+            router.dismissTo(`${itemRoutePrefix}/consumables/${id}`);
+        },
+        onError: (err) => {
+            if (err instanceof PermissionDeniedError) return;
+            console.error(err);
+            Burnt.alert({
+                title: t('general.error'),
+                preset: 'error',
+                message: t('mobile.consumable_checkout_failed'),
+                duration: 4,
+            });
+        },
+    });
+
+    const handleSubmit = () => {
+        if (!selectedUser) {
+            Burnt.alert({
+                title: t('general.error'),
+                preset: 'error',
+                message: t('mobile.consumable_user_required'),
+                duration: 2,
+            });
+            return;
+        }
+
+        const parsedQty = parseInt(qty);
+        const maxQty = consumable?.remaining ?? 1;
+        if (!parsedQty || parsedQty < 1 || parsedQty > maxQty) {
+            Burnt.alert({
+                title: t('general.error'),
+                preset: 'error',
+                message: t('mobile.consumable_qty_required'),
+                duration: 2,
+            });
+            return;
+        }
+
+        checkoutMutation.mutate({
+            assigned_to: selectedUser.id,
+            checkout_qty: parsedQty,
+            note: note || null,
+        });
+    };
+
+    if (!consumable) {
+        return (
+            <LoadingScreen />
+        );
+    }
+
+    const remaining = consumable.remaining ?? 0;
+    const total = consumable.qty ?? 0;
+
+    return (
+        <SafeAreaProvider>
+            <KeyboardAvoidingForm>
+            <ScrollView
+                automaticallyAdjustKeyboardInsets
+                style={styles.container}
+                contentInsetAdjustmentBehavior="automatic"
+                contentContainerStyle={[styles.contentContainer, {paddingTop: Platform.OS === 'android' ? insets.top + 56 : 0}]}
+                keyboardShouldPersistTaps="handled"
+            >
+                {/* Consumable info header */}
+                <View style={styles.infoCard}>
+                    <Text style={styles.infoName}>{decode(consumable.name ?? '')}</Text>
+                    <Text style={styles.infoQty}>
+                        {t('mobile.remaining_qty_display', {remaining, total})}
+                    </Text>
+                </View>
+
+                {/* Assign to user */}
+                <Section title={t('mobile.checkout_to')}>
+                    <SelectorButton
+                        label={t('general.select_user')}
+                        value={selectedUser ? decode(selectedUser.name) : undefined}
+                        placeholder={t('general.select')}
+                        onPress={() => userRef.current?.present()}
+                    />
+                </Section>
+
+                {/* Quantity */}
+                <Section title={t('mobile.checkout_qty_label')}>
+                    <FormTextInput
+                        label={t('mobile.checkout_qty_label')}
+                        value={qty}
+                        onChangeText={setQty}
+                        placeholder={t('mobile.checkout_qty_placeholder')}
+                        keyboardType="number-pad"
+                    />
+                    <Text style={styles.qtyHint}>
+                        {t('mobile.remaining_qty_display', {remaining, total})}
+                    </Text>
+                </Section>
+
+                {/* Note */}
+                <Section title={t('general.notes')}>
+                    <FormTextInput
+                        value={note}
+                        onChangeText={setNote}
+                        placeholder={t('general.notes')}
+                        multiline
+                    />
+                </Section>
+
+                {/* Submit */}
+                <PermissionGate permission={PERMISSIONS.CONSUMABLES_CHECKOUT}>
+                    <Pressable
+                        onPress={handleSubmit}
+                        disabled={checkoutMutation.isPending}
+                        style={({pressed}) => [
+                            styles.submitButton,
+                            pressed && styles.submitButtonPressed,
+                            checkoutMutation.isPending && styles.submitButtonDisabled,
+                        ]}
+                    >
+                        {checkoutMutation.isPending ? (
+                            <ActivityIndicator color="#fff" />
+                        ) : (
+                            <Text style={styles.submitButtonText}>{t('general.checkout')}</Text>
+                        )}
+                    </Pressable>
+                </PermissionGate>
+            </ScrollView>
+            </KeyboardAvoidingForm>
+
+            <SelectUserBottomSheet
+                title={t('general.select_user')}
+                ref={userRef}
+                selectedUser={selectedUser}
+                setSelectedUser={setSelectedUser}
+            />
+        </SafeAreaProvider>
+    );
+}
+
+const createStyles = (colors) => StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: colors.background,
+    },
+    contentContainer: {
+        padding: Spacing.lg,
+        paddingBottom: 100,
+        gap: Spacing.xxl,
+    },
+    infoCard: {
+        backgroundColor: colors.backgroundSecondary,
+        borderRadius: BorderRadius.md,
+        padding: Spacing.lg,
+        alignItems: 'center',
+        gap: Spacing.sm,
+    },
+    infoName: {
+        fontSize: Typography.titleLarge,
+        fontWeight: FontWeight.bold,
+        color: colors.text,
+        textAlign: 'center',
+    },
+    infoQty: {
+        fontSize: Typography.body,
+        color: colors.textSecondary,
+    },
+    qtyHint: {
+        fontSize: Typography.caption,
+        color: colors.textSecondary,
+        marginTop: -Spacing.sm,
+    },
+    submitButton: {
+        backgroundColor: colors.success,
+        padding: Spacing.lg,
+        borderRadius: BorderRadius.md,
+        alignItems: 'center',
+    },
+    submitButtonPressed: {
+        opacity: 0.8,
+        transform: [{scale: 0.98}],
+    },
+    submitButtonDisabled: {
+        opacity: 0.6,
+    },
+    submitButtonText: {
+        color: '#fff',
+        fontSize: Typography.bodyLarge,
+        fontWeight: FontWeight.semibold,
+    },
+});

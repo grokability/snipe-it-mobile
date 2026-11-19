@@ -6,7 +6,8 @@ import { useInfiniteQuery, keepPreviousData } from '@tanstack/react-query';
 import { makeRequest } from "@/helpers/axiosConfig";
 import { assetKeys } from "@/helpers/queryKeys";
 import { useRefreshOnFocus } from "@/hooks/useRefreshOnFocus";
-import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
+import {SafeAreaProvider, useSafeAreaInsets} from "react-native-safe-area-context";
+import {useFloatingButtonGroupStyle} from "@/components/ui/FloatingHeader";
 import { router, useLocalSearchParams, useNavigation } from "expo-router";
 import { useColors } from "@/hooks/useThemeColors";
 import { Spacing, BorderRadius, Typography, FontWeight } from "@/constants/sizes";
@@ -63,6 +64,7 @@ export default function AssetList({ assignedUserId = null }) {
     const styles = useMemo(() => createStyles(colors), [colors]);
     const { t } = useTranslation();
     const navigation = useNavigation();
+    const floatingButtonGroupStyle = useFloatingButtonGroupStyle();
 
     useRedirectIfDenied(PERMISSIONS.ASSETS_VIEW);
     const { denied: createDenied } = usePermission(PERMISSIONS.ASSETS_CREATE);
@@ -113,24 +115,22 @@ export default function AssetList({ assignedUserId = null }) {
     useLayoutEffect(() => {
         navigation.setOptions({
             headerRight: () => (
-                <View style={{ paddingRight: 8 }}>
-                    <View style={styles.headerButtonGroup}>
-                        <Pressable onPress={() => filterSheetRef.current?.present()} hitSlop={4}>
-                            <View style={{ width: 26, height: 26 }}>
-                                <Ionicons name="funnel-outline" size={22} color={colors.text} style={{ position: 'absolute', bottom: 0, left: 0 }} />
-                                {activeFilterCount > 0 && (
-                                    <View style={[styles.filterBadge, { top: 0, right: 0 }]}>
-                                        <Text style={styles.filterBadgeText}>{activeFilterCount}</Text>
-                                    </View>
-                                )}
-                            </View>
+                <View style={[styles.headerButtonGroup, {marginRight: 8}, floatingButtonGroupStyle]}>
+                    <Pressable onPress={() => filterSheetRef.current?.present()} hitSlop={4}>
+                        <View style={{ width: 26, height: 26 }}>
+                            <Ionicons name="funnel-outline" size={22} color={colors.text} style={{ position: 'absolute', bottom: 0, left: 0 }} />
+                            {activeFilterCount > 0 && (
+                                <View style={[styles.filterBadge, { top: 0, right: 0 }]}>
+                                    <Text style={styles.filterBadgeText}>{activeFilterCount}</Text>
+                                </View>
+                            )}
+                        </View>
+                    </Pressable>
+                    {!createDenied && !assignedUserId && (
+                        <Pressable onPress={() => router.push('/assets/create')} hitSlop={4}>
+                            <Ionicons name="add" size={26} color={colors.text} />
                         </Pressable>
-                        {!createDenied && !assignedUserId && (
-                            <Pressable onPress={() => router.push('/assets/create')} hitSlop={4}>
-                                <Ionicons name="add" size={26} color={colors.text} />
-                            </Pressable>
-                        )}
-                    </View>
+                    )}
                 </View>
             ),
             headerSearchBarOptions: {
@@ -154,7 +154,7 @@ export default function AssetList({ assignedUserId = null }) {
                 },
             },
         });
-    }, [navigation, colors.text, colors.primary, t, debouncedSetSearch, activeFilterCount, styles, createDenied, assignedUserId, attachSearchBar, fillSearchBarFromParam]);
+    }, [navigation, colors.text, colors.primary, t, debouncedSetSearch, activeFilterCount, styles, createDenied, assignedUserId, attachSearchBar, fillSearchBarFromParam, floatingButtonGroupStyle]);
 
     useEffect(() => {
         if (!searchParam) {

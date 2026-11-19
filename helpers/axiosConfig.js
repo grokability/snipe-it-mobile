@@ -1,6 +1,5 @@
 import axios from 'axios';
 import { Alert } from 'react-native';
-import {router} from "expo-router";
 import * as SecureStore from 'expo-secure-store';
 import { PermissionManager } from '@/permissions/PermissionManager';
 import { PERMISSION_LABELS } from '@/permissions/PermissionKeys';
@@ -15,6 +14,36 @@ const apiInstance = axios.create({
 const authInstance = axios.create({
     headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
 });
+
+// AuthProvider registers its logout here. The root stack guards /login while signed in, so
+// navigating there on a 401 is refused; clearing the session lets the guard redirect instead.
+let sessionExpiredHandler = null;
+
+export const setSessionExpiredHandler = (handler) => {
+    sessionExpiredHandler = handler;
+};
+
+const expireSession = () => {
+    sessionExpiredHandler?.();
+};
+
+const SERVER_ERROR_ALERT_INTERVAL_MS = 30_000;
+let lastServerErrorAlertAt = 0;
+
+const showServerErrorAlert = (status) => {
+    const now = Date.now();
+
+    if (now - lastServerErrorAlertAt < SERVER_ERROR_ALERT_INTERVAL_MS) {
+        return;
+    }
+
+    lastServerErrorAlertAt = now;
+    Alert.alert(
+        i18n.t('general.error'),
+        i18n.t('mobile.server_error_message', { status }),
+        [{ text: i18n.t('mobile.ok') }]
+    );
+};
 
 // Add request interceptor for automatic token injection
 apiInstance.interceptors.request.use(
@@ -32,18 +61,18 @@ apiInstance.interceptors.request.use(
     (error) => Promise.reject(error)
 );
 
-// authInstance: redirect on 401 only
+// authInstance: clear the session on 401 only
 authInstance.interceptors.response.use(
     (response) => response,
     (error) => {
         if (error.response?.status === 401) {
-            router.replace('/login');
+            expireSession();
         }
         return Promise.reject(error);
     }
 );
 
-// apiInstance: 401 redirect + permission recording
+// apiInstance: clear the session on 401 + permission recording
 apiInstance.interceptors.response.use(
     (response) => {
         const { permissionKey } = response.config;
@@ -54,7 +83,7 @@ apiInstance.interceptors.response.use(
     },
     (error) => {
         if (error.response?.status === 401) {
-            router.replace('/login');
+            expireSession();
         } else if (error.response?.status === 403) {
             if (error.config?.permissionKey) {
                 const isNewDenial = PermissionManager.recordDeny(error.config.permissionKey);
@@ -72,6 +101,8 @@ apiInstance.interceptors.response.use(
             } else if (__DEV__) {
                 console.warn('[permissions] 403 received but no permissionKey was set on this request.');
             }
+        } else if (error.response?.status >= 500 && !error.config?.silent) {
+            showServerErrorAlert(error.response.status);
         }
         return Promise.reject(error);
     }
@@ -100,7 +131,7 @@ export const makeRequest = async ({
     } else {
         const storedDomain = await SecureStore.getItemAsync('domain');
         if (!storedDomain) {
-            router.replace('/login')
+            expireSession();
             throw new Error('No domain configured');
         }
         baseURL = storedDomain + (isAuth ? '' : '/api/v1');

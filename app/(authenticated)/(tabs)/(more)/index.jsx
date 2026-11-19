@@ -1,6 +1,7 @@
-import {View, Text, Pressable, StyleSheet} from 'react-native';
+import {ScrollView, Text, Pressable, StyleSheet, Platform} from 'react-native';
 import {useMemo} from "react";
 import {useRouter} from 'expo-router';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import {useColors} from "@/hooks/useThemeColors";
 import {Spacing, Typography, FontWeight, BorderRadius} from "@/constants/sizes";
@@ -9,7 +10,8 @@ import {PermissionGate} from "@/permissions/PermissionGate";
 import {PERMISSIONS} from "@/permissions/PermissionKeys";
 
 const MENU_ITEMS = [
-    { key: 'users',      icon: 'user',        labelKey: 'general.users',      route: 'users',      permission: PERMISSIONS.USERS_VIEW },
+    { key: 'accessories', icon: 'keyboard-o', labelKey: 'general.accessories', route: 'accessories', permission: PERMISSIONS.ACCESSORIES_VIEW },
+    { key: 'consumables', icon: 'tint',       labelKey: 'general.consumables', route: 'consumables', permission: PERMISSIONS.CONSUMABLES_VIEW },
     { key: 'components', icon: 'hdd-o',       labelKey: 'general.components', route: 'components', permission: PERMISSIONS.COMPONENTS_VIEW },
     { key: 'licenses',   icon: 'file-text-o', labelKey: 'general.licenses',   route: 'licenses',   permission: PERMISSIONS.LICENSES_VIEW },
     { key: 'reports',    icon: 'bar-chart',   labelKey: 'general.reports',     route: 'reports',    permission: PERMISSIONS.REPORTS_VIEW },
@@ -22,9 +24,14 @@ export default function MoreScreen() {
     const styles = useMemo(() => createStyles(colors), [colors]);
     const { t } = useTranslation();
     const router = useRouter();
+    const insets = useSafeAreaInsets();
 
     return (
-        <View style={styles.container}>
+        <ScrollView
+            style={styles.container}
+            contentInsetAdjustmentBehavior="automatic"
+            contentContainerStyle={{paddingTop: Platform.OS === 'android' ? insets.top + 56 + Spacing.lg : Spacing.lg}}
+        >
             {MENU_ITEMS.map((item) => (
                 <PermissionGate key={item.key} permission={item.permission}>
                     <Pressable
@@ -37,7 +44,7 @@ export default function MoreScreen() {
                     </Pressable>
                 </PermissionGate>
             ))}
-        </View>
+        </ScrollView>
     );
 }
 
@@ -45,7 +52,6 @@ const createStyles = (colors) => StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: colors.background,
-        paddingTop: Spacing.lg,
     },
     row: {
         flexDirection: 'row',
