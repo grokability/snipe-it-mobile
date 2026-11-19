@@ -2,6 +2,7 @@ import React, {useContext, useMemo, useRef, useState} from 'react';
 import {ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, Text, View} from 'react-native';
 import {KeyboardAvoidingForm} from "@/components/ui/KeyboardAvoidingForm";
 import {router, useLocalSearchParams} from 'expo-router';
+import {useItemRoutePrefix} from '@/hooks/useItemRoutePrefix';
 import {useMutation, useQueryClient} from '@tanstack/react-query';
 import {SafeAreaProvider, useSafeAreaInsets} from 'react-native-safe-area-context';
 import {makeRequest} from '@/helpers/axiosConfig';
@@ -30,6 +31,7 @@ export default function CheckoutScreen() {
     const insets = useSafeAreaInsets();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const {t} = useTranslation();
+    const itemRoutePrefix = useItemRoutePrefix();
     const {id, assetName: initialAssetName, assetTag, statusId, statusName, statusType} = useLocalSearchParams();
     const {user} = useContext(AuthContext);
     const queryClient = useQueryClient();
@@ -82,7 +84,7 @@ export default function CheckoutScreen() {
             });
             queryClient.invalidateQueries({ queryKey: assetKeys.detail(id) }).catch(() => {});
             queryClient.invalidateQueries({ queryKey: assetKeys.lists() }).catch(() => {});
-            router.dismissTo(`/assets/${id}`);
+            router.dismissTo(`${itemRoutePrefix}/assets/${id}`);
         },
         onError: (err) => {
             console.error(err);

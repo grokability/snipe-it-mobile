@@ -53,6 +53,42 @@ export default function MoreLayout() {
                 }}
             />
             <Stack.Screen
+                name="accessories"
+                options={{
+                    title: t('general.accessories'),
+                    headerTitle: floatingHeaderTitle(t('general.accessories')),
+                    headerBackTitle: '',
+                }}
+            />
+            <Stack.Screen
+                name="accessories/[id]"
+                options={{
+                    title: t('mobile.screen_accessory_details'),
+                    headerBackTitle: '',
+                }}
+            />
+            <Stack.Screen
+                name="accessories/checkout/[id]"
+                options={{
+                    title: t('mobile.screen_checkout'),
+                    headerBackTitle: '',
+                }}
+            />
+            <Stack.Screen
+                name="accessories/checkin/[id]"
+                options={{
+                    title: t('mobile.screen_checkin'),
+                    headerBackTitle: '',
+                }}
+            />
+            <Stack.Screen
+                name="accessories/edit/[id]"
+                options={{
+                    title: t('mobile.screen_edit_accessory'),
+                    headerBackTitle: '',
+                }}
+            />
+            <Stack.Screen
                 name="consumables"
                 options={{
                     title: t('general.consumables'),

@@ -13,6 +13,7 @@ import {KeyboardAvoidingForm} from "@/components/ui/KeyboardAvoidingForm";
 import {LoadingScreen} from "@/components/ui/LoadingScreen";
 import {decode} from 'html-entities';
 import {router, useLocalSearchParams} from 'expo-router';
+import {useItemRoutePrefix} from '@/hooks/useItemRoutePrefix';
 import {makeRequest} from '@/helpers/axiosConfig';
 import {PERMISSIONS} from '@/permissions/PermissionKeys';
 import {PermissionGate} from '@/permissions/PermissionGate';
@@ -50,6 +51,7 @@ export default function AuditConfirmScreen() {
     const insets = useSafeAreaInsets();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const {t} = useTranslation();
+    const itemRoutePrefix = useItemRoutePrefix();
     const {asset_id, from_scanner} = useLocalSearchParams();
     const {addAuditedAsset} = useAuditSession();
 
@@ -118,7 +120,8 @@ export default function AuditConfirmScreen() {
                 if (asset) {
                     addAuditedAsset(asset);
                 }
-                if (from_scanner === 'true') {
+                // Inside the scanner sheet (iOS) the camera is still underneath, so going back reaches it
+                if (from_scanner === 'true' && itemRoutePrefix === '') {
                     router.replace('/scanner?mode=audit');
                 } else {
                     router.back();

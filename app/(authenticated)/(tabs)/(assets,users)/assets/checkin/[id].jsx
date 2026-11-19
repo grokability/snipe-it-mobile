@@ -11,6 +11,7 @@ import {
 import {KeyboardAvoidingForm} from "@/components/ui/KeyboardAvoidingForm";
 import {decode} from 'html-entities';
 import {router, useLocalSearchParams} from 'expo-router';
+import {useItemRoutePrefix} from '@/hooks/useItemRoutePrefix';
 import {useMutation, useQueryClient} from '@tanstack/react-query';
 import {makeRequest} from '@/helpers/axiosConfig';
 import {assetKeys} from '@/helpers/queryKeys';
@@ -31,6 +32,7 @@ export default function CheckinScreen() {
     const insets = useSafeAreaInsets();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const {t} = useTranslation();
+    const itemRoutePrefix = useItemRoutePrefix();
     const {id, assetName, assetTag, assignedToName, statusId, statusName} = useLocalSearchParams();
     const queryClient = useQueryClient();
 
@@ -69,7 +71,7 @@ export default function CheckinScreen() {
             });
             queryClient.invalidateQueries({ queryKey: assetKeys.detail(id) }).catch(() => {});
             queryClient.invalidateQueries({ queryKey: assetKeys.lists() }).catch(() => {});
-            router.dismissTo(`/assets/${id}`);
+            router.dismissTo(`${itemRoutePrefix}/assets/${id}`);
         },
         onError: (err) => {
             console.error(err);

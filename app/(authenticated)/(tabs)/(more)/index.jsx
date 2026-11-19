@@ -10,6 +10,7 @@ import {PermissionGate} from "@/permissions/PermissionGate";
 import {PERMISSIONS} from "@/permissions/PermissionKeys";
 
 const MENU_ITEMS = [
+    { key: 'accessories', icon: 'keyboard-o', labelKey: 'general.accessories', route: 'accessories', permission: PERMISSIONS.ACCESSORIES_VIEW },
     { key: 'consumables', icon: 'tint',       labelKey: 'general.consumables', route: 'consumables', permission: PERMISSIONS.CONSUMABLES_VIEW },
     { key: 'components', icon: 'hdd-o',       labelKey: 'general.components', route: 'components', permission: PERMISSIONS.COMPONENTS_VIEW },
     { key: 'licenses',   icon: 'file-text-o', labelKey: 'general.licenses',   route: 'licenses',   permission: PERMISSIONS.LICENSES_VIEW },
