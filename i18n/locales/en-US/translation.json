@@ -170,6 +170,7 @@
     "scan_hint": "Point your camera at a barcode, then tap it to scan",
     "scan_hint_quick": "Point your camera at a barcode to open it",
     "quick_scan": "Quick Scan",
+    "flashlight": "Flashlight",
     "scan_deleted_tag_match_one": "There is also a deleted asset with this tag.",
     "scan_deleted_tag_match_other": "There are also {{count}} deleted assets with this tag.",
     "scan_deleted_serial_match_one": "There is also a deleted asset with this serial.",

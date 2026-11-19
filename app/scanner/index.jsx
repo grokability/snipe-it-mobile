@@ -13,10 +13,13 @@ import {
 } from "react-native";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useQueries, useQueryClient } from "@tanstack/react-query";
-import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from 'expo-haptics';
 import * as SecureStore from 'expo-secure-store';
 import BarcodeOverlay from "@/components/camera/BarcodeOverlay";
+import CameraToggleButton from "@/components/camera/CameraToggleButton";
+import FastForward from "@expo/material-symbols/fast_forward.xml";
+import FlashlightOff from "@expo/material-symbols/flashlight_off.xml";
+import FlashlightOn from "@expo/material-symbols/flashlight_on.xml";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 import {
@@ -43,7 +46,14 @@ const SCANNER_ZOOM = Platform.OS === 'ios' ? 0.1 : 0;
 const OPENS_ITEMS_IN_SHEET = Platform.OS === 'ios';
 
 const QUICK_SCAN_STORAGE_KEY = 'quick_scan';
-const QUICK_SCAN_ICON = 'play-forward';
+const TORCH_ICONS = {
+    ios: { off: 'flashlight.off.fill', on: 'flashlight.on.fill' },
+    android: { off: FlashlightOff, on: FlashlightOn },
+};
+const QUICK_SCAN_ICONS = {
+    ios: { off: 'forward', on: 'forward.fill' },
+    android: { off: FastForward, on: FastForward },
+};
 
 // Quick scan stays on until it's turned off. SecureStore is read synchronously so the scanner
 // opens in the right mode.
@@ -105,6 +115,7 @@ export default function Home() {
     const queryClient = useQueryClient();
     const isFocused = useIsFocused();
     const [quickScanEnabled, setQuickScanEnabled] = useState(getQuickScanEnabled);
+    const [torchOn, setTorchOn] = useState(false);
     // The code that last opened an item. Quick scan skips it until it has been out of view, so
     // coming back to the camera with it still in frame doesn't open it again.
     const quickScanSkipRef = useRef(null);
@@ -147,6 +158,10 @@ export default function Home() {
 
     useEffect(() => {
         const subscription = AppState.addEventListener("change", (nextAppState) => {
+            if (nextAppState === "background") {
+                setTorchOn(false);
+            }
+
             if (
                 appState.current.match(/inactive|background/) &&
                 nextAppState === "active"
@@ -374,9 +389,7 @@ export default function Home() {
         handleBarcodeSelect(nearestBarcode);
     }, [barcodes, scanQueries, quickScanEnabled, scanningPaused, isAuditMode]);
 
-    const toggleQuickScan = () => {
-        const enabled = !quickScanEnabled;
-
+    const toggleQuickScan = (enabled) => {
         setQuickScanEnabled(enabled);
         SecureStore.setItem(QUICK_SCAN_STORAGE_KEY, enabled ? 'on' : 'off');
         Haptics.selectionAsync();
@@ -431,6 +444,7 @@ export default function Home() {
                 style={styles.camera}
                 facing="back"
                 active={isFocused}
+                enableTorch={torchOn}
                 zoom={SCANNER_ZOOM}
                 onBarcodeScanned={handleBarcodeScan}
                 onCameraReady={() => {}}
@@ -467,24 +481,23 @@ export default function Home() {
                 </View>
             )}
 
-            <TouchableOpacity
-                style={[
-                    styles.cornerButton,
-                    styles.quickScanButton,
-                    quickScanEnabled && styles.cornerButtonOn,
-                    { bottom: insets.bottom + 16 },
-                ]}
-                onPress={() => toggleQuickScan()}
-                accessibilityRole="switch"
-                accessibilityLabel={t('mobile.quick_scan')}
-                accessibilityState={{ checked: quickScanEnabled }}
-            >
-                <Ionicons
-                    name={quickScanEnabled ? QUICK_SCAN_ICON : `${QUICK_SCAN_ICON}-outline`}
-                    size={22}
-                    color={quickScanEnabled ? 'black' : 'white'}
-                />
-            </TouchableOpacity>
+            <CameraToggleButton
+                label={t('mobile.flashlight')}
+                isOn={torchOn}
+                onToggle={(enabled) => setTorchOn(enabled)}
+                iosSymbol={TORCH_ICONS.ios}
+                androidIcon={TORCH_ICONS.android}
+                style={[styles.cornerButton, styles.torchButton, { bottom: insets.bottom + 16 }]}
+            />
+
+            <CameraToggleButton
+                label={t('mobile.quick_scan')}
+                isOn={quickScanEnabled}
+                onToggle={(enabled) => toggleQuickScan(enabled)}
+                iosSymbol={QUICK_SCAN_ICONS.ios}
+                androidIcon={QUICK_SCAN_ICONS.android}
+                style={[styles.cornerButton, styles.quickScanButton, { bottom: insets.bottom + 16 }]}
+            />
         </View>
     );
 }
@@ -557,16 +570,10 @@ const styles = StyleSheet.create({
     },
     cornerButton: {
         position: 'absolute',
-        backgroundColor: 'rgba(0, 0, 0, 0.6)',
-        width: 44,
-        height: 44,
-        borderRadius: 22,
-        alignItems: 'center',
-        justifyContent: 'center',
         zIndex: 20,
     },
-    cornerButtonOn: {
-        backgroundColor: 'white',
+    torchButton: {
+        left: 16,
     },
     quickScanButton: {
         right: 16,
