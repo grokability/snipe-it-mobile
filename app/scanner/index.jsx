@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useQueries, useQueryClient } from "@tanstack/react-query";
+import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from 'expo-haptics';
 import * as SecureStore from 'expo-secure-store';
 import BarcodeOverlay from "@/components/camera/BarcodeOverlay";
@@ -41,6 +42,22 @@ const SCANNER_ZOOM = Platform.OS === 'ios' ? 0.1 : 0;
 // in its tab.
 const OPENS_ITEMS_IN_SHEET = Platform.OS === 'ios';
 
+// Quick scan opens a code without a tap once it has been in view this long, so a code passing
+// through the frame on the way to another doesn't open
+const QUICK_SCAN_HOLD_MS = 300;
+const QUICK_SCAN_STORAGE_KEY = 'quick_scan';
+const QUICK_SCAN_ICON = 'play-forward';
+
+// Quick scan stays on until it's turned off. SecureStore is read synchronously so the scanner
+// opens in the right mode.
+const getQuickScanEnabled = () => {
+    try {
+        return SecureStore.getItem(QUICK_SCAN_STORAGE_KEY) === 'on';
+    } catch {
+        return false;
+    }
+};
+
 const hasBounds = (barcode) => barcode.bounds?.size.width > 0 && barcode.bounds?.size.height > 0;
 
 // Detected bounds are noisy frame-to-frame (autofocus, hand tremor, detector variance);
@@ -55,6 +72,13 @@ const smoothBounds = (prevBounds, nextBounds) => ({
         height: prevBounds.size.height + (nextBounds.size.height - prevBounds.size.height) * BOUNDS_SMOOTHING_ALPHA,
     },
 });
+
+const distanceFromCenter = (bounds, layout) => {
+    const centerX = bounds.origin.x + bounds.size.width / 2;
+    const centerY = bounds.origin.y + bounds.size.height / 2;
+
+    return Math.hypot(centerX - layout.width / 2, centerY - layout.height / 2);
+};
 
 // The overlay names what a code opens: an asset's tag, or an accessory's or consumable's name.
 // An item that isn't found comes back as { status: 'error' }, which has no name.
@@ -83,6 +107,11 @@ export default function Home() {
     const [domain, setDomain] = useState(null);
     const queryClient = useQueryClient();
     const isFocused = useIsFocused();
+    const [quickScanEnabled, setQuickScanEnabled] = useState(getQuickScanEnabled);
+    // The code that last opened an item. Quick scan skips it until it has been out of view, so
+    // coming back to the camera with it still in frame doesn't open it again.
+    const quickScanSkipRef = useRef(null);
+    const cameraLayoutRef = useRef(null);
 
     useEffect(() => {
         SecureStore.getItemAsync('domain').then((storedDomain) => setDomain(storedDomain));
@@ -179,14 +208,20 @@ export default function Home() {
 
         const barcode = stripCodabarStartStop(scannedBarcode);
         const lastSeenAt = Date.now();
+
+        if (quickScanSkipRef.current?.data === barcode.data) {
+            quickScanSkipRef.current.lastSeenAt = lastSeenAt;
+        }
+
         setBarcodes(prevBarcodes => {
             const existing = prevBarcodes.find(prevBarcode => prevBarcode.data === barcode.data);
             if (!existing) {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             }
             const bounds = existing ? smoothBounds(existing.bounds, barcode.bounds) : barcode.bounds;
+            const firstSeenAt = existing?.firstSeenAt ?? lastSeenAt;
             const otherBarcodes = prevBarcodes.filter(prevBarcode => prevBarcode.data !== barcode.data);
-            return [...otherBarcodes, { ...barcode, bounds, lastSeenAt }];
+            return [...otherBarcodes, { ...barcode, bounds, firstSeenAt, lastSeenAt }];
         });
     }, [scanningPaused]);
 
@@ -235,6 +270,7 @@ export default function Home() {
         }
 
         setBarcodes([]);
+        quickScanSkipRef.current = { data: barcode.data, lastSeenAt: null };
 
         if (OPENS_ITEMS_IN_SHEET) {
             router.push(href);
@@ -305,6 +341,51 @@ export default function Home() {
         router.replace(`/(authenticated)/(tabs)/(assets)?search=${encodeURIComponent(value)}${statusParam}`);
     };
 
+    // Opens the code nearest the center among those that have been in view for the hold and resolve
+    // to something a tap would open. Codes that match nothing are left for a tap to explain.
+    useEffect(() => {
+        if (!quickScanEnabled || scanningPaused || isSelectingRef.current || !cameraLayoutRef.current) {
+            return;
+        }
+
+        const now = Date.now();
+        const skipped = quickScanSkipRef.current;
+
+        if (skipped?.lastSeenAt && now - skipped.lastSeenAt > BARCODE_STALE_MS) {
+            quickScanSkipRef.current = null;
+        }
+
+        const openableBarcodes = barcodes.filter((barcode, index) => {
+            const scanResolution = scanQueries[index]?.data;
+
+            if (!scanResolution || barcode.data === quickScanSkipRef.current?.data) {
+                return false;
+            }
+
+            return now - barcode.firstSeenAt >= QUICK_SCAN_HOLD_MS && scannedItemHref(scanResolution, isAuditMode) !== null;
+        });
+
+        if (openableBarcodes.length === 0) {
+            return;
+        }
+
+        const nearestBarcode = openableBarcodes.reduce((nearest, barcode) => (
+            distanceFromCenter(barcode.bounds, cameraLayoutRef.current) < distanceFromCenter(nearest.bounds, cameraLayoutRef.current)
+                ? barcode
+                : nearest
+        ));
+
+        handleBarcodeSelect(nearestBarcode);
+    }, [barcodes, scanQueries, quickScanEnabled, scanningPaused, isAuditMode]);
+
+    const toggleQuickScan = () => {
+        const enabled = !quickScanEnabled;
+
+        setQuickScanEnabled(enabled);
+        SecureStore.setItem(QUICK_SCAN_STORAGE_KEY, enabled ? 'on' : 'off');
+        Haptics.selectionAsync();
+    };
+
     const clearBarcodes = () => {
         setBarcodes([]);
         setScanningPaused(false);
@@ -332,7 +413,12 @@ export default function Home() {
     }
 
     return (
-        <View style={styles.container}>
+        <View
+            style={styles.container}
+            onLayout={(event) => {
+                cameraLayoutRef.current = event.nativeEvent.layout;
+            }}
+        >
             <Stack.Screen
                 options={{
                     title: "Overview",
@@ -376,10 +462,31 @@ export default function Home() {
             />
 
             {!scanningPaused && barcodes.length === 0 && (
-                <View style={[styles.hintContainer, { bottom: insets.bottom + 20 }]}>
-                    <Text style={styles.hintText}>{t('mobile.scan_hint')}</Text>
+                <View style={[styles.hintContainer, { bottom: insets.bottom + 76 }]}>
+                    <Text style={styles.hintText}>
+                        {quickScanEnabled ? t('mobile.scan_hint_quick') : t('mobile.scan_hint')}
+                    </Text>
                 </View>
             )}
+
+            <TouchableOpacity
+                style={[
+                    styles.cornerButton,
+                    styles.quickScanButton,
+                    quickScanEnabled && styles.cornerButtonOn,
+                    { bottom: insets.bottom + 16 },
+                ]}
+                onPress={() => toggleQuickScan()}
+                accessibilityRole="switch"
+                accessibilityLabel={t('mobile.quick_scan')}
+                accessibilityState={{ checked: quickScanEnabled }}
+            >
+                <Ionicons
+                    name={quickScanEnabled ? QUICK_SCAN_ICON : `${QUICK_SCAN_ICON}-outline`}
+                    size={22}
+                    color={quickScanEnabled ? 'black' : 'white'}
+                />
+            </TouchableOpacity>
         </View>
     );
 }
@@ -449,6 +556,22 @@ const styles = StyleSheet.create({
         color: 'white',
         fontSize: 16,
         fontWeight: 'bold',
+    },
+    cornerButton: {
+        position: 'absolute',
+        backgroundColor: 'rgba(0, 0, 0, 0.6)',
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 20,
+    },
+    cornerButtonOn: {
+        backgroundColor: 'white',
+    },
+    quickScanButton: {
+        right: 16,
     },
     auditBanner: {
         position: 'absolute',

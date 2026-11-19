@@ -168,6 +168,8 @@
     "scan_domain_mismatch_title": "Different Instance",
     "scan_domain_mismatch_message": "This QR code belongs to a different Snipe-IT instance than the one you're signed into.",
     "scan_hint": "Point your camera at a barcode, then tap it to scan",
+    "scan_hint_quick": "Point your camera at a barcode to open it",
+    "quick_scan": "Quick Scan",
     "scan_deleted_tag_match_one": "There is also a deleted asset with this tag.",
     "scan_deleted_tag_match_other": "There are also {{count}} deleted assets with this tag.",
     "scan_deleted_serial_match_one": "There is also a deleted asset with this serial.",
