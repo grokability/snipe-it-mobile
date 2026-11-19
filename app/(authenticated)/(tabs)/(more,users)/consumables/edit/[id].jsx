@@ -11,6 +11,7 @@ import {
 import {KeyboardAvoidingForm} from "@/components/ui/KeyboardAvoidingForm";
 import {LoadingScreen} from "@/components/ui/LoadingScreen";
 import {router, useLocalSearchParams} from 'expo-router';
+import {useItemRoutePrefix} from '@/hooks/useItemRoutePrefix';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {makeRequest} from '@/helpers/axiosConfig';
 import {consumableKeys} from '@/helpers/queryKeys';
@@ -46,6 +47,7 @@ export default function EditConsumableScreen() {
     const insets = useSafeAreaInsets();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const {t} = useTranslation();
+    const itemRoutePrefix = useItemRoutePrefix();
 
     const {id} = useLocalSearchParams();
     const queryClient = useQueryClient();
@@ -152,7 +154,7 @@ export default function EditConsumableScreen() {
             });
             queryClient.invalidateQueries({ queryKey: consumableKeys.detail(id) }).catch(() => {});
             queryClient.invalidateQueries({ queryKey: consumableKeys.lists() }).catch(() => {});
-            router.dismissTo(`/consumables/${id}`);
+            router.dismissTo(`${itemRoutePrefix}/consumables/${id}`);
         },
         onError: (err) => {
             console.error(err);

@@ -21,6 +21,7 @@ import Checkbox from "@/components/forms/Checkbox";
 import {Section, SectionHeader} from "@/components/ui/Section";
 import {DetailRow, EncryptedDetailRow} from "@/components/ui/DetailRow";
 import {usePermission} from "@/permissions/PermissionContext";
+import {useItemRoutePrefix} from "@/hooks/useItemRoutePrefix";
 import {PermissionGate} from "@/permissions/PermissionGate";
 
 
@@ -52,6 +53,8 @@ export default function AssetScreen() {
     const styles = useMemo(() => createStyles(colors), [colors]);
     const { t } = useTranslation();
     const floatingButtonGroupStyle = useFloatingButtonGroupStyle();
+    const itemRoutePrefix = useItemRoutePrefix();
+    const isInScannerSheet = itemRoutePrefix === '/scanner';
 
     const { denied: createDenied } = usePermission(PERMISSIONS.ASSETS_CREATE);
     const { denied: editDenied } = usePermission(PERMISSIONS.ASSETS_EDIT);
@@ -93,24 +96,33 @@ export default function AssetScreen() {
     // A soft-deleted asset can't be checked out, checked in, audited or edited until it's restored
     const assetDeleted = Boolean(assetQuery.data?.deleted_at);
 
+    const showsCreateButton = !createDenied && !isInScannerSheet;
+    const showsEditButton = !editDenied && !assetNotFound && !assetDeleted;
+
     useLayoutEffect(() => {
+        if (!showsCreateButton && !showsEditButton) {
+            navigation.setOptions({ headerRight: undefined });
+
+            return;
+        }
+
         navigation.setOptions({
             headerRight: () => (
                 <View style={[styles.headerButtonGroup, floatingButtonGroupStyle]}>
-                    {!createDenied && (
+                    {showsCreateButton && (
                         <Pressable onPress={() => router.push('/assets/create')} hitSlop={4}>
                             <Ionicons name="add" size={26} color={colors.text} />
                         </Pressable>
                     )}
-                    {!editDenied && !assetNotFound && !assetDeleted && (
-                        <Pressable onPress={() => router.push(`/assets/edit/${id}`)} hitSlop={4}>
+                    {showsEditButton && (
+                        <Pressable onPress={() => router.push(`${itemRoutePrefix}/assets/edit/${id}`)} hitSlop={4}>
                             <Ionicons name="pencil" size={22} color={colors.text} />
                         </Pressable>
                     )}
                 </View>
             ),
         });
-    }, [navigation, id, colors.text, createDenied, editDenied, assetNotFound, assetDeleted, floatingButtonGroupStyle]);
+    }, [navigation, id, colors.text, showsCreateButton, showsEditButton, floatingButtonGroupStyle, itemRoutePrefix]);
 
     const na = t('mobile.na');
     const displayValue = (value) => value ? decode(String(value)) : na;
@@ -159,7 +171,7 @@ export default function AssetScreen() {
                     <Callout
                         type="info"
                         onPress={deletedMatchIds.length === 1
-                            ? () => router.push(`/assets/${deletedMatchIds[0]}`)
+                            ? () => router.push(`${itemRoutePrefix}/assets/${deletedMatchIds[0]}`)
                             : undefined}
                     >
                         {t(matched_by === 'serial' ? 'mobile.scan_deleted_serial_match' : 'mobile.scan_deleted_tag_match', { count: deletedMatchIds.length })}
@@ -210,7 +222,7 @@ export default function AssetScreen() {
                                         <Pressable
                                             style={({pressed}) => [styles.button, styles.checkinButton, pressed && styles.buttonPressed]}
                                             onPress={() => router.push({
-                                            pathname: `/assets/checkin/${id}`,
+                                            pathname: `${itemRoutePrefix}/assets/checkin/${id}`,
                                             params: {
                                                 assetName: asset.name ?? '',
                                                 assetTag: asset.asset_tag ?? '',
@@ -237,7 +249,7 @@ export default function AssetScreen() {
                                                     cannotCheckout && styles.buttonDisabled,
                                                 ]}
                                                 onPress={cannotCheckout ? undefined : () => router.push({
-                                                    pathname: `/assets/checkout/${id}`,
+                                                    pathname: `${itemRoutePrefix}/assets/checkout/${id}`,
                                                     params: {
                                                         assetName: asset.name ?? '',
                                                         assetTag: asset.asset_tag ?? '',

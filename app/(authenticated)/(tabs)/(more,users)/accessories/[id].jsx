@@ -1,6 +1,7 @@
 import React, {useState, useMemo, useLayoutEffect} from 'react';
 import {Image, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View} from 'react-native';
 import {router, useLocalSearchParams, useNavigation} from "expo-router";
+import {useItemRoutePrefix} from "@/hooks/useItemRoutePrefix";
 import {useQuery} from '@tanstack/react-query';
 import {Ionicons} from '@expo/vector-icons';
 import {makeRequest} from "@/helpers/axiosConfig";
@@ -26,6 +27,7 @@ export default function AccessoryScreen() {
     const insets = useSafeAreaInsets();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const { t } = useTranslation();
+    const itemRoutePrefix = useItemRoutePrefix();
 
     const { denied: editDenied } = usePermission(PERMISSIONS.ACCESSORIES_EDIT);
 
@@ -61,14 +63,14 @@ export default function AccessoryScreen() {
             headerRight: () => (
                 <View style={[styles.headerButtonGroup, floatingButtonGroupStyle]}>
                     {!editDenied && !accessoryNotFound && (
-                        <Pressable onPress={() => router.push(`/accessories/edit/${id}`)} hitSlop={4}>
+                        <Pressable onPress={() => router.push(`${itemRoutePrefix}/accessories/edit/${id}`)} hitSlop={4}>
                             <Ionicons name="pencil" size={22} color={colors.text} />
                         </Pressable>
                     )}
                 </View>
             ),
         });
-    }, [navigation, id, colors.text, editDenied, accessoryNotFound, floatingButtonGroupStyle]);
+    }, [navigation, id, colors.text, editDenied, accessoryNotFound, floatingButtonGroupStyle, itemRoutePrefix]);
 
     const na = t('mobile.na');
     const displayValue = (value) => value ? decode(String(value)) : na;
@@ -130,7 +132,7 @@ export default function AccessoryScreen() {
                     {item.user_can_checkout && (
                         <Pressable
                             style={({pressed}) => [styles.checkoutButton, pressed && styles.buttonPressed]}
-                            onPress={() => router.push(`/accessories/checkout/${id}`)}
+                            onPress={() => router.push(`${itemRoutePrefix}/accessories/checkout/${id}`)}
                         >
                             <Text style={styles.checkoutButtonText}>{t('mobile.check_out_button')}</Text>
                         </Pressable>
@@ -154,7 +156,7 @@ export default function AccessoryScreen() {
                                     <Pressable
                                         style={({pressed}) => [styles.checkinButton, pressed && styles.buttonPressed]}
                                         onPress={() => router.push({
-                                            pathname: `/accessories/checkin/${id}`,
+                                            pathname: `${itemRoutePrefix}/accessories/checkin/${id}`,
                                             params: {
                                                 checkoutRecordId: record.id,
                                                 assignedToName: record.assigned_to?.name ?? '',

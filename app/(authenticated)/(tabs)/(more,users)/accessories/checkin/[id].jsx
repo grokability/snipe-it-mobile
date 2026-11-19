@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import {KeyboardAvoidingForm} from "@/components/ui/KeyboardAvoidingForm";
 import {router, useLocalSearchParams} from 'expo-router';
+import {useItemRoutePrefix} from '@/hooks/useItemRoutePrefix';
 import {useMutation, useQueryClient} from '@tanstack/react-query';
 import {makeRequest} from '@/helpers/axiosConfig';
 import {accessoryKeys} from '@/helpers/queryKeys';
@@ -29,6 +30,7 @@ export default function AccessoryCheckinScreen() {
     const insets = useSafeAreaInsets();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const {t} = useTranslation();
+    const itemRoutePrefix = useItemRoutePrefix();
 
     const {id, checkoutRecordId, assignedToName, assignedDate} = useLocalSearchParams();
     const queryClient = useQueryClient();
@@ -63,7 +65,7 @@ export default function AccessoryCheckinScreen() {
             });
             queryClient.invalidateQueries({ queryKey: accessoryKeys.detail(id) }).catch(() => {});
             queryClient.invalidateQueries({ queryKey: accessoryKeys.lists() }).catch(() => {});
-            router.dismissTo(`/accessories/${id}`);
+            router.dismissTo(`${itemRoutePrefix}/accessories/${id}`);
         },
         onError: (err) => {
             console.error(err);

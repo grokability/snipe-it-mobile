@@ -191,9 +191,12 @@ export function scannedItemQueryOptions({ kind, value }) {
 // asset, accessory or consumable, a lookup that found nothing or several assets, or, in audit mode,
 // anything but a live asset, since Snipe-IT audits only assets and can't audit a deleted one.
 // A found asset's deletedMatches go along as deleted_matches IDs, with matched_by, so its screen
-// can note the deleted assets that share its tag or serial.
-export function scannedItemHref(scanResolution, isAuditMode) {
+// can note the deleted assets that share its tag or serial. With inScannerSheet (iOS) the item opens
+// in the scanner sheet's own stack instead of its tab.
+export function scannedItemHref(scanResolution, isAuditMode, inScannerSheet = false) {
     const { outcome, asset, deletedMatches, matchedBy, kind, value } = scanResolution;
+    const assetsRoute = inScannerSheet ? '/scanner' : '/(authenticated)/(tabs)/(assets)';
+    const moreRoute = inScannerSheet ? '/scanner' : '/(authenticated)/(tabs)/(more)';
 
     if (isAuditMode) {
         if (outcome !== 'found' || asset.deleted_at) {
@@ -206,19 +209,19 @@ export function scannedItemHref(scanResolution, isAuditMode) {
     if (outcome === 'found' && deletedMatches.length > 0) {
         const deletedMatchIds = deletedMatches.map((deletedMatch) => deletedMatch.id).join(',');
 
-        return `/(authenticated)/(tabs)/(assets)/assets/${asset.id}?deleted_matches=${deletedMatchIds}&matched_by=${matchedBy}`;
+        return `${assetsRoute}/assets/${asset.id}?deleted_matches=${deletedMatchIds}&matched_by=${matchedBy}`;
     }
 
     if (outcome === 'found') {
-        return `/(authenticated)/(tabs)/(assets)/assets/${asset.id}`;
+        return `${assetsRoute}/assets/${asset.id}`;
     }
 
     if (outcome === 'notAsset' && kind === 'accessoryId') {
-        return `/(authenticated)/(tabs)/(more)/accessories/${value}`;
+        return `${moreRoute}/accessories/${value}`;
     }
 
     if (outcome === 'notAsset' && kind === 'consumableId') {
-        return `/(authenticated)/(tabs)/(more)/consumables/${value}`;
+        return `${moreRoute}/consumables/${value}`;
     }
 
     return null;

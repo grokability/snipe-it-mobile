@@ -1,5 +1,5 @@
 import { CameraView, useCameraPermissions } from "expo-camera";
-import { router, Stack, useLocalSearchParams } from "expo-router";
+import { router, Stack, useFocusEffect, useIsFocused, useLocalSearchParams } from "expo-router";
 import {
     Alert,
     AppState,
@@ -35,6 +35,11 @@ const BOUNDS_SMOOTHING_ALPHA = 0.35; // Lower = smoother/more lag, higher = snap
 // zoom as maxZoom ^ zoom) lets people hold the phone back far enough to focus. Android maps zoom
 // linearly to each phone's maximum (8x to 100x), so no fixed value is safe there.
 const SCANNER_ZOOM = Platform.OS === 'ios' ? 0.1 : 0;
+
+// On iOS a scanned item opens inside the sheet, on top of the camera. Android's formSheet can't
+// hold a nested stack (react-native-screens 4.30), so there the sheet closes and the item opens
+// in its tab.
+const OPENS_ITEMS_IN_SHEET = Platform.OS === 'ios';
 
 const hasBounds = (barcode) => barcode.bounds?.size.width > 0 && barcode.bounds?.size.height > 0;
 
@@ -77,6 +82,7 @@ export default function Home() {
     const isSelectingRef = useRef(false);
     const [domain, setDomain] = useState(null);
     const queryClient = useQueryClient();
+    const isFocused = useIsFocused();
 
     useEffect(() => {
         SecureStore.getItemAsync('domain').then((storedDomain) => setDomain(storedDomain));
@@ -131,6 +137,12 @@ export default function Home() {
             subscription.remove();
         };
     }, [getPermission]);
+
+    // Coming back from an item opened in the sheet: the code that opened it is likely still in
+    // frame, so it starts over as a fresh detection that needs a tap
+    useFocusEffect(useCallback(() => {
+        clearBarcodes();
+    }, []));
 
     // Drop highlight boxes for barcodes that are no longer visible in-frame
     useEffect(() => {
@@ -214,7 +226,7 @@ export default function Home() {
             return;
         }
 
-        const href = scannedItemHref(scanResolution, isAuditMode);
+        const href = scannedItemHref(scanResolution, isAuditMode, OPENS_ITEMS_IN_SHEET);
 
         if (!href) {
             clearBarcodes();
@@ -226,6 +238,11 @@ export default function Home() {
 
         if (isAuditMode) {
             router.replace(href);
+            return;
+        }
+
+        if (OPENS_ITEMS_IN_SHEET) {
+            router.push(href);
             return;
         }
 
@@ -331,6 +348,7 @@ export default function Home() {
                 }}
                 style={styles.camera}
                 facing="back"
+                active={isFocused}
                 zoom={SCANNER_ZOOM}
                 onBarcodeScanned={handleBarcodeScan}
                 onCameraReady={() => {}}
