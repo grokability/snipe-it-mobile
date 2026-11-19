@@ -42,9 +42,6 @@ const SCANNER_ZOOM = Platform.OS === 'ios' ? 0.1 : 0;
 // in its tab.
 const OPENS_ITEMS_IN_SHEET = Platform.OS === 'ios';
 
-// Quick scan opens a code without a tap once it has been in view this long, so a code passing
-// through the frame on the way to another doesn't open
-const QUICK_SCAN_HOLD_MS = 300;
 const QUICK_SCAN_STORAGE_KEY = 'quick_scan';
 const QUICK_SCAN_ICON = 'play-forward';
 
@@ -219,9 +216,8 @@ export default function Home() {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             }
             const bounds = existing ? smoothBounds(existing.bounds, barcode.bounds) : barcode.bounds;
-            const firstSeenAt = existing?.firstSeenAt ?? lastSeenAt;
             const otherBarcodes = prevBarcodes.filter(prevBarcode => prevBarcode.data !== barcode.data);
-            return [...otherBarcodes, { ...barcode, bounds, firstSeenAt, lastSeenAt }];
+            return [...otherBarcodes, { ...barcode, bounds, lastSeenAt }];
         });
     }, [scanningPaused]);
 
@@ -341,8 +337,8 @@ export default function Home() {
         router.replace(`/(authenticated)/(tabs)/(assets)?search=${encodeURIComponent(value)}${statusParam}`);
     };
 
-    // Opens the code nearest the center among those that have been in view for the hold and resolve
-    // to something a tap would open. Codes that match nothing are left for a tap to explain.
+    // Opens the code nearest the center among those that resolve to something a tap would open.
+    // Codes that match nothing are ignored.
     useEffect(() => {
         if (!quickScanEnabled || scanningPaused || isSelectingRef.current || !cameraLayoutRef.current) {
             return;
@@ -362,7 +358,7 @@ export default function Home() {
                 return false;
             }
 
-            return now - barcode.firstSeenAt >= QUICK_SCAN_HOLD_MS && scannedItemHref(scanResolution, isAuditMode) !== null;
+            return scannedItemHref(scanResolution, isAuditMode) !== null;
         });
 
         if (openableBarcodes.length === 0) {
@@ -455,11 +451,13 @@ export default function Home() {
                 </View>
             )}
 
-            {/* Barcode Mask Overlay */}
-            <BarcodeOverlay
-                barcodes={barcodes.map((barcode, index) => ({ ...barcode, label: overlayLabel(scanQueries[index].data) }))}
-                onBarcodeSelect={(barcode) => handleBarcodeSelect(barcode)}
-            />
+            {/* Barcode Mask Overlay. Quick scan opens codes on its own, so it draws no boxes to tap. */}
+            {!quickScanEnabled && (
+                <BarcodeOverlay
+                    barcodes={barcodes.map((barcode, index) => ({ ...barcode, label: overlayLabel(scanQueries[index].data) }))}
+                    onBarcodeSelect={(barcode) => handleBarcodeSelect(barcode)}
+                />
+            )}
 
             {!scanningPaused && barcodes.length === 0 && (
                 <View style={[styles.hintContainer, { bottom: insets.bottom + 76 }]}>
