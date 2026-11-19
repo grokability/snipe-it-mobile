@@ -26,6 +26,7 @@ import { useTranslation } from "react-i18next";
 import {
     classifyBarcodeSymbology,
     resolveScannedAsset,
+    SCANNER_CAMERA_DETENTS,
     scannedItemHref,
     scannedItemQueryOptions,
     stripCodabarStartStop,
@@ -125,6 +126,8 @@ export default function Home() {
     // coming back to the camera with it still in frame doesn't open it again.
     const quickScanSkipRef = useRef(null);
     const cameraLayoutRef = useRef(null);
+    const sheetDetentIndexRef = useRef(0);
+    const footerHeightRef = useRef(0);
 
     useEffect(() => {
         SecureStore.getItemAsync('domain').then((storedDomain) => setDomain(storedDomain));
@@ -358,8 +361,33 @@ export default function Home() {
         router.replace(`/(authenticated)/(tabs)/(assets)?search=${encodeURIComponent(value)}${statusParam}`);
     };
 
-    // Opens the code nearest the center among those that resolve to something a tap would open.
-    // Codes that match nothing are ignored.
+    useEffect(() => {
+        if (Platform.OS !== 'android') {
+            return;
+        }
+
+        return navigation.getParent()?.addListener('sheetDetentChange', (event) => {
+            sheetDetentIndexRef.current = event.data.index;
+        });
+    }, [navigation]);
+
+    // How much of the camera is on screen. Android lays the scanner out at full height and slides
+    // it down for the half-height detent, so the camera there sees codes below the screen's edge.
+    // The sheet is the camera plus the footer; at half height the camera shows through the footer.
+    const visibleCameraHeight = () => {
+        const cameraHeight = cameraLayoutRef.current.height;
+
+        if (Platform.OS !== 'android') {
+            return cameraHeight;
+        }
+
+        const sheetHeight = cameraHeight + footerHeightRef.current;
+
+        return Math.min(cameraHeight, SCANNER_CAMERA_DETENTS[sheetDetentIndexRef.current] * sheetHeight);
+    };
+
+    // Opens the code nearest the center of the visible camera among those that resolve to
+    // something a tap would open. Codes that match nothing, or are off screen, are ignored.
     useEffect(() => {
         if (!quickScanEnabled || scanningPaused || isSelectingRef.current || !cameraLayoutRef.current) {
             return;
@@ -372,10 +400,12 @@ export default function Home() {
             quickScanSkipRef.current = null;
         }
 
+        const visibleArea = { width: cameraLayoutRef.current.width, height: visibleCameraHeight() };
         const openableBarcodes = barcodes.filter((barcode, index) => {
             const scanResolution = scanQueries[index]?.data;
+            const centerY = barcode.bounds.origin.y + barcode.bounds.size.height / 2;
 
-            if (!scanResolution || barcode.data === quickScanSkipRef.current?.data) {
+            if (!scanResolution || barcode.data === quickScanSkipRef.current?.data || centerY > visibleArea.height) {
                 return false;
             }
 
@@ -387,7 +417,7 @@ export default function Home() {
         }
 
         const nearestBarcode = openableBarcodes.reduce((nearest, barcode) => (
-            distanceFromCenter(barcode.bounds, cameraLayoutRef.current) < distanceFromCenter(nearest.bounds, cameraLayoutRef.current)
+            distanceFromCenter(barcode.bounds, visibleArea) < distanceFromCenter(nearest.bounds, visibleArea)
                 ? barcode
                 : nearest
         ));
@@ -410,7 +440,13 @@ export default function Home() {
 
     const showsHint = !scanningPaused && barcodes.length === 0;
     const bottomControls = (
-        <View style={[styles.bottomControls, { paddingBottom: insets.bottom + 16 }]} pointerEvents="box-none">
+        <View
+            style={[styles.bottomControls, { paddingBottom: insets.bottom + 16 }]}
+            pointerEvents="box-none"
+            onLayout={(event) => {
+                footerHeightRef.current = event.nativeEvent.layout.height;
+            }}
+        >
             {showsHint && (
                 <View style={styles.hintContainer}>
                     <Text style={styles.hintText}>

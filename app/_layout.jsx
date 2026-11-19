@@ -16,6 +16,7 @@ import i18n from "@/i18n"; //this says unused but it's just providing for the en
 import * as Sentry from "@sentry/react-native";
 import {initSentry} from "@/helpers/sentry";
 import ErrorReportConsentPrompt from "@/components/errorReporting/ErrorReportConsentPrompt";
+import {SCANNER_CAMERA_DETENTS} from "@/helpers/scannerUtils";
 
 // Runs at module scope so the global error handler is installed before any provider mounts.
 initSentry();
@@ -43,7 +44,7 @@ AppState.addEventListener('change', (status) => {
 function scannerSheetDetents(route) {
     const focusedScreen = getFocusedRouteNameFromRoute(route) ?? 'index';
 
-    return focusedScreen === 'index' ? [0.5, 1.0] : [1.0];
+    return focusedScreen === 'index' ? SCANNER_CAMERA_DETENTS : [1.0];
 }
 
 function RootLayout() {

@@ -12,6 +12,9 @@ const SCANNED_URL_PATTERNS = [
     { kind: 'location', pattern: /\/locations\/(\d+)(?:\/|$)/ },
 ];
 
+// The scanner sheet's heights while the camera shows: half and full
+export const SCANNER_CAMERA_DETENTS = [0.5, 1.0];
+
 // Partitions expo-camera's BarcodeType union. Snipe-IT always encodes the asset tag in a 1D
 // barcode, while a 2D code can hold a URL or a plain value, so the two are looked up differently.
 // A type missing from both lists (e.g. one added in a future SDK) is 'unknown' rather than guessed.
