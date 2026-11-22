@@ -12,6 +12,7 @@ import {KeyboardAvoidingForm} from "@/components/ui/KeyboardAvoidingForm";
 import {router} from "expo-router";
 import {makeRequest} from "@/helpers/axiosConfig";
 import {PermissionDeniedError} from "@/helpers/errors";
+import {formatFieldValuesAsArray} from "@/helpers/customFields";
 import {PERMISSIONS} from "@/permissions/PermissionKeys";
 import {PermissionGate} from '@/permissions/PermissionGate';
 import {AuthContext} from "@/context/AuthProvider";
@@ -245,31 +246,29 @@ export default function CreateAssetScreen() {
 
         if (element === 'checkbox') {
             if (field.field_values) {
-                const options = typeof field.field_values === 'string'
-                    ? field.field_values.split('\n').map(value => value.trim()).filter(Boolean)
-                    : Array.isArray(field.field_values) ? field.field_values : [];
+                const options = formatFieldValuesAsArray(field.field_values);
                 const selected = field.value ? field.value.split(',').map(value => value.trim()) : [];
                 return (
                     <FormRow key={fieldName} label={label}>
                         <View style={{gap: Spacing.sm}}>
                             {options.map((option) => {
-                                const isSelected = selected.includes(option);
+                                const isSelected = selected.includes(option.value);
                                 return (
                                     <Pressable
-                                        key={option}
+                                        key={option.value}
                                         onPress={() => {
                                             const newSelected = isSelected
-                                                ? selected.filter(value => value !== option)
-                                                : [...selected, option];
+                                                ? selected.filter(value => value !== option.value)
+                                                : [...selected, option.value];
                                             updateCustomField(fieldName, newSelected.join(', '));
                                         }}
                                         style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: Spacing.xs}}
                                     >
-                                        <Text style={{fontSize: Typography.bodyLarge, color: colors.text}}>{option}</Text>
+                                        <Text style={{fontSize: Typography.bodyLarge, color: colors.text}}>{option.label}</Text>
                                         <Checkbox value={isSelected} onValueChange={() => {
                                             const newSelected = isSelected
-                                                ? selected.filter(value => value !== option)
-                                                : [...selected, option];
+                                                ? selected.filter(value => value !== option.value)
+                                                : [...selected, option.value];
                                             updateCustomField(fieldName, newSelected.join(', '));
                                         }} />
                                     </Pressable>
@@ -310,26 +309,24 @@ export default function CreateAssetScreen() {
         }
 
         if ((element === 'radio') && field.field_values) {
-            const options = typeof field.field_values === 'string'
-                ? field.field_values.split('\n').map(value => value.trim()).filter(Boolean)
-                : Array.isArray(field.field_values) ? field.field_values : [];
+            const options = formatFieldValuesAsArray(field.field_values);
             return (
                 <FormRow key={fieldName} label={label}>
                     <View style={{gap: Spacing.sm}}>
                         {options.map((option) => (
                             <Pressable
-                                key={option}
-                                onPress={() => updateCustomField(fieldName, option)}
+                                key={option.value}
+                                onPress={() => updateCustomField(fieldName, option.value)}
                                 style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: Spacing.xs}}
                             >
-                                <Text style={{fontSize: Typography.bodyLarge, color: colors.text}}>{option}</Text>
+                                <Text style={{fontSize: Typography.bodyLarge, color: colors.text}}>{option.label}</Text>
                                 <View style={{
                                     width: 20, height: 20, borderRadius: 10,
                                     borderWidth: 2,
-                                    borderColor: field.value === option ? colors.primary : colors.border,
+                                    borderColor: field.value === option.value ? colors.primary : colors.border,
                                     alignItems: 'center', justifyContent: 'center',
                                 }}>
-                                    {field.value === option && (
+                                    {field.value === option.value && (
                                         <View style={{width: 12, height: 12, borderRadius: 6, backgroundColor: colors.primary}} />
                                     )}
                                 </View>
@@ -341,27 +338,25 @@ export default function CreateAssetScreen() {
         }
 
         if ((element === 'listbox' || format === 'listbox') && field.field_values) {
-            const options = typeof field.field_values === 'string'
-                ? field.field_values.split('\n').map(value => value.trim()).filter(Boolean)
-                : Array.isArray(field.field_values) ? field.field_values : [];
+            const options = formatFieldValuesAsArray(field.field_values);
             return (
                 <FormRow key={fieldName} label={label}>
                     <View style={styles.listboxContainer}>
                         {options.map((option) => (
                             <Pressable
-                                key={option}
-                                onPress={() => updateCustomField(fieldName, option)}
+                                key={option.value}
+                                onPress={() => updateCustomField(fieldName, option.value)}
                                 style={({pressed}) => [
                                     styles.listboxOption,
-                                    field.value === option && styles.listboxOptionSelected,
+                                    field.value === option.value && styles.listboxOptionSelected,
                                     pressed && styles.selectorButtonPressed,
                                 ]}
                             >
                                 <Text style={[
                                     styles.listboxOptionText,
-                                    field.value === option && styles.listboxOptionTextSelected,
+                                    field.value === option.value && styles.listboxOptionTextSelected,
                                 ]}>
-                                    {option}
+                                    {option.label}
                                 </Text>
                             </Pressable>
                         ))}
