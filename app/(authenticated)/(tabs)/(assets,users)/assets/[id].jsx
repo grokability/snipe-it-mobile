@@ -131,6 +131,22 @@ export default function AssetScreen() {
     const formatDate = (dateObject) => dateObject?.formatted || na;
     const formatBool = (value) => value ? t('mobile.yes') : t('mobile.no');
 
+    const customFieldDisplayValue = (field) => {
+        if (!field.value || !field.field_values) {
+            return displayValue(field.value);
+        }
+
+        const options = formatFieldValuesAsArray(field.field_values);
+        const optionLabel = (storedValue) => options.find((option) => option.value === storedValue)?.label ?? storedValue;
+        const storedValue = decode(String(field.value));
+
+        if (field.element === 'checkbox') {
+            return storedValue.split(',').map((value) => optionLabel(value.trim())).join(', ');
+        }
+
+        return optionLabel(storedValue);
+    };
+
     if (assetNotFound) {
         return (
             <View style={styles.container}>
@@ -345,22 +361,7 @@ export default function AssetScreen() {
                                 return <EncryptedDetailRow key={key} label={label} value={displayValue(field.value)} />;
                             }
 
-                            if (element === 'checkbox' || format === 'boolean') {
-                                if (field.field_values) {
-                                    const options = formatFieldValuesAsArray(field.field_values);
-                                    const selected = field.value ? decode(field.value).split(',').map(value => value.trim()) : [];
-                                    return (
-                                        <View key={key} style={{gap: Spacing.xs}}>
-                                            <Text style={styles.detailLabel}>{label}</Text>
-                                            {options.map((option) => (
-                                                <View key={option.value} style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'}}>
-                                                    <Text style={{fontSize: Typography.body, color: colors.text}}>{option.label}</Text>
-                                                    <Checkbox value={selected.includes(option.value)} disabled />
-                                                </View>
-                                            ))}
-                                        </View>
-                                    );
-                                }
+                            if ((element === 'checkbox' || format === 'boolean') && !field.field_values) {
                                 return (
                                     <View key={key} style={styles.detailRow}>
                                         <Text style={styles.detailLabel}>{label}</Text>
@@ -369,55 +370,7 @@ export default function AssetScreen() {
                                 );
                             }
 
-                            if ((element === 'radio' || format === 'radio') && field.field_values) {
-                                const options = formatFieldValuesAsArray(field.field_values);
-                                return (
-                                    <View key={key} style={{gap: Spacing.xs}}>
-                                        <Text style={styles.detailLabel}>{label}</Text>
-                                        {options.map((option) => (
-                                            <View key={option.value} style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'}}>
-                                                <Text style={{fontSize: Typography.body, color: colors.text}}>{option.label}</Text>
-                                                <View style={{
-                                                    width: 18, height: 18, borderRadius: 9,
-                                                    borderWidth: 2,
-                                                    borderColor: decode(field.value ?? '') === option.value ? colors.primary : colors.textSecondary,
-                                                    alignItems: 'center', justifyContent: 'center',
-                                                }}>
-                                                    {decode(field.value ?? '') === option.value && (
-                                                        <View style={{width: 10, height: 10, borderRadius: 5, backgroundColor: colors.primary}} />
-                                                    )}
-                                                </View>
-                                            </View>
-                                        ))}
-                                    </View>
-                                );
-                            }
-
-                            if ((element === 'listbox' || format === 'listbox') && field.field_values) {
-                                const options = formatFieldValuesAsArray(field.field_values);
-                                return (
-                                    <View key={key} style={{gap: Spacing.xs}}>
-                                        <Text style={styles.detailLabel}>{label}</Text>
-                                        <View style={{flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm}}>
-                                            {options.map((option) => (
-                                                <View key={option.value} style={{
-                                                    paddingHorizontal: Spacing.md, paddingVertical: Spacing.xs,
-                                                    borderRadius: BorderRadius.sm,
-                                                    backgroundColor: decode(field.value ?? '') === option.value ? colors.primary : colors.backgroundTertiary,
-                                                }}>
-                                                    <Text style={{
-                                                        fontSize: Typography.caption,
-                                                        color: decode(field.value ?? '') === option.value ? '#fff' : colors.text,
-                                                        fontWeight: decode(field.value ?? '') === option.value ? FontWeight.semibold : FontWeight.normal,
-                                                    }}>{option.label}</Text>
-                                                </View>
-                                            ))}
-                                        </View>
-                                    </View>
-                                );
-                            }
-
-                            return <DetailRow key={key} label={label} value={displayValue(field.value)}/>;
+                            return <DetailRow key={key} label={label} value={customFieldDisplayValue(field)}/>;
                         })}
                     </Section>
                 )}
