@@ -132,19 +132,16 @@ export default function AssetScreen() {
     const formatBool = (value) => value ? t('mobile.yes') : t('mobile.no');
 
     const customFieldDisplayValue = (field) => {
-        if (!field.value || !field.field_values) {
+        const isListbox = field.element === 'listbox' || field.field_format === 'listbox';
+
+        if (!isListbox || !field.value || !field.field_values) {
             return displayValue(field.value);
         }
 
-        const options = formatFieldValuesAsArray(field.field_values);
-        const optionLabel = (storedValue) => options.find((option) => option.value === storedValue)?.label ?? storedValue;
         const storedValue = decode(String(field.value));
+        const selectedOption = formatFieldValuesAsArray(field.field_values).find((option) => option.value === storedValue);
 
-        if (field.element === 'checkbox') {
-            return storedValue.split(',').map((value) => optionLabel(value.trim())).join(', ');
-        }
-
-        return optionLabel(storedValue);
+        return selectedOption?.label ?? storedValue;
     };
 
     if (assetNotFound) {

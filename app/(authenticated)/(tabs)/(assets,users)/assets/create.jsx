@@ -252,14 +252,14 @@ export default function CreateAssetScreen() {
                     <FormRow key={fieldName} label={label}>
                         <View style={{gap: Spacing.sm}}>
                             {options.map((option) => {
-                                const isSelected = selected.includes(option.value);
+                                const isSelected = selected.includes(option.label);
                                 return (
                                     <Pressable
-                                        key={option.value}
+                                        key={option.label}
                                         onPress={() => {
                                             const newSelected = isSelected
-                                                ? selected.filter(value => value !== option.value)
-                                                : [...selected, option.value];
+                                                ? selected.filter(value => value !== option.label)
+                                                : [...selected, option.label];
                                             updateCustomField(fieldName, newSelected.join(', '));
                                         }}
                                         style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: Spacing.xs}}
@@ -267,8 +267,8 @@ export default function CreateAssetScreen() {
                                         <Text style={{fontSize: Typography.bodyLarge, color: colors.text}}>{option.label}</Text>
                                         <Checkbox value={isSelected} onValueChange={() => {
                                             const newSelected = isSelected
-                                                ? selected.filter(value => value !== option.value)
-                                                : [...selected, option.value];
+                                                ? selected.filter(value => value !== option.label)
+                                                : [...selected, option.label];
                                             updateCustomField(fieldName, newSelected.join(', '));
                                         }} />
                                     </Pressable>
@@ -315,18 +315,18 @@ export default function CreateAssetScreen() {
                     <View style={{gap: Spacing.sm}}>
                         {options.map((option) => (
                             <Pressable
-                                key={option.value}
-                                onPress={() => updateCustomField(fieldName, option.value)}
+                                key={option.label}
+                                onPress={() => updateCustomField(fieldName, option.label)}
                                 style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: Spacing.xs}}
                             >
                                 <Text style={{fontSize: Typography.bodyLarge, color: colors.text}}>{option.label}</Text>
                                 <View style={{
                                     width: 20, height: 20, borderRadius: 10,
                                     borderWidth: 2,
-                                    borderColor: field.value === option.value ? colors.primary : colors.border,
+                                    borderColor: field.value === option.label ? colors.primary : colors.border,
                                     alignItems: 'center', justifyContent: 'center',
                                 }}>
-                                    {field.value === option.value && (
+                                    {field.value === option.label && (
                                         <View style={{width: 12, height: 12, borderRadius: 6, backgroundColor: colors.primary}} />
                                     )}
                                 </View>
