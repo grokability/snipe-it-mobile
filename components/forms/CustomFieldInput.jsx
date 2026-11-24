@@ -1,16 +1,20 @@
-import React, {useMemo} from 'react';
-import {Pressable, StyleSheet, Text, View} from 'react-native';
+import React, {useRef} from 'react';
+import {Pressable, Text, View} from 'react-native';
+import {useTranslation} from "react-i18next";
 import {FormRow} from "@/components/forms/FormRow";
 import {FormTextInput} from "@/components/forms/FormTextInput";
+import {SelectorButton} from "@/components/forms/SelectorButton";
+import SelectOptionBottomSheet from "@/components/bottomSheets/SelectOptionBottomSheet";
 import OptionalDatepicker from "@/components/forms/OptionalDatepicker";
 import Checkbox from "@/components/forms/Checkbox";
 import {formatFieldValuesAsArray} from "@/helpers/customFields";
 import {useColors} from "@/hooks/useThemeColors";
-import {Spacing, BorderRadius, Typography, FontWeight} from "@/constants/sizes";
+import {Spacing, Typography} from "@/constants/sizes";
 
 export const CustomFieldInput = ({fieldName, field, onChange}) => {
     const colors = useColors();
-    const styles = useMemo(() => createStyles(colors), [colors]);
+    const {t} = useTranslation();
+    const optionSheetRef = useRef(null);
 
     const format = field.field_format;
     const element = field.element;
@@ -112,29 +116,24 @@ export const CustomFieldInput = ({fieldName, field, onChange}) => {
 
     if ((element === 'listbox' || format === 'listbox') && field.field_values) {
         const options = formatFieldValuesAsArray(field.field_values);
+        const selectedOption = options.find((option) => option.value === field.value);
+
         return (
-            <FormRow label={label}>
-                <View style={styles.listboxContainer}>
-                    {options.map((option) => (
-                        <Pressable
-                            key={option.value}
-                            onPress={() => onChange(option.value)}
-                            style={({pressed}) => [
-                                styles.listboxOption,
-                                field.value === option.value && styles.listboxOptionSelected,
-                                pressed && styles.listboxOptionPressed,
-                            ]}
-                        >
-                            <Text style={[
-                                styles.listboxOptionText,
-                                field.value === option.value && styles.listboxOptionTextSelected,
-                            ]}>
-                                {option.label}
-                            </Text>
-                        </Pressable>
-                    ))}
-                </View>
-            </FormRow>
+            <>
+                <SelectorButton
+                    label={label}
+                    value={selectedOption?.label ?? field.value}
+                    placeholder={t('general.select')}
+                    onPress={() => optionSheetRef.current?.present()}
+                />
+                <SelectOptionBottomSheet
+                    ref={optionSheetRef}
+                    title={label}
+                    options={options}
+                    selectedValue={field.value}
+                    onSelect={(value) => onChange(value)}
+                />
+            </>
         );
     }
 
@@ -148,33 +147,3 @@ export const CustomFieldInput = ({fieldName, field, onChange}) => {
     );
 };
 
-const createStyles = (colors) => StyleSheet.create({
-    listboxContainer: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: Spacing.sm,
-    },
-    listboxOption: {
-        borderWidth: 1,
-        borderColor: colors.border,
-        borderRadius: BorderRadius.sm,
-        paddingHorizontal: Spacing.md,
-        paddingVertical: Spacing.sm,
-        backgroundColor: colors.backgroundTertiary,
-    },
-    listboxOptionPressed: {
-        opacity: 0.7,
-    },
-    listboxOptionSelected: {
-        backgroundColor: colors.primary,
-        borderColor: colors.primary,
-    },
-    listboxOptionText: {
-        fontSize: Typography.body,
-        color: colors.text,
-    },
-    listboxOptionTextSelected: {
-        color: '#fff',
-        fontWeight: FontWeight.semibold,
-    },
-});
