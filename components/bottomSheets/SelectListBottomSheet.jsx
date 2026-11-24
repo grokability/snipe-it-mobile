@@ -9,9 +9,9 @@ import { useTranslation } from "react-i18next";
 import { useSelectListBottomSheet } from "@/components/bottomSheets/useSelectListBottomSheet";
 import SelectListContent from "@/components/bottomSheets/SelectListContent";
 
-const SNAP_POINTS = ['60%', '90%'];
+export const SNAP_POINTS = ['60%', '90%'];
 
-const CloseBtn = () => {
+export const CloseBtn = () => {
     const { close } = useBottomSheet();
     const { t } = useTranslation();
     return <Button title={t('general.close')} onPress={() => close()} />;
