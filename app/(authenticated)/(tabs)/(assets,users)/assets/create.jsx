@@ -110,6 +110,7 @@ export default function CreateAssetScreen() {
                             element: field.element,
                             field_values: field.field_values_array || null,
                             db_column: field.db_column_name,
+                            db_column_warning: field.db_column_warning || null,
                             name: key,
                         };
                     });
@@ -180,7 +181,7 @@ export default function CreateAssetScreen() {
 
         // Custom fields
         Object.values(customFieldValues).forEach((customField) => {
-            if (customField.db_column) {
+            if (customField.db_column && !customField.db_column_warning) {
                 fields[customField.db_column] = customField.value;
             }
         });

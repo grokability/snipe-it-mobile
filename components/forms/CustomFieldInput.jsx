@@ -20,6 +20,16 @@ export const CustomFieldInput = ({fieldName, field, onChange}) => {
     const element = field.element;
     const label = field.name || fieldName;
 
+    if (field.db_column_warning) {
+        return (
+            <FormRow label={label}>
+                <Text style={{fontSize: Typography.body, color: colors.textSecondary}}>
+                    {t('mobile.custom_field_column_mismatch')}
+                </Text>
+            </FormRow>
+        );
+    }
+
     if (element === 'checkbox') {
         if (field.field_values) {
             const options = formatFieldValuesAsArray(field.field_values);

@@ -214,6 +214,7 @@
     "section_dates": "Dates",
     "section_counters": "Counters",
     "section_custom_fields": "Custom Fields",
+    "custom_field_column_mismatch": "This field can't be saved from the app. Set it in Snipe-IT after creating the asset.",
     "section_notes": "Notes",
     "yes": "Yes",
     "no": "No",

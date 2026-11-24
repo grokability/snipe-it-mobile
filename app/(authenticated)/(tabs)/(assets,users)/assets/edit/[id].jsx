@@ -110,7 +110,7 @@ export default function EditAssetScreen() {
 
     const populatedForIdRef = useRef(null);
 
-    const populateFields = (asset, fieldDefs = {}) => {
+    const populateFields = (asset, fieldDefs = {}, fieldDefsByName = {}) => {
         setName(asset.name ? decode(asset.name) : '');
         setAssetTag(asset.asset_tag ? decode(asset.asset_tag) : '');
         setSerial(asset.serial ? decode(asset.serial) : '');
@@ -152,7 +152,7 @@ export default function EditAssetScreen() {
         if (asset.custom_fields) {
             const initialCustomFieldValues = {};
             Object.entries(asset.custom_fields).forEach(([key, field]) => {
-                const options = fieldDefs[field.field] || null;
+                const options = (field.field in fieldDefs ? fieldDefs[field.field] : fieldDefsByName[key]) || null;
                 initialCustomFieldValues[key] = {
                     value: field.value ? decode(field.value) : '',
                     field_format: field.field_format,
@@ -172,12 +172,14 @@ export default function EditAssetScreen() {
         populatedForIdRef.current = id;
 
         const fieldDefs = {};
+        const fieldDefsByName = {};
         if (fieldsQuery.data?.rows) {
             fieldsQuery.data.rows.forEach(fieldDefinition => {
                 fieldDefs[fieldDefinition.db_column_name] = fieldDefinition.field_values_array;
+                fieldDefsByName[decode(fieldDefinition.name)] = fieldDefinition.field_values_array;
             });
         }
-        populateFields(assetQuery.data, fieldDefs);
+        populateFields(assetQuery.data, fieldDefs, fieldDefsByName);
     }, [assetQuery.data, fieldsQuery.data, fieldsQuery.isFetchedAfterMount, id]);
 
     const formatDateForApi = (date) => {
