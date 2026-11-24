@@ -7,7 +7,6 @@ import {
     ScrollView,
     StyleSheet,
     Text,
-    View,
 } from 'react-native';
 import {KeyboardAvoidingForm} from "@/components/ui/KeyboardAvoidingForm";
 import {LoadingScreen} from "@/components/ui/LoadingScreen";
@@ -16,7 +15,6 @@ import {useItemRoutePrefix} from "@/hooks/useItemRoutePrefix";
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {makeRequest} from "@/helpers/axiosConfig";
 import {PermissionDeniedError} from "@/helpers/errors";
-import {formatFieldValuesAsArray} from "@/helpers/customFields";
 import {PERMISSIONS} from "@/permissions/PermissionKeys";
 import {assetKeys, customFieldKeys} from "@/helpers/queryKeys";
 import {PermissionGate} from '@/permissions/PermissionGate';
@@ -34,12 +32,12 @@ import SelectLocationBottomSheet from "@/components/bottomSheets/SelectLocationB
 import Datepicker from "@/components/forms/Datepicker";
 import OptionalDatepicker from "@/components/forms/OptionalDatepicker";
 import Switch from "@/components/forms/Switch";
-import Checkbox from "@/components/forms/Checkbox";
 import {Section} from "@/components/ui/Section";
 import {FormRow} from "@/components/forms/FormRow";
 import {FormTextInput} from "@/components/forms/FormTextInput";
 import {SelectorButton} from "@/components/forms/SelectorButton";
 import ImagePicker from "@/components/forms/ImagePicker";
+import {CustomFieldInput} from "@/components/forms/CustomFieldInput";
 
 // Parse "YYYY-MM-DD" as local date to avoid UTC timezone shift
 // (dates without times were shifting before this)
@@ -283,144 +281,6 @@ export default function EditAssetScreen() {
         }));
     };
 
-    const renderCustomField = (fieldName, field) => {
-        const format = field.field_format;
-        const element = field.element;
-        const label = field.name || fieldName;
-
-        if (element === 'checkbox') {
-            if (field.field_values) {
-                const options = formatFieldValuesAsArray(field.field_values);
-                const selected = field.value ? field.value.split(',').map(value => value.trim()) : [];
-                return (
-                    <FormRow key={fieldName} label={label}>
-                        <View style={{gap: Spacing.sm}}>
-                            {options.map((option) => {
-                                const isSelected = selected.includes(option.label);
-                                return (
-                                    <Pressable
-                                        key={option.label}
-                                        onPress={() => {
-                                            const newSelected = isSelected
-                                                ? selected.filter(value => value !== option.label)
-                                                : [...selected, option.label];
-                                            updateCustomField(fieldName, newSelected.join(', '));
-                                        }}
-                                        style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: Spacing.xs}}
-                                    >
-                                        <Text style={{fontSize: Typography.bodyLarge, color: colors.text}}>{option.label}</Text>
-                                        <Checkbox value={isSelected} onValueChange={() => {
-                                            const newSelected = isSelected
-                                                ? selected.filter(value => value !== option.label)
-                                                : [...selected, option.label];
-                                            updateCustomField(fieldName, newSelected.join(', '));
-                                        }} />
-                                    </Pressable>
-                                );
-                            })}
-                        </View>
-                    </FormRow>
-                );
-            }
-            return (
-                <FormRow key={fieldName} label={label} horizontal>
-                    <Checkbox
-                        value={field.value === '1'}
-                        onValueChange={(isChecked) => updateCustomField(fieldName, isChecked ? '1' : '0')}
-                    />
-                </FormRow>
-            );
-        }
-
-        if (format === 'DATE' || format === 'date') {
-            return (
-                <FormRow key={fieldName} label={label}>
-                    <OptionalDatepicker
-                        initialDate={field.value ? new Date(field.value) : undefined}
-                        onDateChange={(event, date) => {
-                            if (date) {
-                                const year = date.getFullYear();
-                                const month = String(date.getMonth() + 1).padStart(2, '0');
-                                const day = String(date.getDate()).padStart(2, '0');
-                                updateCustomField(fieldName, `${year}-${month}-${day}`);
-                            } else {
-                                updateCustomField(fieldName, '');
-                            }
-                        }}
-                    />
-                </FormRow>
-            );
-        }
-
-        if ((element === 'radio') && field.field_values) {
-            const options = formatFieldValuesAsArray(field.field_values);
-            return (
-                <FormRow key={fieldName} label={label}>
-                    <View style={{gap: Spacing.sm}}>
-                        {options.map((option) => (
-                            <Pressable
-                                key={option.label}
-                                onPress={() => updateCustomField(fieldName, option.label)}
-                                style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: Spacing.xs}}
-                            >
-                                <Text style={{fontSize: Typography.bodyLarge, color: colors.text}}>{option.label}</Text>
-                                <View style={{
-                                    width: 20, height: 20, borderRadius: 10,
-                                    borderWidth: 2,
-                                    borderColor: field.value === option.label ? colors.primary : colors.border,
-                                    alignItems: 'center', justifyContent: 'center',
-                                }}>
-                                    {field.value === option.label && (
-                                        <View style={{width: 12, height: 12, borderRadius: 6, backgroundColor: colors.primary}} />
-                                    )}
-                                </View>
-                            </Pressable>
-                        ))}
-                    </View>
-                </FormRow>
-            );
-        }
-
-        if ((element === 'listbox' || format === 'listbox') && field.field_values) {
-            const options = formatFieldValuesAsArray(field.field_values);
-            return (
-                <FormRow key={fieldName} label={label}>
-                    <View style={styles.listboxContainer}>
-                        {options.map((option) => (
-                            <Pressable
-                                key={option.value}
-                                onPress={() => updateCustomField(fieldName, option.value)}
-                                style={({pressed}) => [
-                                    styles.listboxOption,
-                                    field.value === option.value && styles.listboxOptionSelected,
-                                    pressed && styles.selectorButtonPressed,
-                                ]}
-                            >
-                                <Text style={[
-                                    styles.listboxOptionText,
-                                    field.value === option.value && styles.listboxOptionTextSelected,
-                                ]}>
-                                    {option.label}
-                                </Text>
-                            </Pressable>
-                        ))}
-                    </View>
-                </FormRow>
-            );
-        }
-
-        // Default: text / textarea
-        return (
-            <FormTextInput
-                key={fieldName}
-                label={label}
-                value={field.value}
-                onChangeText={(text) => updateCustomField(fieldName, text)}
-                multiline={format === 'textarea'}
-            />
-        );
-    };
-
     if (!assetQuery.data || !fieldsQuery.isFetched) {
         return (
             <LoadingScreen />
@@ -500,7 +360,8 @@ export default function EditAssetScreen() {
                     {Object.keys(customFieldValues).length > 0 && (
                         <Section title={t('mobile.section_custom_fields')}>
                             {Object.entries(customFieldValues).map(([fieldName, field]) =>
-                                renderCustomField(fieldName, field)
+                                <CustomFieldInput key={fieldName} fieldName={fieldName} field={field}
+                                    onChange={(newValue) => updateCustomField(fieldName, newValue)} />
                             )}
                         </Section>
                     )}
@@ -631,34 +492,6 @@ const createStyles = (colors) => StyleSheet.create({
         padding: Spacing.lg,
         paddingBottom: 100,
         gap: Spacing.xxl,
-    },
-    selectorButtonPressed: {
-        opacity: 0.7,
-    },
-    listboxContainer: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: Spacing.sm,
-    },
-    listboxOption: {
-        borderWidth: 1,
-        borderColor: colors.border,
-        borderRadius: BorderRadius.sm,
-        paddingHorizontal: Spacing.md,
-        paddingVertical: Spacing.sm,
-        backgroundColor: colors.backgroundTertiary,
-    },
-    listboxOptionSelected: {
-        backgroundColor: colors.primary,
-        borderColor: colors.primary,
-    },
-    listboxOptionText: {
-        fontSize: Typography.body,
-        color: colors.text,
-    },
-    listboxOptionTextSelected: {
-        color: '#fff',
-        fontWeight: FontWeight.semibold,
     },
     submitButton: {
         backgroundColor: colors.primary,
