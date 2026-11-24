@@ -105,7 +105,7 @@ export default function EditAssetScreen() {
     const fieldsQuery = useQuery({
         queryKey: customFieldKeys.all,
         queryFn: () => makeRequest({ url: '/fields', method: 'get', permissionKey: PERMISSIONS.CUSTOMFIELDS_VIEW }),
-        staleTime: Infinity,
+        refetchOnMount: 'always',
     });
 
     const populatedForIdRef = useRef(null);
@@ -167,7 +167,7 @@ export default function EditAssetScreen() {
     };
 
     useEffect(() => {
-        if (!assetQuery.data || !fieldsQuery.isFetched) return;
+        if (!assetQuery.data || !fieldsQuery.isFetchedAfterMount) return;
         if (populatedForIdRef.current === id) return;
         populatedForIdRef.current = id;
 
@@ -178,7 +178,7 @@ export default function EditAssetScreen() {
             });
         }
         populateFields(assetQuery.data, fieldDefs);
-    }, [assetQuery.data, fieldsQuery.data, fieldsQuery.isFetched, id]);
+    }, [assetQuery.data, fieldsQuery.data, fieldsQuery.isFetchedAfterMount, id]);
 
     const formatDateForApi = (date) => {
         if (!date) return undefined;
@@ -281,7 +281,7 @@ export default function EditAssetScreen() {
         }));
     };
 
-    if (!assetQuery.data || !fieldsQuery.isFetched) {
+    if (!assetQuery.data || !fieldsQuery.isFetchedAfterMount) {
         return (
             <LoadingScreen />
         );

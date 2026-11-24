@@ -74,7 +74,6 @@ export default function AssetScreen() {
     const fieldsQuery = useQuery({
         queryKey: customFieldKeys.all,
         queryFn: () => makeRequest({ url: '/fields', method: 'get', permissionKey: PERMISSIONS.CUSTOMFIELDS_VIEW }),
-        staleTime: Infinity, // i'm not sure i like this - we might just make it 24 hours or something but maybe i'm wrong /shrug
     });
 
     useRefreshOnFocus(assetKeys.detail(id));
