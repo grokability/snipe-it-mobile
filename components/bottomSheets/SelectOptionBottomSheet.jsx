@@ -7,6 +7,9 @@ import { BorderRadius, FontWeight, Spacing, Typography } from "@/constants/sizes
 import { CloseBtn, SNAP_POINTS } from "@/components/bottomSheets/SelectListBottomSheet";
 import SelectListContent from "@/components/bottomSheets/SelectListContent";
 
+// @expo/ui's half-height Android sheet keeps full-height content and hides the bottom of it
+const ANDROID_SNAP_POINTS = ['90%'];
+
 const SelectOptionBottomSheet = forwardRef((props, ref) => {
     const {
         title,
@@ -44,7 +47,7 @@ const SelectOptionBottomSheet = forwardRef((props, ref) => {
         <BottomSheetModal
             index={0}
             ref={ref}
-            snapPoints={SNAP_POINTS}
+            snapPoints={Platform.OS === 'android' ? ANDROID_SNAP_POINTS : SNAP_POINTS}
             backgroundStyle={backgroundStyle}
             enablePanDownToClose
             onDismiss={() => setSearchText('')}
