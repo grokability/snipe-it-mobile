@@ -354,7 +354,7 @@ export default function AssetScreen() {
                             const element = field.element;
 
                             if (field.field_encrypted) {
-                                return <EncryptedDetailRow key={key} label={label} value={displayValue(field.value)} />;
+                                return <EncryptedDetailRow key={key} label={label} value={customFieldDisplayValue(field)} />;
                             }
 
                             if ((element === 'checkbox' || format === 'boolean') && !field.field_values) {
