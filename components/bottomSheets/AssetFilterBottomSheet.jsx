@@ -1,5 +1,5 @@
 import React, { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
-import { View, Text, Pressable, Button, Platform, StyleSheet } from 'react-native';
+import { View, Text, Pressable, Platform, StyleSheet } from 'react-native';
 import { BottomSheetModal } from '@expo/ui/community/bottom-sheet';
 import { Ionicons } from '@expo/vector-icons';
 import { useColors } from '@/hooks/useThemeColors';
@@ -8,6 +8,7 @@ import { Spacing, BorderRadius, Typography, FontWeight } from '@/constants/sizes
 import { useAssetFilterBottomSheet } from '@/components/bottomSheets/useAssetFilterBottomSheet';
 import { useSelectListBottomSheet } from '@/components/bottomSheets/useSelectListBottomSheet';
 import SelectListContent from '@/components/bottomSheets/SelectListContent';
+import { SheetHeaderButton } from '@/components/bottomSheets/SheetHeaderButton';
 
 const SNAP_POINTS = ['60%', '90%'];
 
@@ -43,7 +44,7 @@ const FieldPicker = ({ field, label, selectedValue, onSelect, onBack }) => {
             {...selectListProps}
             title={label}
             selectedValue={selectedValue}
-            headerAction={<Button title={t('general.back')} onPress={onBack} />}
+            headerAction={<SheetHeaderButton title={t('general.back')} onPress={() => onBack()} />}
         />
     );
 };
