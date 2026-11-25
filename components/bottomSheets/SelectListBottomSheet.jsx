@@ -2,19 +2,20 @@ import {
     BottomSheetModal,
     useBottomSheet
 } from "@expo/ui/community/bottom-sheet";
-import { Button, Platform } from "react-native";
+import { Platform } from "react-native";
 import React, { forwardRef, useRef } from "react";
 import { useColors } from "@/hooks/useThemeColors";
 import { useTranslation } from "react-i18next";
 import { useSelectListBottomSheet } from "@/components/bottomSheets/useSelectListBottomSheet";
 import SelectListContent from "@/components/bottomSheets/SelectListContent";
+import { SheetHeaderButton } from "@/components/bottomSheets/SheetHeaderButton";
 
-const SNAP_POINTS = ['60%', '90%'];
+export const SNAP_POINTS = ['60%', '90%'];
 
-const CloseBtn = () => {
+export const CloseBtn = () => {
     const { close } = useBottomSheet();
     const { t } = useTranslation();
-    return <Button title={t('general.close')} onPress={() => close()} />;
+    return <SheetHeaderButton title={t('general.close')} onPress={() => close()} />;
 };
 
 // Shared implementation behind all Select*BottomSheet pickers (status, model, category, etc.)

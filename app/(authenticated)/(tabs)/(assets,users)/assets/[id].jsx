@@ -12,6 +12,7 @@ import {AssetDetailSkeleton} from "@/components/ui/Skeleton";
 import EmptyState from "@/components/ui/EmptyState";
 import Callout from "@/components/ui/Callout";
 import {decode} from "html-entities";
+import {formatFieldValuesAsArray} from "@/helpers/customFields";
 import {SafeAreaProvider, useSafeAreaInsets} from "react-native-safe-area-context";
 import {useFloatingButtonGroupStyle} from "@/components/ui/FloatingHeader";
 import {useColors} from "@/hooks/useThemeColors";
@@ -73,7 +74,6 @@ export default function AssetScreen() {
     const fieldsQuery = useQuery({
         queryKey: customFieldKeys.all,
         queryFn: () => makeRequest({ url: '/fields', method: 'get', permissionKey: PERMISSIONS.CUSTOMFIELDS_VIEW }),
-        staleTime: Infinity, // i'm not sure i like this - we might just make it 24 hours or something but maybe i'm wrong /shrug
     });
 
     useRefreshOnFocus(assetKeys.detail(id));
@@ -129,6 +129,19 @@ export default function AssetScreen() {
     const nestedName = (object) => object?.name ? decode(object.name) : na;
     const formatDate = (dateObject) => dateObject?.formatted || na;
     const formatBool = (value) => value ? t('mobile.yes') : t('mobile.no');
+
+    const customFieldDisplayValue = (field) => {
+        const isListbox = field.element === 'listbox' || field.field_format === 'listbox';
+
+        if (!isListbox || !field.value || !field.field_values) {
+            return displayValue(field.value);
+        }
+
+        const storedValue = decode(String(field.value));
+        const selectedOption = formatFieldValuesAsArray(field.field_values).find((option) => option.value === storedValue);
+
+        return selectedOption?.label ?? storedValue;
+    };
 
     if (assetNotFound) {
         return (
@@ -341,27 +354,10 @@ export default function AssetScreen() {
                             const element = field.element;
 
                             if (field.field_encrypted) {
-                                return <EncryptedDetailRow key={key} label={label} value={displayValue(field.value)} />;
+                                return <EncryptedDetailRow key={key} label={label} value={customFieldDisplayValue(field)} />;
                             }
 
-                            if (element === 'checkbox' || format === 'boolean') {
-                                if (field.field_values) {
-                                    const options = typeof field.field_values === 'string'
-                                        ? field.field_values.split('\n').map(value => value.trim()).filter(Boolean)
-                                        : Array.isArray(field.field_values) ? field.field_values : [];
-                                    const selected = field.value ? field.value.split(',').map(value => value.trim()) : [];
-                                    return (
-                                        <View key={key} style={{gap: Spacing.xs}}>
-                                            <Text style={styles.detailLabel}>{label}</Text>
-                                            {options.map((option) => (
-                                                <View key={option} style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'}}>
-                                                    <Text style={{fontSize: Typography.body, color: colors.text}}>{option}</Text>
-                                                    <Checkbox value={selected.includes(option)} disabled />
-                                                </View>
-                                            ))}
-                                        </View>
-                                    );
-                                }
+                            if ((element === 'checkbox' || format === 'boolean') && !field.field_values) {
                                 return (
                                     <View key={key} style={styles.detailRow}>
                                         <Text style={styles.detailLabel}>{label}</Text>
@@ -370,59 +366,7 @@ export default function AssetScreen() {
                                 );
                             }
 
-                            if ((element === 'radio' || format === 'radio') && field.field_values) {
-                                const options = typeof field.field_values === 'string'
-                                    ? field.field_values.split('\n').map(value => value.trim()).filter(Boolean)
-                                    : Array.isArray(field.field_values) ? field.field_values : [];
-                                return (
-                                    <View key={key} style={{gap: Spacing.xs}}>
-                                        <Text style={styles.detailLabel}>{label}</Text>
-                                        {options.map((option) => (
-                                            <View key={option} style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'}}>
-                                                <Text style={{fontSize: Typography.body, color: colors.text}}>{option}</Text>
-                                                <View style={{
-                                                    width: 18, height: 18, borderRadius: 9,
-                                                    borderWidth: 2,
-                                                    borderColor: field.value === option ? colors.primary : colors.textSecondary,
-                                                    alignItems: 'center', justifyContent: 'center',
-                                                }}>
-                                                    {field.value === option && (
-                                                        <View style={{width: 10, height: 10, borderRadius: 5, backgroundColor: colors.primary}} />
-                                                    )}
-                                                </View>
-                                            </View>
-                                        ))}
-                                    </View>
-                                );
-                            }
-
-                            if ((element === 'listbox' || format === 'listbox') && field.field_values) {
-                                const options = typeof field.field_values === 'string'
-                                    ? field.field_values.split('\n').map(value => value.trim()).filter(Boolean)
-                                    : Array.isArray(field.field_values) ? field.field_values : [];
-                                return (
-                                    <View key={key} style={{gap: Spacing.xs}}>
-                                        <Text style={styles.detailLabel}>{label}</Text>
-                                        <View style={{flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm}}>
-                                            {options.map((option) => (
-                                                <View key={option} style={{
-                                                    paddingHorizontal: Spacing.md, paddingVertical: Spacing.xs,
-                                                    borderRadius: BorderRadius.sm,
-                                                    backgroundColor: field.value === option ? colors.primary : colors.backgroundTertiary,
-                                                }}>
-                                                    <Text style={{
-                                                        fontSize: Typography.caption,
-                                                        color: field.value === option ? '#fff' : colors.text,
-                                                        fontWeight: field.value === option ? FontWeight.semibold : FontWeight.normal,
-                                                    }}>{option}</Text>
-                                                </View>
-                                            ))}
-                                        </View>
-                                    </View>
-                                );
-                            }
-
-                            return <DetailRow key={key} label={label} value={displayValue(field.value)}/>;
+                            return <DetailRow key={key} label={label} value={customFieldDisplayValue(field)}/>;
                         })}
                     </Section>
                 )}

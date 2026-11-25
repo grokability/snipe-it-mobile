@@ -6,7 +6,7 @@ import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useColors} from '@/hooks/useThemeColors';
 import {FontWeight, Spacing, Typography} from '@/constants/sizes';
 
-const BUTTON_SIZE = 40;
+export const HEADER_BUTTON_SIZE = 40;
 
 function FloatingBackButton() {
     const colors = useColors();
@@ -58,9 +58,9 @@ export function useFloatingButtonGroupStyle() {
 
     return useMemo(() => ({
         backgroundColor: colors.headerButtonBackground,
-        height: BUTTON_SIZE,
+        height: HEADER_BUTTON_SIZE,
         paddingVertical: 0,
-        borderRadius: BUTTON_SIZE / 2,
+        borderRadius: HEADER_BUTTON_SIZE / 2,
         overflow: 'hidden',
     }), [colors]);
 }
@@ -79,9 +79,9 @@ export function StatusBarScrim() {
 
 const styles = StyleSheet.create({
     backButton: {
-        width: BUTTON_SIZE,
-        height: BUTTON_SIZE,
-        borderRadius: BUTTON_SIZE / 2,
+        width: HEADER_BUTTON_SIZE,
+        height: HEADER_BUTTON_SIZE,
+        borderRadius: HEADER_BUTTON_SIZE / 2,
         marginRight: Spacing.lg,
         alignItems: 'center',
         justifyContent: 'center',
@@ -91,8 +91,8 @@ const styles = StyleSheet.create({
     },
     titlePill: {
         flexShrink: 1,
-        height: BUTTON_SIZE,
-        borderRadius: BUTTON_SIZE / 2,
+        height: HEADER_BUTTON_SIZE,
+        borderRadius: HEADER_BUTTON_SIZE / 2,
         paddingHorizontal: Spacing.lg,
         justifyContent: 'center',
         overflow: 'hidden',

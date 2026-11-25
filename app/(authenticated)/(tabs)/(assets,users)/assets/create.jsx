@@ -6,7 +6,6 @@ import {
     ScrollView,
     StyleSheet,
     Text,
-    View,
 } from 'react-native';
 import {KeyboardAvoidingForm} from "@/components/ui/KeyboardAvoidingForm";
 import {router} from "expo-router";
@@ -29,12 +28,12 @@ import SelectLocationBottomSheet from "@/components/bottomSheets/SelectLocationB
 import Datepicker from "@/components/forms/Datepicker";
 import OptionalDatepicker from "@/components/forms/OptionalDatepicker";
 import Switch from "@/components/forms/Switch";
-import Checkbox from "@/components/forms/Checkbox";
 import {Section} from "@/components/ui/Section";
 import {FormRow} from "@/components/forms/FormRow";
 import {FormTextInput} from "@/components/forms/FormTextInput";
 import {SelectorButton} from "@/components/forms/SelectorButton";
 import ImagePicker from "@/components/forms/ImagePicker";
+import {CustomFieldInput} from "@/components/forms/CustomFieldInput";
 
 export default function CreateAssetScreen() {
     const colors = useColors();
@@ -111,6 +110,7 @@ export default function CreateAssetScreen() {
                             element: field.element,
                             field_values: field.field_values_array || null,
                             db_column: field.db_column_name,
+                            db_column_warning: field.db_column_warning || null,
                             name: key,
                         };
                     });
@@ -181,7 +181,7 @@ export default function CreateAssetScreen() {
 
         // Custom fields
         Object.values(customFieldValues).forEach((customField) => {
-            if (customField.db_column) {
+            if (customField.db_column && !customField.db_column_warning) {
                 fields[customField.db_column] = customField.value;
             }
         });
@@ -236,150 +236,6 @@ export default function CreateAssetScreen() {
             ...prev,
             [fieldName]: { ...prev[fieldName], value: newValue },
         }));
-    };
-
-    const renderCustomField = (fieldName, field) => {
-        const format = field.field_format;
-        const element = field.element;
-        const label = field.name || fieldName;
-
-        if (element === 'checkbox') {
-            if (field.field_values) {
-                const options = typeof field.field_values === 'string'
-                    ? field.field_values.split('\n').map(value => value.trim()).filter(Boolean)
-                    : Array.isArray(field.field_values) ? field.field_values : [];
-                const selected = field.value ? field.value.split(',').map(value => value.trim()) : [];
-                return (
-                    <FormRow key={fieldName} label={label}>
-                        <View style={{gap: Spacing.sm}}>
-                            {options.map((option) => {
-                                const isSelected = selected.includes(option);
-                                return (
-                                    <Pressable
-                                        key={option}
-                                        onPress={() => {
-                                            const newSelected = isSelected
-                                                ? selected.filter(value => value !== option)
-                                                : [...selected, option];
-                                            updateCustomField(fieldName, newSelected.join(', '));
-                                        }}
-                                        style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: Spacing.xs}}
-                                    >
-                                        <Text style={{fontSize: Typography.bodyLarge, color: colors.text}}>{option}</Text>
-                                        <Checkbox value={isSelected} onValueChange={() => {
-                                            const newSelected = isSelected
-                                                ? selected.filter(value => value !== option)
-                                                : [...selected, option];
-                                            updateCustomField(fieldName, newSelected.join(', '));
-                                        }} />
-                                    </Pressable>
-                                );
-                            })}
-                        </View>
-                    </FormRow>
-                );
-            }
-            return (
-                <FormRow key={fieldName} label={label} horizontal>
-                    <Checkbox
-                        value={field.value === '1'}
-                        onValueChange={(isChecked) => updateCustomField(fieldName, isChecked ? '1' : '0')}
-                    />
-                </FormRow>
-            );
-        }
-
-        if (format === 'DATE' || format === 'date') {
-            return (
-                <FormRow key={fieldName} label={label}>
-                    <OptionalDatepicker
-                        initialDate={field.value ? new Date(field.value) : undefined}
-                        onDateChange={(event, date) => {
-                            if (date) {
-                                const year = date.getFullYear();
-                                const month = String(date.getMonth() + 1).padStart(2, '0');
-                                const day = String(date.getDate()).padStart(2, '0');
-                                updateCustomField(fieldName, `${year}-${month}-${day}`);
-                            } else {
-                                updateCustomField(fieldName, '');
-                            }
-                        }}
-                    />
-                </FormRow>
-            );
-        }
-
-        if ((element === 'radio') && field.field_values) {
-            const options = typeof field.field_values === 'string'
-                ? field.field_values.split('\n').map(value => value.trim()).filter(Boolean)
-                : Array.isArray(field.field_values) ? field.field_values : [];
-            return (
-                <FormRow key={fieldName} label={label}>
-                    <View style={{gap: Spacing.sm}}>
-                        {options.map((option) => (
-                            <Pressable
-                                key={option}
-                                onPress={() => updateCustomField(fieldName, option)}
-                                style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: Spacing.xs}}
-                            >
-                                <Text style={{fontSize: Typography.bodyLarge, color: colors.text}}>{option}</Text>
-                                <View style={{
-                                    width: 20, height: 20, borderRadius: 10,
-                                    borderWidth: 2,
-                                    borderColor: field.value === option ? colors.primary : colors.border,
-                                    alignItems: 'center', justifyContent: 'center',
-                                }}>
-                                    {field.value === option && (
-                                        <View style={{width: 12, height: 12, borderRadius: 6, backgroundColor: colors.primary}} />
-                                    )}
-                                </View>
-                            </Pressable>
-                        ))}
-                    </View>
-                </FormRow>
-            );
-        }
-
-        if ((element === 'listbox' || format === 'listbox') && field.field_values) {
-            const options = typeof field.field_values === 'string'
-                ? field.field_values.split('\n').map(value => value.trim()).filter(Boolean)
-                : Array.isArray(field.field_values) ? field.field_values : [];
-            return (
-                <FormRow key={fieldName} label={label}>
-                    <View style={styles.listboxContainer}>
-                        {options.map((option) => (
-                            <Pressable
-                                key={option}
-                                onPress={() => updateCustomField(fieldName, option)}
-                                style={({pressed}) => [
-                                    styles.listboxOption,
-                                    field.value === option && styles.listboxOptionSelected,
-                                    pressed && styles.selectorButtonPressed,
-                                ]}
-                            >
-                                <Text style={[
-                                    styles.listboxOptionText,
-                                    field.value === option && styles.listboxOptionTextSelected,
-                                ]}>
-                                    {option}
-                                </Text>
-                            </Pressable>
-                        ))}
-                    </View>
-                </FormRow>
-            );
-        }
-
-        // Default: text / textarea
-        return (
-            <FormTextInput
-                key={fieldName}
-                label={label}
-                value={field.value}
-                onChangeText={(text) => updateCustomField(fieldName, text)}
-                multiline={format === 'textarea'}
-            />
-        );
     };
 
     return (
@@ -522,7 +378,8 @@ export default function CreateAssetScreen() {
                 {!loadingFields && Object.keys(customFieldValues).length > 0 && (
                     <Section title={t('mobile.section_custom_fields')}>
                         {Object.entries(customFieldValues).map(([fieldName, field]) =>
-                            renderCustomField(fieldName, field)
+                            <CustomFieldInput key={fieldName} fieldName={fieldName} field={field}
+                                onChange={(newValue) => updateCustomField(fieldName, newValue)} />
                         )}
                     </Section>
                 )}
@@ -592,34 +449,6 @@ const createStyles = (colors) => StyleSheet.create({
         padding: Spacing.lg,
         paddingBottom: 100,
         gap: Spacing.xxl,
-    },
-    selectorButtonPressed: {
-        opacity: 0.7,
-    },
-    listboxContainer: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: Spacing.sm,
-    },
-    listboxOption: {
-        borderWidth: 1,
-        borderColor: colors.border,
-        borderRadius: BorderRadius.sm,
-        paddingHorizontal: Spacing.md,
-        paddingVertical: Spacing.sm,
-        backgroundColor: colors.backgroundTertiary,
-    },
-    listboxOptionSelected: {
-        backgroundColor: colors.primary,
-        borderColor: colors.primary,
-    },
-    listboxOptionText: {
-        fontSize: Typography.body,
-        color: colors.text,
-    },
-    listboxOptionTextSelected: {
-        color: '#fff',
-        fontWeight: FontWeight.semibold,
     },
     submitButton: {
         backgroundColor: colors.primary,

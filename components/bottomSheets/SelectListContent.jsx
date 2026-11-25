@@ -25,6 +25,7 @@ const SelectListContent = ({
     handleSearchChange,
     selectItem,
     headerAction,
+    footer,
 }) => {
     const colors = useColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
@@ -85,45 +86,58 @@ const SelectListContent = ({
     );
 
     return (
-        <FlashList
-            data={displayItems}
-            renderItem={({ item }) => <Item item={item} />}
-            keyExtractor={item => item.id}
-            onEndReached={loadMore}
-            onEndReachedThreshold={0.1}
-            ListEmptyComponent={
-                isLoading ? <ActivityIndicator style={styles.loadingInitial} /> : null
-            }
-            ListHeaderComponent={
-                <>
-                    <View style={styles.header}>
-                        <View style={styles.headerTop}>
-                            <Text style={styles.title}>{title}</Text>
-                            {headerAction}
+        <View style={styles.container}>
+            <FlashList
+                data={displayItems}
+                renderItem={({ item }) => <Item item={item} />}
+                keyExtractor={item => item.id}
+                onEndReached={loadMore}
+                onEndReachedThreshold={0.1}
+                ListEmptyComponent={
+                    isLoading ? <ActivityIndicator style={styles.loadingInitial} /> : null
+                }
+                ListHeaderComponent={
+                    <>
+                        <View style={styles.header}>
+                            <View style={styles.headerTop}>
+                                <Text style={styles.title}>{title}</Text>
+                                {headerAction}
+                            </View>
+                            <View style={styles.searchContainer}>
+                                <BottomSheetTextInput
+                                    style={styles.searchInput}
+                                    placeholder={t('general.search')}
+                                    placeholderTextColor={colors.textMuted}
+                                    onChangeText={handleSearchChange}
+                                />
+                            </View>
                         </View>
-                        <View style={styles.searchContainer}>
-                            <BottomSheetTextInput
-                                style={styles.searchInput}
-                                placeholder={t('general.search')}
-                                placeholderTextColor={colors.textMuted}
-                                onChangeText={handleSearchChange}
-                            />
-                        </View>
-                    </View>
-                    {pinnedItem && <PinnedItem item={pinnedItem} />}
-                </>
-            }
-            ListFooterComponent={
-                <>
-                    {isLoadingMore && <ActivityIndicator style={styles.loadingMore} />}
-                </>
-            }
-            contentContainerStyle={styles.listContent}
-        />
+                        {pinnedItem && <PinnedItem item={pinnedItem} />}
+                    </>
+                }
+                ListFooterComponent={
+                    <>
+                        {isLoadingMore && <ActivityIndicator style={styles.loadingMore} />}
+                    </>
+                }
+                contentContainerStyle={styles.listContent}
+            />
+            {footer && <View style={styles.footer}>{footer}</View>}
+        </View>
     );
 };
 
 const createStyles = (colors) => StyleSheet.create({
+    container: {
+        flex: 1,
+    },
+    footer: {
+        paddingHorizontal: Spacing.lg,
+        paddingTop: Spacing.md,
+        paddingBottom: Spacing.xl,
+        borderTopWidth: 1,
+        borderTopColor: colors.border,
+    },
     header: {
         paddingHorizontal: Spacing.lg,
         paddingTop: Spacing.lg,
